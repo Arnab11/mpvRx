@@ -422,5 +422,13 @@ fun PlayerSheets(
         onDismissRequest = onDismissRequest
       )
     }
+
+    Sheets.AudioProperties -> {
+      val properties = remember { viewModel.getAudioPropertiesData() }
+      app.gyrolet.mpvrx.ui.player.controls.components.sheets.AudioPropertiesSheet(
+        properties = properties,
+        onDismissRequest = onDismissRequest
+      )
+    }
   }
 }
