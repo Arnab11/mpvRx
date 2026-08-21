@@ -13,6 +13,7 @@ import android.app.Activity
 import android.app.Application
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -22,6 +23,7 @@ import app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository
 import app.gyrolet.mpvrx.di.DatabaseModule
 import app.gyrolet.mpvrx.di.FileManagerModule
 import app.gyrolet.mpvrx.di.PreferencesModule
+import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.presentation.crash.CrashActivity
@@ -30,6 +32,7 @@ import app.gyrolet.mpvrx.repository.NetworkRepository
 import app.gyrolet.mpvrx.ui.player.AndroidNativeCompat
 import app.gyrolet.mpvrx.ui.player.PlaybackPhase
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
+import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import `is`.xyz.mpv.FastThumbnails
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -128,8 +131,28 @@ class App :
   override fun onActivityStopped(activity: Activity) {
     startedActivityCount = (startedActivityCount - 1).coerceAtLeast(0)
     if (startedActivityCount == 0 && !activity.isChangingConfigurations) {
+      pauseVideoWhenBackgroundPlaybackDisabled(activity)
       getKoin().get<app.gyrolet.mpvrx.domain.syncplay.SyncplayManager>().onAppBackgrounded()
     }
+  }
+
+  private fun pauseVideoWhenBackgroundPlaybackDisabled(activity: Activity) {
+    val playerActivity = activity as? PlayerActivity ?: return
+    if (playerActivity.isCurrentMediaKnownAudio()) return
+
+    val isInPictureInPicture =
+      Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && playerActivity.isInPictureInPictureMode
+    if (isInPictureInPicture) return
+
+    val videoBackgroundPlaybackEnabled = getKoin().get<AudioPreferences>().backgroundPlayback.get()
+    if (videoBackgroundPlaybackEnabled) return
+
+    val state = PlaybackSession.state.value
+    if (state.currentItem == null || state.phase == PlaybackPhase.IDLE || state.phase == PlaybackPhase.UNINITIALIZED) return
+
+    PlaybackSession.setPropertyBoolean("pause", true)
+    playerActivity.abandonAudioFocus()
+    Log.d(TAG, "Paused video because video background playback is disabled")
   }
 
   override fun onActivityCreated(
