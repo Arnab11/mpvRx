@@ -43,6 +43,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -68,6 +69,8 @@ import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
+import app.gyrolet.mpvrx.ui.player.PlaybackSession
+import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.theme.spacing
@@ -669,21 +672,22 @@ fun PlaylistTrackListItem(
       // Status badges
       when {
         item.isPlaying -> {
+          val paused by PlaybackSession.propBoolean["pause"].collectAsState()
+          val isPlaybackActive = paused != true
           Surface(
             color = accentColor.copy(alpha = 0.15f),
             shape = RoundedCornerShape(16.dp),
           ) {
-            Text(
-              text =
-                androidx.compose.ui.res
-                  .stringResource(app.gyrolet.mpvrx.R.string.notification_playing),
-              modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-              style =
-                MaterialTheme.typography.labelSmall.copy(
-                  fontWeight = FontWeight.SemiBold,
-                  color = accentColor,
-                ),
-            )
+            Box(
+              modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+              contentAlignment = Alignment.Center,
+            ) {
+              MiniAudioVisualizer(
+                isPlaying = isPlaybackActive,
+                color = accentColor,
+                modifier = Modifier.size(width = 16.dp, height = 14.dp),
+              )
+            }
           }
         }
       }
@@ -904,22 +908,22 @@ fun PlaylistTrackGridItem(
           }
 
           if (item.isPlaying) {
+            val paused by PlaybackSession.propBoolean["pause"].collectAsState()
+            val isPlaybackActive = paused != true
             Surface(
               color = accentColor.copy(alpha = 0.15f),
               shape = RoundedCornerShape(4.dp),
             ) {
-              Text(
-                text =
-                  androidx.compose.ui.res
-                    .stringResource(app.gyrolet.mpvrx.R.string.notification_playing),
-                modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                style =
-                  MaterialTheme.typography.labelSmall.copy(
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = accentColor,
-                  ),
-              )
+              Box(
+                modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center,
+              ) {
+                MiniAudioVisualizer(
+                  isPlaying = isPlaybackActive,
+                  color = accentColor,
+                  modifier = Modifier.size(width = 14.dp, height = 12.dp),
+                )
+              }
             }
           }
         }
