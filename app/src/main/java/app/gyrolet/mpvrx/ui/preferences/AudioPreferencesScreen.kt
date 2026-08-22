@@ -46,6 +46,8 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AudioChannels
 import app.gyrolet.mpvrx.preferences.AudioPlayerOrientation
 import app.gyrolet.mpvrx.preferences.AudioPreferences
+import app.gyrolet.mpvrx.preferences.LyricsTranslationDisplayMode
+import app.gyrolet.mpvrx.data.lyrics.LyricsLanguageOptions
 import app.gyrolet.mpvrx.preferences.AudioVisualizerStyle
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.MediaLibraryType
@@ -522,6 +524,60 @@ object AudioPreferencesScreen : Screen {
                 },
                 onSliderValueChange = { preferences.volumeBoostCap.set(it.toInt()) },
                 sliderValue = volumeBoostCap.toFloat(),
+              )
+
+              PreferenceDivider()
+              Text(
+                text = stringResource(R.string.pref_lyrics_translation_category),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+              )
+
+              val lyricsAutoTranslate by preferences.lyricsAutoTranslate.collectAsState()
+              SwitchPreference(
+                value = lyricsAutoTranslate,
+                onValueChange = { preferences.lyricsAutoTranslate.set(it) },
+                title = { Text(stringResource(R.string.pref_lyrics_auto_translate)) },
+                summary = {
+                  Text(
+                    stringResource(R.string.pref_lyrics_auto_translate_summary),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+              val lyricsTargetLanguage by preferences.lyricsTargetLanguage.collectAsState()
+              ListPreference(
+                value = lyricsTargetLanguage,
+                onValueChange = { preferences.lyricsTargetLanguage.set(it) },
+                values = LyricsLanguageOptions.ALL_LANGUAGES.map { it.code },
+                valueToText = { AnnotatedString(LyricsLanguageOptions.getDisplayName(it)) },
+                title = { Text(stringResource(R.string.pref_lyrics_target_language)) },
+                summary = {
+                  Text(
+                    text = LyricsLanguageOptions.getDisplayName(lyricsTargetLanguage),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+              val lyricsDisplayMode by preferences.lyricsTranslationDisplayMode.collectAsState()
+              ListPreference(
+                value = lyricsDisplayMode,
+                onValueChange = { preferences.lyricsTranslationDisplayMode.set(it) },
+                values = LyricsTranslationDisplayMode.entries,
+                valueToText = { AnnotatedString(resources.getString(it.title)) },
+                title = { Text(stringResource(R.string.pref_lyrics_display_mode)) },
+                summary = {
+                  Text(
+                    text = stringResource(lyricsDisplayMode.title),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
               )
             }
           }
