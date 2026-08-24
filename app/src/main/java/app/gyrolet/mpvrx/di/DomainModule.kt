@@ -95,5 +95,6 @@ val domainModule =
     single { app.gyrolet.mpvrx.data.lyrics.LyricsTranslationService(get()) }
     single { app.gyrolet.mpvrx.repository.lyrics.LyricsRepository(androidContext(), get()) }
     single { TorrentStreamingEngine(androidContext()) }
+    single { app.gyrolet.mpvrx.repository.SeerrRepository(get(), get(), get()) }
   }
 
