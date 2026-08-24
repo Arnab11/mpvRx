@@ -107,6 +107,7 @@ import app.gyrolet.mpvrx.ui.browser.videolist.VideoListContent
 import app.gyrolet.mpvrx.ui.browser.videolist.VideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.PlaybackIdentity
 import app.gyrolet.mpvrx.ui.player.PlaybackItem
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
@@ -338,6 +339,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
         mimeType = item.mimeType,
       )
     }
+    MediaPlaybackService.prepareForFreshPlaybackLaunch()
     PlaybackSession.replaceQueue(
       items = queueItems,
       currentIndex = index,

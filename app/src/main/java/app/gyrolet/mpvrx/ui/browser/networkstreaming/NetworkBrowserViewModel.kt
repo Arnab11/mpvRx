@@ -25,6 +25,7 @@ import app.gyrolet.mpvrx.domain.network.NetworkPath
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.NetworkProtocol
 import app.gyrolet.mpvrx.repository.NetworkRepository
+import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.NetworkPlaybackSource
 import app.gyrolet.mpvrx.ui.player.PlaybackItem
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
@@ -213,6 +214,7 @@ class NetworkBrowserViewModel(
           networkSource = NetworkPlaybackSource(connection.id, networkFile.path),
         )
       }
+    MediaPlaybackService.prepareForFreshPlaybackLaunch()
     PlaybackSession.replaceQueue(
       items = queueItems,
       currentIndex = playlistIndex,
