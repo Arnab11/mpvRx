@@ -47,8 +47,10 @@ import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,6 +72,7 @@ import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.Panels
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import app.gyrolet.mpvrx.ui.player.PlayerViewModel
+import app.gyrolet.mpvrx.ui.player.clip.ClipOverlayView
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.VideoAspect
 import app.gyrolet.mpvrx.ui.player.controls.components.AbLoopIcon
@@ -689,6 +692,17 @@ fun RenderPlayerButton(
         Icons.RoundedFilled.MoreVert,
         onClick = { onOpenSheet(Sheets.More) },
         onLongClick = { onOpenPanel(Panels.VideoFilters) },
+        color = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
+        modifier = Modifier.size(buttonSize),
+      )
+    }
+
+    PlayerButton.CLIP -> {
+      val clipOverlay = remember(activity) { ClipOverlayView.ensureAttached(activity) }
+      ControlsButton(
+        icon = button.icon,
+        onClick = clipOverlay::openClip,
+        title = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.clip_action),
         color = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
         modifier = Modifier.size(buttonSize),
       )
