@@ -298,10 +298,10 @@ private fun NormalTopBar(
           modifier = Modifier.padding(horizontal = 2.dp),
         ) {
           Icon(
-            Icons.RoundedFilled.AddToQueue,
+            Icons.RoundedFilled.Explore,
             contentDescription =
               androidx.compose.ui.res.stringResource(
-                app.gyrolet.mpvrx.R.string.seerr_requests,
+                app.gyrolet.mpvrx.R.string.seerr_discover,
               ),
             modifier = Modifier.size(24.dp),
             tint = MaterialTheme.colorScheme.secondary,
