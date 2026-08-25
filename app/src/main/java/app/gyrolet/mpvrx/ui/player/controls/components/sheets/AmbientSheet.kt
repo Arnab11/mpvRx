@@ -31,6 +31,9 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -51,6 +54,7 @@ import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.SliderItem
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.AmbientShaderPresets
+import app.gyrolet.mpvrx.ui.player.AmbientStyle
 import app.gyrolet.mpvrx.ui.player.PlayerViewModel
 import app.gyrolet.mpvrx.ui.player.components.expressive.SectionHeader
 import app.gyrolet.mpvrx.ui.player.matchesGlowPreset
@@ -64,6 +68,7 @@ fun AmbientSheet(
   onDismissRequest: () -> Unit,
 ) {
   // ── Collect all state flows ──────────────────────────────────────────────
+  val ambientStyle by viewModel.ambientStyle.collectAsState()
   val blurSamples by viewModel.ambientBlurSamples.collectAsState()
   val maxRadius by viewModel.ambientMaxRadius.collectAsState()
   val glowIntensity by viewModel.ambientGlowIntensity.collectAsState()
@@ -125,6 +130,34 @@ fun AmbientSheet(
             .padding(bottom = 4.dp),
       )
 
+      SingleChoiceSegmentedButtonRow(
+        modifier =
+          Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+      ) {
+        AmbientStyle.entries.forEachIndexed { index, style ->
+          SegmentedButton(
+            selected = ambientStyle == style,
+            onClick = { viewModel.setAmbientStyle(style) },
+            shape = SegmentedButtonDefaults.itemShape(index, AmbientStyle.entries.size),
+            colors =
+              SegmentedButtonDefaults.colors(
+                activeContentColor = MaterialTheme.colorScheme.primary,
+                activeBorderColor = MaterialTheme.colorScheme.primary,
+              ),
+          ) {
+            Text(text = stringResource(style.titleRes))
+          }
+        }
+      }
+
+      HorizontalDivider(
+        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
+        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+      )
+
+      if (ambientStyle == AmbientStyle.Glow) {
       // ── Quality Presets ──────────────────────────────────────────────
       Row(
         modifier =
@@ -409,6 +442,15 @@ fun AmbientSheet(
       }
 
       Spacer(modifier = Modifier.height(8.dp))
+      } else {
+        Text(
+          text = stringResource(R.string.ambient_youtube_auto_hint),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large, vertical = 8.dp),
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+      }
     }
   }
 }
