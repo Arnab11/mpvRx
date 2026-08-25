@@ -85,15 +85,15 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.browser.NavigationBarState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.DeclaredPlaybackMediaKind
 import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.PlaybackPhase
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import app.gyrolet.mpvrx.ui.player.TrackNode
+import app.gyrolet.mpvrx.ui.player.declaredMediaKind
 import app.gyrolet.mpvrx.ui.player.toObject
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
-import app.gyrolet.mpvrx.utils.media.fileExtension
-import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -124,17 +124,11 @@ fun MiniPlayer(modifier: Modifier = Modifier) {
   val hasRealVideo = tracks.any { it.isVideo && !it.isAlbumArtwork }
   val hasAlbumArt = tracks.any { it.isAlbumArtwork }
 
-  val ext = (currentItem?.originalUri ?: currentItem?.title ?: "").fileExtension()
-  val mimeIsAudio = currentItem?.mimeType?.startsWith("audio/", ignoreCase = true) == true
-  val mimeIsVideo = currentItem?.mimeType?.startsWith("video/", ignoreCase = true) == true
-  val extIsAudio = ext in FileTypeUtils.AUDIO_EXTENSIONS
-  val extIsVideo = ext in FileTypeUtils.VIDEO_EXTENSIONS
-
   val isAudioOnlyItem =
-    when {
-      mimeIsAudio || extIsAudio -> true
-      mimeIsVideo || extIsVideo || hasRealVideo -> false
-      else -> hasAlbumArt || tracks.any { it.isAudio }
+    when (currentItem?.declaredMediaKind() ?: DeclaredPlaybackMediaKind.UNKNOWN) {
+      DeclaredPlaybackMediaKind.AUDIO -> true
+      DeclaredPlaybackMediaKind.VIDEO -> false
+      DeclaredPlaybackMediaKind.UNKNOWN -> !hasRealVideo && (hasAlbumArt || tracks.any { it.isAudio })
     }
 
   val isMiniPlayerAllowed = isAudioOnlyItem || enableVideoMiniPlayer
@@ -143,6 +137,7 @@ fun MiniPlayer(modifier: Modifier = Modifier) {
     !isSettingsScreen &&
     isMiniPlayerAllowed &&
     sessionState.phase != PlaybackPhase.IDLE &&
+    sessionState.phase != PlaybackPhase.STOPPING &&
     sessionState.phase != PlaybackPhase.UNINITIALIZED &&
     sessionState.phase != PlaybackPhase.ERROR
 

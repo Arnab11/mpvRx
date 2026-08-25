@@ -25,10 +25,9 @@ import app.gyrolet.mpvrx.domain.network.NetworkPath
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.NetworkProtocol
 import app.gyrolet.mpvrx.repository.NetworkRepository
-import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.NetworkPlaybackSource
 import app.gyrolet.mpvrx.ui.player.PlaybackItem
-import app.gyrolet.mpvrx.ui.player.PlaybackSession
+import app.gyrolet.mpvrx.ui.player.PreparedPlaybackLaunchStore
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import app.gyrolet.mpvrx.utils.media.M3UParseResult
 import app.gyrolet.mpvrx.utils.media.M3UParser
@@ -214,8 +213,7 @@ class NetworkBrowserViewModel(
           networkSource = NetworkPlaybackSource(connection.id, networkFile.path),
         )
       }
-    MediaPlaybackService.prepareForFreshPlaybackLaunch()
-    PlaybackSession.replaceQueue(
+    val launchToken = PreparedPlaybackLaunchStore.stage(
       items = queueItems,
       currentIndex = playlistIndex,
       isExplicitQueue = true,
@@ -227,6 +225,7 @@ class NetworkBrowserViewModel(
     intent.putExtra("internal_launch", true)
     intent.putExtra("launch_source", "network_stream")
     intent.putExtra(PlayerActivity.EXTRA_PREPARED_PLAYBACK_QUEUE, true)
+    intent.putExtra(PlayerActivity.EXTRA_PREPARED_PLAYBACK_TOKEN, launchToken)
     intent.putExtra("title", file.name)
     intent.putExtra("filename", file.name)
     intent.putExtra("network_file_path", file.path)
