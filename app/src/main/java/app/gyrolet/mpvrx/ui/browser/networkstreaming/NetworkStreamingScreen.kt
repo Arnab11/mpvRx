@@ -112,6 +112,7 @@ import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionInput
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionScreen
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionViewModel
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
+import app.gyrolet.mpvrx.utils.media.SharedUrlExtractor
 import app.gyrolet.mpvrx.utils.media.MediaUtils
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
@@ -896,13 +897,13 @@ private fun StreamLinkSection(
           ?.trim()
           .orEmpty()
       if (text.isNotBlank()) {
-        linkUrl = text
+        linkUrl = SharedUrlExtractor.normalizeInput(text)
       }
     }
   }
 
   fun playCurrentLink() {
-    val sanitizedUrl = linkUrl.trim()
+    val sanitizedUrl = SharedUrlExtractor.normalizeInput(linkUrl)
     if (sanitizedUrl.isBlank()) return
 
     keyboardController?.hide()

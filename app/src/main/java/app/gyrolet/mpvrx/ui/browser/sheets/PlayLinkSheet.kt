@@ -49,6 +49,7 @@ import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.utils.history.RecentlyPlayedOps
 import app.gyrolet.mpvrx.utils.media.MediaInfoParser
 import app.gyrolet.mpvrx.utils.media.MediaUtils
+import app.gyrolet.mpvrx.utils.media.SharedUrlExtractor
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
@@ -80,7 +81,7 @@ fun PlayLinkSheet(
   }
 
   val handleConfirm = {
-    val url = linkInputUrl.trim()
+    val url = SharedUrlExtractor.normalizeInput(linkInputUrl)
     if (url.isNotBlank() && MediaUtils.isURLValid(url)) {
       val playableSource = normalizeTorrentSource(url) ?: url
       coroutineScope.launch {
@@ -164,7 +165,8 @@ fun PlayLinkSheet(
           value = linkInputUrl,
           onValueChange = { newValue ->
             linkInputUrl = newValue
-            isLinkInputUrlValid = newValue.isBlank() || MediaUtils.isURLValid(newValue)
+            val normalizedInput = SharedUrlExtractor.normalizeInput(newValue)
+            isLinkInputUrlValid = newValue.isBlank() || MediaUtils.isURLValid(normalizedInput)
           },
           modifier = Modifier.fillMaxWidth(),
           label = {
