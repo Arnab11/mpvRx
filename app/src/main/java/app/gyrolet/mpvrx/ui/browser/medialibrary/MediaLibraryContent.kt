@@ -107,10 +107,9 @@ import app.gyrolet.mpvrx.ui.browser.videolist.VideoListContent
 import app.gyrolet.mpvrx.ui.browser.videolist.VideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
-import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.PlaybackIdentity
 import app.gyrolet.mpvrx.ui.player.PlaybackItem
-import app.gyrolet.mpvrx.ui.player.PlaybackSession
+import app.gyrolet.mpvrx.ui.player.PreparedPlaybackLaunchStore
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import app.gyrolet.mpvrx.ui.securefolder.SecureFolderGateScreen
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
@@ -339,8 +338,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
         mimeType = item.mimeType,
       )
     }
-    MediaPlaybackService.prepareForFreshPlaybackLaunch()
-    PlaybackSession.replaceQueue(
+    val launchToken = PreparedPlaybackLaunchStore.stage(
       items = queueItems,
       currentIndex = index,
       isExplicitQueue = true,
@@ -352,6 +350,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         putExtra("internal_launch", true)
         putExtra(PlayerActivity.EXTRA_PREPARED_PLAYBACK_QUEUE, true)
+        putExtra(PlayerActivity.EXTRA_PREPARED_PLAYBACK_TOKEN, launchToken)
         putExtra("playlist_id", ALL_VIDEOS_PLAYLIST_ID)
         putExtra("playlist_index", index)
         putExtra("launch_source", "media_library")
