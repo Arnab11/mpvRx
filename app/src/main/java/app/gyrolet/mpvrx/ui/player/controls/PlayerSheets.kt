@@ -353,9 +353,7 @@ fun PlayerSheets(
       val videoQualityTracks by viewModel.videoQualityTracks.collectAsState()
       VideoQualitySheet(
         tracks = videoQualityTracks,
-        onSelect = { track ->
-          app.gyrolet.mpvrx.ui.player.PlaybackSession.setPropertyInt("vid", track.id)
-        },
+        onSelect = viewModel::selectVideoQuality,
         onDismissRequest = onDismissRequest,
       )
     }

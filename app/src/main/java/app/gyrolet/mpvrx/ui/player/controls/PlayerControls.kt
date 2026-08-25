@@ -114,6 +114,7 @@ import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.AiPreferences
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
+import app.gyrolet.mpvrx.preferences.PlayerButton
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.PortraitPlaybackControlsPosition
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
@@ -420,6 +421,13 @@ fun PlayerControls(
     remember(portraitBottomControlsPref) {
       appearancePreferences.parseButtons(portraitBottomControlsPref, mutableSetOf())
     }
+  val landscapeHasConfiguredQualityButton =
+    remember(topRightButtons, bottomRightButtons, bottomLeftButtons) {
+      PlayerButton.VIDEO_QUALITY in topRightButtons ||
+        PlayerButton.VIDEO_QUALITY in bottomRightButtons ||
+        PlayerButton.VIDEO_QUALITY in bottomLeftButtons
+    }
+  val portraitHasConfiguredQualityButton = PlayerButton.VIDEO_QUALITY in portraitBottomButtons
 
   var isUnlockSliderDragging by remember { mutableStateOf(false) }
 
@@ -1760,7 +1768,7 @@ fun PlayerControls(
             if (isPortrait) {
               BottomPlayerControlsPortrait(
                 buttons = portraitBottomButtons,
-                showVideoQualitySelector = showVideoQualitySelector,
+                showVideoQualitySelector = showVideoQualitySelector && !portraitHasConfiguredQualityButton,
                 chapters = chapters,
                 currentChapter = currentChapter,
                 isSpeedNonOne = isSpeedNonOne,
@@ -1779,7 +1787,7 @@ fun PlayerControls(
             } else {
               BottomRightPlayerControlsLandscape(
                 buttons = bottomRightButtons,
-                showVideoQualitySelector = showVideoQualitySelector,
+                showVideoQualitySelector = showVideoQualitySelector && !landscapeHasConfiguredQualityButton,
                 chapters = chapters,
                 currentChapter = currentChapter,
                 isSpeedNonOne = isSpeedNonOne,
