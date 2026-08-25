@@ -12,6 +12,7 @@ package app.gyrolet.mpvrx.preferences
 import app.gyrolet.mpvrx.preferences.preference.DependentBooleanPreference
 import app.gyrolet.mpvrx.preferences.preference.PreferenceStore
 import app.gyrolet.mpvrx.preferences.preference.getEnum
+import app.gyrolet.mpvrx.ui.player.AmbientStyle
 import app.gyrolet.mpvrx.ui.player.ControlsAnimationStyle
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.player.PlayerOrientation
@@ -133,6 +134,7 @@ class PlayerPreferences(
   val customButtons = preferenceStore.getString("custom_buttons_json", "[]")
 
   // Ambience Mode
+  val ambientStyle = preferenceStore.getEnum("ambient_style", AmbientStyle.Glow)
   val ambientBlurSamples = preferenceStore.getInt("ambient_blur_samples", 12)
   val ambientMaxRadius = preferenceStore.getFloat("ambient_max_radius", 0.15f)
   val ambientGlowIntensity = preferenceStore.getFloat("ambient_glow_intensity", 1.2f)
