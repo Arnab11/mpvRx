@@ -145,8 +145,6 @@ import app.gyrolet.mpvrx.ui.player.controls.components.TextPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.VolumeSlider
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberBufferingState
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.toFixed
-import app.gyrolet.mpvrx.ui.player.getTrackSelectionId
-import app.gyrolet.mpvrx.ui.player.setTrackSelectionId
 import app.gyrolet.mpvrx.ui.theme.AppMotion
 import app.gyrolet.mpvrx.ui.theme.controlColor
 import app.gyrolet.mpvrx.ui.theme.playerRippleConfiguration
@@ -357,13 +355,7 @@ fun PlayerControls(
         onRemoveSubtitle = viewModel::removeSubtitle,
         audioTracks = audioTracks.toImmutableList(),
         onAddAudio = viewModel::addAudio,
-        onSelectAudio = {
-          if (getTrackSelectionId("aid") == it.id) {
-            setTrackSelectionId("aid", null)
-          } else {
-            setTrackSelectionId("aid", it.id)
-          }
-        },
+        onSelectAudio = viewModel::selectAudioTrack,
         chapter = chapters.getOrNull(currentChapter ?: 0),
         chapters = chapters.toImmutableList(),
         onSeekToChapter = {
@@ -1872,13 +1864,7 @@ fun PlayerControls(
       onRemoveSubtitle = viewModel::removeSubtitle,
       audioTracks = audioTracks.toImmutableList(),
       onAddAudio = viewModel::addAudio,
-      onSelectAudio = {
-        if (getTrackSelectionId("aid") == it.id) {
-          setTrackSelectionId("aid", null)
-        } else {
-          setTrackSelectionId("aid", it.id)
-        }
-      },
+      onSelectAudio = viewModel::selectAudioTrack,
       chapter = chapters.getOrNull(currentChapter ?: 0),
       chapters = chapters.toImmutableList(),
       onSeekToChapter = {
