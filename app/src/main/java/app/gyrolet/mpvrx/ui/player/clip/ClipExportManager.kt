@@ -16,7 +16,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.provider.MediaStore
-import androidx.media3.common.util.UnstableApi
 import app.gyrolet.mpvrx.data.network.proxy.NetworkStreamingProxy
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.ui.player.PlaybackItem
@@ -78,7 +77,6 @@ sealed interface ClipExportState {
  * Playback remains owned by libmpv. Export is intentionally handled by Media3 Transformer so a
  * bundled libmpv build without encoding mode can never fail Clip save during mpv_initialize().
  */
-@OptIn(UnstableApi::class)
 object ClipExportManager {
   private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
   private val exporting = AtomicBoolean(false)
