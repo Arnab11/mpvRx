@@ -137,6 +137,7 @@ import app.gyrolet.mpvrx.ui.player.buildControlsExitH
 import app.gyrolet.mpvrx.ui.player.buildControlsExitV
 import app.gyrolet.mpvrx.ui.player.controls.components.AnimatedPlayPauseIcon
 import app.gyrolet.mpvrx.ui.player.controls.components.BrightnessSlider
+import app.gyrolet.mpvrx.ui.player.controls.components.LocalForceDarkPlayerButtonsBackground
 import app.gyrolet.mpvrx.ui.player.controls.components.MultipleSpeedPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.SeekPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.SeekThumbnailPreviewBubble
@@ -144,6 +145,9 @@ import app.gyrolet.mpvrx.ui.player.controls.components.SeekbarWithTimers
 import app.gyrolet.mpvrx.ui.player.controls.components.SlideToUnlock
 import app.gyrolet.mpvrx.ui.player.controls.components.TextPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.VolumeSlider
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonBorderColor
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContainerColor
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContentColor
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberBufferingState
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.toFixed
 import app.gyrolet.mpvrx.ui.theme.AppMotion
@@ -193,6 +197,7 @@ fun PlayerControls(
   val aiEnabled by aiPreferences.enabled.collectAsState()
   val realtimeSubsEnabled by aiPreferences.realtimeSubsEnabled.collectAsState()
   val hideBackground by appearancePreferences.hidePlayerButtonsBackground.collectAsState()
+  val forceDarkButtonBackground by appearancePreferences.forceDarkPlayerButtonsBackground.collectAsState()
   val portraitPlaybackControlsPosition by
     appearancePreferences.portraitPlaybackControlsPosition.collectAsState()
   val playerPreferences = koinInject<PlayerPreferences>()
@@ -502,6 +507,7 @@ fun PlayerControls(
     CompositionLocalProvider(
       LocalRippleConfiguration provides playerRippleConfiguration,
       LocalPlayerButtonsClickEvent provides { resetControlsTimestamp = System.currentTimeMillis() },
+      LocalForceDarkPlayerButtonsBackground provides forceDarkButtonBackground,
       LocalContentColor provides Color.White,
     ) {
       CompositionLocalProvider(
@@ -526,7 +532,7 @@ fun PlayerControls(
                 }
               }.then(safeAreaInsetModifier)
               .then(navigationBarBottomInsetModifier),
-        ) {
+          ) {
           val (topLeftControls, topRightControls) = createRefs()
           val (volumeSlider, brightnessSlider) = createRefs()
           val unlockControlsButton = createRef()
@@ -1317,16 +1323,16 @@ fun PlayerControls(
                   shape = CircleShape,
                   color =
                     if (!hideBackground) {
-                      MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.55f)
+                      playerButtonContainerColor()
                     } else {
                       Color.Transparent
                     },
-                  contentColor = MaterialTheme.colorScheme.onSurface,
+                  contentColor = playerButtonContentColor(),
                   tonalElevation = 0.dp,
                   shadowElevation = 0.dp,
                   border =
                     if (!hideBackground) {
-                      BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                      BorderStroke(1.dp, playerButtonBorderColor())
                     } else {
                       null
                     },
@@ -1339,7 +1345,7 @@ fun PlayerControls(
                       ),
                     tint =
                       if (viewModel.hasPrevious()) {
-                        if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface
+                        if (hideBackground) controlColor else playerButtonContentColor()
                       } else {
                         if (hideBackground) {
                           controlColor.copy(alpha = 0.38f)
@@ -1373,16 +1379,16 @@ fun PlayerControls(
                   shape = CircleShape,
                   color =
                     if (!hideBackground) {
-                      MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.55f)
+                      playerButtonContainerColor()
                     } else {
                       Color.Transparent
                     },
-                  contentColor = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
+                  contentColor = if (hideBackground) controlColor else playerButtonContentColor(),
                   tonalElevation = 0.dp,
                   shadowElevation = 0.dp,
                   border =
                     if (!hideBackground) {
-                      BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                      BorderStroke(1.dp, playerButtonBorderColor())
                     } else {
                       null
                     },
@@ -1418,16 +1424,16 @@ fun PlayerControls(
                   shape = CircleShape,
                   color =
                     if (!hideBackground) {
-                      MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.55f)
+                      playerButtonContainerColor()
                     } else {
                       Color.Transparent
                     },
-                  contentColor = MaterialTheme.colorScheme.onSurface,
+                  contentColor = playerButtonContentColor(),
                   tonalElevation = 0.dp,
                   shadowElevation = 0.dp,
                   border =
                     if (!hideBackground) {
-                      BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                      BorderStroke(1.dp, playerButtonBorderColor())
                     } else {
                       null
                     },
@@ -1440,7 +1446,7 @@ fun PlayerControls(
                       ),
                     tint =
                       if (viewModel.hasNext()) {
-                        if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface
+                        if (hideBackground) controlColor else playerButtonContentColor()
                       } else {
                         if (hideBackground) {
                           controlColor.copy(alpha = 0.38f)
@@ -1475,16 +1481,16 @@ fun PlayerControls(
                 shape = CircleShape,
                 color =
                   if (!hideBackground) {
-                    MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.55f)
+                    playerButtonContainerColor()
                   } else {
                     Color.Transparent
                   },
-                contentColor = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
+                contentColor = if (hideBackground) controlColor else playerButtonContentColor(),
                 tonalElevation = 0.dp,
                 shadowElevation = 0.dp,
                 border =
                   if (!hideBackground) {
-                    BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+                    BorderStroke(1.dp, playerButtonBorderColor())
                   } else {
                     null
                   },
