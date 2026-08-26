@@ -47,6 +47,9 @@ import app.gyrolet.mpvrx.ui.player.PlayerViewModel
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.VideoAspect
 import app.gyrolet.mpvrx.ui.player.controls.components.ControlsButton
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonBorderColor
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContainerColor
+import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContentColor
 import app.gyrolet.mpvrx.ui.theme.controlColor
 import app.gyrolet.mpvrx.ui.theme.spacing
 import dev.vivvvek.seeker.Segment
@@ -78,7 +81,7 @@ fun TopLeftPlayerControlsLandscape(
         ControlsButton(
           icon = Icons.RoundedFilled.ArrowBack,
           onClick = onBackPress,
-          color = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
+          color = if (hideBackground) controlColor else playerButtonContentColor(),
           modifier = Modifier.size(45.dp),
         )
 
@@ -106,21 +109,16 @@ fun TopLeftPlayerControlsLandscape(
                 if (hideBackground) {
                   Color.Transparent
                 } else {
-                  MaterialTheme.colorScheme.surfaceContainer.copy(
-                    alpha = 0.55f,
-                  )
+                  playerButtonContainerColor()
                 },
-              contentColor = if (hideBackground) controlColor else MaterialTheme.colorScheme.onSurface,
+              contentColor = if (hideBackground) controlColor else playerButtonContentColor(),
               tonalElevation = 0.dp,
               shadowElevation = 0.dp,
               border =
                 if (hideBackground) {
                   null
                 } else {
-                  BorderStroke(
-                    1.dp,
-                    MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f),
-                  )
+                  BorderStroke(1.dp, playerButtonBorderColor())
                 },
             ) {
               Row(
