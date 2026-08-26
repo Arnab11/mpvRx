@@ -52,6 +52,7 @@ import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.SliderItem
+import app.gyrolet.mpvrx.ui.components.themedSegmentedButtonColors
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.AmbientShaderPresets
 import app.gyrolet.mpvrx.ui.player.AmbientStyle
@@ -141,11 +142,7 @@ fun AmbientSheet(
             selected = ambientStyle == style,
             onClick = { viewModel.setAmbientStyle(style) },
             shape = SegmentedButtonDefaults.itemShape(index, AmbientStyle.entries.size),
-            colors =
-              SegmentedButtonDefaults.colors(
-                activeContentColor = MaterialTheme.colorScheme.primary,
-                activeBorderColor = MaterialTheme.colorScheme.primary,
-              ),
+            colors = themedSegmentedButtonColors(),
           ) {
             Text(text = stringResource(style.titleRes))
           }
