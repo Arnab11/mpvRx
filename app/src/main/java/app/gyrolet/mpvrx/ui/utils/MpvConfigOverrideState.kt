@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverride
+import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import org.koin.compose.koinInject
 
@@ -36,5 +37,7 @@ fun isAnyMpvOptionOwnedByConfig(optionNames: Set<String>): Boolean {
 fun currentMpvConfigOverrideOptions(): Set<String> {
   val preferences = koinInject<AdvancedPreferences>()
   val storedValues by preferences.mpvConfOverrides.collectAsState()
-  return remember(storedValues) { MpvConfigOverride.resolveOptionNames(storedValues) }
+  return remember(storedValues) {
+    MpvConfigOverridePolicy.effectiveOptionNames(MpvConfigOverride.resolveOptionNames(storedValues))
+  }
 }
