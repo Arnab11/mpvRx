@@ -68,6 +68,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinAuthMode
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinServer
+import app.gyrolet.mpvrx.ui.components.themedSegmentedButtonColors
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 
@@ -225,6 +226,7 @@ fun AddJellyfinServerDialog(
             selected = authMode == JellyfinAuthMode.CREDENTIALS,
             onClick = { authMode = JellyfinAuthMode.CREDENTIALS },
             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+            colors = themedSegmentedButtonColors(),
             icon = {
               Icon(
                 imageVector = Icons.RoundedFilled.Person,
@@ -239,6 +241,7 @@ fun AddJellyfinServerDialog(
             selected = authMode == JellyfinAuthMode.TOKEN,
             onClick = { authMode = JellyfinAuthMode.TOKEN },
             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+            colors = themedSegmentedButtonColors(),
             icon = {
               Icon(
                 imageVector = Icons.RoundedFilled.Security,
