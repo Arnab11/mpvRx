@@ -22,6 +22,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,10 +42,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
-import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.database.repository.NetworkStreamEntryRepository
 import app.gyrolet.mpvrx.domain.torrent.isTorrentSource
 import app.gyrolet.mpvrx.domain.torrent.normalizeTorrentSource
+import app.gyrolet.mpvrx.preferences.YtdlPreferences
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager
@@ -71,7 +72,7 @@ fun PlayLinkSheet(
   var isSubmitting by remember { mutableStateOf(false) }
   val coroutineScope = rememberCoroutineScope()
   val context = LocalContext.current
-  val playlistRepository = koinInject<PlaylistRepository>()
+  val ytdlPreferences = koinInject<YtdlPreferences>()
   val streamEntryRepository = koinInject<NetworkStreamEntryRepository>()
 
   val handleDismiss = { onDismiss() }
@@ -89,55 +90,35 @@ fun PlayLinkSheet(
       isSubmitting = true
       coroutineScope.launch {
         try {
-          if (isPlaylistInput) {
-            val importResult = playlistRepository.createM3UPlaylist(playableSource)
-            val playlistId = importResult.getOrNull()?.toInt()
-            if (playlistId != null) {
-              val playlistName = playlistRepository.getPlaylistById(playlistId)?.name.orEmpty()
-              val itemCount = playlistRepository.getPlaylistItemCount(playlistId)
-              android.widget.Toast
-                .makeText(
-                  context,
-                  context.getString(
-                    app.gyrolet.mpvrx.R.string.playlist_import_success_detail,
-                    playlistName,
-                    itemCount,
-                  ),
-                  android.widget.Toast.LENGTH_SHORT,
-                ).show()
+          val extractedPlaylist =
+            if (isPlaylistInput) {
+              YtdlpManager.extractPlaylist(context, playableSource, ytdlPreferences).getOrNull()
             } else {
-              val error = importResult.exceptionOrNull()
-              android.widget.Toast
-                .makeText(
-                  context,
-                  context.getString(
-                    app.gyrolet.mpvrx.R.string.playlist_import_playback_fallback,
-                    error?.message ?: context.getString(app.gyrolet.mpvrx.R.string.generic_unknown_error),
-                  ),
-                  android.widget.Toast.LENGTH_LONG,
-                ).show()
+              null
             }
-          }
-
-          val name = MediaInfoParser.parseStreamTitle(playableSource)
-          if (!isTorrentSource(playableSource)) {
+          val firstEntry = extractedPlaylist?.entries?.firstOrNull()
+          val selectedSource = firstEntry?.url ?: playableSource
+          val selectedName = firstEntry?.title ?: MediaInfoParser.parseStreamTitle(playableSource)
+          if (!isTorrentSource(selectedSource)) {
             try {
               RecentlyPlayedOps.addRecentlyPlayed(
-                filePath = playableSource,
-                fileName = name,
+                filePath = selectedSource,
+                fileName = selectedName,
                 launchSource = "play_link",
               )
               streamEntryRepository.saveNormalEntry(
-                canonicalSourceUri = playableSource,
-                fileName = name,
+                canonicalSourceUri = selectedSource,
+                fileName = selectedName,
+                posterUrl = firstEntry?.thumbnailUrl,
+                backdropUrl = firstEntry?.thumbnailUrl,
               )
 
-              val uri = runCatching { android.net.Uri.parse(playableSource) }.getOrNull()
-              if (app.gyrolet.mpvrx.utils.media.HttpUtils.isYouTubeUrl(uri)) {
+              val uri = runCatching { android.net.Uri.parse(selectedSource) }.getOrNull()
+              if (firstEntry == null && app.gyrolet.mpvrx.utils.media.HttpUtils.isYouTubeUrl(uri)) {
                 val ytMeta = app.gyrolet.mpvrx.utils.media.HttpUtils.fetchYouTubeMetadata(playableSource)
                 if (ytMeta != null && ytMeta.title.isNotBlank()) {
                   RecentlyPlayedOps.updateVideoMetadata(
-                    filePath = playableSource,
+                    filePath = selectedSource,
                     videoTitle = ytMeta.title,
                     duration = 0L,
                     fileSize = 0L,
@@ -145,7 +126,7 @@ fun PlayLinkSheet(
                     height = 0,
                   )
                   streamEntryRepository.saveNormalEntry(
-                    canonicalSourceUri = playableSource,
+                    canonicalSourceUri = selectedSource,
                     fileName = ytMeta.title,
                     posterUrl = ytMeta.thumbnailUrl,
                     backdropUrl = ytMeta.thumbnailUrl,
@@ -158,7 +139,11 @@ fun PlayLinkSheet(
               // Playback must still open even if optional history persistence fails.
             }
           }
-          onPlayLink(playableSource)
+          if (extractedPlaylist != null) {
+            YtdlpManager.playPlaylist(context, extractedPlaylist, "play_link")
+          } else {
+            onPlayLink(playableSource)
+          }
           onDismiss()
         } finally {
           isSubmitting = false
@@ -256,17 +241,17 @@ fun PlayLinkSheet(
               containerColor = MaterialTheme.colorScheme.primary,
             ),
         ) {
-          Text(
-            text =
-              when {
-                isSubmitting && isPlaylistInput ->
-                  androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.playlist_importing)
-                isPlaylistInput ->
-                  androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.playlist_import_and_play)
-                else -> androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_play)
-              },
-            fontWeight = FontWeight.SemiBold,
-          )
+          if (isSubmitting) {
+            CircularProgressIndicator(
+              modifier = Modifier.height(18.dp).width(18.dp),
+              strokeWidth = 2.dp,
+            )
+          } else {
+            Text(
+              text = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_play),
+              fontWeight = FontWeight.SemiBold,
+            )
+          }
         }
       }
 
