@@ -22,6 +22,7 @@ import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.domain.media.model.VideoFolder
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 
 /**
@@ -63,7 +64,16 @@ fun PlaylistCard(
 
   // Create a custom chip renderer for playlist type
   val customChipRenderer: @Composable () -> Unit = {
-    val chipText = if (playlist.isM3uPlaylist) stringResource(R.string.playlist_m3u_badge) else "Local"
+    val isOnlinePlaylist =
+      playlist.m3uSourceUrl?.let { source ->
+        YtdlpManager.isPotentialPlaylistUrl(source) && YtdlpManager.requiresYtdlp(source)
+      } == true
+    val chipText =
+      when {
+        isOnlinePlaylist -> stringResource(R.string.playlist_online_badge)
+        playlist.isM3uPlaylist -> stringResource(R.string.playlist_m3u_badge)
+        else -> "Local"
+      }
 
     // Use Material Design theme colors
     val materialTheme = androidx.compose.material3.MaterialTheme.colorScheme
