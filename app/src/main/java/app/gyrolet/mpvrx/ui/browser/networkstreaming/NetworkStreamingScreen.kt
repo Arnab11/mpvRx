@@ -108,12 +108,18 @@ import app.gyrolet.mpvrx.ui.browser.dialogs.EditConnectionSheet
 import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpInstallPromptDialog
+import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpInstallProgressDialog
+import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager
+import app.gyrolet.mpvrx.ui.preferences.YtdlpSettingsScreen
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionInput
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionScreen
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionViewModel
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.utils.media.SharedUrlExtractor
 import app.gyrolet.mpvrx.utils.media.MediaUtils
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
@@ -159,6 +165,29 @@ object NetworkStreamingScreen : Screen {
     var showTorrentPicker by remember { mutableStateOf(false) }
     val navigationBarHeight = app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight.current
     val coroutineScope = rememberCoroutineScope()
+
+    // yt-dlp install gate for the "paste link -> Play" flow: instead of silently installing
+    // yt-dlp in the background while the player buffers on first use, we ask up front.
+    var pendingYtdlpUrl by remember { mutableStateOf<String?>(null) }
+    var showYtdlpInstallPrompt by remember { mutableStateOf(false) }
+    var showYtdlpInstallProgress by remember { mutableStateOf(false) }
+    var ytdlpInstallLastLog by remember { mutableStateOf("") }
+    var ytdlpInstallError by remember { mutableStateOf<String?>(null) }
+    var ytdlpInstallJob by remember { mutableStateOf<Job?>(null) }
+
+    fun proceedToPlay(url: String) {
+      viewModel.recordSubmittedLink(url)
+      MediaUtils.playFile(url, context, "network_stream")
+    }
+
+    fun playLinkGatingYtdlp(url: String) {
+      if (YtdlpManager.requiresYtdlp(url) && !YtdlpManager.isInstalled(context)) {
+        pendingYtdlpUrl = url
+        showYtdlpInstallPrompt = true
+      } else {
+        proceedToPlay(url)
+      }
+    }
 
     LaunchedEffect(torrentPickerViewModel) {
       torrentPickerViewModel.launches.collect { request ->
@@ -392,8 +421,7 @@ object NetworkStreamingScreen : Screen {
                     showTorrentPicker = true
                     torrentPickerViewModel.open(TorrentSelectionInput(source = playableSource))
                   } else {
-                    viewModel.recordSubmittedLink(playableSource)
-                    MediaUtils.playFile(playableSource, context, "network_stream")
+                    playLinkGatingYtdlp(playableSource)
                   }
                 },
                 onPlayRecent = { entry ->
@@ -476,6 +504,55 @@ object NetworkStreamingScreen : Screen {
         onSave = { connection ->
           viewModel.addConnection(connection)
           showAddSheet = false
+        },
+      )
+
+      YtdlpInstallPromptDialog(
+        isOpen = showYtdlpInstallPrompt,
+        onInstall = {
+          showYtdlpInstallPrompt = false
+          ytdlpInstallError = null
+          ytdlpInstallLastLog = ""
+          showYtdlpInstallProgress = true
+          ytdlpInstallJob =
+            coroutineScope.launch {
+              val success =
+                YtdlpManager.runInstall(context) { log ->
+                  // runInstall logs from an IO dispatcher; hop back to Main before touching state.
+                  coroutineScope.launch(Dispatchers.Main) {
+                    ytdlpInstallLastLog = log
+                  }
+                }
+              if (success) {
+                showYtdlpInstallProgress = false
+                pendingYtdlpUrl?.let { proceedToPlay(it) }
+                pendingYtdlpUrl = null
+              } else {
+                // Leave the progress dialog open so the error is visible; Cancel dismisses it.
+                ytdlpInstallError = context.getString(R.string.ytdlp_install_failed)
+              }
+            }
+        },
+        onConfigure = {
+          showYtdlpInstallPrompt = false
+          pendingYtdlpUrl = null
+          backstack.add(YtdlpSettingsScreen)
+        },
+        onDismiss = {
+          showYtdlpInstallPrompt = false
+          pendingYtdlpUrl = null
+        },
+      )
+
+      YtdlpInstallProgressDialog(
+        isOpen = showYtdlpInstallProgress,
+        lastLogLine = ytdlpInstallLastLog,
+        error = ytdlpInstallError,
+        onCancel = {
+          ytdlpInstallJob?.cancel()
+          ytdlpInstallJob = null
+          showYtdlpInstallProgress = false
+          pendingYtdlpUrl = null
         },
       )
 
