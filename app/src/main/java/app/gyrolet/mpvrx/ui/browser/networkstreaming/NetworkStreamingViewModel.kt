@@ -24,6 +24,7 @@ import app.gyrolet.mpvrx.domain.torrent.isTorrentSource
 import app.gyrolet.mpvrx.domain.torrent.parseMagnet
 import app.gyrolet.mpvrx.repository.JellyfinRepository
 import app.gyrolet.mpvrx.repository.NetworkRepository
+import app.gyrolet.mpvrx.preferences.NetworkBookmarkPreferences
 import app.gyrolet.mpvrx.repository.wyzie.WyzieSearchRepository
 import app.gyrolet.mpvrx.repository.wyzie.WyzieTmdbResult
 import app.gyrolet.mpvrx.repository.wyzie.bestTmdbResult
@@ -79,6 +80,7 @@ class NetworkStreamingViewModel(
   private val streamEntryRepository: NetworkStreamEntryRepository by inject()
   private val wyzieSearchRepository: WyzieSearchRepository by inject()
   private val jellyfinRepository: JellyfinRepository by inject()
+  private val bookmarkPreferences: NetworkBookmarkPreferences by inject()
 
   private val enrichmentAttempts = mutableMapOf<String, Long>()
 
@@ -439,6 +441,7 @@ class NetworkStreamingViewModel(
   fun deleteConnection(connection: NetworkConnection) {
     viewModelScope.launch {
       repository.deleteConnection(connection)
+      bookmarkPreferences.removeForConnection(connection.id)
     }
   }
 
