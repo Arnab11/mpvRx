@@ -17,6 +17,7 @@ import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.FoldersPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
+import app.gyrolet.mpvrx.preferences.NetworkBookmarkPreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.SecureFolderPreferences
 import app.gyrolet.mpvrx.preferences.SeerrPreferences
@@ -43,6 +44,7 @@ val PreferencesModule =
     singleOf(::AdvancedPreferences)
     single { BrowserPreferences(get(), androidContext()) }
     singleOf(::FoldersPreferences)
+    singleOf(::NetworkBookmarkPreferences)
     singleOf(::AiPreferences)
     singleOf(::YtdlPreferences)
     singleOf(::SettingsManager)
