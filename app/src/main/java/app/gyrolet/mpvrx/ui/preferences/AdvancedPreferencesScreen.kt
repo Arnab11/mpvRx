@@ -52,7 +52,7 @@ import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.documentfile.provider.DocumentFile
 import app.gyrolet.mpvrx.R
-import app.gyrolet.mpvrx.database.MpvRxDatabase
+import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.FoldersPreferences
@@ -70,6 +70,7 @@ import app.gyrolet.mpvrx.ui.utils.LocalShowSettingsBackArrow
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import app.gyrolet.mpvrx.utils.clipboard.SafeClipboard
 import app.gyrolet.mpvrx.utils.history.RecentlyPlayedOps
+import app.gyrolet.mpvrx.utils.media.PlaybackStateEvents
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -736,7 +737,7 @@ object AdvancedPreferencesScreen : Screen {
           item {
             PreferenceCard {
               var isConfirmDialogShown by remember { mutableStateOf(false) }
-              val mpvrxDatabase = koinInject<MpvRxDatabase>()
+              val playbackStateRepository = koinInject<PlaybackStateRepository>()
               val enableRecentlyPlayed by preferences.enableRecentlyPlayed.collectAsState()
               var recentlyPlayedCount by remember { mutableStateOf(0) }
 
@@ -799,8 +800,9 @@ object AdvancedPreferencesScreen : Screen {
                   onConfirm = {
                     scope.launch(Dispatchers.IO) {
                       runCatching {
-                        mpvrxDatabase.videoDataDao().clearAllPlaybackStates()
+                        playbackStateRepository.clearAllPlaybackStates()
                         RecentlyPlayedOps.clearAll()
+                        PlaybackStateEvents.notifyChanged("")
                       }.onSuccess {
                         withContext(Dispatchers.Main) {
                           isConfirmDialogShown = false

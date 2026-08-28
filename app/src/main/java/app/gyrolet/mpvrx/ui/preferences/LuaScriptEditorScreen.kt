@@ -52,6 +52,7 @@ import app.gyrolet.mpvrx.ui.editor.MpvHelpScreen
 import app.gyrolet.mpvrx.ui.editor.MpvScriptEditor
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import kotlinx.coroutines.Dispatchers
@@ -205,6 +206,12 @@ data class LuaScriptEditorScreen(
                 ).show()
             }
             return@launch
+          }
+
+          if (preferences.enableLuaScripts.get() && finalFileName in preferences.selectedLuaScripts.get()) {
+            val internalScriptsDir = File(context.filesDir, "scripts").apply { mkdirs() }
+            File(internalScriptsDir, finalFileName).writeText(scriptContent)
+            PlaybackSession.invalidateCoreConfiguration()
           }
 
           withContext(Dispatchers.Main) {
