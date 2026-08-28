@@ -23,6 +23,7 @@ import app.gyrolet.mpvrx.ui.browser.base.BaseBrowserViewModel
 import app.gyrolet.mpvrx.ui.player.PlaybackIdentity
 import app.gyrolet.mpvrx.utils.media.MediaLibraryEvents
 import app.gyrolet.mpvrx.utils.media.MetadataRetrieval
+import app.gyrolet.mpvrx.utils.permission.PermissionUtils.StorageOps
 import app.gyrolet.mpvrx.utils.storage.FolderViewScanner
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -358,12 +359,8 @@ class FolderListViewModel(
     folder: VideoFolder,
     newName: String,
   ): Boolean {
-    val src = java.io.File(folder.path)
-    val dst = java.io.File(src.parent ?: return false, newName)
-    if (dst.exists()) return false
-    val ok = src.renameTo(dst)
+    val ok = StorageOps.renameFolder(getApplication(), folder.path, newName)
     if (ok) {
-      android.media.MediaScannerConnection.scanFile(getApplication(), arrayOf(dst.absolutePath), null, null)
       _foldersWereDeleted.value = true
     }
     return ok

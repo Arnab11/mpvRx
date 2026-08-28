@@ -25,6 +25,7 @@ import app.gyrolet.mpvrx.ui.player.PlaybackIdentity
 import app.gyrolet.mpvrx.utils.media.MediaLibraryEvents
 import app.gyrolet.mpvrx.utils.media.MetadataRetrieval
 import app.gyrolet.mpvrx.utils.media.PlaybackStateEvents
+import app.gyrolet.mpvrx.utils.permission.PermissionUtils.StorageOps
 import app.gyrolet.mpvrx.utils.sort.SortUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import app.gyrolet.mpvrx.utils.storage.FolderViewScanner
@@ -408,12 +409,8 @@ class FileSystemBrowserViewModel(
     folder: FileSystemItem.Folder,
     newName: String,
   ): Boolean {
-    val src = File(folder.path)
-    val dst = File(src.parent ?: return false, newName)
-    if (dst.exists()) return false
-    val ok = src.renameTo(dst)
+    val ok = StorageOps.renameFolder(getApplication(), folder.path, newName)
     if (ok) {
-      android.media.MediaScannerConnection.scanFile(getApplication(), arrayOf(dst.absolutePath), null, null)
       setItemsWereDeletedOrMoved()
     }
     return ok
