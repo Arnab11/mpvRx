@@ -95,8 +95,6 @@ import app.gyrolet.mpvrx.ui.browser.cards.VideoCardUiConfig
 import app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
-import app.gyrolet.mpvrx.ui.browser.components.QueueInsertion
-import app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
@@ -572,16 +570,6 @@ data class VideoListScreen(
             onRenameClick = { renameDialogOpen.value = true },
             onDeleteClick = { deleteDialogOpen.value = true },
             onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
-            onPlayNextClick = {
-              if (addVideosToPlaybackQueue(context, selectionManager.getSelectedItems(), QueueInsertion.PlayNext)) {
-                selectionManager.clear()
-              }
-            },
-            onAddToQueueClick = {
-              if (addVideosToPlaybackQueue(context, selectionManager.getSelectedItems(), QueueInsertion.AddToEnd)) {
-                selectionManager.clear()
-              }
-            },
             showDownscale = selectionManager.getSelectedItems().let { items -> items.isNotEmpty() && items.none { it.isAudio } },
             showRename = selectionManager.selectedCount > 0,
             modifier =
