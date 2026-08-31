@@ -21,10 +21,13 @@ import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import android.os.Debug
 import androidx.activity.compose.LocalActivity
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -155,7 +158,6 @@ import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContainerColo
 import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContentColor
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberBufferingState
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.toFixed
-import app.gyrolet.mpvrx.ui.theme.AppMotion
 import app.gyrolet.mpvrx.ui.theme.controlColor
 import app.gyrolet.mpvrx.ui.theme.playerRippleConfiguration
 import app.gyrolet.mpvrx.ui.theme.spacing
@@ -173,17 +175,11 @@ import kotlin.math.roundToInt
 @Suppress("CompositionLocalAllowlist")
 val LocalPlayerButtonsClickEvent = staticCompositionLocalOf { {} }
 
-fun <T> playerControlsExitAnimationSpec(): FiniteAnimationSpec<T> =
-  spring(
-    dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
-    stiffness = AppMotion.Spatial.Standard.stiffness,
-  )
+fun <T> playerControlsExitAnimationSpec(durationMillis: Int = 300): FiniteAnimationSpec<T> =
+  tween(durationMillis = durationMillis, easing = FastOutSlowInEasing)
 
-fun <T> playerControlsEnterAnimationSpec(): FiniteAnimationSpec<T> =
-  spring(
-    dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
-    stiffness = AppMotion.Spatial.Expressive.stiffness,
-  )
+fun <T> playerControlsEnterAnimationSpec(durationMillis: Int = 100): FiniteAnimationSpec<T> =
+  tween(durationMillis = durationMillis, easing = LinearOutSlowInEasing)
 
 @OptIn(
   ExperimentalMaterial3Api::class,
@@ -467,7 +463,12 @@ fun PlayerControls(
 
   val transparentOverlay by animateFloatAsState(
     if (controlsShown && !areControlsLocked) .8f else 0f,
-    animationSpec = playerControlsExitAnimationSpec(),
+    animationSpec =
+      if (controlsShown && !areControlsLocked) {
+        playerControlsEnterAnimationSpec((100 * animSpeed).toInt().coerceAtLeast(30))
+      } else {
+        playerControlsExitAnimationSpec((300 * animSpeed).toInt().coerceAtLeast(50))
+      },
     label = "controls_transparent_overlay",
   )
 
