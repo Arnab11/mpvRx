@@ -110,7 +110,7 @@ fun AspectRatioSheet(
           else -> app.gyrolet.mpvrx.R.string.ui_auto_crop_black_bars_summary
         }
       ListItem(
-        headlineContent = {
+        content = {
           Text(androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_auto_crop_black_bars))
         },
         supportingContent = { Text(androidx.compose.ui.res.stringResource(autoCropSummary)) },
