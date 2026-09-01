@@ -78,7 +78,6 @@ import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.viewmodel.compose.viewModel
-import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.database.repository.SecureFolderRepository
 import app.gyrolet.mpvrx.domain.media.model.Video
@@ -487,12 +486,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
               moveToSecureConfirmOpen.value = true
             }
           },
-          onAddToPlaylistClick =
-            if (!BuildConfig.ENABLE_UPDATE_FEATURE) {
-              { addToPlaylistDialogOpen.value = true }
-            } else {
-              null
-            },
+          onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
         )
       }
     },
