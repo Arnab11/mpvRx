@@ -16,6 +16,7 @@ import app.gyrolet.mpvrx.utils.media.LyricsUtils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.Locale
 
 data class LyricsResult(
   val embeddedLyrics: Lyrics? = null,
