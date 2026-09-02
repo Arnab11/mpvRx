@@ -15,6 +15,7 @@ import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
+import app.gyrolet.mpvrx.preferences.DownloadPreferences
 import app.gyrolet.mpvrx.preferences.FoldersPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
 import app.gyrolet.mpvrx.preferences.NetworkBookmarkPreferences
@@ -50,4 +51,5 @@ val PreferencesModule =
     singleOf(::SettingsManager)
     singleOf(::SecureFolderPreferences)
     singleOf(::SeerrPreferences)
+    singleOf(::DownloadPreferences)
   }
