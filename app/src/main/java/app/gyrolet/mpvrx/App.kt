@@ -74,6 +74,7 @@ class App :
         DatabaseModule,
         FileManagerModule,
         app.gyrolet.mpvrx.di.domainModule,
+        app.gyrolet.mpvrx.di.DownloadModule,
       )
     }
     if (!BuildConfig.MPV_SUPPORTS_VULKAN) {
