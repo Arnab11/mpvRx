@@ -38,6 +38,7 @@ import app.gyrolet.mpvrx.ui.player.controls.components.sheets.MoreSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.OnlineSubtitleSearchSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.PlaybackSpeedSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.PlaylistSheet
+import app.gyrolet.mpvrx.ui.player.controls.components.sheets.ScopesSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.SubtitlesSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.VideoZoomSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.VideoQualitySheet
@@ -572,6 +573,15 @@ fun PlayerSheets(
       app.gyrolet.mpvrx.ui.player.controls.components.sheets.LyricsSheet(
         viewModel = viewModel,
         onDismiss = onDismissRequest,
+      )
+    }
+
+    Sheets.Scopes -> {
+      ScopesSheet(
+        viewModel = viewModel,
+        audioTracks = audioTracks,
+        onSelectAudio = onSelectAudio,
+        onDismissRequest = onDismissRequest,
       )
     }
   }
