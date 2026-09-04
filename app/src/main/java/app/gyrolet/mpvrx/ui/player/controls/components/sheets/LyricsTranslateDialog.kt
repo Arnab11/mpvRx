@@ -55,6 +55,7 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.PlayerViewModel
+import app.gyrolet.mpvrx.ui.theme.fontFamilyForText
 import org.koin.compose.koinInject
 
 @Composable
@@ -120,10 +121,7 @@ fun LyricsTranslateDialog(
             .fillMaxWidth()
             .clip(RoundedCornerShape(12.dp))
             .clickable {
-              audioPreferences.lyricsAutoTranslate.set(false)
-              if (state.isTranslationActive) {
-                viewModel.toggleLyricsTranslation()
-              }
+              viewModel.showOriginalLyrics()
               onDismiss()
             },
           color = if (!state.isTranslationActive) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
@@ -233,6 +231,7 @@ fun LyricsTranslateDialog(
                   text = lang.displayName,
                   style = MaterialTheme.typography.bodyMedium,
                   fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                  fontFamily = fontFamilyForText(lang.displayName),
                   color = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface,
                 )
                 if (lang.isRomanization) {
