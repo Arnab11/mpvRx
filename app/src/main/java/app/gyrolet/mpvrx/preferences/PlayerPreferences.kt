@@ -17,6 +17,7 @@ import app.gyrolet.mpvrx.ui.player.ControlsAnimationStyle
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.player.PlayerOrientation
 import app.gyrolet.mpvrx.ui.player.RepeatMode
+import app.gyrolet.mpvrx.ui.player.ResumePlaybackMode
 import app.gyrolet.mpvrx.ui.player.VideoAspect
 import app.gyrolet.mpvrx.ui.player.VideoOpenAnimation
 import app.gyrolet.mpvrx.ui.player.screenshot.ScreenshotFormat
@@ -44,6 +45,7 @@ class PlayerPreferences(
   preferenceStore: PreferenceStore,
 ) {
   val orientation = preferenceStore.getEnum("player_orientation", PlayerOrientation.Video)
+  val resumePlaybackMode = preferenceStore.getEnum("resume_playback_mode", ResumePlaybackMode.Always)
   val invertDuration = preferenceStore.getBoolean("invert_duration")
   val holdForMultipleSpeed = preferenceStore.getFloat("hold_for_multiple_speed", 2f)
   val showDoubleTapOvals = preferenceStore.getBoolean("show_double_tap_ovals", true)
@@ -174,6 +176,9 @@ class PlayerPreferences(
 
   /** Show brief text pills from custom buttons, ambient toggle, subtitle drag, and Lua scripts. */
   val showActionFeedbackOverlay = preferenceStore.getBoolean("show_action_feedback_overlay", true)
+
+  /** Show the automatic-resume pill with its Restart action. */
+  val showResumeIndicatorOverlay = preferenceStore.getBoolean("show_resume_indicator_overlay", true)
 
   /** Show provider/network status feedback such as online subtitle and marker lookup failures. */
   val showProviderStatusOverlay = preferenceStore.getBoolean("show_provider_status_overlay", false)
