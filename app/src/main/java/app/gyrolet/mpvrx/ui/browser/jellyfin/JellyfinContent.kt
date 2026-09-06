@@ -114,6 +114,8 @@ import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
 import app.gyrolet.mpvrx.ui.browser.dialogs.JellyfinSortDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.MusicSortDialog
+import app.gyrolet.mpvrx.ui.browser.music.MusicSortField
 import app.gyrolet.mpvrx.ui.browser.fab.FabScrollHelper
 import app.gyrolet.mpvrx.ui.browser.selection.rememberSelectionManager
 import app.gyrolet.mpvrx.ui.components.InlineSearchBar
@@ -1393,27 +1395,70 @@ fun JellyfinContent(
     )
   }
 
-  // Standard Material 3 Sort Dialog (matches Home and Network Browser)
-  JellyfinSortDialog(
-    isOpen = isSortDialogOpen,
-    onDismiss = { isSortDialogOpen = false },
-    sortBy = uiState.sortBy,
-    onSortByChange = { newSort ->
-      viewModel.setSort(newSort, uiState.sortOrder)
-    },
-    sortOrder = uiState.sortOrder,
-    onSortOrderChange = { newOrder ->
-      viewModel.setSort(uiState.sortBy, newOrder)
-    },
-    isUnplayedOnly = uiState.isUnplayedOnly,
-    onUnplayedOnlyChange = {
-      viewModel.toggleUnplayedOnly()
-    },
-    layoutMode = layoutMode,
-    onLayoutModeChange = { newMode ->
-      browserPreferences.jellyfinLayoutMode.set(newMode)
-    },
-  )
+  if (uiState.openLibrary?.isMusic == true) {
+    val availableFields = remember(uiState.musicActiveTab) {
+      when (uiState.musicActiveTab) {
+        JellyfinMusicTab.TRACKS -> listOf(
+          MusicSortField.TITLE,
+          MusicSortField.ARTIST,
+          MusicSortField.ALBUM,
+          MusicSortField.DURATION,
+          MusicSortField.YEAR,
+        )
+        JellyfinMusicTab.ALBUMS -> listOf(
+          MusicSortField.TITLE,
+          MusicSortField.ARTIST,
+          MusicSortField.YEAR,
+          MusicSortField.TRACK_COUNT,
+          MusicSortField.DURATION,
+        )
+        JellyfinMusicTab.ARTISTS -> listOf(
+          MusicSortField.ARTIST,
+          MusicSortField.TRACK_COUNT,
+        )
+        JellyfinMusicTab.PLAYLISTS -> listOf(
+          MusicSortField.TITLE,
+          MusicSortField.TRACK_COUNT,
+          MusicSortField.DURATION,
+        )
+        else -> emptyList()
+      }
+    }
+
+    MusicSortDialog(
+      isOpen = isSortDialogOpen,
+      onDismiss = { isSortDialogOpen = false },
+      sortField = uiState.musicSortField,
+      sortOrder = uiState.musicSortOrder,
+      viewMode = uiState.musicViewMode,
+      onSortFieldChange = { viewModel.setMusicSortField(it) },
+      onSortOrderChange = { viewModel.setMusicSortOrder(it) },
+      onViewModeChange = { viewModel.setMusicViewMode(it) },
+      availableFields = availableFields,
+    )
+  } else {
+    // Standard Material 3 Sort Dialog (matches Home and Network Browser)
+    JellyfinSortDialog(
+      isOpen = isSortDialogOpen,
+      onDismiss = { isSortDialogOpen = false },
+      sortBy = uiState.sortBy,
+      onSortByChange = { newSort ->
+        viewModel.setSort(newSort, uiState.sortOrder)
+      },
+      sortOrder = uiState.sortOrder,
+      onSortOrderChange = { newOrder ->
+        viewModel.setSort(uiState.sortBy, newOrder)
+      },
+      isUnplayedOnly = uiState.isUnplayedOnly,
+      onUnplayedOnlyChange = {
+        viewModel.toggleUnplayedOnly()
+      },
+      layoutMode = layoutMode,
+      onLayoutModeChange = { newMode ->
+        browserPreferences.jellyfinLayoutMode.set(newMode)
+      },
+    )
+  }
 
   // Manage Servers Dialog
   ManageJellyfinServersDialog(
