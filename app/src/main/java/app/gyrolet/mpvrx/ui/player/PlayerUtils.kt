@@ -16,6 +16,7 @@ import android.provider.DocumentsContract
 import android.provider.MediaStore
 import android.util.Log
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
+import app.gyrolet.mpvrx.domain.network.XtreamPlaybackUri
 import app.gyrolet.mpvrx.ui.player.PlayerActivity.Companion.TAG
 import `is`.xyz.mpv.MPVNode
 import `is`.xyz.mpv.Utils
@@ -248,7 +249,7 @@ internal fun Uri.resolveUri(
         ?: if (allowFdFallback) null else toString()
     "data" -> "data://$schemeSpecificPart"
     "magnet", "torrent" -> toString()
-    NetworkPlaybackUri.SCHEME -> toString()
+    NetworkPlaybackUri.SCHEME, XtreamPlaybackUri.SCHEME -> toString()
     in Utils.PROTOCOLS -> toString()
     else -> {
       Log.e(TAG, "Unsupported URI scheme: $scheme")

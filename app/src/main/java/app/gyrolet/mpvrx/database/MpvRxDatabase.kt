@@ -50,7 +50,7 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
     JellyfinServerEntity::class,
     DownloadItemEntity::class,
   ],
-  version = 18,
+  version = 19,
   exportSchema = true,
 )
 @TypeConverters(NetworkProtocolConverter::class, NetworkStreamEntryTypeConverter::class)
