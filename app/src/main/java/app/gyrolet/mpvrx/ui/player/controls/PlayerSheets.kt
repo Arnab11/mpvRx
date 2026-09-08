@@ -9,7 +9,9 @@
 
 package app.gyrolet.mpvrx.ui.player.controls
 
+import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -20,12 +22,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
+import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.download.AppDownloadManager
+import app.gyrolet.mpvrx.domain.download.YtdlpDownloadEngine
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
 import app.gyrolet.mpvrx.preferences.MpvConfigOverride
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.player.Decoder
 import app.gyrolet.mpvrx.ui.player.Panels
+import app.gyrolet.mpvrx.ui.player.PlayerViewModel
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.TrackNode
 import app.gyrolet.mpvrx.ui.player.controls.components.MpvConfigOwnedSheet
@@ -91,6 +97,7 @@ fun PlayerSheets(
   onDismissRequest: () -> Unit,
 ) {
   val isTelevision = DeviceFormFactor.isTelevision(LocalContext.current)
+  val qualityDownloadAction = rememberQualityDownloadAction(viewModel)
   val advancedPreferences = koinInject<AdvancedPreferences>()
   val storedConfigOverrides by advancedPreferences.mpvConfOverrides.collectAsState()
   val configOwnedOptions =
@@ -377,6 +384,7 @@ fun PlayerSheets(
       VideoQualitySheet(
         tracks = videoQualityTracks,
         onSelect = viewModel::selectVideoQuality,
+        onDownload = qualityDownloadAction,
         onDismissRequest = onDismissRequest,
       )
     }
@@ -600,6 +608,54 @@ fun PlayerSheets(
         onSelectAudio = onSelectAudio,
         onDismissRequest = onDismissRequest,
       )
+    }
+  }
+}
+
+@Composable
+private fun rememberQualityDownloadAction(viewModel: PlayerViewModel): ((TrackNode) -> Unit)? {
+  val context = LocalContext.current
+  val downloadManager = koinInject<AppDownloadManager>()
+  val ytdlpEngine = koinInject<YtdlpDownloadEngine>()
+  var pendingRequest by remember { mutableStateOf<PlayerViewModel.QualityDownloadRequest?>(null) }
+
+  val enqueueRequest: (PlayerViewModel.QualityDownloadRequest) -> Unit = { request ->
+    ytdlpEngine.enqueue(
+      url = request.sourceUrl,
+      title = request.title,
+      directory = downloadManager.locations.linksDir(),
+      formatSelector = request.formatSelector,
+      mergeSeparateStreams = request.mergeSeparateStreams,
+    )
+    Toast.makeText(context, R.string.downloads_queued, Toast.LENGTH_SHORT).show()
+  }
+  val locationPicker =
+    rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+      val request = pendingRequest
+      pendingRequest = null
+      if (uri == null || request == null) return@rememberLauncherForActivityResult
+
+      runCatching {
+        context.contentResolver.takePersistableUriPermission(
+          uri,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+      }
+      if (downloadManager.locations.setLocationFromTree(uri) == null) {
+        Toast.makeText(context, R.string.downloads_location_invalid, Toast.LENGTH_LONG).show()
+      } else {
+        enqueueRequest(request)
+      }
+    }
+
+  if (!viewModel.canDownloadCurrentVideoQuality()) return null
+  return download@{ track ->
+    val request = viewModel.qualityDownloadRequest(track) ?: return@download
+    if (downloadManager.locations.isUsingCustomLocation()) {
+      enqueueRequest(request)
+    } else {
+      pendingRequest = request
+      locationPicker.launch(null)
     }
   }
 }
