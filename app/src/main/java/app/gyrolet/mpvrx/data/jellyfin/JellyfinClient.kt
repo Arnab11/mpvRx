@@ -17,6 +17,7 @@ import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.data.network.ServerUrlUtils
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinAuthResult
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinItem
+import app.gyrolet.mpvrx.domain.jellyfin.JellyfinPerson
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinUser
 import app.gyrolet.mpvrx.network.awaitResponse
 import app.gyrolet.mpvrx.utils.media.PlaybackSubtitleTrack
@@ -1068,6 +1069,24 @@ class JellyfinClient(
       }
     } ?: obj["RemoteTrailerUrl"]?.jsonPrimitive?.content
 
+    val peopleList =
+      obj["People"]?.jsonArray?.mapNotNull { element ->
+        if (element is JsonObject) {
+          val personId = element["Id"]?.jsonPrimitive?.content ?: return@mapNotNull null
+          val personName = element["Name"]?.jsonPrimitive?.content ?: ""
+          val personRole = element["Role"]?.jsonPrimitive?.content
+          val personType = element["Type"]?.jsonPrimitive?.content
+          val personImageTag = element["PrimaryImageTag"]?.jsonPrimitive?.content
+          JellyfinPerson(
+            id = personId,
+            name = personName,
+            role = personRole,
+            type = personType,
+            primaryImageTag = personImageTag,
+          )
+        } else null
+      } ?: emptyList()
+
     return JellyfinItem(
       id = id,
       name = name,
@@ -1107,6 +1126,7 @@ class JellyfinClient(
       lastPlayedDate = lastPlayedDate,
       remoteTrailerUrl = remoteTrailerUrl,
       canDelete = obj["CanDelete"]?.jsonPrimitive?.booleanOrNull ?: true,
+      people = peopleList,
     )
   }
 
