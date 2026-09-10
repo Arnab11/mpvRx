@@ -93,6 +93,7 @@ import androidx.compose.ui.res.stringResource
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.data.jellyfin.JellyfinClient
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinItem
+import app.gyrolet.mpvrx.domain.jellyfin.JellyfinPerson
 import app.gyrolet.mpvrx.domain.jellyfin.JellyfinServer
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -121,6 +122,7 @@ fun JellyfinDetailSheet(
   onToggleFavorite: (JellyfinItem) -> Unit,
   onTogglePlayed: (JellyfinItem) -> Unit,
   onItemClick: (JellyfinItem) -> Unit,
+  onPersonClick: ((JellyfinPerson) -> Unit)? = null,
   onDeleteItem: ((JellyfinItem) -> Unit)? = null,
   onDownload: ((JellyfinItem) -> Unit)? = null,
   onDownloadSeason: (() -> Unit)? = null,
@@ -924,17 +926,23 @@ fun JellyfinDetailSheet(
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
               ) {
                 Text(
                   text = if (directors.size > 1) "Directors: " else "Director: ",
                   style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                   color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                  text = directors.joinToString(", ") { it.name },
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                directors.forEachIndexed { index, person ->
+                  Text(
+                    text = person.name + if (index < directors.lastIndex) ", " else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (onPersonClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable(enabled = onPersonClick != null) {
+                      onPersonClick?.invoke(person)
+                    },
+                  )
+                }
               }
             }
 
@@ -942,17 +950,23 @@ fun JellyfinDetailSheet(
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
               ) {
                 Text(
                   text = if (writers.size > 1) "Writers: " else "Writer: ",
                   style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                   color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                  text = writers.joinToString(", ") { it.name },
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                writers.forEachIndexed { index, person ->
+                  Text(
+                    text = person.name + if (index < writers.lastIndex) ", " else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (onPersonClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable(enabled = onPersonClick != null) {
+                      onPersonClick?.invoke(person)
+                    },
+                  )
+                }
               }
             }
 
@@ -960,17 +974,23 @@ fun JellyfinDetailSheet(
               Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
               ) {
                 Text(
                   text = if (producers.size > 1) "Producers: " else "Producer: ",
                   style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
                   color = MaterialTheme.colorScheme.onSurface,
                 )
-                Text(
-                  text = producers.joinToString(", ") { it.name },
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+                producers.forEachIndexed { index, person ->
+                  Text(
+                    text = person.name + if (index < producers.lastIndex) ", " else "",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (onPersonClick != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.clickable(enabled = onPersonClick != null) {
+                      onPersonClick?.invoke(person)
+                    },
+                  )
+                }
               }
             }
           }
@@ -998,7 +1018,11 @@ fun JellyfinDetailSheet(
               items(cast, key = { "${it.id}|${it.role ?: ""}" }) { person ->
                 Column(
                   horizontalAlignment = Alignment.CenterHorizontally,
-                  modifier = Modifier.width(72.dp),
+                  modifier = Modifier
+                    .width(72.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .clickable(enabled = onPersonClick != null) { onPersonClick?.invoke(person) }
+                    .padding(vertical = 4.dp),
                   verticalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
                   val personImageUrl = remember(person.id, person.primaryImageTag, server.serverUrl, server.accessToken) {
