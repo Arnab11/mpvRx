@@ -152,7 +152,6 @@ import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.AudioVisualizerStyle
-import app.gyrolet.mpvrx.preferences.GesturePreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -570,8 +569,6 @@ fun AudioPlayerControls(
 ) {
   val speedConfigOwned = isMpvOptionOwnedByConfig("speed")
   val audioFiltersConfigOwned = isMpvOptionOwnedByConfig("af")
-  val gesturePreferences = koinInject<GesturePreferences>()
-  val audioSeekDuration by gesturePreferences.doubleTapToSeekDuration.collectAsState()
   val paused by PlaybackSession.propBoolean["pause"].collectAsState()
   val duration by PlaybackSession.propInt["duration"].collectAsState()
   val preciseDuration by viewModel.preciseDuration.collectAsState()
@@ -1734,14 +1731,6 @@ fun AudioPlayerControls(
             modifier = Modifier.size(28.dp),
           )
         }
-        ReactiveIconButton(onClick = { viewModel.seekBy(-audioSeekDuration) }) {
-          Icon(
-            imageVector = Icons.RoundedFilled.FastRewind,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(34.dp),
-          )
-        }
         ReactiveSurfaceButton(
           onClick = { viewModel.pauseUnpause() },
           shape = CircleShape,
@@ -1757,14 +1746,6 @@ fun AudioPlayerControls(
               modifier = Modifier.size(if (isPortrait) 44.dp else 36.dp),
             )
           }
-        }
-        ReactiveIconButton(onClick = { viewModel.seekBy(audioSeekDuration) }) {
-          Icon(
-            imageVector = Icons.RoundedFilled.FastForward,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(34.dp),
-          )
         }
         ReactiveIconButton(onClick = { viewModel.playNext() }, enabled = playlistModeEnabled) {
           Icon(
