@@ -97,6 +97,7 @@ import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
+import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.preferences.VideoSortType
@@ -4351,6 +4352,10 @@ class PlayerActivity :
 
     lifecycleScope.launch(Dispatchers.IO) {
       try {
+        if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.VIDEO_ZOOM)) {
+          PlaybackSession.setPropertyDouble("video-zoom", 0.0)
+        }
+
         // Load playback state (will skip track restoration if preferred language configured)
         val hasState =
           loadVideoPlaybackState(
@@ -4370,7 +4375,6 @@ class PlayerActivity :
           withContext(Dispatchers.Main) {
             if (!PlaybackSession.isCurrentGeneration(loadGeneration)) return@withContext
             val zoomPreference = playerPreferences.defaultVideoZoom.get()
-            PlaybackSession.setPropertyDouble("video-zoom", zoomPreference.toDouble())
             viewModel.setVideoZoom(zoomPreference)
           }
         }
@@ -4839,7 +4843,7 @@ class PlayerActivity :
       isPositionRestorePending =
         PlaybackSession.isPositionRestorePending(PlaybackSession.state.value.activeGeneration),
       playbackSpeed = PlaybackSession.getPropertyDouble("speed") ?: DEFAULT_PLAYBACK_SPEED,
-      videoZoom = PlaybackSession.getPropertyDouble("video-zoom")?.toFloat() ?: viewModel.videoZoom.value,
+      videoZoom = PlaybackSession.videoZoom.value,
       sid = player.sid,
       secondarySid = player.secondarySid,
       subDelayMs = ((PlaybackSession.getPropertyDouble("sub-delay") ?: 0.0) * MILLISECONDS_TO_SECONDS).toInt(),
@@ -4994,7 +4998,6 @@ class PlayerActivity :
     PlaybackSession.setPropertyDouble("sub-speed", state.subSpeed)
 
     // Restore video zoom from saved state
-    PlaybackSession.setPropertyDouble("video-zoom", state.videoZoom.toDouble())
     viewModel.setVideoZoom(state.videoZoom)
   }
 

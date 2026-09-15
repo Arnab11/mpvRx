@@ -532,6 +532,7 @@ class MainActivity : AppCompatActivity() {
           ScreenNavDisplay(
             modifier = Modifier.fillMaxSize(),
             backStack = typedBackstack,
+            opaqueBackground = typedBackstack.any { it == app.gyrolet.mpvrx.ui.preferences.PreferencesScreen },
             onBack = {
               if (typedBackstack.size <= 1 || !typedBackstack.popSafely()) {
                 this@MainActivity.finish()
