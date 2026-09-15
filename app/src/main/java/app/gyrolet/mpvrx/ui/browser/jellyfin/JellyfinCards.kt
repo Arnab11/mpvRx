@@ -91,6 +91,7 @@ import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
+import app.gyrolet.mpvrx.ui.player.controls.components.tvContextMenu
 import app.gyrolet.mpvrx.ui.theme.LocalDarkAppColorScheme
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
@@ -686,6 +687,7 @@ fun JellyfinResumeCard(
           .tvFocusHighlight(RoundedCornerShape(10.dp), focusedScale = 1.03f)
           .then(posterBorderModifier)
           .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+          .tvContextMenu(onLongClick)
           .combinedClickable(
             onClick = onClick,
             onLongClick = onLongClick,
@@ -895,6 +897,7 @@ fun JellyfinPosterCard(
           .tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.03f)
           .then(posterBorderModifier)
           .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+          .tvContextMenu(onLongClick)
           .combinedClickable(
             onClick = onClick,
             onLongClick = onLongClick,
@@ -1094,6 +1097,7 @@ fun JellyfinMusicCard(
           .tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.03f)
           .then(posterBorderModifier)
           .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+          .tvContextMenu(onLongClick)
           .combinedClickable(
             onClick = onClick,
             onLongClick = onLongClick,
@@ -1455,6 +1459,7 @@ fun JellyfinEpisodeCard(
         .fillMaxWidth()
         .tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.02f)
         .clip(RoundedCornerShape(8.dp))
+        .tvContextMenu(onLongClick)
         .combinedClickable(
           onClick = onPlay,
           onLongClick = onLongClick,
@@ -1685,6 +1690,7 @@ fun JellyfinListItemCard(
         .fillMaxWidth()
         .tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.02f)
         .clip(RoundedCornerShape(8.dp))
+        .tvContextMenu(onLongClick)
         .combinedClickable(
           onClick = onClick,
           onLongClick = onLongClick,

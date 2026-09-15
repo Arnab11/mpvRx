@@ -58,6 +58,7 @@ import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
+import app.gyrolet.mpvrx.ui.player.controls.components.tvContextMenu
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -202,6 +203,7 @@ fun FolderCard(
       modifier
         .fillMaxWidth()
         .clip(cardShape)
+        .tvContextMenu(onLongClick)
         .combinedClickable(
           interactionSource = cardInteractionSource,
           indication = null,

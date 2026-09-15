@@ -58,6 +58,8 @@ import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.theme.WallpaperImage
 import app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode
 import app.gyrolet.mpvrx.ui.theme.loadWallpaperBitmap
+import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
+import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import kotlinx.coroutines.Dispatchers
@@ -135,7 +137,7 @@ data class WallpaperEditorScreen(
       },
     ) { padding ->
       LazyColumn(
-        modifier = Modifier.fillMaxSize().padding(padding),
+        modifier = Modifier.fillMaxSize().padding(padding).tvFocusGroup(),
         contentPadding = PaddingValues(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
@@ -230,6 +232,7 @@ data class WallpaperEditorScreen(
                 offsetY = 0f
                 scaleMode = WallpaperScaleMode.Fit
               },
+              modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), focusedScale = 1.03f),
             ) {
               Icon(Icons.RoundedFilled.Restore, contentDescription = null)
               Text(
@@ -257,6 +260,7 @@ private fun WallpaperSlider(
       value = value,
       onValueChange = onValueChange,
       valueRange = valueRange,
+      modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(12.dp), focusedScale = 1.01f),
     )
   }
 }

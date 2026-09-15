@@ -65,6 +65,10 @@ import app.gyrolet.mpvrx.ui.components.themedSegmentedButtonColors
 import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
+import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
+import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
+import app.gyrolet.mpvrx.ui.player.controls.components.tvInitialFocus
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 import kotlin.math.roundToInt
 
@@ -319,10 +323,12 @@ private fun SortTypeSelector(
   icons: List<AppIcon>,
   modifier: Modifier = Modifier,
 ) {
+  val initialFocusRequester = rememberTvInitialFocusRequester(types.isNotEmpty(), requestKey = sortType)
   Row(
     modifier =
       modifier
         .fillMaxWidth()
+        .tvFocusGroup()
         .horizontalScroll(rememberScrollState()),
     horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
     verticalAlignment = Alignment.CenterVertically,
@@ -346,7 +352,9 @@ private fun SortTypeSelector(
                   } else {
                     MaterialTheme.colorScheme.surfaceContainerHighest
                   },
-              ).clickable(
+              ).then(if (selected) Modifier.tvInitialFocus(initialFocusRequester) else Modifier)
+              .tvFocusHighlight(AppShapeScale.large, focusedScale = 1.04f)
+              .clickable(
                 onClick = { onSortTypeChange(type) },
                 interactionSource = remember { MutableInteractionSource() },
                 indication = ripple(bounded = true),
@@ -479,7 +487,7 @@ private fun GridColumnsNextSection(
           },
           valueRange = folderGridColumnSelector.valueRange,
           steps = folderGridColumnSelector.steps,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.01f),
         )
       }
 
@@ -514,7 +522,7 @@ private fun GridColumnsNextSection(
           },
           valueRange = videoGridColumnSelector.valueRange,
           steps = videoGridColumnSelector.steps,
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.01f),
         )
       }
     }
@@ -544,7 +552,7 @@ private fun GridColumnsNextSection(
       },
       valueRange = selector.valueRange,
       steps = selector.steps,
-      modifier = Modifier.fillMaxWidth(),
+      modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(8.dp), focusedScale = 1.01f),
     )
   }
 }

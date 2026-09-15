@@ -60,6 +60,7 @@ import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
+import app.gyrolet.mpvrx.ui.player.controls.components.tvContextMenu
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
@@ -90,6 +91,7 @@ fun SharedMusicTrackListItem(
       .fillMaxWidth()
       .padding(horizontal = 8.dp, vertical = 3.dp)
       .clip(AppShapeScale.large)
+      .tvContextMenu(onLongClick)
       .then(
         if (onLongClick != null) {
           Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
@@ -262,6 +264,7 @@ fun SharedMusicGridCard(
       .then(if (cardWidth != null) Modifier.width(cardWidth) else Modifier.fillMaxWidth())
       .tvFocusHighlight(AppShapeScale.large, focusedScale = 1.03f)
       .clip(AppShapeScale.large)
+      .tvContextMenu(onLongClick)
       .combinedClickable(onClick = onClick, onLongClick = onLongClick),
     shape = AppShapeScale.large,
     colors = CardDefaults.cardColors(
