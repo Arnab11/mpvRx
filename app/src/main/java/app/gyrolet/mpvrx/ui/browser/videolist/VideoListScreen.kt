@@ -345,6 +345,7 @@ data class VideoListScreen(
     }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         if (internalIsSearching) {
           InlineSearchBar(

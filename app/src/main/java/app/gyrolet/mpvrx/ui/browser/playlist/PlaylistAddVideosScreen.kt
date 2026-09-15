@@ -176,6 +176,7 @@ data class PlaylistAddVideosScreen(
     }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         if (folder == null) {
           BrowserTopBar(

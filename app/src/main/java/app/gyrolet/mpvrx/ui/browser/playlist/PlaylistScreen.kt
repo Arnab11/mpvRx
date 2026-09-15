@@ -174,6 +174,7 @@ object PlaylistScreen : Screen {
     )
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         if (isSearching) {
           // Search mode - show search bar

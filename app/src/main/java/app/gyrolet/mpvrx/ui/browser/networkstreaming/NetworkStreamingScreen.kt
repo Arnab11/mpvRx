@@ -307,9 +307,16 @@ object NetworkStreamingScreen : Screen {
     val pagerState = rememberPagerState { NetworkTab.entries.size }
 
     val headerContainerColor =
-      if (MaterialTheme.colorScheme.background == Color.Black) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+      if (app.gyrolet.mpvrx.ui.theme.LocalAppWallpaperActive.current) {
+        Color.Transparent
+      } else if (MaterialTheme.colorScheme.background == Color.Black) {
+        Color.Black
+      } else {
+        MaterialTheme.colorScheme.surfaceContainer
+      }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       modifier = Modifier.fillMaxSize(),
       topBar = {
         Column(

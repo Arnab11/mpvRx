@@ -34,7 +34,9 @@ import androidx.compose.ui.semantics.semantics
 import app.gyrolet.mpvrx.preferences.preference.PreferenceStore
 import app.gyrolet.mpvrx.preferences.preference.getEnum
 import app.gyrolet.mpvrx.ui.theme.AppTheme
+import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
 import app.gyrolet.mpvrx.ui.theme.DarkMode
+import app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode
 import app.gyrolet.mpvrx.ui.theme.spacing
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
@@ -48,7 +50,12 @@ class AppearancePreferences(
   val darkMode = preferenceStore.getEnum("dark_mode", DarkMode.System)
   val appTheme = preferenceStore.getEnum("app_theme", AppTheme.Dynamic)
   val customTheme = preferenceStore.getString("custom_theme", "")
+  val selectedCustomThemeName = preferenceStore.getString("selected_custom_theme_name", "")
   val customWallpaperUri = preferenceStore.getString("custom_wallpaper_uri", "")
+  val customWallpaperZoom = preferenceStore.getFloat("custom_wallpaper_zoom", 1f)
+  val customWallpaperOffsetX = preferenceStore.getFloat("custom_wallpaper_offset_x", 0f)
+  val customWallpaperOffsetY = preferenceStore.getFloat("custom_wallpaper_offset_y", 0f)
+  val customWallpaperScaleMode = preferenceStore.getEnum("custom_wallpaper_scale_mode", WallpaperScaleMode.Fit)
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
   val unlimitedNameLines = preferenceStore.getBoolean("unlimited_name_lines", false)
@@ -104,6 +111,12 @@ class AppearancePreferences(
     preferenceStore.getBoolean("clip_button_migration_complete", false)
 
   init {
+    if (selectedCustomThemeName.get().isBlank()) {
+      CustomThemeDefinition.parse(customTheme.get())?.let { legacyTheme ->
+        selectedCustomThemeName.set(legacyTheme.name)
+      }
+    }
+
     if (!castButtonMigrationComplete.get()) {
       val landscapeButtons =
         listOf(

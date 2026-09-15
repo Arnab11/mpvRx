@@ -170,6 +170,7 @@ object NetworkBookmarksScreen : Screen {
     }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         BrowserTopBar(
           title = stringResource(R.string.network_bookmarks_title),

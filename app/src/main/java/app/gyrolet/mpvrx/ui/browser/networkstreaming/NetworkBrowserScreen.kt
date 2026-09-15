@@ -158,6 +158,7 @@ data class NetworkBrowserScreen(
     }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         if (isSearching) {
           InlineSearchBar(

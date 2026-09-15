@@ -396,6 +396,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
   }
 
   Scaffold(
+    containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
     topBar = {
       if (isSearching) {
         InlineSearchBar(

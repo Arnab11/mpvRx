@@ -88,7 +88,7 @@ fun NavidromeMusicView(
     state = pagerState,
     modifier = modifier
       .fillMaxSize()
-      .background(MaterialTheme.colorScheme.background),
+      .background(app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor()),
     beyondViewportPageCount = 1,
     key = { page -> visibleTabs.getOrNull(page) ?: page },
   ) { page ->

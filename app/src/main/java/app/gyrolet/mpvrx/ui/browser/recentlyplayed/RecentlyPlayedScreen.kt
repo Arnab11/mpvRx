@@ -251,6 +251,7 @@ object RecentlyPlayedScreen : Screen {
     }
 
     Scaffold(
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         BrowserTopBar(
           title = stringResource(R.string.pref_advanced_enable_recently_played_title),

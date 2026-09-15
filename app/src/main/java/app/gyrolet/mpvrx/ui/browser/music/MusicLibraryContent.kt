@@ -455,13 +455,20 @@ fun MusicLibraryContent(
   }
 
   Scaffold(
+    containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
     modifier = modifier.fillMaxSize(),
     topBar = {
       Column(
         modifier = Modifier
           .fillMaxWidth()
           .background(
-            if (MaterialTheme.colorScheme.background == Color.Black) Color.Black else MaterialTheme.colorScheme.surfaceContainer
+            if (app.gyrolet.mpvrx.ui.theme.LocalAppWallpaperActive.current) {
+              Color.Transparent
+            } else if (MaterialTheme.colorScheme.background == Color.Black) {
+              Color.Black
+            } else {
+              MaterialTheme.colorScheme.surfaceContainer
+            }
           )
       ) {
         if (isSearchActive) {

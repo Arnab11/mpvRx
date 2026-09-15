@@ -61,6 +61,7 @@ import app.gyrolet.mpvrx.ui.browser.MainScreen
 import app.gyrolet.mpvrx.ui.browser.NavigationBarState
 import app.gyrolet.mpvrx.ui.browser.components.MiniPlayer
 import app.gyrolet.mpvrx.ui.theme.DarkMode
+import app.gyrolet.mpvrx.ui.theme.AppWallpaperHost
 import app.gyrolet.mpvrx.ui.theme.MpvrxTheme
 import app.gyrolet.mpvrx.ui.theme.rememberThemeTransitionState
 import android.view.SurfaceHolder
@@ -243,34 +244,36 @@ class MainActivity : AppCompatActivity() {
         }
       } else {
         MpvrxTheme(transitionState = themeTransitionState) {
-          Surface(modifier = Modifier.fillMaxSize()) {
-            Navigator()
-          }
-          if (showRendererBuildNotice) {
-            val acknowledgeNotice = {
-              rendererNoticePreferences.edit().putBoolean(NON_VULKAN_NOTICE_SHOWN, true).apply()
-              showRendererBuildNotice = false
+          AppWallpaperHost {
+            Surface(modifier = Modifier.fillMaxSize(), color = Color.Transparent) {
+              Navigator()
             }
-            AlertDialog(
-              onDismissRequest = acknowledgeNotice,
-              title = { Text(getString(R.string.renderer_build_notice_title)) },
-              text = {
-                Text(
-                  getString(
-                    if (deviceSupportsVulkan) {
-                      R.string.renderer_build_notice_supported_device
-                    } else {
-                      R.string.renderer_build_notice_unsupported_device
-                    },
-                  ),
-                )
-              },
-              confirmButton = {
-                TextButton(onClick = acknowledgeNotice) {
-                  Text(getString(R.string.generic_ok))
-                }
-              },
-            )
+            if (showRendererBuildNotice) {
+              val acknowledgeNotice = {
+                rendererNoticePreferences.edit().putBoolean(NON_VULKAN_NOTICE_SHOWN, true).apply()
+                showRendererBuildNotice = false
+              }
+              AlertDialog(
+                onDismissRequest = acknowledgeNotice,
+                title = { Text(getString(R.string.renderer_build_notice_title)) },
+                text = {
+                  Text(
+                    getString(
+                      if (deviceSupportsVulkan) {
+                        R.string.renderer_build_notice_supported_device
+                      } else {
+                        R.string.renderer_build_notice_unsupported_device
+                      },
+                    ),
+                  )
+                },
+                confirmButton = {
+                  TextButton(onClick = acknowledgeNotice) {
+                    Text(getString(R.string.generic_ok))
+                  }
+                },
+              )
+            }
           }
         }
       }
