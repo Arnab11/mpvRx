@@ -37,8 +37,8 @@ import app.gyrolet.mpvrx.domain.network.NetworkFile
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
-import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
+import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 import org.koin.compose.koinInject
 
@@ -100,8 +100,7 @@ fun NetworkFolderCard(
             Modifier
               .fillMaxWidth()
               .aspectRatio(1f)
-              .clip(AppShapeScale.medium)
-              .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .clip(AppShapeScale.medium),
           contentAlignment = Alignment.Center,
         ) {
           Icon(
@@ -136,8 +135,7 @@ fun NetworkFolderCard(
           modifier =
             Modifier
               .size(64.dp)
-              .clip(AppShapeScale.medium)
-              .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                .clip(AppShapeScale.medium),
           contentAlignment = Alignment.Center,
         ) {
           Icon(
