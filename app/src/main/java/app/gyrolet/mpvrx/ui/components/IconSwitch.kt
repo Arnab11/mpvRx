@@ -10,7 +10,7 @@
 package app.gyrolet.mpvrx.ui.components
 
 import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.snap
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Switch
@@ -20,6 +20,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.theme.AppMotion
+import app.gyrolet.mpvrx.ui.utils.rememberAppHaptics
 
 @Composable
 fun IconSwitch(
@@ -29,16 +31,25 @@ fun IconSwitch(
   enabled: Boolean = true,
   colors: SwitchColors = SwitchDefaults.colors(),
 ) {
+  val haptics = rememberAppHaptics()
   Switch(
     checked = checked,
-    onCheckedChange = onCheckedChange,
+    onCheckedChange =
+      onCheckedChange?.let { change ->
+        { value ->
+          if (enabled && value != checked) {
+            change(value)
+            haptics.selection(value)
+          }
+        }
+      },
     modifier = modifier,
     enabled = enabled,
     colors = colors,
     thumbContent = {
       Crossfade(
         targetState = checked,
-        animationSpec = tween(durationMillis = 200),
+        animationSpec = AppMotion.spatial(AppMotion.Effect.Alpha, snap()),
         label = "SwitchIconAnimation",
       ) { isChecked ->
         if (isChecked) {
