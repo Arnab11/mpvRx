@@ -14,7 +14,6 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import app.gyrolet.mpvrx.database.entities.PlaybackStateEntity
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
@@ -24,9 +23,9 @@ import app.gyrolet.mpvrx.ui.browser.base.BaseBrowserViewModel
 import app.gyrolet.mpvrx.ui.browser.videolist.VideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.videolist.buildVideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.videolist.videoPlaybackIdentifiers
-import app.gyrolet.mpvrx.ui.player.PlaybackIdentity
 import app.gyrolet.mpvrx.utils.media.MetadataRetrieval
 import app.gyrolet.mpvrx.utils.media.PlaybackStateEvents
+import app.gyrolet.mpvrx.utils.media.PlaybackStateOps
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -158,32 +157,7 @@ class MediaLibraryViewModel(
 
   fun setWatched(video: Video, watched: Boolean) {
     viewModelScope.launch(Dispatchers.IO) {
-      val durationSeconds = (video.duration / 1000L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
-      val identifiers = videoPlaybackIdentifiers(video)
-      val existing = playbackStateRepository.getAllPlaybackStates().firstNotNullOfOrNull { state ->
-        if (state.mediaTitle in identifiers) state else null
-      }
-      playbackStateRepository.upsert(
-        (existing ?: PlaybackStateEntity(
-          mediaTitle = PlaybackIdentity.forLocalPath(video.path),
-          lastPosition = 0,
-          playbackSpeed = 1.0,
-          sid = -1,
-          secondarySid = -1,
-          subDelay = 0,
-          subSpeed = 1.0,
-          aid = -1,
-          audioDelay = 0,
-          timeRemaining = durationSeconds,
-          hasBeenWatched = false,
-        )).copy(
-          mediaTitle = PlaybackIdentity.forLocalPath(video.path),
-          lastPosition = 0,
-          timeRemaining = if (watched) 0 else durationSeconds,
-          hasBeenWatched = watched,
-        ),
-      )
-      PlaybackStateEvents.notifyChanged(PlaybackIdentity.forLocalPath(video.path))
+      PlaybackStateOps.setWatched(video, watched)
     }
   }
 

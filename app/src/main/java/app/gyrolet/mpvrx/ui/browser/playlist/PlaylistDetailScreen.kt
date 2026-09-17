@@ -65,6 +65,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.ui.browser.components.rememberVideoSwipeActions
+import app.gyrolet.mpvrx.ui.browser.components.rememberSwipePlaybackInfo
 import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.database.entities.PlaylistItemEntity
 import app.gyrolet.mpvrx.database.repository.PlaylistRepository
@@ -595,6 +597,8 @@ data class PlaylistDetailScreen(
             }
 
             PlaylistVideoListContent(
+              onChanged = { viewModel.refresh() },
+              onDeleted = viewModel::removeVideosFromPlaylist,
               videoItems = filteredVideoItems,
               isLoading = isLoading && videoItems.isEmpty(),
               selectionManager = selectionManager,
@@ -678,7 +682,11 @@ private fun PlaylistVideoListContent(
   modifier: Modifier = Modifier,
   isM3uPlaylist: Boolean = false,
   isAudio: Boolean = false,
+  onChanged: () -> Unit,
+  onDeleted: suspend (List<Video>) -> Unit,
 ) {
+  val swipeActions = rememberVideoSwipeActions(onDeleted = onDeleted, onChanged = onChanged)
+  val swipePlaybackInfo = rememberSwipePlaybackInfo(videoItems.map { it.video })
   val gesturePreferences = koinInject<GesturePreferences>()
   val browserPreferences = koinInject<app.gyrolet.mpvrx.preferences.BrowserPreferences>()
   val appearancePreferences = koinInject<AppearancePreferences>()
@@ -699,6 +707,8 @@ private fun PlaylistVideoListContent(
   val centerGridTitles by browserPreferences.centerGridTitles.collectAsState()
   val musicCoverArtSize by browserPreferences.musicCoverArtSize.collectAsState()
   val thumbnailQuality by browserPreferences.thumbnailQuality.collectAsState()
+  val swipeLeft by browserPreferences.videoSwipeLeft.collectAsState()
+  val swipeRight by browserPreferences.videoSwipeRight.collectAsState()
   val density = LocalDensity.current
   val audioThumbnailSizePx = with(density) { musicCoverArtSize.dp.roundToPx() }
   val videoCardUiConfig =
@@ -717,6 +727,8 @@ private fun PlaylistVideoListContent(
       showDurationField,
       centerGridTitles,
       thumbnailQuality,
+      swipeLeft,
+      swipeRight,
     ) {
       VideoCardUiConfig(
         unlimitedNameLines = unlimitedNameLines,
@@ -733,6 +745,8 @@ private fun PlaylistVideoListContent(
         showDurationField = showDurationField,
         centerGridTitles = centerGridTitles,
         thumbnailQuality = thumbnailQuality,
+        swipeLeft = swipeLeft,
+        swipeRight = swipeRight,
       )
     }
 
@@ -863,6 +877,10 @@ private fun PlaylistVideoListContent(
                 } else {
                   VideoCard(
                     video = if (isAudio && !item.video.isAudio) item.video.copy(isAudio = true) else item.video,
+                    onSwipeAction =
+                      swipeActions.video.takeUnless { selectionManager.isInSelectionMode || isReorderMode },
+                    isWatched = swipePlaybackInfo[item.video.path]?.isWatched == true,
+                    isOldAndUnplayed = swipePlaybackInfo[item.video.path]?.isOldAndUnplayed == true,
                     progressPercentage = progressPercentage,
                     isRecentlyPlayed = item.playlistItem.id == mostRecentlyPlayedItem?.playlistItem?.id,
                     isSelected = selectionManager.isSelected(item),

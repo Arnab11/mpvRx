@@ -53,7 +53,7 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
     DownloadItemEntity::class,
     NavidromeServerEntity::class,
   ],
-  version = 21,
+  version = 22,
   exportSchema = true,
 )
 @TypeConverters(NetworkProtocolConverter::class, NetworkStreamEntryTypeConverter::class)
