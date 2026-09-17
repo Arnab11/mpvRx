@@ -20,6 +20,7 @@ import app.gyrolet.mpvrx.database.dao.DownloadItemDao
 import app.gyrolet.mpvrx.database.dao.NetworkConnectionDao
 import app.gyrolet.mpvrx.database.dao.NetworkStreamEntryDao
 import app.gyrolet.mpvrx.database.dao.PlaybackStateDao
+import app.gyrolet.mpvrx.database.dao.PlaybackBookmarkDao
 import app.gyrolet.mpvrx.database.dao.PlaylistDao
 import app.gyrolet.mpvrx.database.dao.RecentlyPlayedDao
 import app.gyrolet.mpvrx.database.dao.SecureMediaDao
@@ -30,12 +31,12 @@ import app.gyrolet.mpvrx.database.entities.DirectoryScanEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookTrackEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookChapterEntity
-import app.gyrolet.mpvrx.database.entities.AudiobookBookmarkEntity
 import app.gyrolet.mpvrx.database.entities.DownloadItemEntity
 import app.gyrolet.mpvrx.database.entities.JellyfinServerEntity
 import app.gyrolet.mpvrx.database.entities.NavidromeServerEntity
 import app.gyrolet.mpvrx.database.entities.NetworkStreamEntryEntity
 import app.gyrolet.mpvrx.database.entities.PlaybackStateEntity
+import app.gyrolet.mpvrx.database.entities.PlaybackBookmarkEntity
 import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.database.entities.PlaylistItemEntity
 import app.gyrolet.mpvrx.database.entities.RecentlyPlayedEntity
@@ -60,9 +61,9 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
     AudiobookEntity::class,
     AudiobookTrackEntity::class,
     AudiobookChapterEntity::class,
-    AudiobookBookmarkEntity::class,
+    PlaybackBookmarkEntity::class,
   ],
-  version = 23,
+  version = 24,
   exportSchema = true,
 )
 @TypeConverters(NetworkProtocolConverter::class, NetworkStreamEntryTypeConverter::class)
@@ -90,4 +91,6 @@ abstract class MpvRxDatabase : RoomDatabase() {
   abstract fun navidromeServerDao(): NavidromeServerDao
 
   abstract fun audiobookDao(): AudiobookDao
+
+  abstract fun playbackBookmarkDao(): PlaybackBookmarkDao
 }

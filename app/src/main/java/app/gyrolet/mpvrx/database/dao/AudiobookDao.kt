@@ -6,7 +6,6 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import app.gyrolet.mpvrx.database.entities.Audiobook
-import app.gyrolet.mpvrx.database.entities.AudiobookBookmarkEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookChapterEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookTrackEntity
@@ -113,17 +112,4 @@ abstract class AudiobookDao {
     if (chapters.isNotEmpty()) insertChapters(chapters.distinctBy { it.startMs })
   }
 
-  @Query("""SELECT bookmark.* FROM audiobook_bookmarks AS bookmark
-    INNER JOIN audiobook_tracks AS track ON track.id = bookmark.trackId
-    WHERE bookmark.bookId = :bookId ORDER BY track.position, bookmark.positionMs, bookmark.createdAt""")
-  abstract fun observeBookmarks(bookId: Long): Flow<List<AudiobookBookmarkEntity>>
-
-  @Insert
-  abstract suspend fun addBookmark(bookmark: AudiobookBookmarkEntity): Long
-
-  @Query("UPDATE audiobook_bookmarks SET title = :title WHERE id = :id")
-  abstract suspend fun renameBookmark(id: Long, title: String)
-
-  @Query("DELETE FROM audiobook_bookmarks WHERE id = :id")
-  abstract suspend fun deleteBookmark(id: Long)
 }
