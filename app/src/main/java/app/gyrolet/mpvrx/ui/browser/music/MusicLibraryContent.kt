@@ -572,11 +572,6 @@ fun MusicLibraryContent(
               isSingleSelection = activeSelectionManager.isSingleSelection,
               onInfoClick = null,
               preSearchActions = {
-                if (!activeSelectionManager.isInSelectionMode) {
-                  app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
-                    Icons.RoundedFilled.MenuBook, stringResource(R.string.audiobooks_title),
-                  ) { backStack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
-                }
                 if (!activeSelectionManager.isInSelectionMode && (hasJellyfinMusicLibrary || hasNavidromeServer)) {
                   var isSourceDropdownOpen by remember { mutableStateOf(false) }
                   Box {
@@ -754,6 +749,11 @@ fun MusicLibraryContent(
                       )
                     }
                   }
+                }
+                if (!activeSelectionManager.isInSelectionMode) {
+                  app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
+                    Icons.RoundedFilled.MenuBook, stringResource(R.string.audiobooks_title),
+                  ) { backStack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
                 }
               },
             )
