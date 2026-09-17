@@ -69,6 +69,7 @@ object MusicLibraryScanner {
           val file = path?.let { File(it) }
           val fileExists = try { file?.exists() == true } catch (_: Exception) { false }
           if (!fileExists && size <= 0L && duration <= 0L) continue
+          if (app.gyrolet.mpvrx.domain.audiobook.AudiobookMarkerUtils.isAudiobookPath(path ?: effectivePath)) continue
 
           val title = cursor.getString(titleCol)?.takeIf { it.isNotBlank() } ?: (file?.nameWithoutExtension ?: id.toString())
           val artist = cursor.getString(artistCol)?.takeIf { it.isNotBlank() && it != "<unknown>" } ?: "Unknown Artist"
