@@ -15,6 +15,7 @@ import androidx.room.TypeConverters
 import app.gyrolet.mpvrx.database.converters.NetworkProtocolConverter
 import app.gyrolet.mpvrx.database.converters.NetworkStreamEntryTypeConverter
 import app.gyrolet.mpvrx.database.dao.AudiobookDao
+import app.gyrolet.mpvrx.database.dao.AudiobookshelfServerDao
 import app.gyrolet.mpvrx.database.dao.DirectoryScanDao
 import app.gyrolet.mpvrx.database.dao.DownloadItemDao
 import app.gyrolet.mpvrx.database.dao.NetworkConnectionDao
@@ -27,6 +28,7 @@ import app.gyrolet.mpvrx.database.dao.SecureMediaDao
 import app.gyrolet.mpvrx.database.dao.VideoMetadataDao
 import app.gyrolet.mpvrx.database.dao.JellyfinServerDao
 import app.gyrolet.mpvrx.database.dao.NavidromeServerDao
+import app.gyrolet.mpvrx.database.entities.AudiobookshelfServerEntity
 import app.gyrolet.mpvrx.database.entities.DirectoryScanEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookEntity
 import app.gyrolet.mpvrx.database.entities.AudiobookTrackEntity
@@ -62,8 +64,9 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
     AudiobookTrackEntity::class,
     AudiobookChapterEntity::class,
     PlaybackBookmarkEntity::class,
+    AudiobookshelfServerEntity::class,
   ],
-  version = 24,
+  version = 25,
   exportSchema = true,
 )
 @TypeConverters(NetworkProtocolConverter::class, NetworkStreamEntryTypeConverter::class)
@@ -93,4 +96,6 @@ abstract class MpvRxDatabase : RoomDatabase() {
   abstract fun audiobookDao(): AudiobookDao
 
   abstract fun playbackBookmarkDao(): PlaybackBookmarkDao
+
+  abstract fun audiobookshelfServerDao(): AudiobookshelfServerDao
 }
