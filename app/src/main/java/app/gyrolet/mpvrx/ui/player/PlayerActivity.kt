@@ -5668,6 +5668,16 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
                 networkSource = networkSource,
                 torrentFileIndex = torrentResult?.selectedFile?.index,
               )
+
+          // Fetch artwork for music streaming URLs (YouTube / YouTube Music via oEmbed).
+          val itemWithArtwork =
+            if (item.artworkUri.isNullOrBlank() && HttpUtils.isMusicStreamingUrl(resolvedOriginalUri)) {
+              val artwork = HttpUtils.fetchMusicStreamingArtwork(resolvedOriginalUri)
+              if (!artwork.isNullOrBlank()) item.copy(artworkUri = artwork) else item
+            } else {
+              item
+            }
+
           val cookieSource =
             sequenceOf(resolvedPlayableUri, resolvedOriginalUri)
               .firstOrNull { value -> value.startsWith("http://", true) || value.startsWith("https://", true) }
@@ -5722,11 +5732,11 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
                 viewModel.refreshPlaylistItems()
               }
             } else {
-              commitMediaRequest(requestGeneration) { PlaybackSession.replaceQueue(listOf(item), 0) }
+              commitMediaRequest(requestGeneration) { PlaybackSession.replaceQueue(listOf(itemWithArtwork), 0) }
             }
           }
           issuePlaybackLoad(
-            item = item,
+            item = itemWithArtwork,
             attempt = 0,
             requestGeneration = requestGeneration,
             legacyMediaIdentifier = requestedLegacyMediaIdentifier.takeUnless { isTorrentRequest },

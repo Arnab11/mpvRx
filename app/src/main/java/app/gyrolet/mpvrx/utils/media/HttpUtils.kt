@@ -129,6 +129,26 @@ object HttpUtils {
     else -> false
   }
 
+  /**
+   * Fetches a thumbnail URL for a music-streaming link.
+   *
+   * YouTube / YouTube Music: resolved via the public oEmbed endpoint.
+   * Other platforms return null (no free thumbnail API).
+   */
+  suspend fun fetchMusicStreamingArtwork(url: String): String? =
+    withContext(Dispatchers.IO) {
+      try {
+        val uri = Uri.parse(url)
+        if (isYouTubeUrl(uri)) {
+          return@withContext fetchYouTubeMetadata(url)?.thumbnailUrl
+        }
+        null
+      } catch (e: Exception) {
+        Log.w(TAG, "Failed to fetch music streaming artwork for $url: ${e.message}")
+        null
+      }
+    }
+
   fun extractYouTubeVideoId(uri: Uri?): String? {
     if (uri == null) return null
     val host = uri.host?.lowercase().orEmpty()
