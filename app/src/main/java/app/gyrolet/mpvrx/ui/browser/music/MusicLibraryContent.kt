@@ -129,6 +129,7 @@ import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.MediaServerPreferences
 import app.gyrolet.mpvrx.preferences.MusicSourceProvider
+import app.gyrolet.mpvrx.preferences.VideoSwipeAction
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.preferences.PreferencesScreen
 import app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight
@@ -138,6 +139,8 @@ import app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.QueueInsertion
 import app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue
+import app.gyrolet.mpvrx.ui.browser.components.rememberSwipePlaybackInfo
+import app.gyrolet.mpvrx.ui.browser.components.rememberVideoSwipeActions
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.fab.FabScrollHelper
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
@@ -897,6 +900,7 @@ fun MusicLibraryContent(
             key = { page -> visibleTabs[page].name },
             modifier = Modifier.fillMaxSize(),
             beyondViewportPageCount = 1,
+            allowNestedSwipes = true,
           ) { page ->
             val activeTab = visibleTabs.getOrNull(page) ?: MusicTab.SONGS
             when (activeTab) {
@@ -920,6 +924,7 @@ fun MusicLibraryContent(
                 selectionManager = songSelectionManager,
                 listState = songsListState,
                 gridState = songsGridState,
+                onSongsChanged = { musicViewModel.scanLibrary(context) },
               )
 
               MusicTab.ALBUMS -> AlbumsTabContent(
@@ -1527,6 +1532,7 @@ private fun SongsTabContent(
   selectionManager: app.gyrolet.mpvrx.ui.browser.selection.SelectionManager<MusicSong, Long>,
   listState: LazyListState = rememberLazyListState(),
   gridState: LazyGridState = rememberLazyGridState(),
+  onSongsChanged: () -> Unit,
 ) {
   if (songs.isEmpty()) {
     EmptyMusicState(text = "No songs found")
@@ -1567,19 +1573,28 @@ private fun SongsTabContent(
         }
       }
     } else {
+      val swipeVideos = remember(songs) { songs.map { it.toVideo() } }
+      val swipePlaybackInfo = rememberSwipePlaybackInfo(swipeVideos)
+      val swipeActions = rememberVideoSwipeActions(audioOnly = true, onChanged = onSongsChanged)
       LazyColumn(
         state = listState,
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(start = 0.dp, top = 8.dp, end = 0.dp, bottom = navBarHeight + 16.dp)
       ) {
         items(songs, key = { it.id }) { song ->
+          val video = remember(song) { song.toVideo() }
+          val isWatched = swipePlaybackInfo[song.path]?.isWatched ?: false
           SongListItem(
             song = song,
             isSelected = selectionManager.isSelected(song),
             isPlaying = song.isNowPlaying(),
             coverArtSizeDp = coverArtSizeDp,
             onClick = { onSongClick(song) },
-            onLongClick = { onSongLongClick(song) }
+            onLongClick = { onSongLongClick(song) },
+            isWatched = isWatched,
+            onSwipeAction = if (selectionManager.isInSelectionMode || !song.path.startsWith('/')) null else {
+              action -> swipeActions.video(video, isWatched, action)
+            },
           )
         }
       }
@@ -1698,7 +1713,9 @@ private fun SongListItem(
   isPlaying: Boolean = false,
   coverArtSizeDp: Int = 48,
   onClick: () -> Unit,
-  onLongClick: (() -> Unit)? = null
+  onLongClick: (() -> Unit)? = null,
+  isWatched: Boolean? = null,
+  onSwipeAction: ((VideoSwipeAction) -> Unit)? = null,
 ) {
   SharedMusicTrackListItem(
     title = song.title,
@@ -1709,7 +1726,10 @@ private fun SongListItem(
     isSelected = isSelected,
     coverArtSizeDp = coverArtSizeDp,
     onClick = onClick,
-    onLongClick = onLongClick
+    onLongClick = onLongClick,
+    swipeIdentity = song.path,
+    isWatched = isWatched,
+    onSwipeAction = onSwipeAction,
   )
 }
 
