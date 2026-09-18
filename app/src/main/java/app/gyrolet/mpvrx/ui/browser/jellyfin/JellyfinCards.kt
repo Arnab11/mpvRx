@@ -186,7 +186,7 @@ fun JellyfinHeroBanner(
     modifier =
       modifier
         .fillMaxWidth()
-        .height(360.dp),
+        .height(480.dp),
   ) {
     HorizontalPager(
       state = pagerState,
@@ -231,8 +231,8 @@ fun JellyfinHeroBanner(
               .background(
                 Brush.verticalGradient(
                   0.0f to Color.Black.copy(alpha = 0.6f),
-                  0.3f to Color.Transparent,
-                  0.6f to MaterialTheme.colorScheme.background.copy(alpha = 0.6f),
+                  0.25f to Color.Transparent,
+                  0.65f to MaterialTheme.colorScheme.background.copy(alpha = 0.6f),
                   1.0f to MaterialTheme.colorScheme.background,
                 ),
               ),
