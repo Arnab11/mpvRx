@@ -30,6 +30,7 @@ import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.semantics.hideFromAccessibility
 import androidx.compose.ui.semantics.semantics
+import app.gyrolet.mpvrx.preferences.GesturePreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
@@ -60,8 +61,10 @@ internal fun NavigationPager(
   allowNestedSwipes: Boolean = false,
   content: @Composable PagerScope.(Int) -> Unit,
 ) {
+  val gesturePreferences = koinInject<GesturePreferences>()
+  val nestedTabSwipesEnabled by gesturePreferences.nestedTabSwipesEnabled.collectAsState()
   val isNestedPager = LocalNavigationPagerPresent.current
-  val ownsHorizontalSwipes = userScrollEnabled && (!isNestedPager || allowNestedSwipes)
+  val ownsHorizontalSwipes = userScrollEnabled && (!isNestedPager || (allowNestedSwipes && nestedTabSwipesEnabled))
   val nestedScrollConnection = if (ownsHorizontalSwipes) {
     PagerDefaults.pageNestedScrollConnection(state, Orientation.Horizontal)
   } else {
