@@ -5196,6 +5196,13 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
         return@runCatching
       }
 
+      val artworkUrl =
+        if (HttpUtils.isMusicStreamingUrl(filePath) || HttpUtils.isYouTubeUrl(filePath)) {
+          HttpUtils.fetchMusicStreamingArtwork(filePath)
+        } else {
+          null
+        }
+
       RecentlyPlayedOps.addRecentlyPlayed(
         filePath = filePath,
         fileName = resolvedFileName,
@@ -5205,6 +5212,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
         width = width,
         height = height,
         launchSource = launchSource,
+        artworkUrl = artworkUrl,
       )
 
       Log.d(TAG, "Saved recently played: $filePath")
