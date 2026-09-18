@@ -6248,6 +6248,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
   private fun isKnownAudioLaunch(sourceIntent: Intent): Boolean =
     sourceIntent.getBooleanExtra("is_audio", false) ||
       sourceIntent.type?.startsWith("audio/") == true ||
+      HttpUtils.isMusicStreamingUrl(sourceIntent.dataString) ||
       sequenceOf(sourceIntent.dataString, sourceIntent.getStringExtra("local_media_path"))
         .filterNotNull()
         .any { source -> source.fileExtension() in FileTypeUtils.AUDIO_EXTENSIONS }
