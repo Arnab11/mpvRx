@@ -621,7 +621,7 @@ fun JellyfinContent(
                 }
               }
               app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
-                Icons.RoundedFilled.MenuBook,
+                Icons.RoundedFilled.Audiobookshelf,
                 stringResource(R.string.audiobooks_title),
               ) { backstack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
             }
@@ -1347,7 +1347,7 @@ fun JellyfinContent(
                 isFabExpanded = false
                 isManageServersOpen = true
               },
-              icon = { Icon(Icons.RoundedFilled.BringYourOwnIp, contentDescription = null) },
+              icon = { Icon(Icons.RoundedFilled.Jellyfin, contentDescription = null) },
               text = { Text("Switch Server") },
             )
 
