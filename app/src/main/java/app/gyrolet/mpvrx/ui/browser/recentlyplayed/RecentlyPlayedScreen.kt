@@ -683,11 +683,13 @@ private fun RecentItemsContent(
   val usableWidth = screenWidthDp - (contentHorizontalPadding * 2) - itemSpacing
   val videoMinWidth = 130.dp
   val videoGridColumnsPref = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
+  val dynamicVideos = (usableWidth / videoMinWidth).toInt().coerceAtLeast(1)
   val computedVideoColumns =
     if (manualGridColumnsEnabled) {
-      videoGridColumnsPref.coerceAtLeast(1)
+      val maxSafeVideos = maxOf(dynamicVideos + 3, (usableWidth / 90.dp).toInt()).coerceAtLeast(1)
+      videoGridColumnsPref.coerceIn(1, maxSafeVideos)
     } else {
-      (usableWidth / videoMinWidth).toInt().coerceAtLeast(1)
+      dynamicVideos
     }
 
   val isGridMode = mediaLayoutMode == MediaLayoutMode.GRID
