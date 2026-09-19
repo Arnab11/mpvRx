@@ -322,7 +322,7 @@ fun PlayerSheet(
 
 @Composable
 fun PlayerSheetDragHandle() {
-  Box(Modifier.fillMaxWidth().padding(vertical = 12.dp), contentAlignment = Alignment.Center) {
+  Box(Modifier.fillMaxWidth().padding(vertical = 8.dp), contentAlignment = Alignment.Center) {
     Box(
       Modifier.size(width = 32.dp, height = 4.dp)
         .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f), RoundedCornerShape(2.dp)),
@@ -337,7 +337,7 @@ fun PlayerSheetHeader(
   actions: @Composable RowScope.() -> Unit = {},
 ) {
   Box(
-    modifier = modifier.fillMaxWidth().heightIn(min = 56.dp).padding(start = 12.dp, end = 12.dp, bottom = 4.dp),
+    modifier = modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 12.dp, end = 12.dp),
   ) {
     Text(
       text = title,

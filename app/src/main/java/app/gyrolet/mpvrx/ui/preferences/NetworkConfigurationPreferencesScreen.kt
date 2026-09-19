@@ -22,6 +22,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
@@ -51,7 +52,14 @@ object NetworkConfigurationPreferencesScreen : Screen {
     Scaffold(
       topBar = {
         TopAppBar(
-          title = { Text(stringResource(R.string.ui_network)) },
+          title = {
+            Text(
+              text = stringResource(R.string.ui_network),
+              style = MaterialTheme.typography.headlineSmall,
+              fontWeight = FontWeight.ExtraBold,
+              color = MaterialTheme.colorScheme.primary,
+            )
+          },
           navigationIcon = {
             if (LocalShowSettingsBackArrow.current) {
               IconButton(onClick = { backStack.popSafely() }) {

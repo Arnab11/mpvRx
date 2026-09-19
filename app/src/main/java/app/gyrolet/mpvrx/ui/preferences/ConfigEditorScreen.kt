@@ -10,6 +10,7 @@
 package app.gyrolet.mpvrx.ui.preferences
 
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,6 +33,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
@@ -72,6 +75,18 @@ data class ConfigEditorScreen(
     val preferences = koinInject<AdvancedPreferences>()
     val mpvConfigCache = koinInject<MpvConfigCache>()
     val scope = rememberCoroutineScope()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    fun dismissKeyboard() {
+      focusManager.clearFocus(force = true)
+      keyboardController?.hide()
+    }
+
+    BackHandler {
+      dismissKeyboard()
+      backStack.popSafely()
+    }
 
     val (fileName, initialValue) =
       when (configType) {
@@ -114,6 +129,7 @@ data class ConfigEditorScreen(
     }
 
     fun saveConfig() {
+      dismissKeyboard()
       val contentToSave = configText
       scope.launch(Dispatchers.IO) {
         try {
@@ -208,7 +224,12 @@ data class ConfigEditorScreen(
           }
         },
         navigationIcon = {
-          IconButton(onClick = { backStack.popSafely() }) {
+          IconButton(
+            onClick = {
+              dismissKeyboard()
+              backStack.popSafely()
+            },
+          ) {
             Icon(
               Icons.RoundedFilled.ArrowBack,
               contentDescription =
