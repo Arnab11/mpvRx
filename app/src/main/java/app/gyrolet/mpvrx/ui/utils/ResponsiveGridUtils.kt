@@ -42,12 +42,17 @@ fun calculateResponsiveGridSpans(
   contentHorizontalPadding: Dp = 8.dp,
   itemSpacing: Dp = 2.dp,
   isGridMode: Boolean = true,
+  isDualPane: Boolean = false,
 ): ResponsiveGridSpans {
   val browserPreferences = koinInject<BrowserPreferences>()
   val folderGridColumnsPortrait by browserPreferences.folderGridColumnsPortrait.collectAsState()
   val folderGridColumnsLandscape by browserPreferences.folderGridColumnsLandscape.collectAsState()
   val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
   val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
+  val folderGridColumnsDualPanePortrait by browserPreferences.folderGridColumnsDualPanePortrait.collectAsState()
+  val folderGridColumnsDualPaneLandscape by browserPreferences.folderGridColumnsDualPaneLandscape.collectAsState()
+  val videoGridColumnsDualPanePortrait by browserPreferences.videoGridColumnsDualPanePortrait.collectAsState()
+  val videoGridColumnsDualPaneLandscape by browserPreferences.videoGridColumnsDualPaneLandscape.collectAsState()
   val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
 
   if (!isGridMode) {
@@ -56,8 +61,6 @@ fun calculateResponsiveGridSpans(
 
   val configuration = androidx.compose.ui.platform.LocalConfiguration.current
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-  val folderGridColumnsPref = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
-  val videoGridColumnsPref = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
   val usableWidth = maxWidth - (contentHorizontalPadding * 2) - itemSpacing
   val isTelevision =
     app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(androidx.compose.ui.platform.LocalContext.current)
@@ -72,8 +75,18 @@ fun calculateResponsiveGridSpans(
   if (manualGridColumnsEnabled) {
     val maxSafeFolders = maxOf(dynamicFolders + 3, (usableWidth / 70.dp).toInt()).coerceAtLeast(1)
     val maxSafeVideos = maxOf(dynamicVideos + 3, (usableWidth / 90.dp).toInt()).coerceAtLeast(1)
-    maxFolders = folderGridColumnsPref.coerceIn(1, maxSafeFolders)
-    maxVideos = videoGridColumnsPref.coerceIn(1, maxSafeVideos)
+
+    if (isDualPane) {
+      val dualFolderPref = if (isLandscape) folderGridColumnsDualPaneLandscape else folderGridColumnsDualPanePortrait
+      val dualVideoPref = if (isLandscape) videoGridColumnsDualPaneLandscape else videoGridColumnsDualPanePortrait
+      maxFolders = if (dualFolderPref > 0) dualFolderPref.coerceIn(1, maxSafeFolders) else dynamicFolders
+      maxVideos = if (dualVideoPref > 0) dualVideoPref.coerceIn(1, maxSafeVideos) else dynamicVideos
+    } else {
+      val folderGridColumnsPref = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
+      val videoGridColumnsPref = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
+      maxFolders = if (folderGridColumnsPref > 0) folderGridColumnsPref.coerceIn(1, maxSafeFolders) else dynamicFolders
+      maxVideos = if (videoGridColumnsPref > 0) videoGridColumnsPref.coerceIn(1, maxSafeVideos) else dynamicVideos
+    }
   } else {
     maxFolders = dynamicFolders
     maxVideos = dynamicVideos

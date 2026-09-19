@@ -324,7 +324,7 @@ fun SortDialog(
           )
 
           if (visibilityToggles.isNotEmpty()) {
-            HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
+            HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
             Column(
               modifier =
                 Modifier
@@ -335,8 +335,9 @@ fun SortDialog(
                 modifier =
                   Modifier
                     .fillMaxWidth()
+                    .clip(RoundedCornerShape(8.dp))
                     .clickable { isFieldsExpanded = !isFieldsExpanded }
-                    .padding(vertical = 4.dp),
+                    .padding(vertical = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
               ) {
