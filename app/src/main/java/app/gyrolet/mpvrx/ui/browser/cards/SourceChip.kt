@@ -49,12 +49,18 @@ fun SourceChip(
   )
 }
 
-/** Null is a local file. */
-fun sourceChipColor(protocol: NetworkProtocol?): Color =
+/**
+ * A null [protocol] is a local file, unless [isNetwork] says the entry came from a share we can no
+ * longer name — an entry whose connection row is gone must not be painted as local.
+ */
+fun sourceChipColor(
+  protocol: NetworkProtocol?,
+  isNetwork: Boolean = false,
+): Color =
   when (protocol) {
-    null -> Color(0xFF2E7D32)
     NetworkProtocol.WEBDAV -> Color(0xFF1E88E5)
     NetworkProtocol.SMB -> Color(0xFF8E24AA)
     NetworkProtocol.FTP -> Color(0xFFF4511E)
     NetworkProtocol.SFTP -> Color(0xFF00897B)
+    null -> if (isNetwork) Color(0xFF607D8B) else Color(0xFF2E7D32)
   }

@@ -924,10 +924,13 @@ private fun PlaylistVideoListContent(
                 // M3U entries keep their stored URL; everything else gets a source badge so the
                 // internal mpvrx-network:// form never reaches the user.
                 val sourceLabel =
-                  if (isM3uPlaylist) {
-                    null
-                  } else {
-                    item.protocol?.displayName ?: "Local"
+                  when {
+                    isM3uPlaylist -> null
+                    item.protocol != null -> item.protocol.displayName
+                    // A network entry can outlive the row that named its protocol; it is still not
+                    // a local file, so fall back to a generic network badge rather than "Local".
+                    item.isNetwork -> stringResource(R.string.playlist_source_network)
+                    else -> "Local"
                   }
                 val sourceSubtitle =
                   listOfNotNull(item.connectionName, item.sourcePath).joinToString(" · ").ifBlank { null }
@@ -953,7 +956,7 @@ private fun PlaylistVideoListContent(
                     video = item.video,
                     showSourceWarning = isSourceDisconnected(item),
                     sourceLabel = sourceLabel,
-                    sourceColor = sourceChipColor(item.protocol),
+                    sourceColor = sourceChipColor(item.protocol, item.isNetwork),
                     sourceSubtitle = sourceSubtitle,
                     modifier = Modifier.weight(1f),
                   )
@@ -979,7 +982,7 @@ private fun PlaylistVideoListContent(
                     thumbnailWidthPx = if (isAudio) audioThumbnailSizePx else null,
                     thumbnailHeightPx = if (isAudio) audioThumbnailSizePx else null,
                     sourceLabel = sourceLabel,
-                    sourceColor = sourceChipColor(item.protocol),
+                    sourceColor = sourceChipColor(item.protocol, item.isNetwork),
                     sourceSubtitle = sourceSubtitle,
                     modifier = Modifier.weight(1f),
                     uiConfig = videoCardUiConfig,

@@ -896,6 +896,17 @@ val MIGRATION_26_27 =
     }
   }
 
+/**
+ * Network connections become tombstones instead of being deleted, so a re-created connection with
+ * the same settings can revive the row and keep the id that playlist entries reference.
+ */
+val MIGRATION_27_28 =
+  object : Migration(27, 28) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL("ALTER TABLE `network_connections` ADD COLUMN `isDeleted` INTEGER NOT NULL DEFAULT 0")
+    }
+  }
+
 val MIGRATION_24_25 =
   object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -961,6 +972,7 @@ val DatabaseModule =
           MIGRATION_24_25,
           MIGRATION_25_26,
           MIGRATION_26_27,
+          MIGRATION_27_28,
         ).build()
     }
 

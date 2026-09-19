@@ -52,6 +52,21 @@ class NetworkRepository(
   private val _connectionStatuses = MutableStateFlow<Map<Long, ConnectionStatus>>(emptyMap())
   val connectionStatuses: StateFlow<Map<Long, ConnectionStatus>> = _connectionStatuses.asStateFlow()
 
+  /**
+   * Includes tombstones, for callers that must keep naming a share whose connection was deleted.
+   * Availability checks should use [getAllConnections] instead — a tombstone is not usable.
+   */
+  fun observeAllConnectionsIncludingDeleted(): Flow<List<NetworkConnection>> =
+    dao
+      .observeAllConnectionsIncludingDeleted()
+      .map { connections -> connections.map { redactAndMigrate(it) } }
+      .flowOn(Dispatchers.IO)
+
+  suspend fun getAllConnectionsIncludingDeleted(): List<NetworkConnection> =
+    withContext(Dispatchers.IO) {
+      dao.getAllConnectionsIncludingDeleted().map { redactAndMigrate(it) }
+    }
+
   /** UI-facing connection models are always password-redacted. */
   fun getAllConnections(): Flow<List<NetworkConnection>> =
     dao
@@ -69,6 +84,15 @@ class NetworkRepository(
       dao.getConnectionById(id)?.let { redactAndMigrate(it) }
     }
 
+  /**
+   * Returns the row even when it is a tombstone. For callers that need only the connection's
+   * identity — a cached thumbnail's key, for instance — which outlives its deletion.
+   */
+  suspend fun getConnectionIncludingDeleted(id: Long): NetworkConnection? =
+    withContext(Dispatchers.IO) {
+      dao.getConnectionByIdIncludingDeleted(id)?.let { redactAndMigrate(it) }
+    }
+
   suspend fun addConnection(connection: NetworkConnection): Long =
     withContext(Dispatchers.IO) {
       credentialMutex.withLock {
@@ -78,7 +102,18 @@ class NetworkRepository(
           } else {
             encryptForStorage(connection.password)
           }
-        dao.insert(connection.copy(password = password))
+        val candidate = connection.copy(password = password)
+
+        // Reviving a tombstone keeps its row id. Playlist entries identify a connection by that id,
+        // so re-creating the same share has to land on the same id — inserting a fresh row would
+        // leave every entry pointing at the old one permanently unreachable.
+        val tombstone = dao.getDeletedConnections().firstOrNull { it.hasSameConnectionSettings(candidate) }
+        if (tombstone != null) {
+          dao.update(candidate.copy(id = tombstone.id, isDeleted = false))
+          tombstone.id
+        } else {
+          dao.insert(candidate)
+        }
       }
     }
 
@@ -132,7 +167,8 @@ class NetworkRepository(
   suspend fun deleteConnection(connection: NetworkConnection) =
     withContext(Dispatchers.IO) {
       clientLifecycleMutex.withLock {
-        dao.deleteById(connection.id)
+        // Tombstoned rather than removed; see addConnection for why the row id must survive.
+        dao.markDeleted(connection.id)
         val oldClient = activeClients.remove(connection.id)
         _connectionStatuses.update { it - connection.id }
         oldClient?.let { closeClient(it) }

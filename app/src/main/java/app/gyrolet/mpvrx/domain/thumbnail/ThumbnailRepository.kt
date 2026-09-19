@@ -1071,7 +1071,9 @@ class ThumbnailRepository(
     widthPx: Int,
     heightPx: Int,
   ): Bitmap? {
-    val connection = networkRepository.getConnectionById(connectionId) ?: return null
+    // Tombstones included: the cache key needs only this connection's identity, and an entry whose
+    // share was deleted must keep showing the frame that is already on disk.
+    val connection = networkRepository.getConnectionIncludingDeleted(connectionId) ?: return null
     return getThumbnailForNetworkPath(
       path = path,
       widthPx = widthPx,

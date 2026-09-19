@@ -40,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -125,7 +126,13 @@ class PlaylistDetailViewModel(
 
     // Observe playlist items and load video metadata
     viewModelScope.launch(Dispatchers.IO) {
-      playlistRepository.observePlaylistItems(playlistId).collectLatest { items ->
+      combine(
+        playlistRepository.observePlaylistItems(playlistId),
+        // Connections are part of the input: deleting or re-creating one must re-evaluate every
+        // entry that references it instead of waiting for the playlist itself to be reloaded.
+        networkRepository.observeAllConnectionsIncludingDeleted(),
+      ) { items, connections -> items to connections }
+        .collectLatest { (items, connections) ->
         _isLoading.value = true
         try {
           if (items.isEmpty()) {
@@ -142,7 +149,7 @@ class PlaylistDetailViewModel(
               _videoItems.value = videoItems
             } else {
               val networkRefs = items.map { NetworkPlaybackUri.parse(it.filePath) }
-              val connectionsById = loadConnectionsById(networkRefs)
+              val connectionsById = connections.associateBy { it.id }
 
               // For regular playlists, use the existing logic with MediaFileRepository
               val fileObjects =
@@ -269,7 +276,7 @@ class PlaylistDetailViewModel(
         } else {
           // For regular playlists, use existing logic
           val networkRefs = items.map { NetworkPlaybackUri.parse(it.filePath) }
-          val connectionsById = loadConnectionsById(networkRefs)
+          val connectionsById = networkRepository.getAllConnectionsIncludingDeleted().associateBy { it.id }
           val bucketIds =
             items
               .filterIndexed { index, _ -> networkRefs[index] == null }
@@ -420,13 +427,6 @@ class PlaylistDetailViewModel(
     playlistRepository.toggleFavorite(itemId)
   }
 
-  private suspend fun loadConnectionsById(
-    refs: List<NetworkPlaybackUri.Reference?>,
-  ): Map<Long, NetworkConnection?> {
-    val ids = refs.filterNotNull().map { it.connectionId }.distinct()
-    if (ids.isEmpty()) return emptyMap()
-    return ids.associateWith { networkRepository.getConnectionById(it) }
-  }
 
   /**
    * Builds a playlist entry backed by a saved network connection.
@@ -441,7 +441,9 @@ class PlaylistDetailViewModel(
     connection: NetworkConnection?,
   ): PlaylistVideoItem {
     val isAudioFile = FileTypeUtils.isAudioFile(File(item.fileName))
-    val available = connection != null
+    // A tombstoned connection still names the share it pointed at, so the badge keeps saying
+    // "WebDAV", but it is not usable: the row exists only so a re-created connection can revive it.
+    val available = connection != null && !connection.isDeleted
     return PlaylistVideoItem(
       playlistItem = item,
       video =
