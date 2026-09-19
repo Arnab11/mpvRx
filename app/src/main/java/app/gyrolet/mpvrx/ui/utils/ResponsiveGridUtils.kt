@@ -58,21 +58,25 @@ fun calculateResponsiveGridSpans(
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
   val folderGridColumnsPref = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
   val videoGridColumnsPref = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
+  val usableWidth = maxWidth - (contentHorizontalPadding * 2) - itemSpacing
+  val isTelevision =
+    app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(androidx.compose.ui.platform.LocalContext.current)
+  val minimumFolderWidth = if (isTelevision) maxOf(folderMinWidth, 160.dp) else folderMinWidth
+  val minimumVideoWidth = if (isTelevision) maxOf(videoMinWidth, 240.dp) else videoMinWidth
+  val dynamicFolders = (usableWidth / minimumFolderWidth).toInt().coerceAtLeast(1)
+  val dynamicVideos = (usableWidth / minimumVideoWidth).toInt().coerceAtLeast(1)
 
   val maxFolders: Int
   val maxVideos: Int
 
   if (manualGridColumnsEnabled) {
-    maxFolders = folderGridColumnsPref.coerceAtLeast(1)
-    maxVideos = videoGridColumnsPref.coerceAtLeast(1)
+    val maxSafeFolders = maxOf(dynamicFolders + 3, (usableWidth / 70.dp).toInt()).coerceAtLeast(1)
+    val maxSafeVideos = maxOf(dynamicVideos + 3, (usableWidth / 90.dp).toInt()).coerceAtLeast(1)
+    maxFolders = folderGridColumnsPref.coerceIn(1, maxSafeFolders)
+    maxVideos = videoGridColumnsPref.coerceIn(1, maxSafeVideos)
   } else {
-    val usableWidth = maxWidth - (contentHorizontalPadding * 2) - itemSpacing
-    val isTelevision =
-      app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(androidx.compose.ui.platform.LocalContext.current)
-    val minimumFolderWidth = if (isTelevision) maxOf(folderMinWidth, 160.dp) else folderMinWidth
-    val minimumVideoWidth = if (isTelevision) maxOf(videoMinWidth, 240.dp) else videoMinWidth
-    maxFolders = (usableWidth / minimumFolderWidth).toInt().coerceAtLeast(1)
-    maxVideos = (usableWidth / minimumVideoWidth).toInt().coerceAtLeast(1)
+    maxFolders = dynamicFolders
+    maxVideos = dynamicVideos
   }
 
   val spans = lcm(maxFolders, maxVideos).coerceAtLeast(1)

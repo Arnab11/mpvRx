@@ -392,11 +392,13 @@ private fun NetworkBrowserContent(
       val configuration = LocalConfiguration.current
       val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
       val isTablet = configuration.smallestScreenWidthDp >= 600
+      val dynamicVideos = if (isTablet || isLandscape) 4 else 2
       val gridColumns =
         if (manualGridColumnsEnabled) {
-          if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
+          val pref = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
+          pref.coerceIn(1, dynamicVideos + 4)
         } else {
-          if (isTablet || isLandscape) 4 else 2
+          dynamicVideos
         }
 
       val listState = rememberLazyListState()

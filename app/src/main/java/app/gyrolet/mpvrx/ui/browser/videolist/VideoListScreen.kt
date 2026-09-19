@@ -926,20 +926,22 @@ internal fun VideoListContent(
         val contentHorizontalPadding = 8.dp
         val itemSpacing = 2.dp
         val usableWidth = maxWidth - (contentHorizontalPadding * 2) - itemSpacing
+        val videoMinWidth =
+          if (app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(LocalContext.current)) {
+            240.dp
+          } else {
+            130.dp
+          }
+        val dynamicVideos = (usableWidth / videoMinWidth).toInt().coerceAtLeast(1)
         val videoGridColumns =
           if (isAudio) {
             val audioMinWidth = musicGridCoverArtSize.dp
             (usableWidth / audioMinWidth).toInt().coerceAtLeast(1)
           } else if (manualGridColumnsEnabled) {
-            videoGridColumnsPref.coerceAtLeast(1)
+            val maxSafeVideos = maxOf(dynamicVideos + 3, (usableWidth / 90.dp).toInt()).coerceAtLeast(1)
+            videoGridColumnsPref.coerceIn(1, maxSafeVideos)
           } else {
-            val videoMinWidth =
-              if (app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(LocalContext.current)) {
-                240.dp
-              } else {
-                130.dp
-              }
-            (usableWidth / videoMinWidth).toInt().coerceAtLeast(1)
+            dynamicVideos
           }
 
         // Must match the thumbnail size logic inside `VideoCard` for this screen,

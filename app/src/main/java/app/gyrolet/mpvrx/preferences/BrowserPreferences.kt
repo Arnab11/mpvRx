@@ -86,23 +86,23 @@ class BrowserPreferences(
   val dualPaneForTablet = preferenceStore.getBoolean("dual_pane_for_tablet", true)
 
   private val isTablet = context.resources.configuration.smallestScreenWidthDp >= 600
-  val maxColumns = if (isTablet) 8 else 4
+  val maxColumns = if (isTablet) 16 else 6
 
   private val _folderGridColumnsPortrait =
     preferenceStore.getInt(
       "folder_grid_columns_portrait",
       if (isTablet) 4 else 3,
     )
-  private val _folderGridColumnsLandscape = preferenceStore.getInt("folder_grid_columns_landscape", 5)
+  private val _folderGridColumnsLandscape = preferenceStore.getInt("folder_grid_columns_landscape", if (isTablet) 6 else 5)
 
   private val _videoGridColumnsPortrait = preferenceStore.getInt("video_grid_columns_portrait", if (isTablet) 4 else 2)
-  private val _videoGridColumnsLandscape = preferenceStore.getInt("video_grid_columns_landscape", 4)
+  private val _videoGridColumnsLandscape = preferenceStore.getInt("video_grid_columns_landscape", if (isTablet) 5 else 4)
 
   val folderGridColumnsPortrait: Preference<Int> = CoercedPreference(_folderGridColumnsPortrait, maxColumns)
-  val folderGridColumnsLandscape: Preference<Int> = CoercedPreference(_folderGridColumnsLandscape, 8)
+  val folderGridColumnsLandscape: Preference<Int> = CoercedPreference(_folderGridColumnsLandscape, if (isTablet) 16 else 10)
 
   val videoGridColumnsPortrait: Preference<Int> = CoercedPreference(_videoGridColumnsPortrait, maxColumns)
-  val videoGridColumnsLandscape: Preference<Int> = CoercedPreference(_videoGridColumnsLandscape, 8)
+  val videoGridColumnsLandscape: Preference<Int> = CoercedPreference(_videoGridColumnsLandscape, if (isTablet) 16 else 10)
 
   val showExtensionField = preferenceStore.getBoolean("show_extension_field", false)
   val showDurationField = preferenceStore.getBoolean("show_duration_field", true)
