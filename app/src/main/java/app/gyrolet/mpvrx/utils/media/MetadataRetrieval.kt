@@ -152,11 +152,17 @@ object MetadataRetrieval {
       val videosNeedingMetadata =
         videos.filter { video ->
           val needsVideoCodec = browserPreferences.showCodecSupportIndicator.get() && !video.isAudio
-          video.width == 0 ||
-            video.height == 0 ||
-            video.duration == 0L ||
-            video.fps == 0f ||
-            video.subtitleCodec.isEmpty() ||
+          val needsResolution =
+            browserPreferences.showResolutionChip.get() && !video.isAudio &&
+              (video.width == 0 || video.height == 0)
+          val needsFramerate =
+            browserPreferences.showFramerateInResolution.get() && !video.isAudio && video.fps == 0f
+          val needsSubtitleInfo =
+            browserPreferences.showSubtitleIndicator.get() && !video.isAudio && video.subtitleCodec.isEmpty()
+
+          needsResolution ||
+            needsFramerate ||
+            needsSubtitleInfo ||
             (needsVideoCodec && video.videoCodec.isBlank())
         }
 

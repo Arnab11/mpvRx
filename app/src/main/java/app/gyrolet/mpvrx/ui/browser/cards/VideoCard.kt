@@ -521,7 +521,7 @@ fun VideoCard(
               val fpsOnly = video.resolution.substringAfter("@", "")
               val hasFps = fpsOnly.isNotEmpty()
 
-              if (showResolutionChip && !video.isAudio) {
+              if (!isGridMode && showResolutionChip && !video.isAudio) {
                 if (video.resolution != "--") {
                   val displayResolution =
                     if (showFramerateInResolution) {
@@ -531,6 +531,25 @@ fun VideoCard(
                     }
 
                   Text(
+              if (isGridMode && showResolutionChip && !video.isAudio && video.resolution != "--") {
+                val displayResolution =
+                  if (showFramerateInResolution) video.resolution else video.resolution.substringBefore("@")
+                Box(
+                  modifier =
+                    Modifier
+                      .align(Alignment.BottomStart)
+                      .padding(6.dp)
+                      .cardOverlay()
+                      .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                  Text(
+                    text = displayResolution,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = Color.White,
+                  )
+                }
+              }
+
                     displayResolution,
                     style = MaterialTheme.typography.labelSmall,
                     modifier =
