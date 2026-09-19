@@ -512,16 +512,12 @@ private fun GridColumnsNextSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
           )
           Text(
             text = if (folderGridColumnSelector.unitSuffix.isEmpty()) "${folderGridColumnSelector.currentValue}" else "${folderGridColumnSelector.currentValue} ${folderGridColumnSelector.unitSuffix}",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(start = 8.dp),
           )
         }
         Slider(
@@ -551,16 +547,12 @@ private fun GridColumnsNextSection(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
           )
           Text(
             text = if (videoGridColumnSelector.unitSuffix.isEmpty()) "${videoGridColumnSelector.currentValue}" else "${videoGridColumnSelector.currentValue} ${videoGridColumnSelector.unitSuffix}",
             style = MaterialTheme.typography.bodySmall,
             fontWeight = FontWeight.SemiBold,
             color = MaterialTheme.colorScheme.primary,
-            maxLines = 1,
-            softWrap = false,
-            modifier = Modifier.padding(start = 8.dp),
           )
         }
         Slider(
@@ -591,8 +583,6 @@ private fun GridColumnsNextSection(
         style = MaterialTheme.typography.bodySmall,
         fontWeight = FontWeight.SemiBold,
         color = MaterialTheme.colorScheme.primary,
-        maxLines = 1,
-        softWrap = false,
       )
     }
     Slider(

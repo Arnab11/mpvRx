@@ -58,11 +58,19 @@ fun FolderSortDialog(
   val folderViewVideoLayoutMode by browserPreferences.folderViewVideoLayoutMode.collectAsState()
   val separateFolderVideoLayout by browserPreferences.separateFolderVideoLayout.collectAsState()
   val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
+  val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
+  val folderGridColumnsPortrait by browserPreferences.folderGridColumnsPortrait.collectAsState()
+  val folderGridColumnsLandscape by browserPreferences.folderGridColumnsLandscape.collectAsState()
+  val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
+  val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
 
   val configuration = androidx.compose.ui.platform.LocalConfiguration.current
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
   val isTablet = configuration.smallestScreenWidthDp >= 600
   val maxColumns = if (isTablet || isLandscape) 8 else 4
+
+  val folderGridColumns = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
+  val videoGridColumns = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
 
   val screenWidthDp = configuration.screenWidthDp.dp
   val contentHorizontalPadding = 8.dp
@@ -86,14 +94,43 @@ fun FolderSortDialog(
   val isAlbumView = embeddedAlbumView || folderViewMode == FolderViewMode.AlbumView
   val activeLayoutMode = if (isAlbumView) folderViewFolderLayoutMode else mediaLayoutMode
 
-  val (folderGridColumnSelector, videoGridColumnSelector) =
-    rememberGridColumnSelectors(
-      layoutMode = activeLayoutMode,
-      isLandscape = isLandscape,
-      maxColumns = maxColumns,
-      dynamicFolderColumns = dynamicFolderColumns,
-      dynamicVideoColumns = dynamicVideoColumns,
-    )
+  val folderGridColumnSelector =
+    if (activeLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Folder (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = folderGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.folderGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.folderGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
+
+  val videoGridColumnSelector =
+    if (activeLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Video (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = videoGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.videoGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.videoGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
 
   SortDialog(
     isOpen = isOpen,
@@ -245,6 +282,24 @@ fun FolderSortDialog(
         if (activeLayoutMode == MediaLayoutMode.GRID) {
           add(
             VisibilityToggle(
+              label = "Manual Grid Columns",
+              checked = manualGridColumnsEnabled,
+              onCheckedChange = { enabled ->
+                if (enabled) {
+                  if (isLandscape) {
+                    browserPreferences.folderGridColumnsLandscape.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsLandscape.set(dynamicVideoColumns)
+                  } else {
+                    browserPreferences.folderGridColumnsPortrait.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsPortrait.set(dynamicVideoColumns)
+                  }
+                }
+                browserPreferences.manualGridColumnsEnabled.set(enabled)
+              },
+            ),
+          )
+          add(
+            VisibilityToggle(
               label = "Folder Thumbnails",
               checked = showFolderThumbnails,
               onCheckedChange = { browserPreferences.showFolderThumbnails.set(it) },
@@ -296,6 +351,11 @@ fun VideoSortDialog(
   val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
   val folderViewMode by browserPreferences.folderViewMode.collectAsState()
   val centerGridTitles by browserPreferences.centerGridTitles.collectAsState()
+  val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
+  val folderGridColumnsPortrait by browserPreferences.folderGridColumnsPortrait.collectAsState()
+  val folderGridColumnsLandscape by browserPreferences.folderGridColumnsLandscape.collectAsState()
+  val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
+  val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
 
   val activeLayoutMode = if (isFolderView) folderViewVideoLayoutMode else mediaLayoutMode
 
@@ -303,6 +363,9 @@ fun VideoSortDialog(
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
   val isTablet = configuration.smallestScreenWidthDp >= 600
   val maxColumns = if (isTablet || isLandscape) 8 else 4
+
+  val folderGridColumns = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
+  val videoGridColumns = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
 
   val screenWidthDp = configuration.screenWidthDp.dp
   val contentHorizontalPadding = 8.dp
@@ -320,14 +383,43 @@ fun VideoSortDialog(
   val dynamicFolderColumns = (usableFolderWidth / folderMinWidth).toInt().coerceIn(1, maxColumns)
   val dynamicVideoColumns = (usableVideoWidth / videoMinWidth).toInt().coerceIn(1, maxColumns)
 
-  val (folderGridColumnSelector, videoGridColumnSelector) =
-    rememberGridColumnSelectors(
-      layoutMode = activeLayoutMode,
-      isLandscape = isLandscape,
-      maxColumns = maxColumns,
-      dynamicFolderColumns = dynamicFolderColumns,
-      dynamicVideoColumns = dynamicVideoColumns,
-    )
+  val folderGridColumnSelector =
+    if (activeLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Folder (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = folderGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.folderGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.folderGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
+
+  val videoGridColumnSelector =
+    if (activeLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Video (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = videoGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.videoGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.videoGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
 
   SortDialog(
     isOpen = isOpen,
@@ -508,6 +600,24 @@ fun VideoSortDialog(
         if (activeLayoutMode == MediaLayoutMode.GRID) {
           add(
             VisibilityToggle(
+              label = "Manual Grid Columns",
+              checked = manualGridColumnsEnabled,
+              onCheckedChange = { enabled ->
+                if (enabled) {
+                  if (isLandscape) {
+                    browserPreferences.folderGridColumnsLandscape.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsLandscape.set(dynamicVideoColumns)
+                  } else {
+                    browserPreferences.folderGridColumnsPortrait.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsPortrait.set(dynamicVideoColumns)
+                  }
+                }
+                browserPreferences.manualGridColumnsEnabled.set(enabled)
+              },
+            ),
+          )
+          add(
+            VisibilityToggle(
               label = "Center Titles",
               checked = centerGridTitles,
               onCheckedChange = { browserPreferences.centerGridTitles.set(it) },
@@ -545,11 +655,19 @@ fun FileSystemSortDialog(
   val showDurationField by browserPreferences.showDurationField.collectAsState()
   val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
   val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
+  val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
+  val folderGridColumnsPortrait by browserPreferences.folderGridColumnsPortrait.collectAsState()
+  val folderGridColumnsLandscape by browserPreferences.folderGridColumnsLandscape.collectAsState()
+  val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
+  val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
 
   val configuration = androidx.compose.ui.platform.LocalConfiguration.current
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
   val isTablet = configuration.smallestScreenWidthDp >= 600
   val maxColumns = if (isTablet || isLandscape) 8 else 4
+
+  val folderGridColumns = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
+  val videoGridColumns = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
 
   val screenWidthDp = configuration.screenWidthDp.dp
   val contentHorizontalPadding = 8.dp
@@ -562,14 +680,43 @@ fun FileSystemSortDialog(
   val dynamicFolderColumns = (usableWidth / folderMinWidth).toInt().coerceIn(1, maxColumns)
   val dynamicVideoColumns = (usableWidth / videoMinWidth).toInt().coerceIn(1, maxColumns)
 
-  val (folderGridColumnSelector, videoGridColumnSelector) =
-    rememberGridColumnSelectors(
-      layoutMode = mediaLayoutMode,
-      isLandscape = isLandscape,
-      maxColumns = maxColumns,
-      dynamicFolderColumns = dynamicFolderColumns,
-      dynamicVideoColumns = dynamicVideoColumns,
-    )
+  val folderGridColumnSelector =
+    if (mediaLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Folder (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = folderGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.folderGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.folderGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
+
+  val videoGridColumnSelector =
+    if (mediaLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Video (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = videoGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.videoGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.videoGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
 
   SortDialog(
     isOpen = isOpen,
@@ -750,6 +897,26 @@ fun FileSystemSortDialog(
             onCheckedChange = { browserPreferences.showProgressBar.set(it) },
           ),
         )
+        if (mediaLayoutMode == MediaLayoutMode.GRID) {
+          add(
+            VisibilityToggle(
+              label = "Manual Grid Columns",
+              checked = manualGridColumnsEnabled,
+              onCheckedChange = { enabled ->
+                if (enabled) {
+                  if (isLandscape) {
+                    browserPreferences.folderGridColumnsLandscape.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsLandscape.set(dynamicVideoColumns)
+                  } else {
+                    browserPreferences.folderGridColumnsPortrait.set(dynamicFolderColumns)
+                    browserPreferences.videoGridColumnsPortrait.set(dynamicVideoColumns)
+                  }
+                }
+                browserPreferences.manualGridColumnsEnabled.set(enabled)
+              },
+            ),
+          )
+        }
       },
   )
 }
@@ -770,31 +937,35 @@ fun NetworkSortDialog(
   val showExtensionField by browserPreferences.showExtensionField.collectAsState()
   val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
   val centerGridTitles by browserPreferences.centerGridTitles.collectAsState()
+  val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
+  val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
+  val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
 
   val configuration = androidx.compose.ui.platform.LocalConfiguration.current
   val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
   val isTablet = configuration.smallestScreenWidthDp >= 600
   val maxColumns = if (isTablet || isLandscape) 8 else 4
 
-  val screenWidthDp = configuration.screenWidthDp.dp
-  val contentHorizontalPadding = 8.dp
-  val itemSpacing = 2.dp
-  val usableWidth = screenWidthDp - (contentHorizontalPadding * 2) - itemSpacing
-  val isTelevision =
-    app.gyrolet.mpvrx.utils.device.DeviceFormFactor.isTelevision(androidx.compose.ui.platform.LocalContext.current)
-  val folderMinWidth = if (isTelevision) 160.dp else 90.dp
-  val videoMinWidth = if (isTelevision) 240.dp else 130.dp
-  val dynamicFolderColumns = (usableWidth / folderMinWidth).toInt().coerceIn(1, maxColumns)
-  val dynamicVideoColumns = (usableWidth / videoMinWidth).toInt().coerceIn(1, maxColumns)
+  val videoGridColumns = if (isLandscape) videoGridColumnsLandscape else videoGridColumnsPortrait
 
-  val (folderGridColumnSelector, videoGridColumnSelector) =
-    rememberGridColumnSelectors(
-      layoutMode = networkLayoutMode,
-      isLandscape = isLandscape,
-      maxColumns = maxColumns,
-      dynamicFolderColumns = dynamicFolderColumns,
-      dynamicVideoColumns = dynamicVideoColumns,
-    )
+  val videoGridColumnSelector =
+    if (networkLayoutMode == MediaLayoutMode.GRID && manualGridColumnsEnabled) {
+      GridColumnSelector(
+        label = "Grid Columns (${if (isLandscape) "Landscape" else "Portrait"})",
+        currentValue = videoGridColumns.coerceIn(1, maxColumns),
+        onValueChange = {
+          if (isLandscape) {
+            browserPreferences.videoGridColumnsLandscape.set(it)
+          } else {
+            browserPreferences.videoGridColumnsPortrait.set(it)
+          }
+        },
+        valueRange = 1f..maxColumns.toFloat(),
+        steps = maxColumns - 2,
+      )
+    } else {
+      null
+    }
 
   SortDialog(
     isOpen = isOpen,
@@ -847,7 +1018,6 @@ fun NetworkSortDialog(
           )
         },
       ),
-    folderGridColumnSelector = folderGridColumnSelector,
     videoGridColumnSelector = videoGridColumnSelector,
     enableLayoutModeOptions = true,
     visibilityToggles =
@@ -888,6 +1058,15 @@ fun NetworkSortDialog(
           ),
         )
         if (networkLayoutMode == MediaLayoutMode.GRID) {
+          add(
+            VisibilityToggle(
+              label = "Manual Grid Columns",
+              checked = manualGridColumnsEnabled,
+              onCheckedChange = { enabled ->
+                browserPreferences.manualGridColumnsEnabled.set(enabled)
+              },
+            ),
+          )
           add(
             VisibilityToggle(
               label = "Center Titles",
@@ -1142,69 +1321,3 @@ fun AudiobookSortDialog(
 }
 
 
-private data class GridColumnSelectors(
-  val folder: GridColumnSelector?,
-  val video: GridColumnSelector?,
-)
-
-/** Builds the always-visible folder/video grid-column sliders for the view options panel. */
-@Composable
-private fun rememberGridColumnSelectors(
-  layoutMode: MediaLayoutMode,
-  isLandscape: Boolean,
-  maxColumns: Int,
-  dynamicFolderColumns: Int,
-  dynamicVideoColumns: Int,
-): GridColumnSelectors {
-  if (layoutMode != MediaLayoutMode.GRID) {
-    return GridColumnSelectors(folder = null, video = null)
-  }
-
-  val browserPreferences = koinInject<BrowserPreferences>()
-  val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
-  val folderColumnsPreference =
-    if (isLandscape) browserPreferences.folderGridColumnsLandscape else browserPreferences.folderGridColumnsPortrait
-  val videoColumnsPreference =
-    if (isLandscape) browserPreferences.videoGridColumnsLandscape else browserPreferences.videoGridColumnsPortrait
-  val folderColumnsPreferenceValue by folderColumnsPreference.collectAsState()
-  val videoColumnsPreferenceValue by videoColumnsPreference.collectAsState()
-
-  // First drag switches to manual; pin the other dimension to what is already on screen so it
-  // doesn't jump to a stale stored default.
-  val pinComputedColumns = {
-    if (!browserPreferences.manualGridColumnsEnabled.get()) {
-      folderColumnsPreference.set(dynamicFolderColumns)
-      videoColumnsPreference.set(dynamicVideoColumns)
-      browserPreferences.manualGridColumnsEnabled.set(true)
-    }
-  }
-
-  return GridColumnSelectors(
-    folder =
-      GridColumnSelector(
-        label = "Folders",
-        currentValue =
-          (if (manualGridColumnsEnabled) folderColumnsPreferenceValue else dynamicFolderColumns)
-            .coerceIn(1, maxColumns),
-        onValueChange = {
-          pinComputedColumns()
-          folderColumnsPreference.set(it)
-        },
-        valueRange = 1f..maxColumns.toFloat(),
-        steps = maxColumns - 2,
-      ),
-    video =
-      GridColumnSelector(
-        label = "Videos",
-        currentValue =
-          (if (manualGridColumnsEnabled) videoColumnsPreferenceValue else dynamicVideoColumns)
-            .coerceIn(1, maxColumns),
-        onValueChange = {
-          pinComputedColumns()
-          videoColumnsPreference.set(it)
-        },
-        valueRange = 1f..maxColumns.toFloat(),
-        steps = maxColumns - 2,
-      ),
-  )
-}
