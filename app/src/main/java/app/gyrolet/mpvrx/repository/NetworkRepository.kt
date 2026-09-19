@@ -9,6 +9,7 @@
 
 package app.gyrolet.mpvrx.repository
 
+import app.gyrolet.mpvrx.data.network.client.NetworkAuthenticationException
 import app.gyrolet.mpvrx.data.network.client.NetworkClient
 import app.gyrolet.mpvrx.data.network.client.NetworkClientFactory
 import app.gyrolet.mpvrx.data.network.credentials.NetworkCredentialCipher
@@ -290,6 +291,36 @@ class NetworkRepository(
 
   fun isConnected(connectionId: Long): Boolean = hasConnectedClient(connectionId)
 
+  /**
+   * Classifies whether [connection] is usable right now, without touching any particular file.
+   *
+   * An open session is *read through* rather than torn down and re-handshaken: [connect] closes the
+   * existing client before dialling, so a blip during the re-handshake would destroy a connection
+   * that was working. `hasConnectedClient` only selects the path — it is a local flag and is never
+   * trusted as the answer; the read that follows either succeeds or it does not.
+   *
+   * Credential rejections are only typed on the cold path, where the client's own connect()
+   * produces them; a failure against an already-open session reads as unreachable.
+   */
+  suspend fun probe(connection: NetworkConnection): NetworkProbeResult {
+    if (hasConnectedClient(connection.id)) {
+      return listFiles(connection, ROOT_PATH).fold(
+        onSuccess = { NetworkProbeResult.REACHABLE },
+        onFailure = { NetworkProbeResult.UNREACHABLE },
+      )
+    }
+    return connect(connection).fold(
+      onSuccess = { NetworkProbeResult.REACHABLE },
+      onFailure = { error ->
+        if (error.isAuthenticationFailure()) {
+          NetworkProbeResult.AUTHENTICATION_FAILED
+        } else {
+          NetworkProbeResult.UNREACHABLE
+        }
+      },
+    )
+  }
+
   suspend fun disconnectAll() =
     withContext(Dispatchers.IO) {
       clientLifecycleMutex.withLock {
@@ -389,6 +420,17 @@ class NetworkRepository(
       isAnonymous == other.isAnonymous &&
       useHttps == other.useHttps
 
+  /**
+   * Only the WebDAV client classifies credential rejections today; the rest surface them as
+   * generic failures, which read as "unreachable" — the safer of the two to be wrong about.
+   */
+  private companion object {
+    const val ROOT_PATH = "/"
+  }
+
+  private fun Throwable.isAuthenticationFailure(): Boolean =
+    generateSequence(this) { it.cause }.any { it is NetworkAuthenticationException }
+
   private fun Throwable.safeMessage(): String =
     if (
       this is NetworkCredentialUnavailableException ||
@@ -399,3 +441,6 @@ class NetworkRepository(
       message ?: "Connection failed"
     }
 }
+
+/** Outcome of [NetworkRepository.probe]. */
+enum class NetworkProbeResult { REACHABLE, AUTHENTICATION_FAILED, UNREACHABLE }

@@ -884,6 +884,18 @@ val MIGRATION_23_24 =
     }
   }
 
+/**
+ * Records the size of network playlist entries at the time they were added, so the playlist can
+ * show it without reaching out to the share. Table and column names must match Room's generated
+ * schema exactly, or Room rejects the database on open.
+ */
+val MIGRATION_26_27 =
+  object : Migration(26, 27) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL("ALTER TABLE `PlaylistItemEntity` ADD COLUMN `fileSize` INTEGER")
+    }
+  }
+
 val MIGRATION_24_25 =
   object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -948,6 +960,7 @@ val DatabaseModule =
           MIGRATION_23_24,
           MIGRATION_24_25,
           MIGRATION_25_26,
+          MIGRATION_26_27,
         ).build()
     }
 
