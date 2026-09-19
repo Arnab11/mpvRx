@@ -163,6 +163,7 @@ object FoldersPreferencesScreen : Screen {
           PreferenceSectionHeader(
             title = stringResource(R.string.pref_media_library_section),
             modifier = Modifier.settingsSearchTarget(R.string.pref_folders_title),
+            topPadding = 8.dp,
           )
 
           NoMediaPreferenceCard(
