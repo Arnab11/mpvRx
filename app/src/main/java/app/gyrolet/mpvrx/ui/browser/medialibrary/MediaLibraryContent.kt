@@ -90,6 +90,7 @@ import app.gyrolet.mpvrx.ui.browser.NavigationBarState
 import app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FileOperationProgressDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FolderPickerDialog
@@ -785,7 +786,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
 
     AddToPlaylistDialog(
       isOpen = addToPlaylistDialogOpen.value,
-      videos = selectionManager.getSelectedItems(),
+      candidates = selectionManager.getSelectedItems().toPlaylistCandidates(),
       onDismiss = { addToPlaylistDialogOpen.value = false },
       onSuccess = {
         selectionManager.clear()

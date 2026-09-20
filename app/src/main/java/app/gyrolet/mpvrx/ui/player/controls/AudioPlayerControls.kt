@@ -114,6 +114,7 @@ import app.gyrolet.mpvrx.repository.JellyfinRepository
 import app.gyrolet.mpvrx.repository.NavidromeRepository
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.player.resolveUri
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.PlaylistItem
@@ -2325,7 +2326,7 @@ fun AudioPlayerControls(
 
       AddToPlaylistDialog(
         isOpen = true,
-        videos = listOf(videoForPlaylist),
+        candidates = listOf(videoForPlaylist).toPlaylistCandidates(),
         onDismiss = { addToPlaylistDialogOpen = false },
         onSuccess = { addToPlaylistDialogOpen = false },
         isJellyfin = isJellyfinMedia,

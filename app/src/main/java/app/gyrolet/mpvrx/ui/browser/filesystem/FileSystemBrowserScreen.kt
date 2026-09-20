@@ -102,6 +102,7 @@ import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FileOperationProgressDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FileSystemSortDialog
@@ -1074,7 +1075,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
     // Add to Playlist Dialog
     AddToPlaylistDialog(
       isOpen = addToPlaylistDialogOpen.value,
-      videos = selectedVideos,
+      candidates = selectedVideos.toPlaylistCandidates(),
       onDismiss = { addToPlaylistDialogOpen.value = false },
       onSuccess = {
         selectionManager.clear()

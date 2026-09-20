@@ -34,6 +34,7 @@ import app.gyrolet.mpvrx.preferences.VideoSwipeAction
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.repository.MediaFileRepository
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.browser.videolist.VideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.videolist.buildVideoWithPlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.videolist.videoPlaybackIdentifiers
@@ -194,7 +195,7 @@ internal fun rememberVideoSwipeActions(
   playlistTarget?.let { target ->
     AddToPlaylistDialog(
       isOpen = true,
-      videos = target.videos,
+      candidates = target.videos.toPlaylistCandidates(),
       onDismiss = { playlistTarget = null },
       onSuccess = { currentOnChanged() },
       onItemsAdded = haptics::confirm,

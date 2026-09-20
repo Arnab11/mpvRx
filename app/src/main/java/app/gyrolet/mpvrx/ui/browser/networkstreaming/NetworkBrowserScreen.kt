@@ -76,7 +76,9 @@ import app.gyrolet.mpvrx.ui.browser.cards.NetworkVideoCard
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
+import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.NetworkSortDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.PlaylistAddCandidate
 import app.gyrolet.mpvrx.ui.browser.playlist.PlaylistDetailScreen
 import app.gyrolet.mpvrx.ui.browser.selection.rememberSelectionManager
 import app.gyrolet.mpvrx.ui.browser.states.EmptyState
@@ -117,7 +119,7 @@ data class NetworkBrowserScreen(
     val bookmarkPreferences = koinInject<NetworkBookmarkPreferences>()
     val playlistRepository = koinInject<PlaylistRepository>()
 
-    val selectionMode = targetPlaylistId != null
+    val isPickerMode = targetPlaylistId != null
 
     val networkSortType by browserPreferences.networkSortType.collectAsState()
     val networkSortOrder by browserPreferences.networkSortOrder.collectAsState()
@@ -194,20 +196,25 @@ data class NetworkBrowserScreen(
     // one would count it without getSelectedItems() ever returning it.
     val selectablePaths = remember(selectableVideos) { selectableVideos.mapTo(mutableSetOf()) { it.path } }
 
+    // The picker writes straight into the playlist it was opened for; the ordinary browser has no
+    // target, so it collects a selection and hands it to AddToPlaylistDialog instead.
     val selectionManager =
-      if (selectionMode) {
-        rememberSelectionManager(
-          items = selectableVideos,
-          getId = { it.path },
-          onDeleteItems = { _, _ -> Pair(0, 0) },
-        )
-      } else {
-        null
-      }
+      rememberSelectionManager(
+        items = selectableVideos,
+        getId = { it.path },
+        onDeleteItems = { _, _ -> Pair(0, 0) },
+      )
+    val addToPlaylistDialogOpen = rememberSaveable { mutableStateOf(false) }
+
+    // The manager counts the ids it holds, while getSelectedItems() resolves them against the list
+    // it was given. Editing a search query can leave a selected id pointing at a file that is no
+    // longer listed, so every count shown here is taken from the resolved list — otherwise the
+    // bottom bar promises more files than the dialog can actually add.
+    val selectedFiles = selectionManager.getSelectedItems()
 
     fun addSelectedToPlaylist() {
       val target = targetPlaylistId ?: return
-      val selected = selectionManager?.getSelectedItems().orEmpty()
+      val selected = selectionManager.getSelectedItems()
       if (selected.isEmpty()) return
       scope.launch {
         withContext(Dispatchers.IO) {
@@ -239,7 +246,7 @@ data class NetworkBrowserScreen(
           isSearching = false
           searchQuery = ""
         }
-        selectionManager?.isInSelectionMode == true -> selectionManager.clear()
+        selectionManager.isInSelectionMode -> selectionManager.clear()
         else -> backstack.popSafely()
       }
     }
@@ -285,17 +292,19 @@ data class NetworkBrowserScreen(
         } else {
           BrowserTopBar(
             title = connectionName,
-            isInSelectionMode = selectionManager?.isInSelectionMode == true,
-            selectedCount = selectionManager?.selectedCount ?: 0,
-            totalCount = if (selectionMode) selectableVideos.size else files.size,
+            isInSelectionMode = selectionManager.isInSelectionMode,
+            selectedCount = selectedFiles.size,
+            // Folders and playlist files are not selectable here, so the selectable media is the
+            // only meaningful total for select-all.
+            totalCount = selectableVideos.size,
             onBackClick = {
-              if (selectionManager?.isInSelectionMode == true) {
+              if (selectionManager.isInSelectionMode) {
                 selectionManager.clear()
               } else {
                 backstack.popSafely()
               }
             },
-            onCancelSelection = { selectionManager?.clear() },
+            onCancelSelection = { selectionManager.clear() },
             onSortClick = { sortDialogOpen.value = true },
             onSearchClick = { isSearching = true },
             onSettingsClick = {
@@ -307,9 +316,9 @@ data class NetworkBrowserScreen(
             onInfoClick = null,
             onShareClick = null,
             onPlayClick = null,
-            onSelectAll = selectionManager?.let { { it.selectAll() } },
-            onInvertSelection = selectionManager?.let { { it.invertSelection() } },
-            onDeselectAll = selectionManager?.let { { it.clear() } },
+            onSelectAll = { selectionManager.selectAll() },
+            onInvertSelection = { selectionManager.invertSelection() },
+            onDeselectAll = { selectionManager.clear() },
             additionalActions = {
               if (canBookmarkCurrentFolder) {
                 IconButton(
@@ -347,14 +356,15 @@ data class NetworkBrowserScreen(
         }
       },
       bottomBar = {
-        val selectedCount = selectionManager?.selectedCount ?: 0
-        if (selectionMode && selectedCount > 0) {
+        if (selectedFiles.isNotEmpty()) {
           Surface(tonalElevation = 3.dp) {
             Button(
-              onClick = { addSelectedToPlaylist() },
+              onClick = {
+                if (isPickerMode) addSelectedToPlaylist() else addToPlaylistDialogOpen.value = true
+              },
               modifier = Modifier.fillMaxWidth().padding(16.dp),
             ) {
-              Text(stringResource(R.string.playlist_add_videos_button, selectedCount))
+              Text(stringResource(R.string.playlist_add_videos_button, selectedFiles.size))
             }
           }
         }
@@ -388,19 +398,36 @@ data class NetworkBrowserScreen(
           )
         },
         onVideoClick = { video ->
-          if (selectionMode) {
-            if (video.path in selectablePaths) selectionManager?.toggle(video)
+          if (isPickerMode || selectionManager.isInSelectionMode) {
+            if (video.path in selectablePaths) selectionManager.toggleFromUser(video)
           } else {
             viewModel.openMedia(video)
           }
         },
-        onVideoLongClick =
-          selectionManager?.let { manager ->
-            { video: NetworkFile -> manager.handleLongClick(video) }
-          },
-        isVideoSelected = { video -> selectionManager?.isSelected(video) == true },
+        onVideoLongClick = { video ->
+          // Playlist files are listed here but cannot be added to a playlist, so they must not
+          // open selection mode either.
+          if (video.path in selectablePaths) selectionManager.handleLongClick(video)
+        },
+        isVideoSelected = { video -> selectionManager.isSelected(video) },
         modifier = Modifier.padding(padding),
       )
+
+      if (!isPickerMode) {
+        AddToPlaylistDialog(
+          isOpen = addToPlaylistDialogOpen.value,
+          candidates =
+            selectedFiles.map { file ->
+              PlaylistAddCandidate(
+                path = NetworkPlaybackUri.create(connectionId, file.path),
+                name = file.name,
+                isAudio = file.isPlayableNetworkAudio(),
+              )
+            },
+          onDismiss = { addToPlaylistDialogOpen.value = false },
+          onSuccess = { selectionManager.clear() },
+        )
+      }
 
       NetworkSortDialog(
         isOpen = sortDialogOpen.value,

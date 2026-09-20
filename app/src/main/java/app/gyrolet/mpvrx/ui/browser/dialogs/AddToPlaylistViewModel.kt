@@ -38,6 +38,32 @@ data class PlaylistOption(
   val jellyfinItem: JellyfinItem? = null,
 )
 
+/**
+ * One entry the add-to-playlist dialog can write.
+ *
+ * Deliberately not a [Video]: network files carry only a path, a name and an audio flag, so
+ * fabricating the other twenty Video fields would push placeholder durations and bucket ids into
+ * the playlist UI. Playlist rows only ever need [path] and [name], which is exactly what the
+ * network picker already builds by hand.
+ */
+data class PlaylistAddCandidate(
+  val path: String,
+  val name: String,
+  val isAudio: Boolean,
+  /** Only read in Jellyfin mode; [toPlaylistCandidate] derives it from the stream path. */
+  val jellyfinItemId: String? = null,
+)
+
+fun List<Video>.toPlaylistCandidates(): List<PlaylistAddCandidate> = map { it.toPlaylistCandidate() }
+
+private fun Video.toPlaylistCandidate(): PlaylistAddCandidate =
+  PlaylistAddCandidate(
+    path = path,
+    name = displayName,
+    isAudio = isAudio,
+    jellyfinItemId = jellyfinItemIdFromPath(path, id),
+  )
+
 class AddToPlaylistViewModel :
   ViewModel(),
   KoinComponent {
@@ -103,54 +129,47 @@ class AddToPlaylistViewModel :
 
   suspend fun createAndAdd(
     name: String,
-    videos: List<Video>,
+    candidates: List<PlaylistAddCandidate>,
     isJellyfin: Boolean = false,
   ) = withContext(Dispatchers.IO) {
     if (isJellyfin) {
       val server = activeJellyfinServer ?: jellyfinRepository.allServers.firstOrNull()?.firstOrNull() ?: return@withContext
-      val itemIds = videos.map { extractJellyfinItemId(it) }
-      jellyfinRepository.createPlaylist(server, name, itemIds)
+      jellyfinRepository.createPlaylist(server, name, candidates.mapNotNull { it.jellyfinItemId })
     } else {
-      val isAudio = videos.firstOrNull()?.isAudio ?: return@withContext
-      val compatibleVideos = videos.filter { it.isAudio == isAudio }
+      val isAudio = candidates.firstOrNull()?.isAudio ?: return@withContext
       val playlistId = repository.createPlaylist(name, isAudio = isAudio).toInt()
-      repository.addItemsToPlaylist(playlistId, compatibleVideos.asPlaylistItems())
+      repository.addItemsToPlaylist(playlistId, candidates.filter { it.isAudio == isAudio }.asPlaylistItems())
     }
   }
 
   suspend fun addToPlaylist(
     option: PlaylistOption,
-    videos: List<Video>,
+    candidates: List<PlaylistAddCandidate>,
     isJellyfin: Boolean = false,
   ) = withContext(Dispatchers.IO) {
     if (isJellyfin) {
       val server = activeJellyfinServer ?: jellyfinRepository.allServers.firstOrNull()?.firstOrNull() ?: return@withContext
-      val itemIds = videos.map { extractJellyfinItemId(it) }
-      jellyfinRepository.addToPlaylist(server, option.id, itemIds)
+      jellyfinRepository.addToPlaylist(server, option.id, candidates.mapNotNull { it.jellyfinItemId })
     } else {
       val playlistId = option.id.toIntOrNull() ?: return@withContext
       val isAudio = option.localPlaylist?.isAudio ?: return@withContext
-      repository.addItemsToPlaylist(playlistId, videos.filter { it.isAudio == isAudio }.asPlaylistItems())
+      repository.addItemsToPlaylist(playlistId, candidates.filter { it.isAudio == isAudio }.asPlaylistItems())
     }
   }
 
-  private fun extractJellyfinItemId(video: Video): String {
-    val path = video.path
-    if (path.contains("/Audio/")) {
-      val sub = path.substringAfter("/Audio/")
-      return sub.substringBefore("/").substringBefore("?")
-    }
-    if (path.contains("/Videos/")) {
-      val sub = path.substringAfter("/Videos/")
-      return sub.substringBefore("/").substringBefore("?")
-    }
-    if (path.contains("/Items/")) {
-      val sub = path.substringAfter("/Items/")
-      return sub.substringBefore("/").substringBefore("?")
-    }
-    return video.id.toString()
-  }
+  private fun List<PlaylistAddCandidate>.asPlaylistItems(): List<PlaylistItemInput> =
+    map { candidate -> PlaylistItemInput(candidate.path, candidate.name) }
+}
 
-  private fun List<Video>.asPlaylistItems(): List<PlaylistItemInput> =
-    map { video -> PlaylistItemInput(video.path, video.displayName) }
+/** Jellyfin stream URLs carry the item id as their first path segment; other sources use the media id. */
+private fun jellyfinItemIdFromPath(
+  path: String,
+  fallbackId: Long,
+): String {
+  for (marker in listOf("/Audio/", "/Videos/", "/Items/")) {
+    if (path.contains(marker)) {
+      return path.substringAfter(marker).substringBefore("/").substringBefore("?")
+    }
+  }
+  return fallbackId.toString()
 }

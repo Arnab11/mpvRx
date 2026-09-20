@@ -76,6 +76,7 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -535,7 +536,7 @@ fun PlaylistSheet(
     val queueVideos = remember(playlist) { playlist.map { it.toVideo() } }
     AddToPlaylistDialog(
       isOpen = true,
-      videos = queueVideos,
+      candidates = queueVideos.toPlaylistCandidates(),
       onDismiss = { showAddToPlaylistDialog = false },
       onSuccess = { showAddToPlaylistDialog = false },
     )
