@@ -1853,7 +1853,7 @@
   <string name="pref_audio_effects">音频处理</string>
   <string name="toast_file_not_found">文件已不存在</string>
   <string name="pref_audio_visualizer_style_particle">粒子</string>
-  <string name="pref_section_p2p_streaming">P2P 流媒体播放, Ytdlp 管理器</string>
+  <string name="pref_section_p2p_streaming">P2P 流媒体播放</string>
   <string name="toast_torrent_streaming_disabled">请先在高级设置中启用 P2P 种子流媒体播放</string>
   <string name="ui_recent_stream_links">最近的链接</string>
   <string name="ui_torrent_files">种子</string>

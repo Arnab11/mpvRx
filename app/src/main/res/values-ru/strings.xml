@@ -1848,7 +1848,7 @@
   <string name="pref_audio_effects">Обработка звука</string>
   <string name="toast_file_not_found">Файл больше не существует</string>
   <string name="pref_audio_visualizer_style_particle">Частицы</string>
-  <string name="pref_section_p2p_streaming">P2P-стриминг, Менеджер Ytdlp</string>
+  <string name="pref_section_p2p_streaming">P2P-стриминг</string>
   <string name="toast_torrent_streaming_disabled">Сначала включите P2P-стриминг торрентов в расширенных настройках</string>
   <string name="ui_recent_stream_links">Недавние ссылки</string>
   <string name="ui_torrent_files">Торренты</string>

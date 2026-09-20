@@ -1854,7 +1854,7 @@
   <string name="pref_audio_effects">معالجة الصوت</string>
   <string name="toast_file_not_found">الملف لم يعد موجودًا</string>
   <string name="pref_audio_visualizer_style_particle">جسيمات</string>
-  <string name="pref_section_p2p_streaming">بث P2P, مدير Ytdlp</string>
+  <string name="pref_section_p2p_streaming">بث P2P</string>
   <string name="toast_torrent_streaming_disabled">فعّل بث التورنت P2P في الإعدادات المتقدمة أولاً</string>
   <string name="ui_recent_stream_links">الروابط الأخيرة</string>
   <string name="ui_torrent_files">تورنت</string>

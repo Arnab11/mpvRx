@@ -1840,7 +1840,7 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="pref_audio_effects">Procesamiento de audio</string>
   <string name="toast_file_not_found">El archivo ya no existe</string>
   <string name="pref_audio_visualizer_style_particle">Partículas</string>
-  <string name="pref_section_p2p_streaming">Transmisión P2P, Administrador Ytdlp</string>
+  <string name="pref_section_p2p_streaming">Transmisión P2P</string>
   <string name="toast_torrent_streaming_disabled">Active primero la transmisión de torrents P2P en los ajustes avanzados</string>
   <string name="ui_recent_stream_links">Enlaces recientes</string>
   <string name="ui_torrent_files">Torrents</string>

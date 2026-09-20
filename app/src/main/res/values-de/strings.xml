@@ -1840,7 +1840,7 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_audio_effects">Audioverarbeitung</string>
   <string name="toast_file_not_found">Datei ist nicht mehr vorhanden</string>
   <string name="pref_audio_visualizer_style_particle">Partikel</string>
-  <string name="pref_section_p2p_streaming">P2P-Streaming, Ytdlp-Manager</string>
+  <string name="pref_section_p2p_streaming">P2P-Streaming</string>
   <string name="toast_torrent_streaming_disabled">Aktiviere zuerst P2P-Torrent-Streaming in den erweiterten Einstellungen</string>
   <string name="ui_recent_stream_links">Letzte Links</string>
   <string name="ui_torrent_files">Torrents</string>
