@@ -25,13 +25,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetDragHandle
-import app.gyrolet.mpvrx.presentation.components.PlayerSheetHeader
 
 data class AudioPropertyItem(
   val label: String,
@@ -59,7 +56,6 @@ fun AudioPropertiesSheet(
     dragHandle = { PlayerSheetDragHandle() },
     modifier = modifier,
   ) {
-    PlayerSheetHeader(stringResource(R.string.ui_media_info))
     Column(
       modifier =
         Modifier

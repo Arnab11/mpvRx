@@ -106,13 +106,13 @@ fun DraggablePanel(
       shadowElevation = shadowElevation,
       border = border,
     ) {
-      Column(Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+      Column(Modifier.fillMaxWidth()) {
         // Drag Handle & Indicator
         Box(
           modifier =
             Modifier
               .fillMaxWidth()
-              .height(48.dp)
+              .height(32.dp)
               .pointerInput(maxOffset, minOffset) {
                 detectDragGestures { change, dragAmount ->
                   change.consume()

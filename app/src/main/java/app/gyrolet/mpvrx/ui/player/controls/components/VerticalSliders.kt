@@ -74,7 +74,7 @@ fun VerticalSlider(
     Box(
       Modifier
         .fillMaxWidth()
-        .fillMaxHeight(targetHeight.coerceAtLeast(0.05f)) // Keep a tiny amount visible
+        .fillMaxHeight(targetHeight)
         .clip(AppShapeScale.largeIncreased)
         .background(gradientBrush),
     )
@@ -123,7 +123,7 @@ fun VerticalSlider(
     Box(
       Modifier
         .fillMaxWidth()
-        .fillMaxHeight(targetHeight.coerceAtLeast(0.05f))
+        .fillMaxHeight(targetHeight)
         .clip(AppShapeScale.largeIncreased)
         .background(gradientBrush),
     )

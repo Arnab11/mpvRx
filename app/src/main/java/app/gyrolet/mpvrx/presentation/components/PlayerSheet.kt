@@ -339,19 +339,6 @@ fun PlayerSheetHeader(
   Box(
     modifier = modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 12.dp, end = 12.dp),
   ) {
-    Text(
-      text = title,
-      modifier =
-        Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 48.dp)
-          .align(Alignment.Center)
-          .semantics { heading() },
-      style = MaterialTheme.typography.titleLarge,
-      fontWeight = FontWeight.SemiBold,
-      color = MaterialTheme.colorScheme.onSurface,
-      textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-    )
     Row(
       modifier = Modifier.align(Alignment.CenterEnd),
       verticalAlignment = Alignment.CenterVertically,
