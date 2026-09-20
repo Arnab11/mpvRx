@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
+import app.gyrolet.mpvrx.utils.storage.VideoScanUtils
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -208,7 +209,7 @@ data object SecureFolderScreen : Screen {
               width = metadata?.width ?: 0,
               height = metadata?.height ?: 0,
               fps = metadata?.fps ?: 0f,
-              resolution = metadata?.let { formatResolutionWithFps(it.width, it.height, it.fps) } ?: "--",
+              resolution = metadata?.let { VideoScanUtils.formatResolutionWithFps(it.width, it.height, it.fps) } ?: "--",
               isAudio = entity.mimeType.startsWith("audio/"),
             )
         }
@@ -657,19 +658,7 @@ private fun formatResolution(
   width: Int,
   height: Int,
 ): String {
-  if (width <= 0 || height <= 0) return "--"
-
-  return when {
-    width >= 7680 || height >= 4320 -> "4320p"
-    width >= 3840 || height >= 2160 -> "2160p"
-    width >= 2560 || height >= 1440 -> "1440p"
-    width >= 1920 || height >= 1080 -> "1080p"
-    width >= 1280 || height >= 720 -> "720p"
-    width >= 854 || height >= 480 -> "480p"
-    width >= 640 || height >= 360 -> "360p"
-    width >= 426 || height >= 240 -> "240p"
-    else -> "${height}p"
-  }
+  return VideoScanUtils.formatResolution(width, height)
 }
 
 private fun formatResolutionWithFps(
@@ -677,10 +666,7 @@ private fun formatResolutionWithFps(
   height: Int,
   fps: Float,
 ): String {
-  val baseResolution = formatResolution(width, height)
-  if (baseResolution == "--" || fps <= 0f) return baseResolution
-
-  return "$baseResolution@${fps.toInt()}"
+  return VideoScanUtils.formatResolutionWithFps(width, height, fps)
 }
 
 

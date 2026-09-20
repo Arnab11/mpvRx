@@ -22,6 +22,7 @@ import app.gyrolet.mpvrx.database.entities.RecentlyPlayedEntity
 import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository
 import app.gyrolet.mpvrx.domain.media.model.Video
+import app.gyrolet.mpvrx.utils.storage.VideoScanUtils
 import app.gyrolet.mpvrx.domain.recentlyplayed.repository.RecentlyPlayedRepository
 import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 import app.gyrolet.mpvrx.utils.media.HttpUtils
@@ -258,7 +259,7 @@ class RecentlyPlayedViewModel(
         width = width,
         height = height,
         fps = fps,
-        resolution = if (isAudio) "--" else formatResolution(width, height),
+        resolution = if (isAudio) "--" else VideoScanUtils.formatResolution(width, height),
         isAudio = isAudio,
       )
     } catch (e: Exception) {
@@ -334,7 +335,7 @@ class RecentlyPlayedViewModel(
       width = width,
       height = height,
       fps = 0f, // Network videos typically don't have fps metadata stored
-      resolution = if (isAudio) "--" else formatResolution(width, height),
+      resolution = if (isAudio) "--" else VideoScanUtils.formatResolution(width, height),
       isAudio = isAudio,
       artworkUrl = entity?.artworkUrl,
     )
@@ -475,26 +476,6 @@ class RecentlyPlayedViewModel(
       bytes / 1024.0.pow(digitGroups.toDouble()),
       units[digitGroups],
     )
-  }
-
-  private fun formatResolution(
-    width: Int,
-    height: Int,
-  ): String {
-    if (width <= 0 || height <= 0) return "--"
-
-    return when {
-      width >= 7680 || height >= 4320 -> "4320p"
-      width >= 3840 || height >= 2160 -> "2160p"
-      width >= 2560 || height >= 1440 -> "1440p"
-      width >= 1920 || height >= 1080 -> "1080p"
-      width >= 1280 || height >= 720 -> "720p"
-      width >= 854 || height >= 480 -> "480p"
-      width >= 640 || height >= 360 -> "360p"
-      width >= 426 || height >= 240 -> "240p"
-      width >= 256 || height >= 144 -> "144p"
-      else -> "${height}p"
-    }
   }
 
   private fun isNetworkUri(path: String): Boolean =

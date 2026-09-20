@@ -427,23 +427,58 @@ object VideoScanUtils : KoinComponent {
     )
   }
 
-  private fun formatResolution(
+fun formatResolution(
     width: Int,
     height: Int,
-  ): String {
+): String {
     if (width <= 0 || height <= 0) return "--"
 
+    val longSide = maxOf(width, height)
+    val shortSide = minOf(width, height)
+
     return when {
-      width >= 7680 || height >= 4320 -> "4320p"
-      width >= 3840 || height >= 2160 -> "2160p"
-      width >= 2560 || height >= 1440 -> "1440p"
-      width >= 1920 || height >= 1080 -> "1080p"
-      width >= 1280 || height >= 720 -> "720p"
-      width >= 854 || height >= 480 -> "480p"
-      width >= 640 || height >= 360 -> "360p"
-      width >= 426 || height >= 240 -> "240p"
-      else -> "${height}p"
+        // 8K / 4320p class
+        longSide >= 7680 || shortSide >= 4320 -> "4320p"
+
+        // 4K / 2160p class
+        // Includes cinematic 4K such as 3840×1600
+        longSide >= 3840 || shortSide >= 2160 -> "2160p"
+
+        // QHD / 1440p class
+        // Includes ultrawide 3440×1440
+        longSide >= 2560 && shortSide >= 1350 -> "1440p"
+
+        // FHD / 1080p class
+        // Includes cinematic 1920×800, 1920×816, etc.
+        // and ultrawide 2560×1080
+        longSide >= 1920 && shortSide >= 750 -> "1080p"
+
+        // HD / 720p class
+        // Includes 1280×544, 1280×576, etc.
+        longSide >= 1280 && shortSide >= 500 -> "720p"
+
+        // 480p class
+        longSide >= 854 || shortSide >= 480 -> "480p"
+
+        // 360p class
+        longSide >= 640 || shortSide >= 360 -> "360p"
+
+        // 240p class
+        longSide >= 426 || shortSide >= 240 -> "240p"
+
+        // 144p / everything below 240p
+        else -> "144p"
     }
+}
+
+  fun formatResolutionWithFps(
+    width: Int,
+    height: Int,
+    fps: Float,
+  ): String {
+    val resolution = formatResolution(width, height)
+    if (resolution == "--" || !fps.isFinite() || fps <= 0f) return resolution
+    return "$resolution@${fps.toInt()}"
   }
 }
 

@@ -17,8 +17,7 @@
 </p>
 
 > [!IMPORTANT]
-> **Well Development is now Resumed**
-
+> [Join us on Telegram](https://t.me/+yA0f2nknCAc1ODZl)
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android-brightgreen.svg" />
