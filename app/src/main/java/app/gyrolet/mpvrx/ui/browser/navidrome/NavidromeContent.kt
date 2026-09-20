@@ -375,6 +375,30 @@ fun NavidromeContent(
                     },
                   )
 
+                  DropdownMenuItem(
+                    text = {
+                      Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth(),
+                      ) {
+                        Text(stringResource(R.string.audiobooks_title))
+                      }
+                    },
+                    leadingIcon = {
+                      Icon(
+                        Icons.RoundedFilled.Audiobookshelf,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(20.dp),
+                      )
+                    },
+                    onClick = {
+                      isSourceDropdownOpen = false
+                      backstack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen)
+                    },
+                  )
+
                   HorizontalDivider()
 
                   DropdownMenuItem(
@@ -389,23 +413,6 @@ fun NavidromeContent(
                   )
                 }
               }
-            }
-            app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
-              Icons.RoundedFilled.Audiobookshelf,
-              stringResource(R.string.audiobooks_title),
-            ) { backstack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
-          },
-          postSearchActions = {
-            IconButton(
-              onClick = { backstack.navigateTo(app.gyrolet.mpvrx.ui.downloads.DownloadsScreen) },
-              modifier = Modifier.padding(horizontal = 2.dp),
-            ) {
-              Icon(
-                imageVector = Icons.RoundedFilled.Download,
-                contentDescription = stringResource(R.string.downloads_open_downloads),
-                modifier = Modifier.size(24.dp),
-                tint = MaterialTheme.colorScheme.secondary,
-              )
             }
           },
         )

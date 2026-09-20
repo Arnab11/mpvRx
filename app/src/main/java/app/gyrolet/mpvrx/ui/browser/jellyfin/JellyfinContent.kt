@@ -1158,6 +1158,30 @@ fun JellyfinContent(
                       )
                     }
 
+                    DropdownMenuItem(
+                      text = {
+                        Row(
+                          verticalAlignment = Alignment.CenterVertically,
+                          horizontalArrangement = Arrangement.SpaceBetween,
+                          modifier = Modifier.fillMaxWidth(),
+                        ) {
+                          Text(stringResource(R.string.audiobooks_title))
+                        }
+                      },
+                      leadingIcon = {
+                        Icon(
+                          Icons.RoundedFilled.Audiobookshelf,
+                          contentDescription = null,
+                          tint = MaterialTheme.colorScheme.primary,
+                          modifier = Modifier.size(20.dp),
+                        )
+                      },
+                      onClick = {
+                        isSourceDropdownOpen = false
+                        backstack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen)
+                      },
+                    )
+
                     HorizontalDivider()
 
                     DropdownMenuItem(
@@ -1173,14 +1197,10 @@ fun JellyfinContent(
                   }
                 }
               }
-              app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
-                Icons.RoundedFilled.Audiobookshelf,
-                stringResource(R.string.audiobooks_title),
-              ) { backstack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
             }
           },
           postSearchActions = {
-            if (!selectionManager.isInSelectionMode) {
+            if (!selectionManager.isInSelectionMode && !isMusicOnlyMode) {
               IconButton(
                 onClick = { backstack.navigateTo(app.gyrolet.mpvrx.ui.downloads.DownloadsScreen) },
                 modifier = Modifier.padding(horizontal = 2.dp),

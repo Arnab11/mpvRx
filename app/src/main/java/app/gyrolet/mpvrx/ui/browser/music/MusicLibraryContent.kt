@@ -546,7 +546,7 @@ fun MusicLibraryContent(
               isSingleSelection = activeSelectionManager.isSingleSelection,
               onInfoClick = null,
               preSearchActions = {
-                if (!activeSelectionManager.isInSelectionMode && (hasJellyfinMusicLibrary || hasNavidromeServer)) {
+                if (!activeSelectionManager.isInSelectionMode) {
                   var isSourceDropdownOpen by remember { mutableStateOf(false) }
                   Box {
                     Surface(
@@ -709,6 +709,30 @@ fun MusicLibraryContent(
                         )
                       }
 
+                      DropdownMenuItem(
+                        text = {
+                          Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier.fillMaxWidth(),
+                          ) {
+                            Text(stringResource(R.string.audiobooks_title))
+                          }
+                        },
+                        leadingIcon = {
+                          Icon(
+                            Icons.RoundedFilled.Audiobookshelf,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(20.dp),
+                          )
+                        },
+                        onClick = {
+                          isSourceDropdownOpen = false
+                          backStack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen)
+                        },
+                      )
+
                       HorizontalDivider()
 
                       DropdownMenuItem(
@@ -723,11 +747,6 @@ fun MusicLibraryContent(
                       )
                     }
                   }
-                }
-                if (!activeSelectionManager.isInSelectionMode) {
-                  app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookIconButton(
-                    Icons.RoundedFilled.Audiobookshelf, stringResource(R.string.audiobooks_title),
-                  ) { backStack.navigateTo(app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryScreen) }
                 }
               },
             )
