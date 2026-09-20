@@ -142,6 +142,7 @@ import app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue
 import app.gyrolet.mpvrx.ui.browser.components.rememberSwipePlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.components.rememberVideoSwipeActions
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.browser.fab.FabScrollHelper
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FolderSortDialog
@@ -1363,7 +1364,7 @@ fun MusicLibraryContent(
         selectedVideosForAddToPlaylist?.let { videos ->
           AddToPlaylistDialog(
             isOpen = true,
-            videos = videos,
+            candidates = videos.toPlaylistCandidates(),
             onDismiss = { selectedVideosForAddToPlaylist = null },
             onSuccess = { selectedVideosForAddToPlaylist = null }
           )

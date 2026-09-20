@@ -91,6 +91,7 @@ import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
+import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.browser.components.rememberVideoSwipeActions
 import app.gyrolet.mpvrx.ui.browser.dialogs.DeleteConfirmationDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.FileOperationProgressDialog
@@ -757,7 +758,7 @@ data class VideoListScreen(
       // Add to Playlist Dialog
       AddToPlaylistDialog(
         isOpen = addToPlaylistDialogOpen.value,
-        videos = selectionManager.getSelectedItems(),
+        candidates = selectionManager.getSelectedItems().toPlaylistCandidates(),
         onDismiss = { addToPlaylistDialogOpen.value = false },
         onSuccess = {
           selectionManager.clear()

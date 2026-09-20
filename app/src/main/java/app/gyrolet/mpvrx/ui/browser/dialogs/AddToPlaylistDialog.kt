@@ -50,7 +50,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
-import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
@@ -62,7 +61,7 @@ import java.util.Locale
 @Composable
 fun AddToPlaylistDialog(
   isOpen: Boolean,
-  videos: List<Video>,
+  candidates: List<PlaylistAddCandidate>,
   onDismiss: () -> Unit,
   onSuccess: () -> Unit,
   isJellyfin: Boolean = false,
@@ -74,8 +73,8 @@ fun AddToPlaylistDialog(
   val scope = rememberCoroutineScope()
   var showCreateDialog by remember { mutableStateOf(false) }
   val context = LocalContext.current
-  val isAudio = remember(videos) { videos.firstOrNull()?.isAudio == true }
-  val compatibleVideos = remember(videos, isAudio) { videos.filter { it.isAudio == isAudio } }
+  val isAudio = remember(candidates) { candidates.firstOrNull()?.isAudio == true }
+  val compatibleCandidates = remember(candidates, isAudio) { candidates.filter { it.isAudio == isAudio } }
 
   androidx.compose.runtime.LaunchedEffect(isOpen, isAudio, isJellyfin) {
     if (isOpen) {
@@ -90,11 +89,11 @@ fun AddToPlaylistDialog(
       onDismiss = { showCreateDialog = false },
       onConfirm = { name ->
         scope.launch {
-          viewModel.createAndAdd(name, compatibleVideos, isJellyfin = isJellyfin)
+          viewModel.createAndAdd(name, compatibleCandidates, isJellyfin = isJellyfin)
           val message =
             context.getString(
               if (isAudio) R.string.playlist_add_songs_success else R.string.playlist_add_videos_success,
-              compatibleVideos.size,
+              compatibleCandidates.size,
             )
           Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
           showCreateDialog = false
@@ -127,9 +126,9 @@ fun AddToPlaylistDialog(
         Text(
           text =
             if (isAudio) {
-              if (videos.size == 1) "Adding 1 song to playlist" else "Adding ${videos.size} songs to playlist"
+              if (candidates.size == 1) "Adding 1 song to playlist" else "Adding ${candidates.size} songs to playlist"
             } else {
-              if (videos.size == 1) "Adding 1 video to playlist" else "Adding ${videos.size} videos to playlist"
+              if (candidates.size == 1) "Adding 1 video to playlist" else "Adding ${candidates.size} videos to playlist"
             },
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -176,11 +175,11 @@ fun AddToPlaylistDialog(
                 option = option,
                 onClick = {
                   scope.launch {
-                    viewModel.addToPlaylist(option, compatibleVideos, isJellyfin = isJellyfin)
+                    viewModel.addToPlaylist(option, compatibleCandidates, isJellyfin = isJellyfin)
                     val message =
                       context.getString(
                         if (isAudio) R.string.playlist_add_songs_success else R.string.playlist_add_videos_success,
-                        compatibleVideos.size,
+                        compatibleCandidates.size,
                       )
                     Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     onItemsAdded()
