@@ -2297,6 +2297,8 @@
   <string name="pref_appearance_custom_wallpaper_transparency">Transparency</string>
   <string name="pref_appearance_custom_wallpaper_save">Save wallpaper</string>
   <string name="pref_appearance_custom_wallpaper_adjust">Adjust</string>
+  <string name="pref_appearance_custom_wallpaper_home_preview">Home preview</string>
+  <string name="pref_appearance_custom_wallpaper_home_preview_close">Tap anywhere to close</string>
   <string name="pref_appearance_custom_wallpaper_gesture_hint">Drag to reposition. Pinch to zoom.</string>
   <string name="pref_appearance_custom_wallpaper_reset">Reset</string>
   <string name="pref_appearance_custom_wallpaper_fit">Fit</string>

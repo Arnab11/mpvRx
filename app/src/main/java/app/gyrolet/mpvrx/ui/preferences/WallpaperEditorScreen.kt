@@ -14,6 +14,7 @@ import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -21,6 +22,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -32,11 +38,13 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -54,6 +62,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -83,6 +95,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import org.koin.compose.koinInject
 
 @Serializable
@@ -127,6 +141,7 @@ data class WallpaperEditorScreen(
     }
     var previewLocked by rememberSaveable(sourceUri) { mutableStateOf(false) }
     var previewAspect by rememberSaveable(sourceUri) { mutableStateOf<Float?>(null) }
+    var showHomePreview by rememberSaveable(sourceUri) { mutableStateOf(false) }
     val bitmap =
       produceState<Bitmap?>(initialValue = null, resolvedSource) {
         val loaded = withContext(Dispatchers.IO) { loadWallpaperBitmap(context, resolvedSource) }
@@ -330,6 +345,16 @@ data class WallpaperEditorScreen(
                   modifier = Modifier.fillMaxSize(),
                 )
               }
+              ExtendedFloatingActionButton(
+                onClick = { showHomePreview = true },
+                icon = { Icon(Icons.RoundedFilled.Visibility, contentDescription = null) },
+                text = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_home_preview)) },
+                modifier =
+                  Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(12.dp)
+                    .tvFocusHighlight(RoundedCornerShape(16.dp), focusedScale = 1.05f),
+              )
             }
           }
         }
@@ -415,6 +440,19 @@ data class WallpaperEditorScreen(
         }
       }
     }
+
+    if (showHomePreview && bitmap != null) {
+      WallpaperHomePreviewDialog(
+        bitmap = bitmap,
+        zoom = zoom,
+        offsetX = offsetX,
+        offsetY = offsetY,
+        scaleMode = scaleMode,
+        blur = blur,
+        alpha = alpha,
+        onDismiss = { showHomePreview = false },
+      )
+    }
   }
 }
 
@@ -435,6 +473,163 @@ private fun WallpaperSlider(
     )
   }
 }
+
+/**
+ * Full-screen preview that mimics the app's home screen (top bar, folder list, bottom nav)
+ * drawn over the wallpaper using the *unsaved* editor values. Tap anywhere or press back to close.
+ */
+@Composable
+private fun WallpaperHomePreviewDialog(
+  bitmap: Bitmap,
+  zoom: Float,
+  offsetX: Float,
+  offsetY: Float,
+  scaleMode: WallpaperScaleMode,
+  blur: Float,
+  alpha: Float,
+  onDismiss: () -> Unit,
+) {
+  Dialog(
+    onDismissRequest = onDismiss,
+    properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+  ) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+      modifier =
+        Modifier
+          .fillMaxSize()
+          .background(colors.background)
+          .clickable(onClick = onDismiss),
+    ) {
+      WallpaperImage(
+        bitmap = bitmap,
+        zoom = zoom,
+        offsetX = offsetX,
+        offsetY = offsetY,
+        scaleMode = scaleMode,
+        blurRadius = blur,
+        imageAlpha = alpha,
+        modifier = Modifier.fillMaxSize(),
+      )
+      // Same scrim AppWallpaperHost puts over the wallpaper.
+      Box(
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .background(
+              if (colors.background.luminance() < 0.5f) Color.Black.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
+            ),
+      )
+
+      Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
+        // Top bar
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Text(
+            text = stringResource(R.string.app_name),
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = colors.onBackground,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.weight(1f),
+          )
+          Icon(Icons.RoundedFilled.Search, contentDescription = null, tint = colors.onBackground)
+          Spacer(Modifier.width(16.dp))
+          Icon(Icons.RoundedFilled.MoreVert, contentDescription = null, tint = colors.onBackground)
+        }
+
+        // Fake folder list
+        Column(
+          modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          HOME_PREVIEW_FOLDERS.forEach { (name, count) ->
+            Surface(
+              shape = RoundedCornerShape(20.dp),
+              color = colors.surfaceContainerLow.copy(alpha = 0.88f),
+              modifier = Modifier.fillMaxWidth(),
+            ) {
+              Row(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically,
+              ) {
+                Icon(Icons.RoundedFilled.Folder, contentDescription = null, tint = colors.primary, modifier = Modifier.size(32.dp))
+                Column(modifier = Modifier.padding(start = 16.dp)) {
+                  Text(name, style = MaterialTheme.typography.titleMedium, color = colors.onSurface, maxLines = 1)
+                  Text(count, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
+              }
+            }
+          }
+        }
+
+        // Fake bottom nav pill
+        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
+          Surface(
+            shape = CircleShape,
+            color = colors.surfaceContainer.copy(alpha = 0.92f),
+          ) {
+            Row(
+              modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+            ) {
+              listOf(Icons.RoundedFilled.Home, Icons.RoundedFilled.VideoLibrary, Icons.RoundedFilled.Download, Icons.RoundedFilled.Settings)
+                .forEachIndexed { index, icon ->
+                  Box(
+                    modifier =
+                      Modifier
+                        .size(width = 64.dp, height = 40.dp)
+                        .clip(CircleShape)
+                        .background(if (index == 0) colors.secondaryContainer else Color.Transparent),
+                    contentAlignment = Alignment.Center,
+                  ) {
+                    Icon(
+                      icon,
+                      contentDescription = null,
+                      tint = if (index == 0) colors.onSecondaryContainer else colors.onSurfaceVariant,
+                    )
+                  }
+                }
+            }
+          }
+        }
+      }
+
+      // Close chip
+      Surface(
+        shape = CircleShape,
+        color = colors.inverseSurface.copy(alpha = 0.85f),
+        modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 4.dp),
+      ) {
+        Row(
+          modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Icon(Icons.RoundedFilled.Close, contentDescription = null, tint = colors.inverseOnSurface, modifier = Modifier.size(16.dp))
+          Text(
+            text = stringResource(R.string.pref_appearance_custom_wallpaper_home_preview_close),
+            style = MaterialTheme.typography.labelMedium,
+            color = colors.inverseOnSurface,
+            modifier = Modifier.padding(start = 6.dp),
+          )
+        }
+      }
+    }
+  }
+}
+
+private val HOME_PREVIEW_FOLDERS =
+  listOf(
+    "Camera" to "128 videos",
+    "Downloads" to "42 videos",
+    "Movies" to "17 videos",
+    "Screen recordings" to "9 videos",
+    "WhatsApp Video" to "63 videos",
+  )
 
 private data class AspectPreset(
   val label: String,
