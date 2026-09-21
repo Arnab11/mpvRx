@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
@@ -223,6 +224,7 @@ fun AudioTrackRow(
         .heightIn(min = 56.dp)
         .padding(horizontal = 8.dp, vertical = 2.dp)
         .background(containerColor, MaterialTheme.shapes.medium)
+        .clip(MaterialTheme.shapes.medium)
         .tvFocusHighlight(enabled = enabled)
         .selectable(selected = isSelected, enabled = enabled, role = Role.RadioButton) {
           onClick()

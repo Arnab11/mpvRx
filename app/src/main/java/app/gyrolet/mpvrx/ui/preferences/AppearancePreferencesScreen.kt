@@ -9,6 +9,7 @@
 
 package app.gyrolet.mpvrx.ui.preferences
 
+import android.app.Activity
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -67,6 +68,7 @@ import app.gyrolet.mpvrx.ui.player.ControlsAnimationStyle
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.player.VideoOpenAnimation
 import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
+import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.preferences.components.ThemePicker
 import app.gyrolet.mpvrx.ui.theme.DarkMode
 import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
@@ -110,6 +112,7 @@ object AppearancePreferencesScreen : Screen {
     val selectedCustomThemeName by preferences.selectedCustomThemeName.collectAsState()
     val customWallpaperUri by preferences.customWallpaperUri.collectAsState()
     var pendingThumbnailMode by remember { mutableStateOf<ThumbnailMode?>(null) }
+    var pendingAppUiScale by remember { mutableStateOf<Float?>(null) }
     var isThemeSectionExpanded by rememberSaveable { mutableStateOf(true) }
     val storedThumbnailMode by browserPreferences.thumbnailMode.collectAsState()
     val thumbnailQuality by browserPreferences.thumbnailQuality.collectAsState()
@@ -180,6 +183,24 @@ object AppearancePreferencesScreen : Screen {
           }
         },
         onCancel = { pendingThumbnailMode = null },
+      )
+    }
+
+    pendingAppUiScale?.let { scale ->
+      RestartRequiredDialog(
+        title = stringResource(R.string.pref_appearance_ui_scale_restart_title),
+        message =
+          stringResource(
+            R.string.pref_appearance_ui_scale_restart_message,
+            (scale * 100).roundToInt(),
+          ),
+        confirmLabel = stringResource(R.string.pref_appearance_ui_scale_restart_now),
+        onDismiss = { pendingAppUiScale = null },
+        onConfirm = {
+          pendingAppUiScale = null
+          preferences.appUiScale.set(scale)
+          (context as? Activity)?.recreate()
+        },
       )
     }
 
@@ -442,8 +463,8 @@ object AppearancePreferencesScreen : Screen {
                   val appUiScale by preferences.appUiScale.collectAsState()
                   SliderPreference(
                     modifier = Modifier.settingsSearchTarget(R.string.pref_appearance_ui_scale_title),
-                    value = appUiScale,
-                    onValueChange = { preferences.appUiScale.set(it) },
+                    value = pendingAppUiScale ?: appUiScale,
+                    onValueChange = { pendingAppUiScale = it },
                     title = {
                       Text(stringResource(R.string.pref_appearance_ui_scale_title))
                     },
@@ -451,12 +472,15 @@ object AppearancePreferencesScreen : Screen {
                     valueSteps = 19,
                     summary = {
                       Text(
-                        stringResource(R.string.pref_appearance_ui_scale_summary, (appUiScale * 100).roundToInt()),
+                        stringResource(
+                          R.string.pref_appearance_ui_scale_summary,
+                          ((pendingAppUiScale ?: appUiScale) * 100).roundToInt(),
+                        ),
                         color = MaterialTheme.colorScheme.outline,
                       )
                     },
-                    onSliderValueChange = { preferences.appUiScale.set(it) },
-                    sliderValue = appUiScale,
+                    onSliderValueChange = { pendingAppUiScale = it },
+                    sliderValue = pendingAppUiScale ?: appUiScale,
                   )
                 }
               }

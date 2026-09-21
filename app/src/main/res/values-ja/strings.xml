@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">Google Sans Flexの代わりにAndroidのシステム書体をmpvRx全体で使用します</string>
   <string name="pref_appearance_ui_scale_title">アプリUIの拡大率</string>
   <string name="pref_appearance_ui_scale_summary">アプリのインターフェースを%1$d%%に拡大縮小します。変更を適用するにはアプリを再起動してください。</string>
+  <string name="pref_appearance_ui_scale_restart_title">再起動が必要です</string>
+  <string name="pref_appearance_ui_scale_restart_message">新しいアプリUIの拡大率%1$d%%を適用するには、mpvRxを再起動してください。</string>
+  <string name="pref_appearance_ui_scale_restart_now">今すぐ再起動</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">ダイナミックカラーを有効にする</string>
   <string name="pref_appearance_material_you_summary_disabled">Android 12以降でのみ利用できます</string>

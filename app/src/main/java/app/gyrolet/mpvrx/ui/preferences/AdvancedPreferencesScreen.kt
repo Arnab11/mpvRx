@@ -9,6 +9,7 @@
 
 package app.gyrolet.mpvrx.ui.preferences
 
+import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Environment
@@ -65,6 +66,7 @@ import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.MpvConfigCache
 import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
+import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.navigateTo
 import app.gyrolet.mpvrx.ui.utils.LocalShowSettingsBackArrow
@@ -259,54 +261,43 @@ object AdvancedPreferencesScreen : Screen {
       )
     }
 
-    // Import results dialog
-    if (showImportDialog && importStats != null) {
-      AlertDialog(
-        onDismissRequest = { showImportDialog = false },
-        title = { Text(stringResource(R.string.pref_import_complete_title)) },
-        text = {
-          Text(
+    // Imported settings require a restart so every screen reloads the new configuration.
+    if (showImportDialog) {
+      importStats?.let { stats ->
+        RestartRequiredDialog(
+          title = stringResource(R.string.pref_import_complete_title),
+          message =
             stringResource(
               R.string.pref_import_complete_text,
-              importStats?.imported ?: 0,
-              importStats?.failed ?: 0,
-              importStats?.version ?: "unknown",
+              stats.imported,
+              stats.failed,
+              stats.version,
             ),
-          )
-        },
-        confirmButton = {
-          TextButton(onClick = { showImportDialog = false }) {
-            Text(stringResource(R.string.generic_ok))
-          }
-        },
-      )
+          confirmLabel = stringResource(R.string.pref_app_language_restart_now),
+          onDismiss = { showImportDialog = false },
+          onConfirm = {
+            showImportDialog = false
+            (context as? Activity)?.recreate()
+          },
+        )
+      }
     }
 
     pendingAppLanguage?.let { language ->
-      AlertDialog(
-        onDismissRequest = { pendingAppLanguage = null },
-        title = { Text(stringResource(R.string.pref_app_language_restart_title)) },
-        text = { Text(stringResource(R.string.pref_app_language_restart_message)) },
-        dismissButton = {
-          TextButton(onClick = { pendingAppLanguage = null }) {
-            Text(stringResource(R.string.generic_cancel))
-          }
-        },
-        confirmButton = {
-          TextButton(
-            onClick = {
-              pendingAppLanguage = null
-              val locales =
-                if (language == AppLanguage.SystemDefault) {
-                  LocaleListCompat.getEmptyLocaleList()
-                } else {
-                  LocaleListCompat.forLanguageTags(language.languageTag)
-                }
-              AppCompatDelegate.setApplicationLocales(locales)
-            },
-          ) {
-            Text(stringResource(R.string.pref_app_language_restart_now))
-          }
+      RestartRequiredDialog(
+        title = stringResource(R.string.pref_app_language_restart_title),
+        message = stringResource(R.string.pref_app_language_restart_message),
+        confirmLabel = stringResource(R.string.pref_app_language_restart_now),
+        onDismiss = { pendingAppLanguage = null },
+        onConfirm = {
+          pendingAppLanguage = null
+          val locales =
+            if (language == AppLanguage.SystemDefault) {
+              LocaleListCompat.getEmptyLocaleList()
+            } else {
+              LocaleListCompat.forLanguageTags(language.languageTag)
+            }
+          AppCompatDelegate.setApplicationLocales(locales)
         },
       )
     }

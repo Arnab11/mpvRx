@@ -111,6 +111,7 @@ import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
@@ -453,7 +454,15 @@ fun PlayerControls(
 
   val playerActivity = LocalActivity.current as PlayerActivity
   val configuration = LocalConfiguration.current
-  val isPortrait = remember(configuration.orientation) { configuration.orientation == ORIENTATION_PORTRAIT }
+  var playerBounds by remember { mutableStateOf(IntSize.Zero) }
+  val isPortrait =
+    remember(configuration.orientation, playerBounds) {
+      if (playerBounds != IntSize.Zero) {
+        playerBounds.width < playerBounds.height
+      } else {
+        configuration.orientation == ORIENTATION_PORTRAIT
+      }
+    }
   val aspect by viewModel.videoAspect.collectAsState()
   val currentZoom by viewModel.videoZoom.collectAsState()
   val rawMediaTitle by PlaybackSession.propString["media-title"].collectAsState()
@@ -592,7 +601,11 @@ fun PlayerControls(
   ) {
     PlayerControlsContentTheme {
       Box(
-        modifier = modifier.fillMaxSize().clipToBounds(),
+        modifier =
+          modifier
+            .fillMaxSize()
+            .clipToBounds()
+            .onSizeChanged { playerBounds = it },
       ) {
     VideoOpenAnimationOverlay(
       style = videoOpenAnim,

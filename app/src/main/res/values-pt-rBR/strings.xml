@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">Usar a fonte do sistema Android em todo o mpvRx no lugar da Google Sans Flex</string>
   <string name="pref_appearance_ui_scale_title">Escala da interface do app</string>
   <string name="pref_appearance_ui_scale_summary">Escalar a interface do app para %1$d%%. Reinicie o app para aplicar as alterações.</string>
+  <string name="pref_appearance_ui_scale_restart_title">É necessário reiniciar</string>
+  <string name="pref_appearance_ui_scale_restart_message">Reinicie o mpvRx para aplicar a nova escala da interface de %1$d%%.</string>
+  <string name="pref_appearance_ui_scale_restart_now">Reiniciar agora</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Ativar cores dinâmicas</string>
   <string name="pref_appearance_material_you_summary_disabled">Disponível somente no Android 12 ou superior</string>

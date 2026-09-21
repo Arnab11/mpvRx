@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">Utiliser la police système Android dans mpvRx à la place de Google Sans Flex</string>
   <string name="pref_appearance_ui_scale_title">Échelle de l’interface de l’application</string>
   <string name="pref_appearance_ui_scale_summary">Mettre l’interface de l’application à l’échelle de %1$d%%. Redémarrez l’application pour appliquer les changements.</string>
+  <string name="pref_appearance_ui_scale_restart_title">Redémarrage requis</string>
+  <string name="pref_appearance_ui_scale_restart_message">Redémarrez mpvRx pour appliquer la nouvelle échelle de l’interface de %1$d%%.</string>
+  <string name="pref_appearance_ui_scale_restart_now">Redémarrer maintenant</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Activer les couleurs dynamiques</string>
   <string name="pref_appearance_material_you_summary_disabled">Disponible uniquement sur Android 12 et versions ultérieures</string>

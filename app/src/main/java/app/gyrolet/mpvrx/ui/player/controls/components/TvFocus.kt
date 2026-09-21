@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.composed
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -46,7 +47,8 @@ fun Modifier.tvFocusHighlight(
 ): Modifier =
   composed {
     val isTelevision = DeviceFormFactor.isTelevision(LocalContext.current)
-    if (!isTelevision || !enabled) return@composed this
+    val clippedModifier = clip(shape)
+    if (!isTelevision || !enabled) return@composed clippedModifier
 
     var focused by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -54,7 +56,7 @@ fun Modifier.tvFocusHighlight(
       animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
       label = "tv_focus_scale",
     )
-    this
+    clippedModifier
       .onFocusChanged { state -> focused = state.isFocused || state.hasFocus }
       .graphicsLayer {
         scaleX = scale

@@ -43,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -588,6 +589,7 @@ fun SubtitleTrackRow(
         .heightIn(min = 56.dp)
         .padding(horizontal = 8.dp, vertical = 2.dp)
         .background(containerColor, MaterialTheme.shapes.medium)
+        .clip(MaterialTheme.shapes.medium)
         .tvFocusHighlight()
         .toggleable(value = isSelected, role = Role.Checkbox) { selected ->
           onToggle()

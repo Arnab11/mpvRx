@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">In mpvRx die Android-Systemschrift anstelle von Google Sans Flex verwenden</string>
   <string name="pref_appearance_ui_scale_title">App-Oberflächenskalierung</string>
   <string name="pref_appearance_ui_scale_summary">App-Oberfläche auf %1$d%% skalieren. App neu starten, um die Änderungen anzuwenden.</string>
+  <string name="pref_appearance_ui_scale_restart_title">Neustart erforderlich</string>
+  <string name="pref_appearance_ui_scale_restart_message">Starte mpvRx neu, um die neue App-Oberflächenskalierung von %1$d%% anzuwenden.</string>
+  <string name="pref_appearance_ui_scale_restart_now">Jetzt neu starten</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Dynamische Farben aktivieren</string>
   <string name="pref_appearance_material_you_summary_disabled">Nur unter Android 12 oder höher verfügbar</string>

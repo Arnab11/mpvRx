@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">استخدام محرف نظام Android في mpvRx بدلًا من Google Sans Flex</string>
   <string name="pref_appearance_ui_scale_title">مقياس واجهة التطبيق</string>
   <string name="pref_appearance_ui_scale_summary">تغيير مقياس واجهة التطبيق إلى %1$d٪. أعد تشغيل التطبيق لتطبيق التغييرات.</string>
+  <string name="pref_appearance_ui_scale_restart_title">إعادة التشغيل مطلوبة</string>
+  <string name="pref_appearance_ui_scale_restart_message">أعد تشغيل mpvRx لتطبيق مقياس واجهة التطبيق الجديد %1$d٪.</string>
+  <string name="pref_appearance_ui_scale_restart_now">إعادة التشغيل الآن</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">تفعيل الألوان الديناميكية</string>
   <string name="pref_appearance_material_you_summary_disabled">متاح فقط على Android 12 والإصدارات الأحدث</string>

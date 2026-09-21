@@ -430,6 +430,7 @@ fun OnlineSubtitleRow(
     modifier =
       modifier
         .fillMaxWidth()
+        .clip(MaterialTheme.shapes.medium)
         .clickable { onDownload(subtitleForDownload) },
     shape = MaterialTheme.shapes.medium,
     color =

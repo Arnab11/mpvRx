@@ -20,6 +20,9 @@
   <string name="pref_appearance_system_font_summary">在整个 mpvRx 中使用 Android 系统字体，而不是 Google Sans Flex</string>
   <string name="pref_appearance_ui_scale_title">应用界面缩放</string>
   <string name="pref_appearance_ui_scale_summary">将应用界面缩放为 %1$d%%。重启应用以应用更改。</string>
+  <string name="pref_appearance_ui_scale_restart_title">需要重启</string>
+  <string name="pref_appearance_ui_scale_restart_message">重启 mpvRx 以应用新的 %1$d%% 应用界面缩放。</string>
+  <string name="pref_appearance_ui_scale_restart_now">立即重启</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">启用动态颜色</string>
   <string name="pref_appearance_material_you_summary_disabled">仅适用于 Android 12 及更高版本</string>
