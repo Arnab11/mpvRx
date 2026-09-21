@@ -64,6 +64,7 @@ class AppearancePreferences(
   val customWallpaperAlpha = preferenceStore.getFloat("custom_wallpaper_alpha", 1f)
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
+  val appUiScale = preferenceStore.getFloat("app_ui_scale", 1f)
   val unlimitedNameLines = preferenceStore.getBoolean("unlimited_name_lines", false)
   val hidePlayerButtonsBackground = preferenceStore.getBoolean("hide_player_buttons_background", false)
   val forceDarkPlayerButtonsBackground = preferenceStore.getBoolean("force_dark_player_buttons_background", false)

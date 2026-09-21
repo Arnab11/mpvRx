@@ -18,6 +18,8 @@
   <string name="pref_appearance_amoled_mode_summary">Использовать полностью чёрный фон для тёмных тем</string>
   <string name="pref_appearance_system_font_title">Использовать системный шрифт</string>
   <string name="pref_appearance_system_font_summary">Использовать системный шрифт Android во всём mpvRx вместо Google Sans Flex</string>
+  <string name="pref_appearance_ui_scale_title">Масштаб интерфейса приложения</string>
+  <string name="pref_appearance_ui_scale_summary">Масштабировать интерфейс приложения до %1$d%%. Перезапустите приложение для применения изменений.</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Включить динамические цвета</string>
   <string name="pref_appearance_material_you_summary_disabled">Доступно только на Android 12 и новее</string>

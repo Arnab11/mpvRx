@@ -18,6 +18,8 @@
   <string name="pref_appearance_amoled_mode_summary">डार्क थीम के लिए शुद्ध काला बैकग्राउंड इस्तेमाल करें</string>
   <string name="pref_appearance_system_font_title">सिस्टम फॉन्ट इस्तेमाल करें</string>
   <string name="pref_appearance_system_font_summary">Google Sans Flex की जगह mpvRx में Android सिस्टम टाइपफेस इस्तेमाल करें</string>
+  <string name="pref_appearance_ui_scale_title">ऐप UI स्केल</string>
+  <string name="pref_appearance_ui_scale_summary">ऐप इंटरफ़ेस को %1$d%% पर स्केल करें। बदलाव लागू करने के लिए ऐप को रीस्टार्ट करें।</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">डायनामिक कलर्स सक्षम करें</string>
   <string name="pref_appearance_material_you_summary_disabled">सिर्फ Android 12 और उससे ऊपर पर उपलब्ध</string>

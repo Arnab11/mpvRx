@@ -281,6 +281,19 @@ class MainActivity : AppCompatActivity() {
     }
   }
 
+  override fun attachBaseContext(newBase: android.content.Context?) {
+    if (newBase == null) {
+      super.attachBaseContext(null)
+      return
+    }
+
+    val baseConfiguration = Configuration(newBase.resources.configuration)
+    val appUiScale = appearancePreferences.appUiScale.get().coerceIn(0.5f, 1.5f)
+    baseConfiguration.fontScale = 1f
+    baseConfiguration.densityDpi = (baseConfiguration.densityDpi * appUiScale).toInt()
+    super.attachBaseContext(newBase.createConfigurationContext(baseConfiguration))
+  }
+
   override fun onStart() {
     super.onStart()
     pipHelper.updatePictureInPictureParams()

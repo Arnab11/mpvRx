@@ -436,6 +436,28 @@ object AppearancePreferencesScreen : Screen {
                       )
                     },
                   )
+
+                  PreferenceDivider()
+
+                  val appUiScale by preferences.appUiScale.collectAsState()
+                  SliderPreference(
+                    modifier = Modifier.settingsSearchTarget(R.string.pref_appearance_ui_scale_title),
+                    value = appUiScale,
+                    onValueChange = { preferences.appUiScale.set(it) },
+                    title = {
+                      Text(stringResource(R.string.pref_appearance_ui_scale_title))
+                    },
+                    valueRange = 0.5f..1.5f,
+                    valueSteps = 19,
+                    summary = {
+                      Text(
+                        stringResource(R.string.pref_appearance_ui_scale_summary, (appUiScale * 100).roundToInt()),
+                        color = MaterialTheme.colorScheme.outline,
+                      )
+                    },
+                    onSliderValueChange = { preferences.appUiScale.set(it) },
+                    sliderValue = appUiScale,
+                  )
                 }
               }
             }

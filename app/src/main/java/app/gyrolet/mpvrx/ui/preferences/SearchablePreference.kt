@@ -100,6 +100,15 @@ object SearchablePreferences {
       )
       add(
         SearchablePreference(
+          titleRes = R.string.pref_appearance_ui_scale_title,
+          summaryRes = R.string.pref_appearance_ui_scale_summary,
+          keywords = listOf("scale", "size", "zoom", "ui", "display", "appearance"),
+          category = "Appearance",
+          screen = AppearancePreferencesScreen,
+        ),
+      )
+      add(
+        SearchablePreference(
           titleRes = R.string.pref_appearance_unlimited_name_lines_title,
           summaryRes = R.string.pref_appearance_unlimited_name_lines_summary,
           keywords = listOf("name", "full", "truncate", "lines", "display"),

@@ -857,17 +857,11 @@ class PlayerActivity :
       return
     }
 
-    val originalConfiguration = newBase.resources.configuration
-    val contextToUse =
-      if (originalConfiguration.fontScale == 1f) {
-        newBase
-      } else {
-        val updatedConfiguration = Configuration(originalConfiguration).apply { fontScale = 1f }
-        val configurationContext = newBase.createConfigurationContext(updatedConfiguration)
-        configurationContext
-      }
-
-    super.attachBaseContext(contextToUse)
+    val updatedConfiguration = Configuration(newBase.resources.configuration)
+    val appUiScale = appearancePreferences.appUiScale.get().coerceIn(0.5f, 1.5f)
+    updatedConfiguration.fontScale = 1f
+    updatedConfiguration.densityDpi = (updatedConfiguration.densityDpi * appUiScale).toInt()
+    super.attachBaseContext(newBase.createConfigurationContext(updatedConfiguration))
   }
 
   private fun setupBackPressHandler() {
@@ -5372,7 +5366,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
 
     setIntent(intent)
     applyInitialVideoOrientation(intent)
-    applyInitialVideoOrientation(intent)
     applyPlaybackBrightnessPolicy(isAudio = isCurrentMediaKnownAudio())
     if (!beginMediaRequest()) return
     cancelPlaybackLoadRecovery()
@@ -6229,62 +6222,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         PlayerOrientation.ReverseLandscape -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
         PlayerOrientation.SensorLandscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
       }
-  }
-
-  private fun applyInitialVideoOrientation(sourceIntent: Intent) {
-    if (isTelevision) {
-      requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-      return
-    }
-    if (playerPreferences.orientation.get() != PlayerOrientation.Video || isKnownAudioLaunch(sourceIntent)) return
-
-    var width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
-    var height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
-    var rotation = 0
-
-    extractUriFromIntent(sourceIntent)
-      ?.takeIf { uri -> uri.scheme.equals("content", true) || uri.scheme.equals("file", true) }
-      ?.let { uri ->
-        runCatching {
-          val retriever = android.media.MediaMetadataRetriever()
-          try {
-            retriever.setDataSource(this, uri)
-            if (width <= 0) {
-              width =
-                retriever
-                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                  ?.toIntOrNull()
-                  ?: 0
-            }
-            if (height <= 0) {
-              height =
-                retriever
-                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                  ?.toIntOrNull()
-                  ?: 0
-            }
-            rotation =
-              retriever
-                .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
-                ?.toIntOrNull()
-                ?: 0
-          } finally {
-            retriever.release()
-          }
-        }
-      }
-    if (width <= 0 || height <= 0) return
-
-    val normalizedRotation = ((rotation % 360) + 360) % 360
-    val swapsDimensions = normalizedRotation == 90 || normalizedRotation == 270
-    val initialOrientation =
-      if ((width > height) != swapsDimensions) {
-        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-      } else {
-        ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-      }
-
-    if (requestedOrientation != initialOrientation) requestedOrientation = initialOrientation
   }
 
   private fun applyInitialVideoOrientation(sourceIntent: Intent) {

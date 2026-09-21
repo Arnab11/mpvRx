@@ -18,6 +18,8 @@
   <string name="pref_appearance_amoled_mode_summary">Usar fundo totalmente preto em temas escuros</string>
   <string name="pref_appearance_system_font_title">Usar fonte do sistema</string>
   <string name="pref_appearance_system_font_summary">Usar a fonte do sistema Android em todo o mpvRx no lugar da Google Sans Flex</string>
+  <string name="pref_appearance_ui_scale_title">Escala da interface do app</string>
+  <string name="pref_appearance_ui_scale_summary">Escalar a interface do app para %1$d%%. Reinicie o app para aplicar as alterações.</string>
   <string name="pref_appearance_material_you_title">Material You</string>
   <string name="pref_appearance_material_you_summary">Ativar cores dinâmicas</string>
   <string name="pref_appearance_material_you_summary_disabled">Disponível somente no Android 12 ou superior</string>
