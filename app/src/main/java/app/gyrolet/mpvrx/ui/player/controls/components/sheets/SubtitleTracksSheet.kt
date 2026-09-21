@@ -43,7 +43,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
@@ -524,7 +523,7 @@ fun SubtitlesSheet(
                       MaterialTheme.shapes.medium,
                     )
                     .tvInitialFocus(initialFocusRequester)
-                    .tvFocusHighlight()
+                    .tvFocusHighlight(MaterialTheme.shapes.medium)
                     .selectable(selected = subtitlesOff, role = Role.RadioButton) {
                       onDisableSubtitles()
                       if (!subtitlesOff) haptics.selection(false)
@@ -589,8 +588,7 @@ fun SubtitleTrackRow(
         .heightIn(min = 56.dp)
         .padding(horizontal = 8.dp, vertical = 2.dp)
         .background(containerColor, MaterialTheme.shapes.medium)
-        .clip(MaterialTheme.shapes.medium)
-        .tvFocusHighlight()
+        .tvFocusHighlight(MaterialTheme.shapes.medium)
         .toggleable(value = isSelected, role = Role.Checkbox) { selected ->
           onToggle()
           haptics.selection(selected)

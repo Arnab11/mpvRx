@@ -147,6 +147,16 @@ object GesturePreferencesScreen : Screen {
               )
               PreferenceDivider()
 
+              val confirmBackToExit by preferences.confirmBackToExit.collectAsState()
+              SwitchPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_confirm_back_to_exit_title),
+                value = confirmBackToExit,
+                onValueChange = preferences.confirmBackToExit::set,
+                title = { Text(stringResource(R.string.pref_confirm_back_to_exit_title)) },
+                summary = { Text(stringResource(R.string.pref_confirm_back_to_exit_summary)) },
+              )
+              PreferenceDivider()
+
               val brightnessGesture by playerPreferences.brightnessGesture.collectAsState()
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_player_gestures_brightness),

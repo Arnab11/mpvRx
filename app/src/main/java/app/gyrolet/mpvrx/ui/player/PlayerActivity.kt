@@ -242,6 +242,7 @@ class PlayerActivity :
    * Preferences for player settings.
    */
   private val playerPreferences: PlayerPreferences by inject()
+  private val gesturePreferences: app.gyrolet.mpvrx.preferences.GesturePreferences by inject()
 
   /**
    * Preferences for audio settings.
@@ -421,6 +422,7 @@ class PlayerActivity :
 
   private var isReady = false // Single flag: true when video loaded and ready
   private var isUserFinishing = false
+  private var lastExitBackPressAtMs: Long? = null
   private var isBackgroundPlaybackSessionActive = false
   private var reusingPlaybackSessionOnLaunch = false
   private var playbackOwnerToken = 0L
@@ -946,23 +948,40 @@ class PlayerActivity :
   private fun handleBackPress() {
     // Dismiss overlays first
     if (viewModel.sheetShown.value != Sheets.None) {
+      lastExitBackPressAtMs = null
       viewModel.sheetShown.update { Sheets.None }
       viewModel.showControls()
       return
     }
 
     if (viewModel.panelShown.value != Panels.None) {
+      lastExitBackPressAtMs = null
       viewModel.panelShown.update { Panels.None }
       viewModel.showControls()
       return
     }
 
-    if (handleLockedControlsBackPress()) return
+    if (handleLockedControlsBackPress()) {
+      lastExitBackPressAtMs = null
+      return
+    }
 
     if (isTelevision && viewModel.controlsShown.value) {
+      lastExitBackPressAtMs = null
       viewModel.hideControls()
       return
     }
+
+    if (isReady && gesturePreferences.confirmBackToExit.get()) {
+      val now = android.os.SystemClock.elapsedRealtime()
+      val previousPress = lastExitBackPressAtMs
+      if (previousPress == null || now - previousPress !in 0L..2_000L) {
+        lastExitBackPressAtMs = now
+        Toast.makeText(this, R.string.player_press_back_again_to_exit, Toast.LENGTH_SHORT).show()
+        return
+      }
+    }
+    lastExitBackPressAtMs = null
 
     // If mini player is enabled, back press within the app hands off playback to the mini player
     // rather than entering PiP. If mini player is disabled, auto-PiP retains priority on Back
@@ -1732,6 +1751,7 @@ class PlayerActivity :
   }
 
   override fun onPause() {
+    lastExitBackPressAtMs = null
     if (scriptRuntimeRestartPending || !mpvInitialized || !ownsPlaybackSession()) {
       super.onPause()
       return
@@ -2443,7 +2463,10 @@ class PlayerActivity :
   }
 
   private fun beginMediaRequest(): Boolean =
-    PlaybackActivityOwner.beginRequest(playbackOwnerToken) { mediaRequestGeneration++ }
+    PlaybackActivityOwner.beginRequest(playbackOwnerToken) {
+      lastExitBackPressAtMs = null
+      mediaRequestGeneration++
+    }
 
   private fun isCurrentMediaRequest(requestGeneration: Long): Boolean =
     ownsPlaybackSession() && requestGeneration == mediaRequestGeneration
@@ -5046,13 +5069,18 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
 
   val resumeMode = playerPreferences.resumePlaybackMode.get()
   val hasValidSavedPosition = state.lastPosition > 3
-  if (!playerPreferences.savePositionOnQuit.get() || !hasValidSavedPosition) {
+  val meetsMinimumDuration =
+    resumeMode != ResumePlaybackMode.MinimumDuration ||
+      PlaybackSession.getPropertyDouble("duration")
+        ?.takeIf { it.isFinite() && it > 0.0 }
+        ?.let { it >= playerPreferences.minimumResumeDurationSeconds.get().coerceAtLeast(0) } == true
+  if (!playerPreferences.savePositionOnQuit.get() || !hasValidSavedPosition || !meetsMinimumDuration) {
     PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")
     return
   }
 
   when (resumeMode) {
-    ResumePlaybackMode.Always -> {
+    ResumePlaybackMode.Always, ResumePlaybackMode.MinimumDuration -> {
       if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", state.lastPosition.toString())) return
       if (playerPreferences.showResumeIndicatorOverlay.get()) {
         withContext(Dispatchers.Main) {

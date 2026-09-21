@@ -2403,4 +2403,11 @@
   <string name="audio_swipe_folder_empty">此文件夹中未找到音频文件</string>
   <string name="playlist_connect_source_title">尚未连接来源</string>
   <string name="playlist_connect_source_message">请先在「网络连接」页连接来源，连接后才会显示在这里。</string>
+  <string name="pref_confirm_back_to_exit_title">离开播放器前确认</string>
+  <string name="pref_confirm_back_to_exit_summary">按两次返回键以离开播放器。</string>
+  <string name="player_press_back_again_to_exit">再按一次返回键以离开播放器</string>
+  <string name="pref_player_resume_mode_min_duration">仅限较长视频</string>
+  <string name="pref_player_resume_mode_min_duration_summary">仅当视频达到最短时长时，才从保存的位置继续播放。</string>
+  <string name="pref_player_resume_min_duration">最短视频时长</string>
+  <string name="pref_player_resume_min_duration_summary">短于 %1$d 秒的视频将从头开始播放。</string>
 </resources>

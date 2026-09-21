@@ -11,7 +11,6 @@ package app.gyrolet.mpvrx.ui.preferences
 
 import android.content.Intent
 import android.widget.Toast
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -590,7 +589,7 @@ private fun ScriptExtensionChip(
   onClick: () -> Unit,
 ) {
   Surface(
-    modifier = Modifier.clickable(onClick = onClick),
+    onClick = onClick,
     shape = RoundedCornerShape(999.dp),
     color =
       if (selected) {

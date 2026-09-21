@@ -485,6 +485,33 @@ object SearchablePreferences {
       )
       add(
         SearchablePreference(
+          titleRes = R.string.pref_confirm_back_to_exit_title,
+          summaryRes = R.string.pref_confirm_back_to_exit_summary,
+          keywords = listOf("back", "exit", "confirm", "double", "leave", "playback"),
+          category = "Gestures",
+          screen = GesturePreferencesScreen,
+        ),
+      )
+      add(
+        SearchablePreference(
+          titleRes = R.string.pref_player_resume_playback_title,
+          keywords = listOf("resume", "position", "always", "ask", "never", "minimum", "duration"),
+          category = "Player",
+          screen = PlayerPreferencesScreen,
+        ),
+      )
+      add(
+        SearchablePreference(
+          titleRes = R.string.pref_player_resume_min_duration,
+          summaryRes = R.string.pref_player_resume_mode_min_duration_summary,
+          keywords = listOf("resume", "minimum", "duration", "length", "short", "seconds"),
+          category = "Player",
+          screen = PlayerPreferencesScreen,
+          targetRes = R.string.pref_player_resume_playback_title,
+        ),
+      )
+      add(
+        SearchablePreference(
           titleRes = R.string.pref_video_swipe_title,
           keywords = listOf("swipe", "left", "right", "video", "folder", "watched", "queue", "delete"),
           category = "Gestures",

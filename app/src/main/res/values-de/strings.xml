@@ -2409,4 +2409,11 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   </plurals>
   <string name="playlist_connect_source_title">Keine verbundenen Quellen</string>
   <string name="playlist_connect_source_message">Verbinde zuerst eine Quelle im Tab „Netzwerk“ – hier erscheinen nur verbundene Quellen.</string>
+  <string name="pref_confirm_back_to_exit_title">Verlassen des Players bestätigen</string>
+  <string name="pref_confirm_back_to_exit_summary">Zweimal Zurück drücken, um den Player zu verlassen.</string>
+  <string name="player_press_back_again_to_exit">Erneut Zurück drücken, um den Player zu verlassen</string>
+  <string name="pref_player_resume_mode_min_duration">Nur bei längeren Videos</string>
+  <string name="pref_player_resume_mode_min_duration_summary">Nur dann an der gespeicherten Position fortsetzen, wenn das Video die Mindestdauer erreicht.</string>
+  <string name="pref_player_resume_min_duration">Mindestdauer des Videos</string>
+  <string name="pref_player_resume_min_duration_summary">Videos mit einer Dauer unter %1$d Sekunden beginnen von vorn.</string>
 </resources>

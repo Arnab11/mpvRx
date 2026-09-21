@@ -2405,4 +2405,11 @@
   </plurals>
   <string name="playlist_connect_source_title">接続済みのソースがありません</string>
   <string name="playlist_connect_source_message">先に「ネットワーク」タブでソースを接続してください。接続済みのソースだけがここに表示されます。</string>
+  <string name="pref_confirm_back_to_exit_title">プレーヤーを閉じる前に確認</string>
+  <string name="pref_confirm_back_to_exit_summary">戻る操作を2回行うとプレーヤーを閉じます。</string>
+  <string name="player_press_back_again_to_exit">もう一度戻る操作をするとプレーヤーを閉じます</string>
+  <string name="pref_player_resume_mode_min_duration">長い動画のみ</string>
+  <string name="pref_player_resume_mode_min_duration_summary">動画の長さが最小時間以上の場合のみ、保存した位置から再開します。</string>
+  <string name="pref_player_resume_min_duration">動画の最小時間</string>
+  <string name="pref_player_resume_min_duration_summary">%1$d秒未満の動画は最初から再生します。</string>
 </resources>

@@ -48,6 +48,7 @@ class PlayerPreferences(
 ) {
   val orientation = preferenceStore.getEnum("player_orientation", PlayerOrientation.Video)
   val resumePlaybackMode = preferenceStore.getEnum("resume_playback_mode", ResumePlaybackMode.Always)
+  val minimumResumeDurationSeconds = preferenceStore.getInt("resume_minimum_video_duration_seconds", 100)
   val invertDuration = preferenceStore.getBoolean("invert_duration")
   val holdForMultipleSpeed = preferenceStore.getFloat("hold_for_multiple_speed", 2f)
   val showDoubleTapOvals = preferenceStore.getBoolean("show_double_tap_ovals", true)

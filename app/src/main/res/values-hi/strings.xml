@@ -2313,4 +2313,11 @@
   </plurals>
   <string name="playlist_connect_source_title">कोई जुड़ा हुआ स्रोत नहीं</string>
   <string name="playlist_connect_source_message">पहले नेटवर्क टैब में कोई स्रोत कनेक्ट करें — यहाँ केवल जुड़े हुए स्रोत दिखाई देते हैं।</string>
+  <string name="pref_confirm_back_to_exit_title">प्लेयर से बाहर निकलने से पहले पुष्टि करें</string>
+  <string name="pref_confirm_back_to_exit_summary">प्लेयर से बाहर निकलने के लिए वापस जाएँ बटन दो बार दबाएँ।</string>
+  <string name="player_press_back_again_to_exit">प्लेयर से बाहर निकलने के लिए वापस जाएँ बटन फिर दबाएँ</string>
+  <string name="pref_player_resume_mode_min_duration">केवल लंबे वीडियो के लिए</string>
+  <string name="pref_player_resume_mode_min_duration_summary">सहेजी गई स्थिति से तभी जारी रखें जब वीडियो की अवधि न्यूनतम अवधि के बराबर या उससे अधिक हो।</string>
+  <string name="pref_player_resume_min_duration">वीडियो की न्यूनतम अवधि</string>
+  <string name="pref_player_resume_min_duration_summary">%1$d सेकंड से छोटे वीडियो शुरुआत से चलेंगे।</string>
 </resources>

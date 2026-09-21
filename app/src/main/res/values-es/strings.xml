@@ -2409,4 +2409,11 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   </plurals>
   <string name="playlist_connect_source_title">Sin fuentes conectadas</string>
   <string name="playlist_connect_source_message">Conecta primero una fuente en la pestaña Red: aquí solo aparecen las fuentes conectadas.</string>
+  <string name="pref_confirm_back_to_exit_title">Confirmar antes de salir del reproductor</string>
+  <string name="pref_confirm_back_to_exit_summary">Pulsa Atrás dos veces para salir del reproductor.</string>
+  <string name="player_press_back_again_to_exit">Pulsa Atrás de nuevo para salir del reproductor</string>
+  <string name="pref_player_resume_mode_min_duration">Solo para vídeos más largos</string>
+  <string name="pref_player_resume_mode_min_duration_summary">Reanudar desde la posición guardada solo si el vídeo alcanza la duración mínima.</string>
+  <string name="pref_player_resume_min_duration">Duración mínima del vídeo</string>
+  <string name="pref_player_resume_min_duration_summary">Los vídeos de menos de %1$d segundos empiezan desde el principio.</string>
 </resources>

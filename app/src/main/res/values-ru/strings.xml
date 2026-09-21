@@ -2417,4 +2417,11 @@
   </plurals>
   <string name="playlist_connect_source_title">Нет подключённых источников</string>
   <string name="playlist_connect_source_message">Сначала подключите источник на вкладке «Сеть» — здесь показываются только подключённые источники.</string>
+  <string name="pref_confirm_back_to_exit_title">Подтверждать выход из плеера</string>
+  <string name="pref_confirm_back_to_exit_summary">Нажмите «Назад» дважды, чтобы выйти из плеера.</string>
+  <string name="player_press_back_again_to_exit">Нажмите «Назад» ещё раз, чтобы выйти из плеера</string>
+  <string name="pref_player_resume_mode_min_duration">Только для длинных видео</string>
+  <string name="pref_player_resume_mode_min_duration_summary">Продолжать с сохранённой позиции, только если длительность видео не меньше заданной.</string>
+  <string name="pref_player_resume_min_duration">Минимальная длительность видео</string>
+  <string name="pref_player_resume_min_duration_summary">Видео короче %1$d секунд воспроизводятся с начала.</string>
 </resources>

@@ -57,6 +57,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -494,6 +495,7 @@ private fun DebugLogEntryCard(
       Modifier
         .fillMaxWidth()
         .animateContentSize()
+        .clip(RoundedCornerShape(18.dp))
         .combinedClickable(
           onClick = onToggleExpanded,
           onLongClick = onCopy,

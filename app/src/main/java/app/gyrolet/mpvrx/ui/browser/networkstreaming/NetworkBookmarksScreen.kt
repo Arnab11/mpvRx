@@ -227,7 +227,8 @@ private fun BookmarkManageCard(
   onRemove: () -> Unit,
 ) {
   Card(
-    modifier = Modifier.fillMaxWidth().clickable(onClick = onOpen),
+    onClick = onOpen,
+    modifier = Modifier.fillMaxWidth(),
     shape = RoundedCornerShape(8.dp),
     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainer),
   ) {

@@ -17,7 +17,6 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -411,10 +410,8 @@ private fun FrameReviewOverlay(
       }
       Spacer(Modifier.weight(1f))
       Surface(
-        modifier =
-          Modifier
-            .size(48.dp)
-            .clickable(onClick = onDismissRequest),
+        onClick = onDismissRequest,
+        modifier = Modifier.size(48.dp),
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
         contentColor = MaterialTheme.colorScheme.onSurface,

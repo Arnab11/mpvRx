@@ -47,8 +47,7 @@ fun Modifier.tvFocusHighlight(
 ): Modifier =
   composed {
     val isTelevision = DeviceFormFactor.isTelevision(LocalContext.current)
-    val clippedModifier = clip(shape)
-    if (!isTelevision || !enabled) return@composed clippedModifier
+    if (!isTelevision || !enabled) return@composed clip(shape)
 
     var focused by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
@@ -56,12 +55,13 @@ fun Modifier.tvFocusHighlight(
       animationSpec = spring(dampingRatio = 0.82f, stiffness = 420f),
       label = "tv_focus_scale",
     )
-    clippedModifier
+    this
       .onFocusChanged { state -> focused = state.isFocused || state.hasFocus }
       .graphicsLayer {
         scaleX = scale
         scaleY = scale
       }
+      .clip(shape)
       .then(
         if (focused) {
           Modifier.border(3.dp, MaterialTheme.colorScheme.primary, shape)

@@ -150,21 +150,42 @@ object PlayerPreferencesScreen : Screen {
 
               PreferenceDivider()
 
-val resumePlaybackMode by preferences.resumePlaybackMode.collectAsState()
-ListPreference(
-  modifier = Modifier.settingsSearchTarget(R.string.pref_player_resume_playback_title),
-  value = resumePlaybackMode,
-  onValueChange = preferences.resumePlaybackMode::set,
-  values = ResumePlaybackMode.entries,
-  valueToText = { AnnotatedString(resources.getString(it.titleRes)) },
-  title = { Text(stringResource(R.string.pref_player_resume_playback_title)) },
-  summary = {
-    Text(
-      stringResource(resumePlaybackMode.summaryRes),
-      color = MaterialTheme.colorScheme.outline,
-    )
-  },
-)
+              val resumePlaybackMode by preferences.resumePlaybackMode.collectAsState()
+              ListPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_player_resume_playback_title),
+                value = resumePlaybackMode,
+                onValueChange = preferences.resumePlaybackMode::set,
+                values = ResumePlaybackMode.entries,
+                valueToText = { AnnotatedString(resources.getString(it.titleRes)) },
+                title = { Text(stringResource(R.string.pref_player_resume_playback_title)) },
+                summary = {
+                  Text(
+                    stringResource(resumePlaybackMode.summaryRes),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              if (resumePlaybackMode == ResumePlaybackMode.MinimumDuration) {
+                PreferenceDivider()
+                val minimumDuration by preferences.minimumResumeDurationSeconds.collectAsState()
+                SliderPreference(
+                  modifier = Modifier.settingsSearchTarget(R.string.pref_player_resume_min_duration),
+                  value = minimumDuration.coerceIn(0, 3600).toFloat(),
+                  onValueChange = { preferences.minimumResumeDurationSeconds.set(it.roundToInt().coerceIn(0, 3600)) },
+                  title = { Text(stringResource(R.string.pref_player_resume_min_duration)) },
+                  summary = {
+                    Text(
+                      stringResource(R.string.pref_player_resume_min_duration_summary, minimumDuration),
+                      color = MaterialTheme.colorScheme.outline,
+                    )
+                  },
+                  valueRange = 0f..3600f,
+                  valueSteps = 359,
+                  onSliderValueChange = { preferences.minimumResumeDurationSeconds.set(it.roundToInt().coerceIn(0, 3600)) },
+                  sliderValue = minimumDuration.coerceIn(0, 3600).toFloat(),
+                )
+              }
 
 PreferenceDivider()
 

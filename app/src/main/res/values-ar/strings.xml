@@ -2423,4 +2423,11 @@
   </plurals>
   <string name="playlist_connect_source_title">لا توجد مصادر متصلة</string>
   <string name="playlist_connect_source_message">اتصل بمصدر أولاً من علامة تبويب الشبكة — لن تظهر هنا إلا المصادر المتصلة.</string>
+  <string name="pref_confirm_back_to_exit_title">التأكيد قبل مغادرة المشغّل</string>
+  <string name="pref_confirm_back_to_exit_summary">اضغط على رجوع مرتين لمغادرة المشغّل.</string>
+  <string name="player_press_back_again_to_exit">اضغط على رجوع مرة أخرى لمغادرة المشغّل</string>
+  <string name="pref_player_resume_mode_min_duration">للفيديوهات الأطول فقط</string>
+  <string name="pref_player_resume_mode_min_duration_summary">استأنف من الموضع المحفوظ فقط عندما تبلغ مدة الفيديو الحد الأدنى.</string>
+  <string name="pref_player_resume_min_duration">الحد الأدنى لمدة الفيديو</string>
+  <string name="pref_player_resume_min_duration_summary">تبدأ الفيديوهات الأقصر من %1$d ثانية من البداية.</string>
 </resources>

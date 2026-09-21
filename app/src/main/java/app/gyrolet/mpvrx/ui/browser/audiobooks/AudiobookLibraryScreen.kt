@@ -18,8 +18,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
 import androidx.compose.foundation.clickable
+import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1315,9 +1315,10 @@ private fun AudiobookGridCard(
   modifier: Modifier = Modifier,
 ) {
   Surface(
+    onClick = onClick,
     shape = RoundedCornerShape(12.dp),
     color = MaterialTheme.colorScheme.surfaceContainer,
-    modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+    modifier = modifier.fillMaxWidth(),
   ) {
     Column(Modifier.fillMaxWidth().padding(8.dp)) {
       Box(
@@ -1400,9 +1401,10 @@ private fun AudiobookListRow(
   modifier: Modifier = Modifier,
 ) {
   Surface(
+    onClick = onClick,
     shape = RoundedCornerShape(10.dp),
     color = MaterialTheme.colorScheme.surfaceContainer,
-    modifier = modifier.fillMaxWidth().clickable(onClick = onClick),
+    modifier = modifier.fillMaxWidth(),
   ) {
     Row(
       Modifier.padding(12.dp),

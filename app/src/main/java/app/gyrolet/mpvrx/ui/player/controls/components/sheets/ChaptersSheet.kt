@@ -37,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -110,6 +111,7 @@ fun ChapterTrack(
         .heightIn(min = 56.dp)
         .padding(horizontal = 8.dp, vertical = 2.dp)
         .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = if (selected) 0.35f else 0f), MaterialTheme.shapes.medium)
+        .clip(MaterialTheme.shapes.medium)
         .clickable(onClick = onClick)
         .padding(vertical = 10.dp, horizontal = 12.dp),
     horizontalArrangement = Arrangement.spacedBy(12.dp),

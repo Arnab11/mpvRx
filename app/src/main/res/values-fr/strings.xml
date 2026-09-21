@@ -2409,4 +2409,11 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   </plurals>
   <string name="playlist_connect_source_title">Aucune source connectée</string>
   <string name="playlist_connect_source_message">Connectez d\'abord une source dans l\'onglet Réseau — seules les sources connectées apparaissent ici.</string>
+  <string name="pref_confirm_back_to_exit_title">Confirmer avant de quitter le lecteur</string>
+  <string name="pref_confirm_back_to_exit_summary">Appuyez deux fois sur Retour pour quitter le lecteur.</string>
+  <string name="player_press_back_again_to_exit">Appuyez à nouveau sur Retour pour quitter le lecteur</string>
+  <string name="pref_player_resume_mode_min_duration">Uniquement pour les vidéos longues</string>
+  <string name="pref_player_resume_mode_min_duration_summary">Reprendre à la position enregistrée uniquement si la vidéo atteint la durée minimale.</string>
+  <string name="pref_player_resume_min_duration">Durée minimale de la vidéo</string>
+  <string name="pref_player_resume_min_duration_summary">Les vidéos de moins de %1$d secondes commencent au début.</string>
 </resources>
