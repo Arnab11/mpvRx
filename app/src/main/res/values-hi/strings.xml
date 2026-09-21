@@ -2320,4 +2320,21 @@
   <string name="pref_player_resume_mode_min_duration_summary">सहेजी गई स्थिति से तभी जारी रखें जब वीडियो की अवधि न्यूनतम अवधि के बराबर या उससे अधिक हो।</string>
   <string name="pref_player_resume_min_duration">वीडियो की न्यूनतम अवधि</string>
   <string name="pref_player_resume_min_duration_summary">%1$d सेकंड से छोटे वीडियो शुरुआत से चलेंगे।</string>
+  <string name="playlist_sort_original">प्लेलिस्ट क्रम</string>
+  <string name="playlist_location">स्थान</string>
+  <string name="playlist_date_added">जोड़े जाने की तारीख</string>
+  <string name="playlist_item_count">आइटम की संख्या</string>
+  <string name="playlist_category">श्रेणी</string>
+  <string name="playlist_sort_ascending">आरोही</string>
+  <string name="playlist_sort_descending">अवरोही</string>
+  <string name="playlist_layout">लेआउट</string>
+  <string name="playlist_view_list">सूची</string>
+  <string name="playlist_view_grid">ग्रिड</string>
+  <string name="playlist_full_names">पूरे नाम</string>
+  <string name="playlist_stream_details">स्ट्रीम विवरण</string>
+  <string name="playlist_center_titles">शीर्षक बीच में रखें</string>
+  <string name="playlist_manual_grid">ग्रिड कॉलम खुद चुनें</string>
+  <string name="playlist_columns_portrait">पोर्ट्रेट कॉलम</string>
+  <string name="playlist_columns_landscape">लैंडस्केप कॉलम</string>
+  <string name="playlist_extension">फ़ाइल एक्सटेंशन</string>
 </resources>

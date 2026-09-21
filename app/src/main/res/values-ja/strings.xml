@@ -2412,4 +2412,21 @@
   <string name="pref_player_resume_mode_min_duration_summary">動画の長さが最小時間以上の場合のみ、保存した位置から再開します。</string>
   <string name="pref_player_resume_min_duration">動画の最小時間</string>
   <string name="pref_player_resume_min_duration_summary">%1$d秒未満の動画は最初から再生します。</string>
+  <string name="playlist_sort_original">プレイリスト順</string>
+  <string name="playlist_location">場所</string>
+  <string name="playlist_date_added">追加日</string>
+  <string name="playlist_item_count">項目数</string>
+  <string name="playlist_category">カテゴリ</string>
+  <string name="playlist_sort_ascending">昇順</string>
+  <string name="playlist_sort_descending">降順</string>
+  <string name="playlist_layout">レイアウト</string>
+  <string name="playlist_view_list">リスト</string>
+  <string name="playlist_view_grid">グリッド</string>
+  <string name="playlist_full_names">名前をすべて表示</string>
+  <string name="playlist_stream_details">ストリームの詳細</string>
+  <string name="playlist_center_titles">タイトルを中央揃え</string>
+  <string name="playlist_manual_grid">グリッド列数を手動設定</string>
+  <string name="playlist_columns_portrait">縦向きの列数</string>
+  <string name="playlist_columns_landscape">横向きの列数</string>
+  <string name="playlist_extension">ファイル拡張子</string>
 </resources>

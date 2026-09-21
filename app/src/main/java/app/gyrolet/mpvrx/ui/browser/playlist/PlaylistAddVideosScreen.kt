@@ -13,7 +13,9 @@ import android.app.Application
 import android.widget.Toast
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -21,6 +23,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -45,6 +50,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -58,6 +65,7 @@ import app.gyrolet.mpvrx.repository.NetworkRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
+import app.gyrolet.mpvrx.preferences.MediaLayoutMode
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.browser.cards.FolderCard
@@ -111,14 +119,28 @@ data class PlaylistAddVideosScreen(
     val application = context.applicationContext as Application
     val backstack = LocalBackStack.current
     val scope = rememberCoroutineScope()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var contentWidthDp by remember { mutableStateOf<Int?>(null) }
 
     val browserPreferences = koinInject<BrowserPreferences>()
     val networkRepository = koinInject<NetworkRepository>()
     val videoCardUiConfig = rememberVideoCardUiConfig()
+    val showSubtitleIndicator by browserPreferences.showSubtitleIndicator.collectAsState()
+    val folderLayoutMode by browserPreferences.folderViewFolderLayoutMode.collectAsState()
+    val videoLayoutMode by browserPreferences.folderViewVideoLayoutMode.collectAsState()
+    val manualGrid by browserPreferences.manualGridColumnsEnabled.collectAsState()
+    val landscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+    val folderColumnPreference = if (landscape) browserPreferences.folderGridColumnsLandscape else browserPreferences.folderGridColumnsPortrait
+    val videoColumnPreference = if (landscape) browserPreferences.videoGridColumnsLandscape else browserPreferences.videoGridColumnsPortrait
+    val requestedFolderColumns by folderColumnPreference.collectAsState()
+    val requestedVideoColumns by videoColumnPreference.collectAsState()
     val videoListState = rememberLazyListState()
+    val videoGridState = rememberLazyGridState()
     val isVideoListScrolling by
-      remember(videoListState) {
-        derivedStateOf { videoListState.isScrollInProgress }
+      remember(videoListState, videoGridState, videoLayoutMode) {
+        derivedStateOf {
+          if (videoLayoutMode == MediaLayoutMode.GRID) videoGridState.isScrollInProgress else videoListState.isScrollInProgress
+        }
       }
 
     val playlistDetailViewModel: PlaylistDetailViewModel =
@@ -314,6 +336,30 @@ data class PlaylistAddVideosScreen(
             message = stringResource(if (isAudio) R.string.playlist_add_songs_empty_folder_message else R.string.playlist_add_videos_empty_message),
             modifier = Modifier.padding(padding),
           )
+        } else if (folderLayoutMode == MediaLayoutMode.GRID) {
+          BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).onSizeChanged {
+            contentWidthDp = with(density) { it.width.toDp().value.toInt() }
+          }) {
+            val maximumColumns = playlistGridColumnLimit(maxWidth.value.toInt(), true)
+            val columns = if (manualGrid && requestedFolderColumns > 0) requestedFolderColumns.coerceIn(1, maximumColumns) else maximumColumns
+            LazyVerticalGrid(
+              columns = GridCells.Fixed(columns),
+              modifier = Modifier.fillMaxSize(),
+              contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+              horizontalArrangement = Arrangement.spacedBy(2.dp),
+              verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+              items(count = sortedFolders.size, key = { sortedFolders[it].bucketId }, contentType = { "folder" }) { index ->
+                val videoFolder = sortedFolders[index]
+                FolderCard(
+                  folder = videoFolder,
+                  isGridMode = true,
+                  onClick = { selectedFolder = videoFolder },
+                  onThumbClick = { selectedFolder = videoFolder },
+                )
+              }
+            }
+          }
         } else {
           LazyColumn(modifier = Modifier.padding(padding)) {
             items(
@@ -324,6 +370,7 @@ data class PlaylistAddVideosScreen(
               FolderCard(
                 folder = videoFolder,
                 onClick = { selectedFolder = videoFolder },
+                onThumbClick = { selectedFolder = videoFolder },
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
               )
             }
@@ -336,6 +383,37 @@ data class PlaylistAddVideosScreen(
           message = stringResource(if (isAudio) R.string.playlist_add_songs_empty_message else R.string.playlist_add_videos_empty_message),
           modifier = Modifier.padding(padding),
         )
+      } else if (videoLayoutMode == MediaLayoutMode.GRID) {
+        BoxWithConstraints(modifier = Modifier.fillMaxSize().padding(padding).onSizeChanged {
+          contentWidthDp = with(density) { it.width.toDp().value.toInt() }
+        }) {
+          val maximumColumns = playlistGridColumnLimit(maxWidth.value.toInt())
+          val columns = if (manualGrid && requestedVideoColumns > 0) requestedVideoColumns.coerceIn(1, maximumColumns) else maximumColumns
+          LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            state = videoGridState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+          ) {
+            items(count = sortedVideos.size, key = { sortedVideos[it].id }, contentType = { "video" }) { index ->
+              val video = sortedVideos[index]
+              VideoCard(
+                video = video,
+                isGridMode = true,
+                gridColumns = columns,
+                showSubtitleIndicator = showSubtitleIndicator,
+                isSelected = selectionManager?.isSelected(video) == true,
+                onClick = { selectionManager?.toggle(video) },
+                onThumbClick = { selectionManager?.toggle(video) },
+                onLongClick = { selectionManager?.handleLongClick(video) },
+                allowThumbnailLoading = !isVideoListScrolling,
+                uiConfig = videoCardUiConfig,
+              )
+            }
+          }
+        }
       } else {
         LazyColumn(
           state = videoListState,
@@ -354,6 +432,7 @@ data class PlaylistAddVideosScreen(
               onLongClick = { selectionManager?.handleLongClick(video) },
               allowThumbnailLoading = !isVideoListScrolling,
               uiConfig = videoCardUiConfig,
+              showSubtitleIndicator = showSubtitleIndicator,
               modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )
           }
@@ -370,6 +449,9 @@ data class PlaylistAddVideosScreen(
           sortOrder = folderSortOrder,
           onSortTypeChange = { browserPreferences.folderSortType.set(it) },
           onSortOrderChange = { browserPreferences.folderSortOrder.set(it) },
+          embeddedAlbumView = true,
+          pickerMode = true,
+          availableWidthDp = contentWidthDp,
         )
       } else {
         VideoSortDialog(
@@ -379,6 +461,9 @@ data class PlaylistAddVideosScreen(
           sortOrder = videoSortOrder,
           onSortTypeChange = { browserPreferences.videoSortType.set(it) },
           onSortOrderChange = { browserPreferences.videoSortOrder.set(it) },
+          enableViewModeOptions = false,
+          pickerMode = true,
+          availableWidthDp = contentWidthDp,
         )
       }
     }

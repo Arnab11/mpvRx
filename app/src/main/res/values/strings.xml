@@ -2451,4 +2451,21 @@
   <string name="pref_player_resume_mode_min_duration_summary">Resume from the saved position only when the video meets the minimum duration.</string>
   <string name="pref_player_resume_min_duration">Minimum video duration</string>
   <string name="pref_player_resume_min_duration_summary">Videos shorter than %1$d seconds start from the beginning.</string>
+  <string name="playlist_sort_original">Playlist order</string>
+  <string name="playlist_location">Location</string>
+  <string name="playlist_date_added">Date added</string>
+  <string name="playlist_item_count">Item count</string>
+  <string name="playlist_category">Category</string>
+  <string name="playlist_sort_ascending">Ascending</string>
+  <string name="playlist_sort_descending">Descending</string>
+  <string name="playlist_layout">Layout</string>
+  <string name="playlist_view_list">List</string>
+  <string name="playlist_view_grid">Grid</string>
+  <string name="playlist_full_names">Full names</string>
+  <string name="playlist_stream_details">Stream details</string>
+  <string name="playlist_center_titles">Center titles</string>
+  <string name="playlist_manual_grid">Manual grid columns</string>
+  <string name="playlist_columns_portrait">Portrait columns</string>
+  <string name="playlist_columns_landscape">Landscape columns</string>
+  <string name="playlist_extension">File extension</string>
 </resources>

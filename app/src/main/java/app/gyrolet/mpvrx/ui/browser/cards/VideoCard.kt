@@ -184,6 +184,7 @@ fun VideoCard(
   sourceColor: Color? = null,
   /** Path line under the title, mirroring the network card's source line. */
   sourceSubtitle: String? = null,
+  titleAction: (@Composable () -> Unit)? = null,
 ) {
   // Screens hoist this once and pass it down; collecting per card would register a dozen
   // preference observers for every visible item in a grid.
@@ -480,8 +481,14 @@ fun VideoCard(
           Spacer(modifier = Modifier.height(4.dp))
 
           // Title below thumbnail
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = if (centerGridTitles) Arrangement.Center else Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
           Text(
             text = displayName,
+            modifier = if (titleAction != null) Modifier.weight(1f) else Modifier,
             style =
               MaterialTheme.typography.titleMedium.let { baseStyle ->
                 if (isRecentlyPlayed) baseStyle.copy(fontStyle = FontStyle.Italic) else baseStyle
@@ -494,10 +501,12 @@ fun VideoCard(
               } else {
                 MaterialTheme.colorScheme.onSurface
               },
-            maxLines = if (sourceLabel != null) 1 else maxLines,
+            maxLines = maxLines,
             overflow = TextOverflow.Ellipsis,
             textAlign = if (centerGridTitles) TextAlign.Center else TextAlign.Start,
           )
+            titleAction?.invoke()
+          }
           if (!sourceSubtitle.isNullOrBlank()) {
             Text(
               text = sourceSubtitle,
@@ -814,8 +823,10 @@ fun VideoCard(
             // types produce the same text-block height in a mixed playlist and stay aligned.
             verticalArrangement = if (sourceLabel != null) Arrangement.spacedBy(6.dp) else Arrangement.Top,
           ) {
+            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
               displayName,
+              modifier = Modifier.weight(1f),
               style =
                 if (useFolderNameStyle) {
                   MaterialTheme.typography.titleMedium
@@ -832,9 +843,11 @@ fun VideoCard(
                 } else {
                   MaterialTheme.colorScheme.onSurface
                 },
-              maxLines = if (sourceLabel != null) 1 else maxLines,
+              maxLines = maxLines,
               overflow = TextOverflow.Ellipsis,
             )
+              titleAction?.invoke()
+            }
           if (!sourceSubtitle.isNullOrBlank()) {
             Text(
               text = sourceSubtitle,

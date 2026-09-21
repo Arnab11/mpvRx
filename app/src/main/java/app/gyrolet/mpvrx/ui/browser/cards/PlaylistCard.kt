@@ -12,6 +12,7 @@ package app.gyrolet.mpvrx.ui.browser.cards
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -80,17 +81,23 @@ fun PlaylistCard(
   val thumbnailQuality by preferences.thumbnailQuality.collectAsState()
   val thumbnailMode by preferences.thumbnailMode.collectAsState()
   val thumbnailFramePosition by preferences.thumbnailFramePosition.collectAsState()
+  val showThumbnails by preferences.showFolderThumbnails.collectAsState()
+  val showLocation by preferences.showPlaylistLocation.collectAsState()
+  val sourceLocation = remember(playlist.m3uSourceUrl, playlist.xtreamServerUrl) {
+    app.gyrolet.mpvrx.ui.browser.playlist.playlistSourceLocation(playlist.m3uSourceUrl ?: playlist.xtreamServerUrl)
+  }
   val showNetworkThumbnails by appearancePreferences.showNetworkThumbnails.collectAsState()
   val firstItem by remember(repository, playlist.id) {
     repository.observeFirstPlaylistItem(playlist.id)
   }.collectAsState(initial = null)
   val thumbnailSizePx = with(LocalDensity.current) { (if (isGridMode) 192.dp else 96.dp).roundToPx() }
   val resolvedThumbnail by produceState<Bitmap?>(
-    initialValue = thumbnail,
+    initialValue = thumbnail.takeIf { showThumbnails },
     playlist.id, thumbnail, firstItem?.filePath, firstItem?.tvgLogo, firstItem?.addedAt,
-    firstItem?.licenseType, thumbnailSizePx, thumbnailQuality, thumbnailMode, thumbnailFramePosition, showNetworkThumbnails,
+    firstItem?.licenseType, thumbnailSizePx, thumbnailQuality, thumbnailMode, thumbnailFramePosition, showNetworkThumbnails, showThumbnails,
   ) {
-    value = thumbnail
+    value = thumbnail.takeIf { showThumbnails }
+    if (!showThumbnails) return@produceState
     if (thumbnail != null) return@produceState
     val item = firstItem ?: return@produceState
     value = withContext(Dispatchers.IO) {
@@ -196,6 +203,16 @@ fun PlaylistCard(
         )
       }
     }
+    if (showLocation && sourceLocation.isNotBlank()) {
+      androidx.compose.material3.Text(
+        text = sourceLocation,
+        modifier = Modifier.fillMaxWidth(),
+        style = androidx.compose.material3.MaterialTheme.typography.bodySmall,
+        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+      )
+    }
   }
 
   val thumbnailBitmap = remember(resolvedThumbnail) { resolvedThumbnail?.asImageBitmap() }
@@ -211,7 +228,7 @@ fun PlaylistCard(
     showDateModified = true,
     customIcon =
       when {
-        isFavorites -> Icons.RoundedFilled.Favorite
+        isFavorites -> Icons.RoundedFilled.Bookmarks
         playlist.isXtreamPlaylist -> Icons.RoundedFilled.Tv
         else -> Icons.RoundedFilled.PlaylistPlay
       },

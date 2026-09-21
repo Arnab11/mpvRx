@@ -19,9 +19,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -149,11 +150,12 @@ fun FilePickerDialog(
 
   // Get folders and allowed files
   val (folders, files) =
-    remember(selectedPath, matchToName) {
+    remember(selectedPath, matchToName, allowedExtensions) {
       if (showStorageRoot) {
         Pair(emptyList<File>(), emptyList<File>())
       } else {
-        val allFiles = currentDir?.listFiles { file -> !file.name.startsWith(".") } ?: emptyArray()
+        val allFiles = currentDir?.listFiles() ?: emptyArray()
+        val extensions = allowedExtensions.map { it.trim().removePrefix(".") }.filter(String::isNotBlank)
 
         // Use NaturalOrderComparator for better sorting (e.g., Ep 2 < Ep 10)
         val dirs =
@@ -164,7 +166,7 @@ fun FilePickerDialog(
 
         val filteredFiles =
           allFiles.filter { file ->
-            !file.isDirectory && allowedExtensions.any { ext -> file.name.endsWith(ext, ignoreCase = true) }
+            file.isFile && extensions.any { extension -> file.extension.equals(extension, ignoreCase = true) }
           }
 
         // Final sorted files: matches first (alphabetical), then others (alphabetical)
@@ -189,43 +191,63 @@ fun FilePickerDialog(
 
   val configuration = LocalConfiguration.current
   val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+  val dialogWidth =
+    (configuration.screenWidthDp.dp * (if (isPortrait) 0.85f else 0.5f))
+      .coerceAtMost(if (isPortrait) 360.dp else 480.dp)
+  val dialogMaxHeight = configuration.screenHeightDp.dp * (if (isPortrait) 0.85f else 0.9f)
 
   androidx.compose.ui.window.Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
     Surface(
-      modifier = modifier.fillMaxWidth(if (isPortrait) 0.9f else 0.50f),
+      modifier = modifier.width(dialogWidth).heightIn(max = dialogMaxHeight),
       shape = MaterialTheme.shapes.extraLarge,
       color = MaterialTheme.colorScheme.surface,
       tonalElevation = 6.dp,
     ) {
       Column(
-        modifier = Modifier.padding(24.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        modifier = Modifier.padding(if (isPortrait) 20.dp else 16.dp),
+        verticalArrangement = Arrangement.spacedBy(if (isPortrait) 12.dp else 8.dp),
       ) {
-        // Title Section - orientation-aware layout
-        if (isPortrait) {
-          // Portrait: title/path stacked on top, nav buttons centered below
-          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-              Text(
-                text =
-                  androidx.compose.ui.res
-                    .stringResource(app.gyrolet.mpvrx.R.string.ui_select_subtitle),
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold,
-              )
-              Text(
-                text = selectedPath ?: "Select a storage location",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.padding(top = 4.dp),
-              )
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+          ) {
+            Text(
+              text =
+                androidx.compose.ui.res
+                  .stringResource(app.gyrolet.mpvrx.R.string.ui_select_subtitle),
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.SemiBold,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
+              modifier = Modifier.weight(1f),
+            )
+            if (!isPortrait) {
+              Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                NavigationButtons(
+                  selectedPath = selectedPath,
+                  onBack = { selectedPath = currentDir?.parent },
+                  onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
+                  onSystemPicker = onSystemPickerRequest,
+                  buttonSize = 40.dp,
+                  iconSize = 24.dp,
+                )
+              }
             }
+          }
+          Text(
+            text = selectedPath ?: "Select a storage location",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.fillMaxWidth(),
+          )
+          if (isPortrait) {
             Row(
               modifier = Modifier.fillMaxWidth(),
               horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
@@ -240,50 +262,11 @@ fun FilePickerDialog(
               )
             }
           }
-        } else {
-          // Landscape: title/path left, nav buttons right (same row)
-          Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.SpaceBetween,
-              verticalAlignment = Alignment.CenterVertically,
-            ) {
-              Column(modifier = Modifier.weight(1f)) {
-                Text(
-                  text =
-                    androidx.compose.ui.res.stringResource(
-                      app.gyrolet.mpvrx.R.string.ui_select_subtitle,
-                    ),
-                  style = MaterialTheme.typography.headlineMedium,
-                  fontWeight = FontWeight.Bold,
-                )
-                Text(
-                  text = selectedPath ?: "Select a storage location",
-                  style = MaterialTheme.typography.bodyMedium,
-                  fontWeight = FontWeight.Medium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis,
-                  modifier = Modifier.padding(top = 4.dp),
-                )
-              }
-              Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                NavigationButtons(
-                  selectedPath = selectedPath,
-                  onBack = { selectedPath = currentDir?.parent },
-                  onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
-                  onSystemPicker = onSystemPickerRequest,
-                  buttonSize = 40.dp,
-                  iconSize = 24.dp,
-                )
-              }
-            }
-          }
         }
 
         // Content Section
         Column(
-          modifier = Modifier.fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
           verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
           // Folder/Volume/File list
@@ -291,7 +274,7 @@ fun FilePickerDialog(
             modifier =
               Modifier
                 .fillMaxWidth()
-                .height(400.dp),
+                .heightIn(max = 400.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
           ) {
             if (showStorageRoot) {

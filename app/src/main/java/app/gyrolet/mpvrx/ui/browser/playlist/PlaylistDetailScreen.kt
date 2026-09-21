@@ -15,6 +15,7 @@ import android.widget.Toast
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -28,6 +29,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Button
@@ -52,12 +56,14 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.shadow
 import app.gyrolet.mpvrx.ui.utils.dragElevation
 import app.gyrolet.mpvrx.ui.utils.rememberReorderFeedback
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -74,12 +80,17 @@ import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.network.ConnectionStatus
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
+import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
+import app.gyrolet.mpvrx.preferences.MediaLayoutMode
+import app.gyrolet.mpvrx.preferences.PlaylistSortType
+import app.gyrolet.mpvrx.preferences.SortOrder
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.repository.NetworkProbeResult
 import app.gyrolet.mpvrx.presentation.components.pullrefresh.PullRefreshBox
 import app.gyrolet.mpvrx.ui.browser.cards.M3UVideoCard
+import app.gyrolet.mpvrx.ui.browser.cards.PlaylistBookmarkButton
 import app.gyrolet.mpvrx.ui.browser.cards.sourceChipColor
 import app.gyrolet.mpvrx.ui.browser.cards.VideoCard
 import app.gyrolet.mpvrx.ui.browser.cards.VideoCardUiConfig
@@ -132,6 +143,11 @@ data class PlaylistDetailScreen(
     val context = LocalContext.current
     val backStack = LocalBackStack.current
     val coroutineScope = rememberCoroutineScope()
+    val density = LocalDensity.current
+    var contentWidthDp by remember { mutableStateOf<Int?>(null) }
+    val browserPreferences = koinInject<BrowserPreferences>()
+    val sortType by browserPreferences.playlistItemSortType.collectAsState()
+    val sortOrder by browserPreferences.playlistItemSortOrder.collectAsState()
 
     // ViewModel
     val viewModel: PlaylistDetailViewModel =
@@ -163,17 +179,17 @@ data class PlaylistDetailScreen(
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var isSearching by rememberSaveable { mutableStateOf(false) }
     var selectedM3UFilter by rememberSaveable { mutableStateOf(M3U_FILTER_ALL) }
+    var isReorderMode by rememberSaveable { mutableStateOf(false) }
+    var showSortDialog by rememberSaveable { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
     val hasFavoriteStreams = remember(videoItems) { videoItems.any { it.playlistItem.isFavorite } }
 
     LaunchedEffect(categories, hasFavoriteStreams, playlist?.isM3uPlaylist) {
-      if (playlist?.isM3uPlaylist != true) {
-        selectedM3UFilter = M3U_FILTER_ALL
-      } else if (
+      if (
         selectedM3UFilter != M3U_FILTER_ALL &&
         selectedM3UFilter != M3U_FILTER_FAVORITES &&
-        selectedM3UFilter !in categories
+        (playlist?.isM3uPlaylist != true || selectedM3UFilter !in categories)
       ) {
         selectedM3UFilter = M3U_FILTER_ALL
       } else if (selectedM3UFilter == M3U_FILTER_FAVORITES && !hasFavoriteStreams) {
@@ -181,15 +197,16 @@ data class PlaylistDetailScreen(
       }
     }
 
+    val sortedVideoItems = remember(videoItems, sortType, sortOrder, isReorderMode, playlist?.isM3uPlaylist) {
+      val effectiveType = sortType.takeUnless { it == PlaylistSortType.Category && playlist?.isM3uPlaylist != true }
+        ?: PlaylistSortType.Original
+      if (isReorderMode) videoItems else sortPlaylistItems(videoItems, effectiveType, sortOrder)
+    }
     val m3uFilteredItems =
-      if (playlist?.isM3uPlaylist == true) {
-        when (selectedM3UFilter) {
-          M3U_FILTER_FAVORITES -> videoItems.filter { it.playlistItem.isFavorite }
-          M3U_FILTER_ALL -> videoItems
-          else -> videoItems.filter { it.playlistItem.groupTitle == selectedM3UFilter }
-        }
-      } else {
-        videoItems
+      when (selectedM3UFilter) {
+        M3U_FILTER_FAVORITES -> sortedVideoItems.filter { it.playlistItem.isFavorite }
+        M3U_FILTER_ALL -> sortedVideoItems
+        else -> sortedVideoItems.filter { it.playlistItem.groupTitle == selectedM3UFilter }
       }
 
     // Filter video items based on category and search query
@@ -240,9 +257,6 @@ data class PlaylistDetailScreen(
     val mediaInfoError = remember { mutableStateOf<String?>(null) }
     var showUrlDialog by rememberSaveable { mutableStateOf(false) }
     var urlDialogContent by remember { mutableStateOf("") }
-
-    // Reorder mode state
-    var isReorderMode by rememberSaveable { mutableStateOf(false) }
 
     // Predictive back: Intercept when in selection mode, reorder mode, or searching
     BackHandler(enabled = selectionManager.isInSelectionMode || isReorderMode || isSearching) {
@@ -431,6 +445,7 @@ data class PlaylistDetailScreen(
             },
             onCancelSelection = { selectionManager.clear() },
             isSingleSelection = selectionManager.isSingleSelection,
+            onSortClick = if (isReorderMode) null else ({ showSortDialog = true }),
             useRemoveIcon = true, // Show remove icon instead of delete for playlist
             onInfoClick =
               if (selectionManager.isSingleSelection && playlist?.isXtreamPlaylist != true) {
@@ -510,7 +525,14 @@ data class PlaylistDetailScreen(
                     // Reorder button (hide for M3U playlists)
                     if (playlist?.isM3uPlaylist != true) {
                       IconButton(
-                        onClick = { isReorderMode = true },
+                        onClick = {
+                          selectedM3UFilter = M3U_FILTER_ALL
+                          searchQuery = ""
+                          isSearching = false
+                          browserPreferences.playlistItemSortType.set(PlaylistSortType.Original)
+                          browserPreferences.playlistItemSortOrder.set(SortOrder.Ascending)
+                          isReorderMode = true
+                        },
                       ) {
                         Icon(
                           imageVector = Icons.RoundedFilled.SwapVert,
@@ -655,9 +677,9 @@ data class PlaylistDetailScreen(
           },
         ) {
           Column(modifier = Modifier.fillMaxSize()) {
-            if (playlist?.isM3uPlaylist == true && (categories.isNotEmpty() || hasFavoriteStreams)) {
+            if (!isReorderMode && (hasFavoriteStreams || (playlist?.isM3uPlaylist == true && categories.isNotEmpty()))) {
               M3UPlaylistFilterRow(
-                categories = categories,
+                categories = if (playlist?.isM3uPlaylist == true) categories else emptyList(),
                 hasFavorites = hasFavoriteStreams,
                 selectedFilter = selectedM3UFilter,
                 onFilterSelected = { selectedM3UFilter = it },
@@ -680,10 +702,16 @@ data class PlaylistDetailScreen(
                 }
               },
               onToggleFavorite =
-                if (playlist?.isM3uPlaylist == true && !selectionManager.isInSelectionMode) {
+                if (!selectionManager.isInSelectionMode && !isReorderMode) {
                   { item ->
                     coroutineScope.launch {
-                      viewModel.toggleFavorite(item.playlistItem.id)
+                      try {
+                        viewModel.toggleFavorite(item.playlistItem.id)
+                      } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        throw cancelled
+                      } catch (_: Exception) {
+                        showToast(context.getString(R.string.playback_bookmark_update_failed))
+                      }
                     }
                   }
                 } else {
@@ -703,13 +731,22 @@ data class PlaylistDetailScreen(
                 selectionManager.handleLongClick(item)
               },
               listState = listState,
-              modifier = Modifier.weight(1f).fillMaxWidth(),
+              modifier = Modifier.weight(1f).fillMaxWidth().onSizeChanged {
+                contentWidthDp = with(density) { it.width.toDp().value.toInt() }
+              },
             )
           }
         }
       }
 
       // Dialogs
+      app.gyrolet.mpvrx.ui.browser.dialogs.PlaylistSortDialog(
+        isOpen = showSortDialog,
+        onDismiss = { showSortDialog = false },
+        isM3uPlaylist = playlist?.isM3uPlaylist == true,
+        availableWidthDp = contentWidthDp,
+      )
+
       RemoveFromPlaylistDialog(
         isOpen = deleteDialogOpen.value,
         onDismiss = { deleteDialogOpen.value = false },
@@ -755,6 +792,20 @@ private fun PlaylistVideoListContent(
   val gesturePreferences = koinInject<GesturePreferences>()
   val browserPreferences = koinInject<app.gyrolet.mpvrx.preferences.BrowserPreferences>()
   val appearancePreferences = koinInject<AppearancePreferences>()
+  val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
+  val manualGrid by browserPreferences.manualGridColumnsEnabled.collectAsState()
+  val landscape = LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+  val columnPreference = if (landscape) browserPreferences.videoGridColumnsLandscape else browserPreferences.videoGridColumnsPortrait
+  val requestedColumns by columnPreference.collectAsState()
+  val isGridMode = mediaLayoutMode == MediaLayoutMode.GRID && !isReorderMode
+  val gridState = rememberLazyGridState()
+  val showLocation by browserPreferences.showPlaylistLocation.collectAsState()
+  val showCategory by browserPreferences.showPlaylistCategory.collectAsState()
+  val showStreamDetails by browserPreferences.showPlaylistStreamDetails.collectAsState()
+  val bottomClearance = maxOf(
+    app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight.current,
+    app.gyrolet.mpvrx.ui.browser.NavigationBarState.miniPlayerClearance,
+  ) + 80.dp
   val tapThumbnailToSelect by gesturePreferences.tapThumbnailToSelect.collectAsState()
   val showSubtitleIndicator by browserPreferences.showSubtitleIndicator.collectAsState()
   val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
@@ -822,6 +873,75 @@ private fun PlaylistVideoListContent(
         .filter { it.playlistItem.lastPlayedAt > 0 }
         .maxByOrNull { it.playlistItem.lastPlayedAt }
     }
+
+  val itemContent: @Composable (PlaylistVideoItem, Boolean, Int, Modifier) -> Unit = { item, grid, columns, itemModifier ->
+    val sourceLabel = when {
+      isM3uPlaylist -> null
+      item.protocol != null -> item.protocol.displayName
+      item.isNetwork -> stringResource(R.string.playlist_source_network)
+      else -> stringResource(R.string.playlist_source_local)
+    }
+    val location = item.displayLocation().takeIf { showLocation && it.isNotBlank() }
+    val thumbnailClick = {
+      if (tapThumbnailToSelect) selectionManager.toggleFromUser(item) else onVideoItemClick(item)
+    }
+    if (isM3uPlaylist || item.isNetwork) {
+      M3UVideoCard(
+        title = item.video.displayName,
+        url = item.video.path,
+        logoUrl = item.playlistItem.tvgLogo,
+        groupTitle = item.playlistItem.groupTitle,
+        hasDrm = !item.playlistItem.licenseType.isNullOrBlank() || !item.playlistItem.licenseKey.isNullOrBlank(),
+        hasCustomUserAgent = !item.playlistItem.userAgent.isNullOrBlank(),
+        onClick = { onVideoItemClick(item) },
+        onLongClick = { onVideoItemLongClick(item) },
+        onThumbClick = thumbnailClick,
+        onFavoriteClick = onToggleFavorite?.let { toggle -> { toggle(item) } },
+        isSelected = selectionManager.isSelected(item),
+        isRecentlyPlayed = item.playlistItem.id == mostRecentlyPlayedItem?.playlistItem?.id,
+        isFavorite = item.playlistItem.isFavorite,
+        video = item.video,
+        showSourceWarning = isSourceDisconnected(item),
+        sourceLabel = sourceLabel,
+        sourceColor = sourceChipColor(item.protocol, item.isNetwork),
+        sourceSubtitle = location,
+        isGridMode = grid,
+        showLocation = showLocation,
+        showCategory = showCategory,
+        showStreamDetails = showStreamDetails,
+        uiConfig = videoCardUiConfig,
+        modifier = itemModifier,
+      )
+    } else {
+      VideoCard(
+        video = if (isAudio && !item.video.isAudio) item.video.copy(isAudio = true) else item.video,
+        onSwipeAction = swipeActions.video.takeUnless { selectionManager.isInSelectionMode || isReorderMode },
+        isWatched = swipePlaybackInfo[item.video.path]?.isWatched == true,
+        isOldAndUnplayed = swipePlaybackInfo[item.video.path]?.isOldAndUnplayed == true,
+        progressPercentage = if (item.playlistItem.lastPosition > 0 && item.video.duration > 0) {
+          item.playlistItem.lastPosition.toFloat() / item.video.duration.toFloat() * 100f
+        } else null,
+        isRecentlyPlayed = item.playlistItem.id == mostRecentlyPlayedItem?.playlistItem?.id,
+        isSelected = selectionManager.isSelected(item),
+        onClick = { onVideoItemClick(item) },
+        onLongClick = { onVideoItemLongClick(item) },
+        onThumbClick = thumbnailClick,
+        isGridMode = grid,
+        gridColumns = columns,
+        showSubtitleIndicator = showSubtitleIndicator,
+        thumbnailWidthPx = if (isAudio && !grid) audioThumbnailSizePx else null,
+        thumbnailHeightPx = if (isAudio && !grid) audioThumbnailSizePx else null,
+        sourceLabel = sourceLabel,
+        sourceColor = sourceChipColor(item.protocol, item.isNetwork),
+        sourceSubtitle = location,
+        modifier = itemModifier,
+        uiConfig = videoCardUiConfig,
+        titleAction = if (onToggleFavorite != null) {
+          { PlaylistBookmarkButton(item.playlistItem.isFavorite, onToggle = { onToggleFavorite(item) }) }
+        } else null,
+      )
+    }
+  }
 
   when {
     isLoading -> {
@@ -896,11 +1016,27 @@ private fun PlaylistVideoListContent(
           }
         }
 
-      Box(modifier = modifier.fillMaxSize()) {
+      BoxWithConstraints(modifier = modifier.fillMaxSize()) {
+        val maximumColumns = playlistGridColumnLimit(maxWidth.value.toInt())
+        val columns = if (manualGrid && requestedColumns > 0) requestedColumns.coerceIn(1, maximumColumns) else maximumColumns
+        if (isGridMode) {
+          LazyVerticalGrid(
+            columns = GridCells.Fixed(columns),
+            state = gridState,
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = bottomClearance),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+          ) {
+            items(count = videoItems.size, key = { videoItems[it].playlistItem.id }) { index ->
+              itemContent(videoItems[index], true, columns, Modifier.fillMaxWidth())
+            }
+          }
+        } else {
         LazyColumn(
           state = listState,
           modifier = Modifier.fillMaxSize(),
-          contentPadding = PaddingValues(start = 8.dp, end = 8.dp),
+          contentPadding = PaddingValues(start = 8.dp, end = 8.dp, top = 4.dp, bottom = bottomClearance),
         ) {
           items(
             count = videoItems.size,
@@ -910,84 +1046,11 @@ private fun PlaylistVideoListContent(
               val item = videoItems[index]
               val elevation = dragElevation(isDragging)
 
-              val progressPercentage =
-                if (item.playlistItem.lastPosition > 0 && item.video.duration > 0) {
-                  item.playlistItem.lastPosition.toFloat() / item.video.duration.toFloat() * 100f
-                } else {
-                  null
-                }
-
               Row(
                 modifier = Modifier.fillMaxWidth().shadow(elevation, MaterialTheme.shapes.medium, clip = false),
                 verticalAlignment = Alignment.CenterVertically,
               ) {
-                // M3U entries keep their stored URL; everything else gets a source badge so the
-                // internal mpvrx-network:// form never reaches the user.
-                val sourceLabel =
-                  when {
-                    isM3uPlaylist -> null
-                    item.protocol != null -> item.protocol.displayName
-                    // A network entry can outlive the row that named its protocol; it is still not
-                    // a local file, so fall back to a generic network badge rather than "Local".
-                    item.isNetwork -> stringResource(R.string.playlist_source_network)
-                    else -> "Local"
-                  }
-                val sourceSubtitle =
-                  listOfNotNull(item.connectionName, item.sourcePath).joinToString(" · ").ifBlank { null }
-
-                // Network entries share the M3U card: it is the only card that resolves network
-                // thumbnails through ThumbnailRepository's network APIs, whose cache keys differ
-                // from the plain Video path used by VideoCard.
-                if (isM3uPlaylist || item.isNetwork) {
-                  M3UVideoCard(
-                    title = item.video.displayName,
-                    url = item.video.path,
-                    logoUrl = item.playlistItem.tvgLogo,
-                    groupTitle = item.playlistItem.groupTitle,
-                    hasDrm =
-                      !item.playlistItem.licenseType.isNullOrBlank() || !item.playlistItem.licenseKey.isNullOrBlank(),
-                    hasCustomUserAgent = !item.playlistItem.userAgent.isNullOrBlank(),
-                    onClick = { onVideoItemClick(item) },
-                    onLongClick = { onVideoItemLongClick(item) },
-                    onFavoriteClick = onToggleFavorite?.let { { it(item) } },
-                    isSelected = selectionManager.isSelected(item),
-                    isRecentlyPlayed = item.playlistItem.id == mostRecentlyPlayedItem?.playlistItem?.id,
-                    isFavorite = item.playlistItem.isFavorite,
-                    video = item.video,
-                    showSourceWarning = isSourceDisconnected(item),
-                    sourceLabel = sourceLabel,
-                    sourceColor = sourceChipColor(item.protocol, item.isNetwork),
-                    sourceSubtitle = sourceSubtitle,
-                    modifier = Modifier.weight(1f),
-                  )
-                } else {
-                  VideoCard(
-                    video = if (isAudio && !item.video.isAudio) item.video.copy(isAudio = true) else item.video,
-                    onSwipeAction =
-                      swipeActions.video.takeUnless { selectionManager.isInSelectionMode || isReorderMode },
-                    isWatched = swipePlaybackInfo[item.video.path]?.isWatched == true,
-                    isOldAndUnplayed = swipePlaybackInfo[item.video.path]?.isOldAndUnplayed == true,
-                    progressPercentage = progressPercentage,
-                    isRecentlyPlayed = item.playlistItem.id == mostRecentlyPlayedItem?.playlistItem?.id,
-                    isSelected = selectionManager.isSelected(item),
-                    onClick = { onVideoItemClick(item) },
-                    onLongClick = { onVideoItemLongClick(item) },
-                    onThumbClick =
-                      if (tapThumbnailToSelect) {
-                        { selectionManager.toggleFromUser(item) }
-                      } else {
-                        { onVideoItemClick(item) }
-                      },
-                    showSubtitleIndicator = showSubtitleIndicator,
-                    thumbnailWidthPx = if (isAudio) audioThumbnailSizePx else null,
-                    thumbnailHeightPx = if (isAudio) audioThumbnailSizePx else null,
-                    sourceLabel = sourceLabel,
-                    sourceColor = sourceChipColor(item.protocol, item.isNetwork),
-                    sourceSubtitle = sourceSubtitle,
-                    modifier = Modifier.weight(1f),
-                    uiConfig = videoCardUiConfig,
-                  )
-                }
+                itemContent(item, false, 1, Modifier.weight(1f))
 
                 if (isReorderMode) {
                   IconButton(
@@ -1014,19 +1077,27 @@ private fun PlaylistVideoListContent(
             }
           }
         }
+        }
 
         if (hasEnoughItems && scrollbarAlpha > 0.01f) {
-          ExpressiveScrollBar(
-            listState = listState,
-            dragLabelProvider = { index ->
-              fastScrollGlyph(videoItems.getOrNull(index)?.video?.displayName)
-            },
-            modifier =
-              Modifier
-                .align(Alignment.CenterEnd)
-                .padding(vertical = 6.dp)
-                .graphicsLayer { alpha = scrollbarAlpha },
-          )
+          val scrollbarModifier = Modifier.align(Alignment.CenterEnd).padding(vertical = 6.dp)
+            .graphicsLayer { alpha = scrollbarAlpha }
+          val labelForIndex: (Int) -> String? = { index ->
+            fastScrollGlyph(videoItems.getOrNull(index)?.video?.displayName)
+          }
+          if (isGridMode) {
+            ExpressiveScrollBar(
+              gridState = gridState,
+              dragLabelProvider = labelForIndex,
+              modifier = scrollbarModifier,
+            )
+          } else {
+            ExpressiveScrollBar(
+              listState = listState,
+              dragLabelProvider = labelForIndex,
+              modifier = scrollbarModifier,
+            )
+          }
         }
       }
     }

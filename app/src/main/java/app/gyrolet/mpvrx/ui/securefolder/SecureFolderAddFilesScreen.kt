@@ -85,6 +85,7 @@ data object SecureFolderAddFilesScreen : Screen {
     val secureFolderPreferences = koinInject<SecureFolderPreferences>()
     val browserPreferences = koinInject<BrowserPreferences>()
     val videoCardUiConfig = rememberVideoCardUiConfig()
+    val showSubtitleIndicator by browserPreferences.showSubtitleIndicator.collectAsState()
     val videoListState = rememberLazyListState()
     val isVideoListScrolling by
       remember(videoListState) {
@@ -241,6 +242,7 @@ data object SecureFolderAddFilesScreen : Screen {
               FolderCard(
                 folder = videoFolder,
                 onClick = { selectedFolder = videoFolder },
+                onThumbClick = { selectedFolder = videoFolder },
                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
               )
             }
@@ -271,6 +273,7 @@ data object SecureFolderAddFilesScreen : Screen {
               onLongClick = { selectionManager?.handleLongClick(video) },
               allowThumbnailLoading = !isVideoListScrolling,
               uiConfig = videoCardUiConfig,
+              showSubtitleIndicator = showSubtitleIndicator,
               modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp),
             )
           }
@@ -286,6 +289,9 @@ data object SecureFolderAddFilesScreen : Screen {
         sortOrder = folderSortOrder,
         onSortTypeChange = { browserPreferences.folderSortType.set(it) },
         onSortOrderChange = { browserPreferences.folderSortOrder.set(it) },
+        embeddedAlbumView = true,
+        pickerMode = true,
+        fixedLayoutMode = app.gyrolet.mpvrx.preferences.MediaLayoutMode.LIST,
       )
     } else {
       VideoSortDialog(
@@ -295,6 +301,9 @@ data object SecureFolderAddFilesScreen : Screen {
         sortOrder = videoSortOrder,
         onSortTypeChange = { browserPreferences.videoSortType.set(it) },
         onSortOrderChange = { browserPreferences.videoSortOrder.set(it) },
+        enableViewModeOptions = false,
+        pickerMode = true,
+        fixedLayoutMode = app.gyrolet.mpvrx.preferences.MediaLayoutMode.LIST,
       )
     }
 

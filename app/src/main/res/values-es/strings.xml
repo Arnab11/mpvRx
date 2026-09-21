@@ -2416,4 +2416,21 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="pref_player_resume_mode_min_duration_summary">Reanudar desde la posición guardada solo si el vídeo alcanza la duración mínima.</string>
   <string name="pref_player_resume_min_duration">Duración mínima del vídeo</string>
   <string name="pref_player_resume_min_duration_summary">Los vídeos de menos de %1$d segundos empiezan desde el principio.</string>
+  <string name="playlist_sort_original">Orden de la lista</string>
+  <string name="playlist_location">Ubicación</string>
+  <string name="playlist_date_added">Fecha de incorporación</string>
+  <string name="playlist_item_count">Número de elementos</string>
+  <string name="playlist_category">Categoría</string>
+  <string name="playlist_sort_ascending">Ascendente</string>
+  <string name="playlist_sort_descending">Descendente</string>
+  <string name="playlist_layout">Diseño</string>
+  <string name="playlist_view_list">Lista</string>
+  <string name="playlist_view_grid">Cuadrícula</string>
+  <string name="playlist_full_names">Nombres completos</string>
+  <string name="playlist_stream_details">Detalles de la transmisión</string>
+  <string name="playlist_center_titles">Centrar títulos</string>
+  <string name="playlist_manual_grid">Columnas de cuadrícula manuales</string>
+  <string name="playlist_columns_portrait">Columnas en vertical</string>
+  <string name="playlist_columns_landscape">Columnas en horizontal</string>
+  <string name="playlist_extension">Extensión del archivo</string>
 </resources>

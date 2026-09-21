@@ -11,6 +11,7 @@ package app.gyrolet.mpvrx.ui.browser.cards
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
@@ -324,6 +325,15 @@ fun FolderCard(
               style = MaterialTheme.typography.labelSmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
+          }
+          if (customChipContent != null) {
+            FlowRow(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(4.dp),
+              verticalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+              customChipContent()
+            }
           }
         }
       } else {

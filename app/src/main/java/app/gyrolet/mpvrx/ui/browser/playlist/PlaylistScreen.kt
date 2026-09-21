@@ -46,6 +46,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.graphicsLayer
@@ -86,6 +87,8 @@ object PlaylistScreen : Screen {
     val browserPreferences = koinInject<BrowserPreferences>()
     val backStack = LocalBackStack.current
     val scope = rememberCoroutineScope()
+    val density = androidx.compose.ui.platform.LocalDensity.current
+    var contentWidthDp by remember { mutableStateOf<Int?>(null) }
 
     // ViewModel
     val viewModel: PlaylistViewModel =
@@ -94,6 +97,11 @@ object PlaylistScreen : Screen {
       )
 
     val playlistsWithCount by viewModel.playlistsWithCount.collectAsState()
+    val playlistSortType by browserPreferences.playlistSortType.collectAsState()
+    val playlistSortOrder by browserPreferences.playlistSortOrder.collectAsState()
+    val sortedPlaylists = remember(playlistsWithCount, playlistSortType, playlistSortOrder) {
+      sortPlaylists(playlistsWithCount, playlistSortType, playlistSortOrder)
+    }
     val isLoading by viewModel.isLoading.collectAsState()
     val hasCompletedInitialLoad by viewModel.hasCompletedInitialLoad.collectAsState()
     app.gyrolet.mpvrx.utils.permission.PermissionUtils.handleStoragePermission {
@@ -109,11 +117,13 @@ object PlaylistScreen : Screen {
     // Filter playlists based on search query
     val filteredPlaylists =
       if (isSearching && searchQuery.isNotBlank()) {
-        playlistsWithCount.filter { playlistWithCount ->
-          playlistWithCount.playlist.name.contains(searchQuery, ignoreCase = true)
+        sortedPlaylists.filter { playlistWithCount ->
+          playlistWithCount.playlist.name.contains(searchQuery, ignoreCase = true) ||
+            playlistSourceLocation(playlistWithCount.playlist.m3uSourceUrl ?: playlistWithCount.playlist.xtreamServerUrl)
+              .contains(searchQuery, ignoreCase = true)
         }
       } else {
-        playlistsWithCount
+        sortedPlaylists
       }
 
     // Request focus when search is activated
@@ -144,6 +154,7 @@ object PlaylistScreen : Screen {
     val isRefreshing = remember { mutableStateOf(false) }
     var showRenameDialog by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showSortDialog by rememberSaveable { mutableStateOf(false) }
     // Playlist action sheet state
     var showPlaylistActionSheet by remember { mutableStateOf(false) }
     val hasProtectedSelection =
@@ -175,6 +186,13 @@ object PlaylistScreen : Screen {
       isFabVisible = isFabVisible,
       expanded = false,
       onExpandedChange = {},
+    )
+
+    app.gyrolet.mpvrx.ui.browser.dialogs.PlaylistSortDialog(
+      isOpen = showSortDialog,
+      onDismiss = { showSortDialog = false },
+      isLibrary = true,
+      availableWidthDp = contentWidthDp,
     )
 
     Scaffold(
@@ -234,6 +252,7 @@ object PlaylistScreen : Screen {
             onBackClick = null,
             onCancelSelection = { selectionManager.clear() },
             isSingleSelection = selectionManager.isSingleSelection,
+            onSortClick = { showSortDialog = true },
             onSearchClick = { isSearching = true },
             onSettingsClick = {
               backStack.navigateTo(app.gyrolet.mpvrx.ui.preferences.PreferencesScreen)
@@ -324,7 +343,9 @@ object PlaylistScreen : Screen {
           onPlaylistLongClick = { playlistWithCount ->
             selectionManager.handleLongClick(playlistWithCount)
           },
-          modifier = Modifier.padding(paddingValues),
+          modifier = Modifier.padding(paddingValues).onSizeChanged {
+            contentWidthDp = with(density) { it.width.toDp().value.toInt() }
+          },
           isInSelectionMode = selectionManager.isInSelectionMode,
         )
       }
@@ -469,15 +490,12 @@ object PlaylistScreen : Screen {
           val configuration = androidx.compose.ui.platform.LocalConfiguration.current
           val isLandscape = configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
           val folderGridColumnsPref = if (isLandscape) folderGridColumnsLandscape else folderGridColumnsPortrait
+          val maximumColumns = playlistGridColumnLimit(maxWidth.value.toInt(), true)
           val folderGridColumns =
-            if (manualGridColumnsEnabled) {
-              folderGridColumnsPref.coerceAtLeast(1)
+            if (manualGridColumnsEnabled && folderGridColumnsPref > 0) {
+              folderGridColumnsPref.coerceIn(1, maximumColumns)
             } else {
-              val contentHorizontalPadding = 8.dp
-              val itemSpacing = 2.dp
-              val usableWidth = maxWidth - (contentHorizontalPadding * 2) - itemSpacing
-              val folderMinWidth = 100.dp
-              (usableWidth / folderMinWidth).toInt().coerceAtLeast(1)
+              maximumColumns
             }
 
           LazyVerticalGrid(

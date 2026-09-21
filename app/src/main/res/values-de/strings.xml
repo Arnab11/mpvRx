@@ -2416,4 +2416,21 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_player_resume_mode_min_duration_summary">Nur dann an der gespeicherten Position fortsetzen, wenn das Video die Mindestdauer erreicht.</string>
   <string name="pref_player_resume_min_duration">Mindestdauer des Videos</string>
   <string name="pref_player_resume_min_duration_summary">Videos mit einer Dauer unter %1$d Sekunden beginnen von vorn.</string>
+  <string name="playlist_sort_original">Reihenfolge der Wiedergabeliste</string>
+  <string name="playlist_location">Speicherort</string>
+  <string name="playlist_date_added">Hinzugefügt am</string>
+  <string name="playlist_item_count">Anzahl der Einträge</string>
+  <string name="playlist_category">Kategorie</string>
+  <string name="playlist_sort_ascending">Aufsteigend</string>
+  <string name="playlist_sort_descending">Absteigend</string>
+  <string name="playlist_layout">Layout</string>
+  <string name="playlist_view_list">Liste</string>
+  <string name="playlist_view_grid">Raster</string>
+  <string name="playlist_full_names">Vollständige Namen</string>
+  <string name="playlist_stream_details">Streamdetails</string>
+  <string name="playlist_center_titles">Titel zentrieren</string>
+  <string name="playlist_manual_grid">Rasterspalten manuell festlegen</string>
+  <string name="playlist_columns_portrait">Spalten im Hochformat</string>
+  <string name="playlist_columns_landscape">Spalten im Querformat</string>
+  <string name="playlist_extension">Dateierweiterung</string>
 </resources>

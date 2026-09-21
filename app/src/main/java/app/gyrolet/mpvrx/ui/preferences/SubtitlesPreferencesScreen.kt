@@ -701,6 +701,7 @@ object SubtitlesPreferencesScreen : Screen {
                         ) {
                           SuggestionChip(
                             onClick = {},
+                            enabled = false,
                             label = { Text(stringResource(R.string.pref_api_key_type, keyType)) },
                             colors =
                               SuggestionChipDefaults.suggestionChipColors(

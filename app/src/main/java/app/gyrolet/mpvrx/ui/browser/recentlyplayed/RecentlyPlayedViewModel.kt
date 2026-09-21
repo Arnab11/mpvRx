@@ -27,10 +27,13 @@ import app.gyrolet.mpvrx.domain.recentlyplayed.repository.RecentlyPlayedReposito
 import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 import app.gyrolet.mpvrx.utils.media.HttpUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.updateAndGet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.java.KoinJavaComponent.inject
@@ -49,6 +52,8 @@ class RecentlyPlayedViewModel(
 
   private val _isLoading = MutableStateFlow(true)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
+  private val refreshRevision = MutableStateFlow(0L)
+  private val completedRefreshRevision = MutableStateFlow(0L)
 
   init {
     // Observe recently played changes and update automatically
@@ -62,12 +67,19 @@ class RecentlyPlayedViewModel(
         .combine(
           recentlyPlayedRepository.observeRecentlyPlayed(limit = 50),
           db.recentlyPlayedDao().observeRecentlyPlayedPlaylists(limit = 50),
-        ) { entities, playlists ->
-          Pair(entities, playlists)
-        }.collect { (entities, playlists) ->
+          refreshRevision,
+        ) { entities, playlists, revision ->
+          Triple(entities, playlists, revision)
+        }.collect { (entities, playlists, revision) ->
           loadRecentVideosFromEntities(entities, playlists)
+          completedRefreshRevision.value = revision
         }
     }
+  }
+
+  suspend fun refresh() {
+    val revision = refreshRevision.updateAndGet { it + 1L }
+    completedRefreshRevision.first { it >= revision }
   }
 
   private suspend fun loadRecentVideosFromEntities(
@@ -172,6 +184,8 @@ class RecentlyPlayedViewModel(
       // Sort by timestamp
       val sortedItems = items.sortedByDescending { it.timestamp }
       _recentItems.value = sortedItems
+    } catch (cancellation: CancellationException) {
+      throw cancellation
     } catch (e: Exception) {
       Log.e("RecentlyPlayedViewModel", "Error loading recent videos", e)
       _recentItems.value = emptyList()

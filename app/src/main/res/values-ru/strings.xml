@@ -2424,4 +2424,21 @@
   <string name="pref_player_resume_mode_min_duration_summary">Продолжать с сохранённой позиции, только если длительность видео не меньше заданной.</string>
   <string name="pref_player_resume_min_duration">Минимальная длительность видео</string>
   <string name="pref_player_resume_min_duration_summary">Видео короче %1$d секунд воспроизводятся с начала.</string>
+  <string name="playlist_sort_original">Порядок плейлиста</string>
+  <string name="playlist_location">Расположение</string>
+  <string name="playlist_date_added">Дата добавления</string>
+  <string name="playlist_item_count">Количество элементов</string>
+  <string name="playlist_category">Категория</string>
+  <string name="playlist_sort_ascending">По возрастанию</string>
+  <string name="playlist_sort_descending">По убыванию</string>
+  <string name="playlist_layout">Вид</string>
+  <string name="playlist_view_list">Список</string>
+  <string name="playlist_view_grid">Сетка</string>
+  <string name="playlist_full_names">Полные имена</string>
+  <string name="playlist_stream_details">Сведения о потоке</string>
+  <string name="playlist_center_titles">Заголовки по центру</string>
+  <string name="playlist_manual_grid">Число столбцов вручную</string>
+  <string name="playlist_columns_portrait">Столбцы по вертикали</string>
+  <string name="playlist_columns_landscape">Столбцы по горизонтали</string>
+  <string name="playlist_extension">Расширение файла</string>
 </resources>

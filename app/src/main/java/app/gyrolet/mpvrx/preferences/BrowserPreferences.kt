@@ -60,6 +60,14 @@ class BrowserPreferences(
   val videoSwipeRightZonePercent = preferenceStore.getInt("video_swipe_right_zone_percent", DEFAULT_VIDEO_SWIPE_ZONE_PERCENT)
   val videoSwipeLeftZonePercent = preferenceStore.getInt("video_swipe_left_zone_percent", DEFAULT_VIDEO_SWIPE_ZONE_PERCENT)
 
+  val playlistSortType = preferenceStore.getEnum("playlist_sort_type", PlaylistSortType.Original)
+  val playlistSortOrder = preferenceStore.getEnum("playlist_sort_order", SortOrder.Ascending)
+  val playlistItemSortType = preferenceStore.getEnum("playlist_item_sort_type", PlaylistSortType.Original)
+  val playlistItemSortOrder = preferenceStore.getEnum("playlist_item_sort_order", SortOrder.Ascending)
+  val showPlaylistLocation = preferenceStore.getBoolean("show_playlist_location", true)
+  val showPlaylistCategory = preferenceStore.getBoolean("show_playlist_category", true)
+  val showPlaylistStreamDetails = preferenceStore.getBoolean("show_playlist_stream_details", true)
+
   // Music view mode and sorting preferences
   val musicViewMode = preferenceStore.getEnum("music_view_mode", MusicViewMode.GRID)
   val musicSortField = preferenceStore.getEnum("music_sort_field", MusicSortField.TITLE)
@@ -163,6 +171,16 @@ enum class SortOrder {
 
   val isAscending: Boolean
     get() = this == Ascending
+}
+
+enum class PlaylistSortType {
+  Original,
+  Name,
+  Location,
+  DateAdded,
+  LastPlayed,
+  ItemCount,
+  Category,
 }
 
 /**

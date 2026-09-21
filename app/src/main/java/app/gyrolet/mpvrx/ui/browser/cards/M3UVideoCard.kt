@@ -28,7 +28,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -43,10 +42,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
@@ -55,14 +58,33 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.browser.playlist.playlistSourceLocation
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.ui.player.controls.components.tvContextMenu
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
+import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
-import kotlin.math.roundToInt
+
+@Composable
+internal fun PlaylistBookmarkButton(
+  isFavorite: Boolean,
+  onToggle: () -> Unit,
+  modifier: Modifier = Modifier,
+) {
+  androidx.compose.material3.FilledTonalIconToggleButton(
+    checked = isFavorite,
+    onCheckedChange = { onToggle() },
+    modifier = modifier.size(48.dp),
+  ) {
+    Icon(
+      imageVector = Icons.RoundedFilled.Bookmarks,
+      contentDescription = stringResource(if (isFavorite) R.string.audiobook_delete_bookmark else R.string.audiobook_add_bookmark),
+    )
+  }
+}
 
 /**
  * Card for displaying M3U/M3U8 playlist items (streaming URLs)
@@ -92,11 +114,19 @@ fun M3UVideoCard(
   sourceLabel: String? = null,
   sourceColor: Color? = null,
   sourceSubtitle: String? = null,
+  isGridMode: Boolean = false,
+  showLocation: Boolean = true,
+  showCategory: Boolean = true,
+  showStreamDetails: Boolean = true,
+  onThumbClick: () -> Unit = onClick,
+  uiConfig: VideoCardUiConfig? = null,
 ) {
+  val displayConfig = uiConfig ?: rememberVideoCardUiConfig()
   val thumbnailRepository = koinInject<ThumbnailRepository>()
   val appearancePreferences = koinInject<AppearancePreferences>()
   val showNetworkThumbnails by appearancePreferences.showNetworkThumbnails.collectAsState()
   var thumbnail by remember(url, logoUrl) { mutableStateOf<android.graphics.Bitmap?>(null) }
+  var thumbnailSize by remember(url, isGridMode) { mutableStateOf(IntSize.Zero) }
   val networkReference = remember(url) { NetworkPlaybackUri.parse(url) }
   val isYouTubeArtwork =
     remember(logoUrl) {
@@ -116,11 +146,11 @@ fun M3UVideoCard(
         url.startsWith("smb://", ignoreCase = true)
     }
 
-  if (!isYouTubeArtwork && (!isNetwork || showNetworkThumbnails)) {
-    val density = LocalDensity.current
-    val targetThumbnailSize = 128.dp
-    val thumbWidthPx = with(density) { targetThumbnailSize.toPx().roundToInt() }
-    val thumbHeightPx = (thumbWidthPx / (16f / 9f)).roundToInt()
+  if (displayConfig.showThumbnails && logoUrl.isNullOrBlank() && !hasDrm &&
+    thumbnailSize.width > 0 && thumbnailSize.height > 0 && (!isNetwork || showNetworkThumbnails)
+  ) {
+    val thumbWidthPx = thumbnailSize.width
+    val thumbHeightPx = thumbnailSize.height
 
     val actualVideo =
       remember(video, url) {
@@ -147,7 +177,7 @@ fun M3UVideoCard(
       }
 
     val thumbnailKey =
-      remember(actualVideo.id, thumbWidthPx, thumbHeightPx, isNetwork) {
+      remember(actualVideo, url, thumbWidthPx, thumbHeightPx, isNetwork, networkReference) {
         if (networkReference != null) {
           "network-m3u|${networkReference.connectionId}|${networkReference.path.value}|$thumbWidthPx|$thumbHeightPx"
         } else if (isNetwork) {
@@ -180,28 +210,32 @@ fun M3UVideoCard(
     }
 
     LaunchedEffect(thumbnailKey) {
-      if (thumbnail == null) {
-        thumbnail =
-          withContext(Dispatchers.IO) {
-            if (networkReference != null) {
-              thumbnailRepository.getThumbnailForNetworkSource(
-                connectionId = networkReference.connectionId,
-                path = networkReference.path.value,
-                widthPx = thumbWidthPx,
-                heightPx = thumbHeightPx,
-              )
-            } else if (isNetwork) {
-              thumbnailRepository.getThumbnailForNetworkPath(url, thumbWidthPx, thumbHeightPx)
-            } else {
-              thumbnailRepository.getThumbnail(actualVideo, thumbWidthPx, thumbHeightPx)
-            }
+      thumbnail =
+        withContext(Dispatchers.IO) {
+          if (networkReference != null) {
+            thumbnailRepository.getThumbnailForNetworkSource(
+              connectionId = networkReference.connectionId,
+              path = networkReference.path.value,
+              widthPx = thumbWidthPx,
+              heightPx = thumbHeightPx,
+            )
+          } else if (isNetwork) {
+            thumbnailRepository.getThumbnailForNetworkPath(url, thumbWidthPx, thumbHeightPx)
+          } else {
+            thumbnailRepository.getThumbnail(actualVideo, thumbWidthPx, thumbHeightPx)
           }
-      }
+        }
     }
   }
 
-  val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
-  val maxLines = if (unlimitedNameLines) Int.MAX_VALUE else 2
+  val maxLines = if (displayConfig.unlimitedNameLines) Int.MAX_VALUE else 2
+  val displayTitle =
+    if (sourceLabel != null && !displayConfig.showExtensionField) {
+      if (video?.isAudio == true && video.title.isNotBlank()) video.title else FileTypeUtils.stripExtension(title)
+    } else {
+      title
+    }
+  val location = sourceSubtitle?.takeIf(String::isNotBlank) ?: playlistSourceLocation(url)
 
   val thumbnailWidth = 128.dp
 
@@ -231,24 +265,28 @@ fun M3UVideoCard(
         )
       }
 
-      Row(
+      FlowRow(
         // Matches VideoCard's list layout exactly (8dp inset, 12dp thumbnail gap) so a mixed
         // playlist's thumbnails and text columns line up across both card types.
         modifier =
           Modifier
             .fillMaxWidth()
             .padding(horizontal = 8.dp, vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically,
+        maxItemsInEachRow = if (isGridMode) 1 else Int.MAX_VALUE,
+        verticalArrangement = Arrangement.spacedBy(if (isGridMode) 8.dp else 0.dp),
+        itemVerticalAlignment = Alignment.CenterVertically,
       ) {
+      if (displayConfig.showThumbnails) {
       Box(
         modifier =
           Modifier
-            .width(thumbnailWidth)
+            .then(if (isGridMode) Modifier.fillMaxWidth() else Modifier.width(thumbnailWidth))
             .aspectRatio(16f / 9f)
+            .onSizeChanged { thumbnailSize = it }
             .clip(RoundedCornerShape(12.dp))
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .combinedClickable(
-              onClick = onClick,
+              onClick = onThumbClick,
               onLongClick = onLongClick,
             ),
         contentAlignment = Alignment.Center,
@@ -284,6 +322,21 @@ fun M3UVideoCard(
           )
         }
 
+        if (isSelected) {
+          Box(
+            modifier = Modifier.align(Alignment.TopStart).padding(4.dp).size(24.dp)
+              .clip(CircleShape).background(MaterialTheme.colorScheme.primary),
+            contentAlignment = Alignment.Center,
+          ) {
+            Icon(
+              imageVector = Icons.RoundedFilled.Check,
+              contentDescription = null,
+              modifier = Modifier.size(16.dp),
+              tint = MaterialTheme.colorScheme.onPrimary,
+            )
+          }
+        }
+
         if (showSourceWarning) {
           Box(
             modifier =
@@ -297,13 +350,19 @@ fun M3UVideoCard(
           )
         }
       }
-      Spacer(modifier = Modifier.width(12.dp))
+      if (!isGridMode) Spacer(modifier = Modifier.width(12.dp))
+      }
       Column(
-        modifier = Modifier.weight(1f),
+        modifier = if (isGridMode) Modifier.fillMaxWidth() else Modifier.weight(1f),
         verticalArrangement = Arrangement.spacedBy(6.dp),
       ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+          if (isSelected && !displayConfig.showThumbnails) {
+            Icon(Icons.RoundedFilled.Check, null, Modifier.size(20.dp), tint = MaterialTheme.colorScheme.primary)
+          }
         Text(
-          title,
+          displayTitle,
+          modifier = Modifier.weight(1f),
           style = MaterialTheme.typography.titleSmall,
           color =
             if (isRecentlyPlayed) {
@@ -311,26 +370,21 @@ fun M3UVideoCard(
             } else {
               MaterialTheme.colorScheme.onSurface
             },
-          maxLines = if (sourceLabel != null) 1 else maxLines,
+          maxLines = maxLines,
           overflow = TextOverflow.Ellipsis,
           fontWeight = if (isFavorite) FontWeight.SemiBold else FontWeight.Normal,
+          textAlign = if (isGridMode && displayConfig.centerGridTitles) TextAlign.Center else TextAlign.Start,
         )
-        if (sourceLabel != null) {
-          if (!sourceSubtitle.isNullOrBlank()) {
-            Text(
-              sourceSubtitle,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-            )
+          if (onFavoriteClick != null) {
+            PlaylistBookmarkButton(isFavorite = isFavorite, onToggle = onFavoriteClick)
           }
-        } else {
+        }
+        if (showLocation && location.isNotBlank()) {
           Text(
-            url,
+            location,
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
+            maxLines = 1,
             overflow = TextOverflow.Ellipsis,
           )
         }
@@ -345,7 +399,7 @@ fun M3UVideoCard(
           if (sourceLabel != null) {
             SourceChip(label = sourceLabel, color = sourceColor ?: MaterialTheme.colorScheme.surfaceContainerHigh)
             val sizeText = video?.sizeFormatted
-            if (!sizeText.isNullOrBlank() && sizeText != "0 B" && sizeText != "--") {
+            if (displayConfig.showSizeChip && !sizeText.isNullOrBlank() && sizeText != "0 B" && sizeText != "--") {
               // Deliberately not M3UMetadataChip: that one is a pill. This sits next to the source
               // badge, and matching VideoCard's rounded-rect metadata chips keeps a mixed
               // playlist's third line reading as one row instead of two chip systems.
@@ -361,21 +415,21 @@ fun M3UVideoCard(
               )
             }
           }
-          if (!groupTitle.isNullOrBlank()) {
+          if (showCategory && !groupTitle.isNullOrBlank()) {
             M3UMetadataChip(
               text = groupTitle,
               containerColor = MaterialTheme.colorScheme.secondaryContainer,
               contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
             )
           }
-          if (hasDrm) {
+          if (showStreamDetails && hasDrm) {
             M3UMetadataChip(
               text = "DRM",
               containerColor = MaterialTheme.colorScheme.errorContainer,
               contentColor = MaterialTheme.colorScheme.onErrorContainer,
             )
           }
-          if (hasCustomUserAgent) {
+          if (showStreamDetails && hasCustomUserAgent) {
             M3UMetadataChip(
               text = "UA",
               containerColor = MaterialTheme.colorScheme.tertiaryContainer,
@@ -384,7 +438,7 @@ fun M3UVideoCard(
           }
           if (isFavorite) {
             M3UMetadataChip(
-              text = "Saved",
+              text = stringResource(R.string.ui_saved),
               containerColor = MaterialTheme.colorScheme.primaryContainer,
               contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
             )
@@ -392,21 +446,6 @@ fun M3UVideoCard(
         }
       }
 
-        if (onFavoriteClick != null) {
-          Spacer(modifier = Modifier.width(8.dp))
-          IconButton(onClick = onFavoriteClick) {
-            Icon(
-              imageVector = Icons.RoundedFilled.Bookmarks,
-              contentDescription = if (isFavorite) "Unsave stream" else "Save stream",
-              tint =
-                if (isFavorite) {
-                  MaterialTheme.colorScheme.primary
-                } else {
-                  MaterialTheme.colorScheme.onSurfaceVariant
-                },
-            )
-          }
-        }
       }
     }
   }

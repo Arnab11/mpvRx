@@ -16,6 +16,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +28,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -220,99 +222,63 @@ fun SortDialog(
                 Text(text = layoutModeSelector.secondOptionLabel)
               }
             }
-            if (layoutModeSelector.checkboxLabel != null && layoutModeSelector.onCheckboxChange != null) {
+            val showSeparateLayout = layoutModeSelector.checkboxLabel != null && layoutModeSelector.onCheckboxChange != null
+            val showManualGrid = manualGridToggle != null && !layoutModeSelector.isFirstOptionSelected
+            if (showSeparateLayout || showManualGrid) {
               Spacer(modifier = Modifier.height(4.dp))
               Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier =
-                  Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable {
-                      if (enableLayoutModeOptions) {
-                        layoutModeSelector.onCheckboxChange.invoke(!layoutModeSelector.isCheckboxChecked)
-                      }
-                    }.padding(vertical = 2.dp),
-              ) {
-                Checkbox(
-                  checked = layoutModeSelector.isCheckboxChecked,
-                  onCheckedChange = { checked ->
-                    if (enableLayoutModeOptions) {
-                      layoutModeSelector.onCheckboxChange.invoke(checked)
-                    }
-                  },
-                )
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(
-                  text = layoutModeSelector.checkboxLabel,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-              }
-            }
-            if (manualGridToggle != null && !layoutModeSelector.isFirstOptionSelected) {
-              Spacer(modifier = Modifier.height(8.dp))
-              val isEnabled = enableLayoutModeOptions && manualGridToggle.enabled
-              val buttonBgColor by animateColorAsState(
-                targetValue =
-                  if (manualGridToggle.checked) {
-                    MaterialTheme.colorScheme.primaryContainer
-                  } else {
-                    MaterialTheme.colorScheme.surfaceContainerHighest
-                  },
-                label = "manualGridButtonBg",
-              )
-              val buttonTextColor by animateColorAsState(
-                targetValue =
-                  if (manualGridToggle.checked) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                  } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                  },
-                label = "manualGridButtonText",
-              )
-
-              Row(
-                modifier =
-                  Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .clickable(
-                      enabled = isEnabled,
-                      onClick = {
-                        manualGridToggle.onCheckedChange(!manualGridToggle.checked)
-                        haptics.selection(!manualGridToggle.checked)
-                      },
-                    )
-                    .padding(vertical = 4.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
               ) {
-                Text(
-                  text = manualGridToggle.label,
-                  style = MaterialTheme.typography.bodyMedium,
-                )
-                val buttonShape = RoundedCornerShape(12.dp)
-                Box(
-                  modifier =
-                    Modifier
-                      .clip(buttonShape)
-                      .background(buttonBgColor)
-                      .then(
-                        if (!manualGridToggle.checked) {
-                          Modifier.border(1.dp, MaterialTheme.colorScheme.outlineVariant, buttonShape)
-                        } else {
-                          Modifier
+                if (layoutModeSelector.checkboxLabel != null && layoutModeSelector.onCheckboxChange != null) {
+                  Row(
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+                      .toggleable(
+                        value = layoutModeSelector.isCheckboxChecked,
+                        enabled = enableLayoutModeOptions,
+                        role = androidx.compose.ui.semantics.Role.Checkbox,
+                        onValueChange = { checked ->
+                          layoutModeSelector.onCheckboxChange.invoke(checked)
+                          haptics.selection(checked)
                         },
-                      )
-                      .padding(horizontal = 16.dp, vertical = 6.dp),
-                  contentAlignment = Alignment.Center,
-                ) {
-                  Text(
-                    text = if (manualGridToggle.checked) "On" else "Off",
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.Medium,
-                    color = buttonTextColor,
-                  )
+                      ),
+                    verticalAlignment = Alignment.CenterVertically,
+                  ) {
+                    Checkbox(
+                      checked = layoutModeSelector.isCheckboxChecked,
+                      onCheckedChange = null,
+                      enabled = enableLayoutModeOptions,
+                    )
+                    Text(
+                      text = layoutModeSelector.checkboxLabel,
+                      modifier = Modifier.weight(1f),
+                      style = MaterialTheme.typography.bodyMedium,
+                    )
+                  }
+                }
+                if (manualGridToggle != null && showManualGrid) {
+                  val isEnabled = enableLayoutModeOptions && manualGridToggle.enabled
+                  Row(
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp).clip(RoundedCornerShape(8.dp))
+                      .toggleable(
+                        value = manualGridToggle.checked,
+                        enabled = isEnabled,
+                        role = androidx.compose.ui.semantics.Role.Checkbox,
+                        onValueChange = { checked ->
+                          manualGridToggle.onCheckedChange(checked)
+                          haptics.selection(checked)
+                        },
+                      ),
+                    verticalAlignment = Alignment.CenterVertically,
+                  ) {
+                    Checkbox(checked = manualGridToggle.checked, onCheckedChange = null, enabled = isEnabled)
+                    Text(
+                      text = manualGridToggle.label,
+                      modifier = Modifier.weight(1f),
+                      style = MaterialTheme.typography.bodyMedium,
+                    )
+                  }
                 }
               }
             }

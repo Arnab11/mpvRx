@@ -516,7 +516,8 @@ object RecentlyPlayedScreen : Screen {
               }
             } else {
               RecentItemsContent(
-                onChanged = {},
+                onChanged = { coroutineScope.launch { viewModel.refresh() } },
+                onRefresh = viewModel::refresh,
                 recentItems = pageItems,
                 selectionManager = selectionManager,
                 onVideoClick = { video ->
@@ -641,6 +642,7 @@ private fun RecentItemsContent(
   listState: LazyListState,
   gridState: LazyGridState,
   onChanged: () -> Unit,
+  onRefresh: suspend () -> Unit,
 ) {
   val swipeActions = rememberVideoSwipeActions(onChanged = onChanged)
   val swipePlaybackInfo = rememberSwipePlaybackInfo(
@@ -789,7 +791,7 @@ private fun RecentItemsContent(
 
   PullRefreshBox(
     isRefreshing = isRefreshing,
-    onRefresh = { },
+    onRefresh = onRefresh,
     listState = listState,
     modifier = modifier.fillMaxSize(),
   ) {

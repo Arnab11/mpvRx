@@ -2416,4 +2416,21 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="pref_player_resume_mode_min_duration_summary">Retomar da posição salva somente quando o vídeo atingir a duração mínima.</string>
   <string name="pref_player_resume_min_duration">Duração mínima do vídeo</string>
   <string name="pref_player_resume_min_duration_summary">Vídeos com menos de %1$d segundos começam do início.</string>
+  <string name="playlist_sort_original">Ordem da lista</string>
+  <string name="playlist_location">Localização</string>
+  <string name="playlist_date_added">Data de adição</string>
+  <string name="playlist_item_count">Número de itens</string>
+  <string name="playlist_category">Categoria</string>
+  <string name="playlist_sort_ascending">Crescente</string>
+  <string name="playlist_sort_descending">Decrescente</string>
+  <string name="playlist_layout">Layout</string>
+  <string name="playlist_view_list">Lista</string>
+  <string name="playlist_view_grid">Grade</string>
+  <string name="playlist_full_names">Nomes completos</string>
+  <string name="playlist_stream_details">Detalhes da transmissão</string>
+  <string name="playlist_center_titles">Centralizar títulos</string>
+  <string name="playlist_manual_grid">Colunas da grade manuais</string>
+  <string name="playlist_columns_portrait">Colunas em retrato</string>
+  <string name="playlist_columns_landscape">Colunas em paisagem</string>
+  <string name="playlist_extension">Extensão do arquivo</string>
 </resources>
