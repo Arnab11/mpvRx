@@ -62,6 +62,7 @@ class AppearancePreferences(
   val customWallpaperScaleMode = preferenceStore.getEnum("custom_wallpaper_scale_mode", WallpaperScaleMode.Fit)
   val customWallpaperBlur = preferenceStore.getFloat("custom_wallpaper_blur", 0f)
   val customWallpaperAlpha = preferenceStore.getFloat("custom_wallpaper_alpha", 1f)
+  val customWallpaperUseColors = preferenceStore.getBoolean("custom_wallpaper_use_colors", false)
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
   val appUiScale = preferenceStore.getFloat("app_ui_scale", 1f)

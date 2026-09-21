@@ -72,6 +72,7 @@ import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.preferences.components.ThemePicker
 import app.gyrolet.mpvrx.ui.theme.DarkMode
 import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
+import app.gyrolet.mpvrx.ui.theme.WallpaperDerivedThemeName
 import app.gyrolet.mpvrx.ui.theme.LocalThemeTransitionState
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.LocalShowSettingsBackArrow
@@ -124,6 +125,14 @@ object AppearancePreferencesScreen : Screen {
     val thumbnailMode = storedThumbnailMode
     val customThemes = remember(customTheme) { CustomThemeDefinition.parseCollection(customTheme) }
     val selectedCustomTheme = customThemes.firstOrNull { it.name == selectedCustomThemeName }
+    // The wallpaper-derived theme is managed from the wallpaper editor, so it's hidden from the picker.
+    val pickerThemes = remember(customThemes) { customThemes.filterNot { it.name == WallpaperDerivedThemeName } }
+    val selectedThemeLabel =
+      if (selectedCustomTheme?.name == WallpaperDerivedThemeName) {
+        stringResource(R.string.pref_appearance_custom_wallpaper_title)
+      } else {
+        selectedCustomTheme?.name ?: stringResource(appTheme.titleRes)
+      }
 
     val wallpaperPicker =
       rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
@@ -268,7 +277,7 @@ object AppearancePreferencesScreen : Screen {
                     fontWeight = FontWeight.SemiBold,
                   )
                   Text(
-                    text = "${stringResource(darkMode.titleRes)} · ${selectedCustomTheme?.name ?: stringResource(appTheme.titleRes)}",
+                    text = "${stringResource(darkMode.titleRes)} · $selectedThemeLabel",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                   )
@@ -312,7 +321,7 @@ object AppearancePreferencesScreen : Screen {
                   val amoledMode by preferences.amoledMode.collectAsState()
                   ThemePicker(
                     currentTheme = appTheme,
-                    customThemes = customThemes,
+                    customThemes = pickerThemes,
                     selectedCustomThemeName = selectedCustomThemeName,
                     isDarkMode = isDarkMode,
                     onThemeSelected = { theme, position ->
@@ -387,6 +396,15 @@ object AppearancePreferencesScreen : Screen {
                               preferences.customWallpaperOffsetX.set(0f)
                               preferences.customWallpaperOffsetY.set(0f)
                               preferences.customWallpaperScaleMode.set(app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode.Fit)
+                              preferences.customWallpaperUseColors.set(false)
+                              if (customThemes.any { it.name == WallpaperDerivedThemeName }) {
+                                preferences.customTheme.set(
+                                  CustomThemeDefinition.serializeCollection(pickerThemes),
+                                )
+                              }
+                              if (selectedCustomThemeName == WallpaperDerivedThemeName) {
+                                preferences.selectedCustomThemeName.set("")
+                              }
                             },
                             modifier = Modifier.weight(1f),
                             contentPadding = PaddingValues(horizontal = 8.dp),

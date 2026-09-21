@@ -58,8 +58,12 @@ import app.gyrolet.mpvrx.preferences.MultiChoiceSegmentedButton
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
+import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
+import app.gyrolet.mpvrx.ui.theme.WallpaperDerivedThemeName
 import app.gyrolet.mpvrx.ui.theme.WallpaperImage
 import app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode
+import app.gyrolet.mpvrx.ui.theme.extractThemeFromWallpaper
 import app.gyrolet.mpvrx.ui.theme.loadWallpaperBitmap
 import app.gyrolet.mpvrx.ui.theme.saveWallpaperCopy
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
@@ -108,6 +112,13 @@ data class WallpaperEditorScreen(
     var alpha by rememberSaveable(sourceUri) {
       mutableStateOf(if (isEditingCurrent) preferences.customWallpaperAlpha.get() else 1f)
     }
+    var useColors by rememberSaveable(sourceUri) {
+      mutableStateOf(
+        isEditingCurrent &&
+          preferences.customWallpaperUseColors.get() &&
+          preferences.selectedCustomThemeName.get() == WallpaperDerivedThemeName,
+      )
+    }
     val bitmap =
       produceState<Bitmap?>(initialValue = null, resolvedSource) {
         val loaded = withContext(Dispatchers.IO) { loadWallpaperBitmap(context, resolvedSource) }
@@ -149,6 +160,37 @@ data class WallpaperEditorScreen(
                     preferences.customWallpaperBlur.set(blur)
                     preferences.customWallpaperAlpha.set(alpha)
                     preferences.customWallpaperUri.set(savedUri)
+
+                    if (useColors) {
+                      val extracted =
+                        bitmap?.let { loaded -> withContext(Dispatchers.Default) { extractThemeFromWallpaper(loaded) } }
+                      if (extracted != null) {
+                        val otherThemes =
+                          CustomThemeDefinition
+                            .parseCollection(preferences.customTheme.get())
+                            .filterNot { it.name == WallpaperDerivedThemeName }
+                        preferences.customTheme.set(
+                          CustomThemeDefinition.serializeCollection(otherThemes + extracted),
+                        )
+                        preferences.selectedCustomThemeName.set(extracted.name)
+                        preferences.customWallpaperUseColors.set(true)
+                      } else {
+                        preferences.customWallpaperUseColors.set(false)
+                        android.widget.Toast
+                          .makeText(
+                            context,
+                            R.string.pref_appearance_custom_wallpaper_colors_failed,
+                            android.widget.Toast.LENGTH_LONG,
+                          )
+                          .show()
+                      }
+                    } else {
+                      preferences.customWallpaperUseColors.set(false)
+                      if (preferences.selectedCustomThemeName.get() == WallpaperDerivedThemeName) {
+                        preferences.selectedCustomThemeName.set("")
+                      }
+                    }
+
                     backStack.popSafely()
                   } catch (error: CancellationException) {
                     throw error
@@ -271,6 +313,14 @@ data class WallpaperEditorScreen(
           )
         }
         item {
+          SwitchPreference(
+            value = useColors,
+            onValueChange = { useColors = it },
+            title = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors)) },
+            summary = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors_summary)) },
+          )
+        }
+        item {
           Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End,
@@ -283,6 +333,7 @@ data class WallpaperEditorScreen(
                 scaleMode = WallpaperScaleMode.Fit
                 blur = 0f
                 alpha = 1f
+                useColors = false
               },
               modifier = Modifier.tvFocusHighlight(RoundedCornerShape(12.dp), focusedScale = 1.03f),
             ) {
