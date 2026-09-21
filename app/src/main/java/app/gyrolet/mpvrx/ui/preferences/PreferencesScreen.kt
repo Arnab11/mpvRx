@@ -314,7 +314,7 @@ object PreferencesScreen : Screen {
           listOf(
             SettingsDestination(
               title = stringResource(R.string.ui_network),
-              summary = stringResource(R.string.pref_section_p2p_streaming),
+              summary = stringResource(R.string.pref_network_summary),
               icon = Icons.RoundedFilled.Language,
               screen = NetworkConfigurationPreferencesScreen,
             ),

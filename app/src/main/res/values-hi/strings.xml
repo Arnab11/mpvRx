@@ -1752,6 +1752,7 @@
   <string name="pref_enable_p2p_streaming_title">P2P टोरेंट स्ट्रीमिंग सक्षम करें</string>
   <string name="pref_enable_p2p_streaming_summary">मैग्नेट लिंक और टोरेंट फ़ाइलों से चलाने योग्य मीडिया स्ट्रीम करें</string>
   <string name="pref_section_p2p_streaming">P2P स्ट्रीमिंग</string>
+  <string name="pref_network_summary">P2P स्ट्रीमिंग और yt-dlp मैनेजर</string>
   <string name="toast_torrent_streaming_disabled">पहले उन्नत सेटिंग्स में P2P टोरेंट स्ट्रीमिंग सक्षम करें</string>
   <string name="ui_recent_stream_links">हाल के लिंक</string>
   <string name="ui_torrent_files">टोरेंट</string>

@@ -893,6 +893,7 @@
   <string name="pref_config_edit_summary">Tap to edit configuration</string>
   <string name="pref_section_scripts">Scripts (Lua / JS)</string>
   <string name="pref_section_p2p_streaming">P2P streaming</string>
+  <string name="pref_network_summary">P2P streaming, yt-dlp Manager</string>
   <string name="toast_torrent_streaming_disabled">Enable P2P torrent streaming in Advanced settings first</string>
   <string name="ui_recent_stream_links">Recent links</string>
   <string name="ui_torrent_files">Torrents</string>

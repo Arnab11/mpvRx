@@ -1844,6 +1844,7 @@
   <string name="toast_file_not_found">ファイルはもう存在しません</string>
   <string name="pref_audio_visualizer_style_particle">粒子</string>
   <string name="pref_section_p2p_streaming">P2P ストリーミング</string>
+  <string name="pref_network_summary">P2P ストリーミング、yt-dlpマネージャー</string>
   <string name="toast_torrent_streaming_disabled">最初に詳細設定で P2P トレントストリーミングを有効化してください</string>
   <string name="ui_recent_stream_links">最近のリンク</string>
   <string name="ui_torrent_files">トレント</string>

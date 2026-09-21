@@ -1848,6 +1848,7 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="toast_file_not_found">Le fichier n\'existe plus</string>
   <string name="pref_audio_visualizer_style_particle">Particules</string>
   <string name="pref_section_p2p_streaming">Streaming P2P</string>
+  <string name="pref_network_summary">Streaming P2P et gestionnaire yt-dlp</string>
   <string name="toast_torrent_streaming_disabled">Activez d\'abord le streaming torrent P2P dans les paramètres avancés</string>
   <string name="ui_recent_stream_links">Liens récents</string>
   <string name="ui_torrent_files">Torrents</string>
