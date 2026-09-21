@@ -42,7 +42,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -66,6 +66,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -121,6 +123,10 @@ data class WallpaperEditorScreen(
     val resolvedSource = remember(sourceUri) { sourceUri.ifBlank { preferences.customWallpaperUri.get() } }
     val scope = rememberCoroutineScope()
     var isSaving by remember { mutableStateOf(false) }
+    val screenConfig = LocalConfiguration.current
+    val deviceRatio =
+      minOf(screenConfig.screenWidthDp, screenConfig.screenHeightDp).toFloat() /
+        maxOf(screenConfig.screenWidthDp, screenConfig.screenHeightDp).toFloat()
     BackHandler(enabled = isSaving) { }
     val isEditingCurrent = sourceUri.isBlank() || sourceUri == preferences.customWallpaperUri.get()
     var zoom by rememberSaveable(sourceUri) {
@@ -350,7 +356,7 @@ data class WallpaperEditorScreen(
                   label = {
                     Text(
                       if (preset.ratio == null) {
-                        stringResource(R.string.pref_appearance_custom_wallpaper_aspect_free)
+                        stringResource(R.string.wallpaper_aspect_device)
                       } else {
                         preset.label
                       },
@@ -364,24 +370,24 @@ data class WallpaperEditorScreen(
         }
         item {
           BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val aspect = previewAspect
-            val previewHeight =
-              if (aspect == null) {
-                300.dp
-              } else {
-                minOf(320.dp, maxWidth / aspect).coerceAtLeast(120.dp)
-              }
-            val previewWidth = if (aspect == null) maxWidth else minOf(maxWidth, previewHeight * aspect)
+            // Preview is shaped like the real screen (or the chosen ratio), so it shows the wallpaper
+            // exactly as the app will draw it. Fit/Fill/zoom/position all match 1:1.
+            val ratio = previewAspect ?: deviceRatio
+            val maxPreviewHeight = 340.dp
+            val fitsByHeight = maxPreviewHeight * ratio <= maxWidth
+            val frameHeight = if (fitsByHeight) maxPreviewHeight else maxWidth / ratio
+            val frameWidth = if (fitsByHeight) maxPreviewHeight * ratio else maxWidth
+            val frameShape = RoundedCornerShape(22.dp)
             Box(
               modifier =
                 Modifier
                   .align(Alignment.Center)
-                  .width(previewWidth)
-                  .height(previewHeight)
-                  .clip(RoundedCornerShape(8.dp))
-                  .clipToBounds()
+                  .width(frameWidth)
+                  .height(frameHeight)
+                  .shadow(6.dp, frameShape)
+                  .clip(frameShape)
                   .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                  .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                  .border(3.dp, MaterialTheme.colorScheme.outline, frameShape)
                   .pointerInput(sourceUri, previewLocked) {
                     if (previewLocked) return@pointerInput
                     detectTransformGestures { _, pan, gestureZoom, _ ->
@@ -413,15 +419,17 @@ data class WallpaperEditorScreen(
                   modifier = Modifier.align(Alignment.Center),
                 )
               }
-              ExtendedFloatingActionButton(
-                onClick = { showHomePreview = true },
-                icon = { Icon(Icons.RoundedFilled.Visibility, contentDescription = null) },
-                text = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_home_preview)) },
-                modifier =
-                  Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(12.dp)
-                    .tvFocusHighlight(RoundedCornerShape(16.dp), focusedScale = 1.05f),
+            }
+            FloatingActionButton(
+              onClick = { showHomePreview = true },
+              modifier =
+                Modifier
+                  .align(Alignment.BottomEnd)
+                  .tvFocusHighlight(RoundedCornerShape(16.dp), focusedScale = 1.05f),
+            ) {
+              Icon(
+                Icons.RoundedFilled.Visibility,
+                contentDescription = stringResource(R.string.pref_appearance_custom_wallpaper_home_preview),
               )
             }
           }

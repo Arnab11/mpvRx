@@ -2299,6 +2299,7 @@
   <string name="pref_appearance_custom_wallpaper_adjust">Adjust</string>
   <string name="pref_appearance_custom_wallpaper_home_preview">Home preview</string>
   <string name="pref_appearance_custom_wallpaper_home_preview_close">Tap anywhere to close</string>
+  <string name="wallpaper_aspect_device">Device</string>
   <string name="wallpaper_presets_label">Wallpapers</string>
   <string name="wallpaper_preset_none">None</string>
   <string name="wallpaper_preset_custom">Custom</string>
