@@ -2306,6 +2306,9 @@
   <string name="pref_appearance_custom_wallpaper_use_colors">Use wallpaper colours</string>
   <string name="pref_appearance_custom_wallpaper_use_colors_summary">Generate the app theme from this wallpaper\'s colours</string>
   <string name="pref_appearance_custom_wallpaper_colors_failed">Couldn\'t extract colours from this wallpaper</string>
+  <string name="pref_appearance_custom_wallpaper_preview_locked">Preview locked</string>
+  <string name="pref_appearance_custom_wallpaper_preview_unlocked">Preview unlocked</string>
+  <string name="pref_appearance_custom_wallpaper_aspect_free">Free</string>
   <string name="wallpaper_save_failed">Could not save the wallpaper. Please choose the image again.</string>
   <string name="pref_haptic_feedback_title">Haptic feedback</string>
   <string name="pref_haptic_feedback_summary">Tactile feedback for selection, dragging, and control adjustments. Respects system settings.</string>

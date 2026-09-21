@@ -18,6 +18,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -26,8 +27,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -45,6 +50,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
@@ -119,6 +125,8 @@ data class WallpaperEditorScreen(
           preferences.selectedCustomThemeName.get() == WallpaperDerivedThemeName,
       )
     }
+    var previewLocked by rememberSaveable(sourceUri) { mutableStateOf(false) }
+    var previewAspect by rememberSaveable(sourceUri) { mutableStateOf<Float?>(null) }
     val bitmap =
       produceState<Bitmap?>(initialValue = null, resolvedSource) {
         val loaded = withContext(Dispatchers.IO) { loadWallpaperBitmap(context, resolvedSource) }
@@ -232,36 +240,96 @@ data class WallpaperEditorScreen(
           )
         }
         item {
-          Box(
-            modifier =
-              Modifier
-                .fillMaxWidth()
-                .height(420.dp)
-                .clip(RoundedCornerShape(8.dp))
-                .clipToBounds()
-                .background(MaterialTheme.colorScheme.surfaceContainerLowest)
-                .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
-                .pointerInput(sourceUri) {
-                  detectTransformGestures { _, pan, gestureZoom, _ ->
-                    zoom = (zoom * gestureZoom).coerceIn(1f, 3f)
-                    if (size.width > 0 && size.height > 0) {
-                      offsetX = (offsetX + pan.x / (size.width * 0.35f)).coerceIn(-1f, 1f)
-                      offsetY = (offsetY + pan.y / (size.height * 0.35f)).coerceIn(-1f, 1f)
-                    }
-                  }
-                },
+          Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
           ) {
-            bitmap?.let { loaded ->
-              WallpaperImage(
-                bitmap = loaded,
-                zoom = zoom,
-                offsetX = offsetX,
-                offsetY = offsetY,
-                scaleMode = scaleMode,
-                blurRadius = blur,
-                imageAlpha = alpha,
-                modifier = Modifier.fillMaxSize(),
+            IconButton(
+              onClick = { previewLocked = !previewLocked },
+              modifier =
+                Modifier
+                  .background(
+                    if (previewLocked) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceContainerHighest,
+                    CircleShape,
+                  ).tvFocusHighlight(CircleShape, focusedScale = 1.05f),
+            ) {
+              Icon(
+                if (previewLocked) Icons.RoundedFilled.Lock else Icons.RoundedFilled.LockOpen,
+                contentDescription = stringResource(
+                  if (previewLocked) {
+                    R.string.pref_appearance_custom_wallpaper_preview_locked
+                  } else {
+                    R.string.pref_appearance_custom_wallpaper_preview_unlocked
+                  },
+                ),
+                tint =
+                  if (previewLocked) {
+                    MaterialTheme.colorScheme.onPrimaryContainer
+                  } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                  },
               )
+            }
+            LazyRow(
+              horizontalArrangement = Arrangement.spacedBy(8.dp),
+              modifier = Modifier.tvFocusGroup(),
+            ) {
+              items(ASPECT_RATIO_PRESETS) { preset ->
+                FilterChip(
+                  selected = previewAspect == preset.ratio,
+                  onClick = { previewAspect = preset.ratio },
+                  label = {
+                    Text(
+                      if (preset.ratio == null) {
+                        stringResource(R.string.pref_appearance_custom_wallpaper_aspect_free)
+                      } else {
+                        preset.label
+                      },
+                    )
+                  },
+                  modifier = Modifier.tvFocusHighlight(RoundedCornerShape(8.dp)),
+                )
+              }
+            }
+          }
+        }
+        item {
+          BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+            val targetHeight =
+              previewAspect?.let { ratio -> (maxWidth / ratio).coerceIn(160.dp, 640.dp) } ?: 420.dp
+            Box(
+              modifier =
+                Modifier
+                  .fillMaxWidth()
+                  .height(targetHeight)
+                  .clip(RoundedCornerShape(8.dp))
+                  .clipToBounds()
+                  .background(MaterialTheme.colorScheme.surfaceContainerLowest)
+                  .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(8.dp))
+                  .pointerInput(sourceUri, previewLocked) {
+                    if (previewLocked) return@pointerInput
+                    detectTransformGestures { _, pan, gestureZoom, _ ->
+                      zoom = (zoom * gestureZoom).coerceIn(1f, 3f)
+                      if (size.width > 0 && size.height > 0) {
+                        offsetX = (offsetX + pan.x / (size.width * 0.35f)).coerceIn(-1f, 1f)
+                        offsetY = (offsetY + pan.y / (size.height * 0.35f)).coerceIn(-1f, 1f)
+                      }
+                    }
+                  },
+            ) {
+              bitmap?.let { loaded ->
+                WallpaperImage(
+                  bitmap = loaded,
+                  zoom = zoom,
+                  offsetX = offsetX,
+                  offsetY = offsetY,
+                  scaleMode = scaleMode,
+                  blurRadius = blur,
+                  imageAlpha = alpha,
+                  modifier = Modifier.fillMaxSize(),
+                )
+              }
             }
           }
         }
@@ -367,5 +435,20 @@ private fun WallpaperSlider(
     )
   }
 }
+
+private data class AspectPreset(
+  val label: String,
+  val ratio: Float?,
+)
+
+private val ASPECT_RATIO_PRESETS =
+  listOf(
+    AspectPreset("Free", null),
+    AspectPreset("9:16", 9f / 16f),
+    AspectPreset("9:19.5", 9f / 19.5f),
+    AspectPreset("3:4", 3f / 4f),
+    AspectPreset("1:1", 1f),
+    AspectPreset("16:9", 16f / 9f),
+  )
 
 private const val WALLPAPER_EDITOR_RECYCLE_DELAY_MS = 120L
