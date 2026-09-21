@@ -23,6 +23,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -41,6 +42,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -56,6 +58,7 @@ import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
@@ -79,6 +82,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -98,6 +103,7 @@ import app.gyrolet.mpvrx.domain.jellyfin.JellyfinServer
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import java.util.Locale
 import kotlin.math.roundToInt
 
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -1221,69 +1227,65 @@ fun JellyfinDetailSheet(
           }
         }
 
-        // Media Stream Technical Specs Box
-        if (item.videoCodec != null || item.audioCodec != null) {
-          Card(
-            shape = RoundedCornerShape(14.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh),
+        val technicalDetails =
+          listOf(
+            R.string.media_info_tab_video to item.videoCodec,
+            R.string.ui_resolution to item.videoResolution,
+            R.string.media_info_tab_audio to item.audioCodec,
+            R.string.media_info_stat_channels to item.audioChannels,
+            R.string.ytdlp_container to item.container?.uppercase(Locale.ROOT),
+          ).mapNotNull { (label, value) ->
+            value?.trim()?.takeIf(String::isNotEmpty)?.let { label to it }
+          }
+        if (technicalDetails.isNotEmpty()) {
+          Column(
             modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
           ) {
-            Column(
-              modifier = Modifier.padding(14.dp),
-              verticalArrangement = Arrangement.spacedBy(8.dp),
-            ) {
-              Text(
-                text = "Technical Details",
-                style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
-              )
-
-              Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-              ) {
-                item.videoCodec?.let {
-                  Column {
-                    Text(
-                      text = "Video",
-                      style = MaterialTheme.typography.labelSmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                      text = "$it ${item.videoResolution ?: ""}",
-                      style = MaterialTheme.typography.bodySmall,
-                      fontWeight = FontWeight.SemiBold,
-                    )
-                  }
-                }
-
-                item.audioCodec?.let {
-                  Column {
-                    Text(
-                      text = "Audio",
-                      style = MaterialTheme.typography.labelSmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                      text = "$it ${item.audioChannels ?: ""}",
-                      style = MaterialTheme.typography.bodySmall,
-                      fontWeight = FontWeight.SemiBold,
-                    )
-                  }
-                }
-
-                item.container?.let {
-                  Column {
-                    Text(
-                      text = "Container",
-                      style = MaterialTheme.typography.labelSmall,
-                      color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                    Text(
-                      text = it.uppercase(),
-                      style = MaterialTheme.typography.bodySmall,
-                      fontWeight = FontWeight.SemiBold,
-                    )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            Text(
+              text = stringResource(R.string.jellyfin_technical_details),
+              modifier = Modifier.semantics { heading() },
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+            )
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+              val columns = when {
+                maxWidth >= 600.dp -> 3
+                maxWidth >= 320.dp -> 2
+                else -> 1
+              }
+              Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                technicalDetails.chunked(columns).forEach { detailsRow ->
+                  Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp),
+                    verticalAlignment = Alignment.Top,
+                  ) {
+                    detailsRow.forEach { (label, value) ->
+                      Column(
+                        modifier = Modifier.weight(1f),
+                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                      ) {
+                        Text(
+                          text = stringResource(label),
+                          style = MaterialTheme.typography.labelMedium,
+                          color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                        SelectionContainer {
+                          Text(
+                            text = value,
+                            modifier = Modifier.fillMaxWidth(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                          )
+                        }
+                      }
+                    }
+                    repeat(columns - detailsRow.size) {
+                      Spacer(Modifier.weight(1f))
+                    }
                   }
                 }
               }

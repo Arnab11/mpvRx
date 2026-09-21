@@ -1110,8 +1110,9 @@ fun RenderPlayerButton(
     }
 
     PlayerButton.BACKGROUND_PLAYBACK -> {
-      val audioPreferences = koinInject<AudioPreferences>()
-      val backgroundPlaybackEnabled by audioPreferences.backgroundPlayback.collectAsState()
+      val backgroundPlaybackEnabled by PlaybackSession.videoBackgroundPlaybackEnabled.collectAsState(
+        initial = PlaybackSession.isVideoBackgroundPlaybackEnabled(),
+      )
       ControlsButton(
         icon = Icons.RoundedFilled.Headset,
         onClick = { activity.toggleBackgroundPlayback() },

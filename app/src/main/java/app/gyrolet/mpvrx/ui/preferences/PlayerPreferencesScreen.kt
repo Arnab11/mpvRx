@@ -33,6 +33,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -48,6 +49,7 @@ import androidx.core.content.ContextCompat
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
+import app.gyrolet.mpvrx.preferences.BackgroundPlaybackBehavior
 import app.gyrolet.mpvrx.preferences.IntroSegmentProvider
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
@@ -55,6 +57,8 @@ import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.NotificationStyle
+import app.gyrolet.mpvrx.ui.player.PlaybackPhase
+import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.PlayerOrientation
 import app.gyrolet.mpvrx.ui.player.ResumePlaybackMode
 import app.gyrolet.mpvrx.ui.player.screenshot.ScreenshotFormat
@@ -84,6 +88,8 @@ object PlayerPreferencesScreen : Screen {
     val preferences = koinInject<PlayerPreferences>()
     val configOwnedOptions = currentMpvConfigOverrideOptions()
     val audioPreferences = koinInject<AudioPreferences>()
+    val backgroundPlaybackBehavior by audioPreferences.backgroundPlaybackBehavior.collectAsState()
+    val playbackState by PlaybackSession.state.collectAsState()
     val advancedPreferences = koinInject<AdvancedPreferences>()
     val notificationPermissionLauncher =
       rememberLauncherForActivityResult(
@@ -209,14 +215,21 @@ val savePositionOnQuit by preferences.savePositionOnQuit.collectAsState()
 
               PreferenceDivider()
 
-              val videoBackgroundPlayback by audioPreferences.backgroundPlayback.collectAsState()
+              val videoBackgroundPlayback by PlaybackSession.videoBackgroundPlaybackEnabled.collectAsState(
+                initial = PlaybackSession.isVideoBackgroundPlaybackEnabled(),
+              )
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_video_background_playback_title),
                 value = videoBackgroundPlayback,
+                enabled = backgroundPlaybackBehavior == BackgroundPlaybackBehavior.Remember ||
+                  (PlaybackSession.videoBackgroundPlaybackId(playbackState) != null &&
+                    playbackState.phase in setOf(PlaybackPhase.LOADING, PlaybackPhase.READY, PlaybackPhase.BACKGROUND)),
                 onValueChange = { enabled ->
-                  audioPreferences.backgroundPlayback.set(enabled)
+                  PlaybackSession.setVideoBackgroundPlaybackEnabled(enabled)
                   if (!enabled) {
-                    preferences.enableVideoMiniPlayer.set(false)
+                    if (backgroundPlaybackBehavior == BackgroundPlaybackBehavior.Remember) {
+                      preferences.enableVideoMiniPlayer.set(false)
+                    }
                     showVideoMiniPlayerDependencyDialog = false
                   }
                   if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
@@ -229,10 +242,28 @@ val savePositionOnQuit by preferences.savePositionOnQuit.collectAsState()
                 title = { Text(stringResource(R.string.pref_video_background_playback_title)) },
                 summary = {
                   Text(
-                    stringResource(R.string.pref_video_background_playback_summary),
+                    stringResource(
+                      if (backgroundPlaybackBehavior == BackgroundPlaybackBehavior.PerVideo) {
+                        R.string.pref_background_playback_per_video_summary
+                      } else {
+                        R.string.pref_video_background_playback_summary
+                      },
+                    ),
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },
+              )
+
+              PreferenceDivider()
+
+              ListPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_background_playback_behavior),
+                value = backgroundPlaybackBehavior,
+                onValueChange = audioPreferences.backgroundPlaybackBehavior::set,
+                values = app.gyrolet.mpvrx.preferences.BackgroundPlaybackBehavior.entries,
+                valueToText = { AnnotatedString(resources.getString(it.titleRes)) },
+                title = { Text(stringResource(R.string.pref_background_playback_behavior)) },
+                summary = { Text(stringResource(backgroundPlaybackBehavior.summaryRes), color = MaterialTheme.colorScheme.outline) },
               )
 
               PreferenceDivider()
@@ -371,7 +402,8 @@ val savePositionOnQuit by preferences.savePositionOnQuit.collectAsState()
                 onValueChange = { enabled ->
                   when {
                     !enabled -> preferences.enableVideoMiniPlayer.set(false)
-                    videoBackgroundPlayback -> preferences.enableVideoMiniPlayer.set(true)
+                    videoBackgroundPlayback || backgroundPlaybackBehavior == BackgroundPlaybackBehavior.PerVideo ->
+                      preferences.enableVideoMiniPlayer.set(true)
                     else -> {
                       preferences.enableVideoMiniPlayer.set(false)
                       showVideoMiniPlayerDependencyDialog = true
@@ -1158,7 +1190,7 @@ val showProviderStatusOverlay by preferences.showProviderStatusOverlay.collectAs
         confirmButton = {
           TextButton(
             onClick = {
-              audioPreferences.backgroundPlayback.set(true)
+              PlaybackSession.setVideoBackgroundPlaybackEnabled(true)
               preferences.enableVideoMiniPlayer.set(true)
               showVideoMiniPlayerDependencyDialog = false
               if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&

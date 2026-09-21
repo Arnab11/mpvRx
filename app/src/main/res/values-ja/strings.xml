@@ -2091,7 +2091,7 @@
   <string name="storage_permission_needed_desc">メディアの閲覧と再生にはストレージアクセスを許可してください。</string>
   <string name="storage_permission_grant">アクセスを許可</string>
   <string name="pref_player_web_stream_links_title">ストリーミングサイトのリンクを開く</string>
-  <string name="pref_player_web_stream_links_summary">YouTube、Vimeo、Twitch、Odysee、Bilibili のリンクで mpvRx を候補に表示。オフにすると各アプリが開きます。</string>
+  <string name="pref_player_web_stream_links_summary">対応する配信サイトのリンクやテキストで共有されたリンクで mpvRx を候補に表示します。無効にしてもメディアファイルや直接のメディアURLは開けます。</string>
 
   <string name="btn_label_scopes">スコープ</string>
   <string name="scopes_title">スコープ</string>
@@ -2430,4 +2430,10 @@
   <string name="playlist_columns_portrait">縦向きの列数</string>
   <string name="playlist_columns_landscape">横向きの列数</string>
   <string name="playlist_extension">ファイル拡張子</string>
+  <string name="pref_background_playback_behavior">バックグラウンド再生の動作</string>
+  <string name="pref_background_playback_remember">選択を常に記憶する</string>
+  <string name="pref_background_playback_remember_summary">バックグラウンド再生の選択を次の動画でも維持します。</string>
+  <string name="pref_background_playback_per_video">動画ごとに選択を記憶する</string>
+  <string name="pref_background_playback_per_video_summary">バックグラウンド再生の選択を動画ごとに保存します。他の動画では有効にするまでオフのままです。</string>
+  <string name="jellyfin_technical_details">技術情報</string>
 </resources>

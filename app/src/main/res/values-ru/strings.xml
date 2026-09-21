@@ -2103,7 +2103,7 @@
   <string name="storage_permission_needed_desc">Предоставьте доступ к хранилищу, чтобы просматривать и воспроизводить медиа.</string>
   <string name="storage_permission_grant">Предоставить доступ</string>
   <string name="pref_player_web_stream_links_title">Открывать ссылки стриминговых сайтов</string>
-  <string name="pref_player_web_stream_links_summary">Предлагать mpvRx для ссылок YouTube, Vimeo, Twitch, Odysee и Bilibili. Отключите, чтобы их открывали собственные приложения.</string>
+  <string name="pref_player_web_stream_links_summary">Предлагать mpvRx для ссылок поддерживаемых стриминговых сайтов и ссылок, переданных как текст. Медиафайлы и прямые ссылки на них остаются доступными при отключении.</string>
 
   <string name="btn_label_scopes">Скопы</string>
   <string name="scopes_title">Скопы</string>
@@ -2442,4 +2442,10 @@
   <string name="playlist_columns_portrait">Столбцы по вертикали</string>
   <string name="playlist_columns_landscape">Столбцы по горизонтали</string>
   <string name="playlist_extension">Расширение файла</string>
+  <string name="pref_background_playback_behavior">Поведение фонового воспроизведения</string>
+  <string name="pref_background_playback_remember">Всегда запоминать мой выбор</string>
+  <string name="pref_background_playback_remember_summary">Сохранять выбор фонового воспроизведения для следующих видео.</string>
+  <string name="pref_background_playback_per_video">Запоминать выбор для каждого видео</string>
+  <string name="pref_background_playback_per_video_summary">Сохранять выбор фонового воспроизведения отдельно для каждого видео. Для остальных видео оно выключено, пока вы его не включите.</string>
+  <string name="jellyfin_technical_details">Технические сведения</string>
 </resources>

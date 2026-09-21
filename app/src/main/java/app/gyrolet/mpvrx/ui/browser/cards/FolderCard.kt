@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
@@ -87,6 +88,7 @@ fun FolderCard(
   isActive: Boolean = false,
   isAudioOnly: Boolean = false,
   onSwipeAction: ((VideoFolder, VideoSwipeAction) -> Unit)? = null,
+  placeholderIconSize: Dp? = null,
 ) {
   val appearancePreferences = koinInject<AppearancePreferences>()
   val browserPreferences = koinInject<BrowserPreferences>()
@@ -236,7 +238,7 @@ fun FolderCard(
                 contentDescription =
                   androidx.compose.ui.res
                     .stringResource(app.gyrolet.mpvrx.R.string.ui_folder),
-                modifier = Modifier.fillMaxWidth().aspectRatio(aspect),
+                modifier = placeholderIconSize?.let { Modifier.size(it) } ?: Modifier.fillMaxWidth().aspectRatio(aspect),
                 tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
               )
             }
@@ -368,7 +370,7 @@ fun FolderCard(
                 contentDescription =
                   androidx.compose.ui.res
                     .stringResource(app.gyrolet.mpvrx.R.string.ui_folder),
-                modifier = Modifier.matchParentSize(),
+                modifier = placeholderIconSize?.let { Modifier.size(it) } ?: Modifier.matchParentSize(),
                 tint = MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
               )
             }

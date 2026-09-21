@@ -330,7 +330,9 @@ fun PlayerControls(
   val isHdrOutputEnabled by viewModel.isHdrScreenOutputEnabled.collectAsState()
   val isAmbientEnabled by viewModel.isAmbientEnabled.collectAsState()
   val isPostProcessingEnabled by viewModel.isPostProcessingEnabled.collectAsState()
-  val backgroundPlaybackEnabled by audioPreferences.backgroundPlayback.collectAsState()
+  val backgroundPlaybackEnabled by PlaybackSession.videoBackgroundPlaybackEnabled.collectAsState(
+    initial = PlaybackSession.isVideoBackgroundPlaybackEnabled(),
+  )
 
   val onOpenSheet: (Sheets) -> Unit = remember(viewModel) {
     {

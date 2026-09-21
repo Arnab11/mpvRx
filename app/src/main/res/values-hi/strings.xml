@@ -1999,7 +1999,7 @@
   <string name="storage_permission_needed_desc">मीडिया ब्राउज़ और प्ले करने के लिए स्टोरेज एक्सेस दें।</string>
   <string name="storage_permission_grant">एक्सेस दें</string>
   <string name="pref_player_web_stream_links_title">स्ट्रीमिंग साइट लिंक खोलें</string>
-  <string name="pref_player_web_stream_links_summary">YouTube, Vimeo, Twitch, Odysee और Bilibili लिंक के लिए mpvRx दिखाएं। बंद करने पर उनके अपने ऐप उन्हें खोलेंगे।</string>
+  <string name="pref_player_web_stream_links_summary">समर्थित स्ट्रीमिंग साइट लिंक और टेक्स्ट के रूप में साझा किए गए लिंक के लिए mpvRx दिखाएं। इसे बंद करने पर भी मीडिया फ़ाइलें और सीधे मीडिया URL खोले जा सकते हैं।</string>
 
   <string name="btn_label_scopes">स्कोप</string>
   <string name="scopes_title">स्कोप</string>
@@ -2338,4 +2338,10 @@
   <string name="playlist_columns_portrait">पोर्ट्रेट कॉलम</string>
   <string name="playlist_columns_landscape">लैंडस्केप कॉलम</string>
   <string name="playlist_extension">फ़ाइल एक्सटेंशन</string>
+  <string name="pref_background_playback_behavior">बैकग्राउंड प्लेबैक का व्यवहार</string>
+  <string name="pref_background_playback_remember">मेरी पसंद हमेशा याद रखें</string>
+  <string name="pref_background_playback_remember_summary">अगले वीडियो के लिए भी बैकग्राउंड प्लेबैक की पसंद रखें।</string>
+  <string name="pref_background_playback_per_video">हर वीडियो के लिए पसंद याद रखें</string>
+  <string name="pref_background_playback_per_video_summary">हर वीडियो के लिए बैकग्राउंड प्लेबैक की पसंद अलग सहेजें। दूसरे वीडियो के लिए यह चालू किए जाने तक बंद रहेगा।</string>
+  <string name="jellyfin_technical_details">तकनीकी विवरण</string>
 </resources>

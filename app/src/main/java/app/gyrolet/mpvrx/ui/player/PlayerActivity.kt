@@ -3314,14 +3314,16 @@ class PlayerActivity :
     return if (isCurrentPlaybackAudio()) {
       true
     } else {
-      playerPreferences.enableVideoMiniPlayer.get()
+      playerPreferences.enableVideoMiniPlayer.get() &&
+        (audioPreferences.backgroundPlaybackBehavior.get() != app.gyrolet.mpvrx.preferences.BackgroundPlaybackBehavior.PerVideo ||
+          PlaybackSession.isVideoBackgroundPlaybackEnabled())
     }
   }
 
   private fun isBackgroundPlaybackEnabled(): Boolean =
     if (PlaybackSession.state.value.currentItem?.audiobook != null) true
     else if (isCurrentPlaybackAudio()) audioPreferences.audioBackgroundPlayback.get()
-    else audioPreferences.backgroundPlayback.get()
+    else PlaybackSession.isVideoBackgroundPlaybackEnabled()
 
   private fun isCurrentPlaybackAudio(): Boolean =
     when (currentDeclaredMediaKind()) {
@@ -6990,7 +6992,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
 
   /** Toggles video background playback without changing the audio-player setting. */
   fun toggleBackgroundPlayback() {
-    val enabled = !audioPreferences.backgroundPlayback.get()
+    val enabled = !PlaybackSession.isVideoBackgroundPlaybackEnabled()
 
     if (enabled && !shouldShowPlaybackNotification()) {
       Toast
@@ -7002,7 +7004,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
       return
     }
 
-    audioPreferences.backgroundPlayback.set(enabled)
+    PlaybackSession.setVideoBackgroundPlaybackEnabled(enabled)
 
     if (enabled) {
       ensureNotificationAccessForPlayback(allowUserPrompt = true)
@@ -7029,7 +7031,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
       }
       BackgroundPlaybackStartResult.PendingPermission -> pendingBackgroundTransition = true
       BackgroundPlaybackStartResult.Blocked -> {
-        audioPreferences.backgroundPlayback.set(false)
+        PlaybackSession.setVideoBackgroundPlaybackEnabled(false)
         isBackgroundPlaybackSessionActive = false
         pendingBackgroundTransition = false
       }

@@ -1369,7 +1369,7 @@
   <string name="storage_permission_needed_desc">Grant storage access to browse and play your media.</string>
   <string name="storage_permission_grant">Grant access</string>
   <string name="pref_player_web_stream_links_title">Open streaming site links</string>
-  <string name="pref_player_web_stream_links_summary">Offer mpvRx for YouTube, Vimeo, Twitch, Odysee, and Bilibili links. Turn off to let their own apps handle them.</string>
+  <string name="pref_player_web_stream_links_summary">Offer mpvRx for supported streaming-site links and shared text links. Media files and direct media URLs remain available when disabled.</string>
   <string name="player_unknown_video">Unknown Video</string>
   <string name="ui_logcat">Logcat:</string>
   <string name="ui_home">Home</string>
@@ -2469,4 +2469,10 @@
   <string name="playlist_columns_portrait">Portrait columns</string>
   <string name="playlist_columns_landscape">Landscape columns</string>
   <string name="playlist_extension">File extension</string>
+  <string name="pref_background_playback_behavior">Background playback behavior</string>
+  <string name="pref_background_playback_remember">Always remember my choice</string>
+  <string name="pref_background_playback_remember_summary">Keep the background playback choice for future videos.</string>
+  <string name="pref_background_playback_per_video">Remember for each video</string>
+  <string name="pref_background_playback_per_video_summary">Save a separate background playback choice for each video. Other videos stay off until enabled.</string>
+  <string name="jellyfin_technical_details">Technical details</string>
 </resources>

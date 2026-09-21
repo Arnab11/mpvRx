@@ -2109,7 +2109,7 @@
   <string name="storage_permission_needed_desc">امنح إذن التخزين لتصفح وتشغيل الوسائط.</string>
   <string name="storage_permission_grant">منح الإذن</string>
   <string name="pref_player_web_stream_links_title">فتح روابط مواقع البث</string>
-  <string name="pref_player_web_stream_links_summary">عرض mpvRx لروابط YouTube وVimeo وTwitch وOdysee وBilibili. أوقف الخيار لتركها لتطبيقاتها الأصلية.</string>
+  <string name="pref_player_web_stream_links_summary">إظهار mpvRx لروابط مواقع البث المدعومة والروابط النصية المشتركة. تظل ملفات الوسائط وروابط الوسائط المباشرة متاحة عند التعطيل.</string>
 
   <string name="btn_label_scopes">النطاقات</string>
   <string name="scopes_title">النطاقات</string>
@@ -2448,4 +2448,10 @@
   <string name="playlist_columns_portrait">الأعمدة في الوضع العمودي</string>
   <string name="playlist_columns_landscape">الأعمدة في الوضع الأفقي</string>
   <string name="playlist_extension">امتداد الملف</string>
+  <string name="pref_background_playback_behavior">سلوك التشغيل في الخلفية</string>
+  <string name="pref_background_playback_remember">تذكر اختياري دائمًا</string>
+  <string name="pref_background_playback_remember_summary">الاحتفاظ باختيار التشغيل في الخلفية للفيديوهات التالية.</string>
+  <string name="pref_background_playback_per_video">تذكر الاختيار لكل فيديو</string>
+  <string name="pref_background_playback_per_video_summary">احفظ اختيار التشغيل في الخلفية لكل فيديو على حدة. يظل معطلًا للفيديوهات الأخرى حتى تفعيله لها.</string>
+  <string name="jellyfin_technical_details">التفاصيل التقنية</string>
 </resources>

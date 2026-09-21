@@ -67,6 +67,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -399,11 +400,19 @@ class MediaPlaybackService :
 
     serviceScope.launch {
       combine(
-        audioPreferences.backgroundPlayback.changes(),
+        PlaybackSession.videoBackgroundPlaybackEnabled,
         audioPreferences.audioBackgroundPlayback.changes(),
-      ) { videoEnabled, audioEnabled ->
-        if (usesAudioBackgroundPlayback) audioEnabled else videoEnabled
-      }.drop(1).collect { enabled ->
+        PlaybackSession.state,
+      ) { _, audioEnabled, playbackState ->
+        when {
+          playbackState.currentItem?.audiobook != null -> true
+          playbackState.currentItem?.declaredMediaKind() == DeclaredPlaybackMediaKind.AUDIO -> audioEnabled
+          playbackState.currentItem?.declaredMediaKind() == DeclaredPlaybackMediaKind.VIDEO ->
+            audioPreferences.getVideoBackgroundPlayback(PlaybackSession.videoBackgroundPlaybackId(playbackState))
+          usesAudioBackgroundPlayback -> audioEnabled
+          else -> audioPreferences.getVideoBackgroundPlayback(PlaybackSession.videoBackgroundPlaybackId(playbackState))
+        }
+      }.distinctUntilChanged().drop(1).collect { enabled ->
         if (!enabled) {
           Log.d(TAG, "Background playback disabled; stopping service")
           stopDetachedPlaybackIfNeeded()

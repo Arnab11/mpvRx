@@ -2108,7 +2108,7 @@
   <string name="storage_permission_needed_desc">授予存储访问权限以浏览和播放媒体。</string>
   <string name="storage_permission_grant">授予访问权限</string>
   <string name="pref_player_web_stream_links_title">打开流媒体网站链接</string>
-  <string name="pref_player_web_stream_links_summary">为 YouTube、Vimeo、Twitch、Odysee 和 Bilibili 链接提供 mpvRx 选项。关闭后由它们自己的应用打开。</string>
+  <string name="pref_player_web_stream_links_summary">为支持的流媒体网站链接和以文本分享的链接提供 mpvRx 选项。禁用后仍可打开媒体文件和直接媒体链接。</string>
 
   <string name="btn_label_scopes">示波器</string>
   <string name="scopes_title">示波器</string>
@@ -2428,4 +2428,10 @@
   <string name="playlist_columns_portrait">竖屏列数</string>
   <string name="playlist_columns_landscape">横屏列数</string>
   <string name="playlist_extension">文件扩展名</string>
+  <string name="pref_background_playback_behavior">后台播放行为</string>
+  <string name="pref_background_playback_remember">始终记住我的选择</string>
+  <string name="pref_background_playback_remember_summary">为后续视频保留后台播放选择。</string>
+  <string name="pref_background_playback_per_video">为每个视频记住选择</string>
+  <string name="pref_background_playback_per_video_summary">分别保存每个视频的后台播放选择。其他视频的后台播放在单独启用前保持关闭。</string>
+  <string name="jellyfin_technical_details">技术详情</string>
 </resources>

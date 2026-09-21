@@ -21,16 +21,20 @@ import app.gyrolet.mpvrx.data.network.proxy.NetworkStreamingProxy
 import app.gyrolet.mpvrx.data.network.proxy.XtreamStreamingProxy
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.XtreamPlaybackUri
+import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import `is`.xyz.mpv.MPVLib
 import `is`.xyz.mpv.MPVNode
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withTimeoutOrNull
 import java.util.ArrayDeque
@@ -143,6 +147,9 @@ object PlaybackSession : MPVLib.EventObserver {
   )
 
   private val nativeLock = ReentrantLock(true)
+  private val audioPreferences by lazy {
+    org.koin.java.KoinJavaComponent.get<AudioPreferences>(AudioPreferences::class.java)
+  }
   private val observers = CopyOnWriteArraySet<MPVLib.EventObserver>()
   private val _state = MutableStateFlow(PlaybackSessionState())
   private val _queue = MutableStateFlow(PlaybackQueueState())
@@ -159,6 +166,22 @@ object PlaybackSession : MPVLib.EventObserver {
   val videoZoom: StateFlow<Float> = _videoZoom.asStateFlow()
   val videoPanX: StateFlow<Float> = _videoPanX.asStateFlow()
   val videoPanY: StateFlow<Float> = _videoPanY.asStateFlow()
+
+  val videoBackgroundPlaybackEnabled: Flow<Boolean> by lazy {
+    audioPreferences.videoBackgroundPlaybackChanges(state.map(::videoBackgroundPlaybackId).distinctUntilChanged())
+  }
+
+  internal fun videoBackgroundPlaybackId(playbackState: PlaybackSessionState): String? =
+    playbackState.currentItem?.takeUnless { it.audiobook != null || it.isDefinitelyAudioOnly() }?.stableId
+
+  fun isVideoBackgroundPlaybackEnabled(): Boolean =
+    audioPreferences.getVideoBackgroundPlayback(videoBackgroundPlaybackId(_state.value))
+
+  fun setVideoBackgroundPlaybackEnabled(enabled: Boolean) {
+    nativeLock.withLock {
+      audioPreferences.setVideoBackgroundPlayback(videoBackgroundPlaybackId(_state.value), enabled)
+    }
+  }
 
   fun setVideoTransformZoom(zoom: Float) {
     _videoZoom.value = zoom
@@ -835,8 +858,8 @@ object PlaybackSession : MPVLib.EventObserver {
     withCore(default = -1L) {
       if (_state.value.phase == PlaybackPhase.STOPPING) return@withCore -1L
       AudiobookPlayback.capture()
-      loadedPlaybackItem = null
       val resolvedItem = item ?: PlaybackItem.fromUri(playableUri)
+      loadedPlaybackItem = null
       if (resolvedItem.audiobook != null) AudiobookPlayback.ensureStarted()
       if (resolvedItem.audiobook == null && speedBeforeAudiobook != null) {
         if (!MpvConfigOverridePolicy.isOwnedByMpvConf("speed")) MPVLib.setPropertyDouble("speed", speedBeforeAudiobook!!.toDouble())

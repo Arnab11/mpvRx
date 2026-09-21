@@ -18,8 +18,10 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -194,14 +196,15 @@ fun FilePickerDialog(
   val dialogWidth =
     (configuration.screenWidthDp.dp * (if (isPortrait) 0.85f else 0.5f))
       .coerceAtMost(if (isPortrait) 360.dp else 480.dp)
-  val dialogMaxHeight = configuration.screenHeightDp.dp * (if (isPortrait) 0.85f else 0.9f)
 
   androidx.compose.ui.window.Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
     Surface(
-      modifier = modifier.width(dialogWidth).heightIn(max = dialogMaxHeight),
+      modifier = modifier.width(dialogWidth).then(
+        if (isPortrait) Modifier.height(configuration.screenHeightDp.dp * 0.5f) else Modifier.fillMaxHeight(),
+      ),
       shape = MaterialTheme.shapes.extraLarge,
       color = MaterialTheme.colorScheme.surface,
       tonalElevation = 6.dp,
@@ -266,15 +269,12 @@ fun FilePickerDialog(
 
         // Content Section
         Column(
-          modifier = Modifier.fillMaxWidth().weight(1f, fill = false),
+          modifier = Modifier.fillMaxWidth().weight(1f),
           verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
           // Folder/Volume/File list
           LazyColumn(
-            modifier =
-              Modifier
-                .fillMaxWidth()
-                .heightIn(max = 400.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(4.dp),
           ) {
             if (showStorageRoot) {

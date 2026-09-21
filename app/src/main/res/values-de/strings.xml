@@ -2095,7 +2095,7 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="storage_permission_needed_desc">Speicherzugriff gewähren, um Medien zu durchsuchen und abzuspielen.</string>
   <string name="storage_permission_grant">Zugriff gewähren</string>
   <string name="pref_player_web_stream_links_title">Streaming-Website-Links öffnen</string>
-  <string name="pref_player_web_stream_links_summary">mpvRx für Links von YouTube, Vimeo, Twitch, Odysee und Bilibili anbieten. Deaktivieren, damit deren eigene Apps sie öffnen.</string>
+  <string name="pref_player_web_stream_links_summary">mpvRx für unterstützte Streaming-Weblinks und als Text geteilte Links anbieten. Mediendateien und direkte Medien-URLs bleiben auch bei deaktivierter Option verfügbar.</string>
 
   <string name="btn_label_scopes">Scopes</string>
   <string name="scopes_title">Scopes</string>
@@ -2434,4 +2434,10 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="playlist_columns_portrait">Spalten im Hochformat</string>
   <string name="playlist_columns_landscape">Spalten im Querformat</string>
   <string name="playlist_extension">Dateierweiterung</string>
+  <string name="pref_background_playback_behavior">Verhalten der Hintergrundwiedergabe</string>
+  <string name="pref_background_playback_remember">Meine Auswahl immer merken</string>
+  <string name="pref_background_playback_remember_summary">Die Auswahl zur Hintergrundwiedergabe für künftige Videos beibehalten.</string>
+  <string name="pref_background_playback_per_video">Auswahl für jedes Video merken</string>
+  <string name="pref_background_playback_per_video_summary">Hintergrundwiedergabe für jedes Video separat speichern. Für andere Videos bleibt sie ausgeschaltet, bis sie aktiviert wird.</string>
+  <string name="jellyfin_technical_details">Technische Details</string>
 </resources>

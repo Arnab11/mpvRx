@@ -26,7 +26,6 @@ import app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository
 import app.gyrolet.mpvrx.di.DatabaseModule
 import app.gyrolet.mpvrx.di.FileManagerModule
 import app.gyrolet.mpvrx.di.PreferencesModule
-import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.presentation.crash.CrashActivity
@@ -203,7 +202,7 @@ class App :
       Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && playerActivity.isInPictureInPictureMode
     if (isInPictureInPicture) return
 
-    val videoBackgroundPlaybackEnabled = getKoin().get<AudioPreferences>().backgroundPlayback.get()
+    val videoBackgroundPlaybackEnabled = PlaybackSession.isVideoBackgroundPlaybackEnabled()
     if (videoBackgroundPlaybackEnabled) return
 
     val state = PlaybackSession.state.value

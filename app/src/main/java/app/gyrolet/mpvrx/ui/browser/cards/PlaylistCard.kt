@@ -236,5 +236,6 @@ fun PlaylistCard(
     customChipContent = customChipRenderer,
     isGridMode = isGridMode,
     thumbnail = thumbnailBitmap,
+    placeholderIconSize = if (isFavorites) (if (isGridMode) 40.dp else 32.dp) else null,
   )
 }
