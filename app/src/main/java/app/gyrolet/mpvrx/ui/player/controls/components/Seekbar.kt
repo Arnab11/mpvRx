@@ -328,14 +328,18 @@ internal fun SeekbarWithTimers(
       // When `position` changes on the next poll, the effect is cancelled and relaunched,
       // which retargets the same Animatable smoothly instead of stacking independent
       // spring coroutines that fight each other and leak work every ~50ms.
-      animatedPosition.animateTo(
-        targetValue = position,
-        animationSpec =
-          spring(
-            dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
-            stiffness = AppMotion.Spatial.Standard.stiffness,
-          ),
-      )
+      if (position == 0f) {
+        animatedPosition.snapTo(position)
+      } else {
+        animatedPosition.animateTo(
+          targetValue = position,
+          animationSpec =
+            spring(
+              dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
+              stiffness = AppMotion.Spatial.Standard.stiffness,
+            ),
+        )
+      }
     }
   }
 

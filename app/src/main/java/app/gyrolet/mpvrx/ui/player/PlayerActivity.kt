@@ -1868,6 +1868,20 @@ class PlayerActivity :
       }
 
       if (
+        PlayerLifecyclePolicy.shouldTreatStopAsPipDismissal(
+          wasInPictureInPictureMode = wasInPipMode,
+          isInPictureInPictureMode = isInPictureInPictureMode,
+          isActivityFinishing = isFinishing,
+          isChangingConfigurations = isChangingConfigurations,
+          isScreenOffOrLocked = isDeviceScreenOffOrLocked(),
+          alreadyHandled = handledPipDismissal,
+        )
+      ) {
+        handlePipDismissed()
+        return@runCatching
+      }
+
+      if (
         PlayerLifecyclePolicy.shouldStartBackgroundPlaybackOnStop(
           backgroundPlaybackEnabled = isBackgroundPlaybackEnabled() || externalDisplayManager?.isActive == true,
           backgroundPlaybackSessionActive = isBackgroundPlaybackSessionActive,

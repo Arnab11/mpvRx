@@ -126,7 +126,7 @@ internal object PlayerLifecyclePolicy {
     alreadyHandled: Boolean,
   ): Boolean =
     wasInPictureInPictureMode &&
-      (!isInPictureInPictureMode || isActivityFinishing) &&
+      (isInPictureInPictureMode || isActivityFinishing) &&
       !isChangingConfigurations &&
       !isScreenOffOrLocked &&
       !alreadyHandled

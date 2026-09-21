@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.ime
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -337,7 +336,7 @@ fun PlayerSheetHeader(
   actions: @Composable RowScope.() -> Unit = {},
 ) {
   Box(
-    modifier = modifier.fillMaxWidth().heightIn(min = 48.dp).padding(start = 12.dp, end = 12.dp),
+    modifier = modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp),
   ) {
     Row(
       modifier = Modifier.align(Alignment.CenterEnd),

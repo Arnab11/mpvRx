@@ -74,6 +74,7 @@ import app.gyrolet.mpvrx.ui.player.MPVPipHelper
 import app.gyrolet.mpvrx.ui.player.PlaybackPhase
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
+import app.gyrolet.mpvrx.ui.player.PlayerLifecyclePolicy
 import app.gyrolet.mpvrx.ui.player.MediaPlaybackService
 import app.gyrolet.mpvrx.ui.player.TrackNode
 import app.gyrolet.mpvrx.ui.player.toObject
@@ -343,14 +344,20 @@ class MainActivity : AppCompatActivity() {
   private fun schedulePipExitResolution() {
     pendingPipExitResolution = true
     if (isFinishing || isDestroyed) {
-      pendingPipExitResolution = false
-      wasInPipMode = false
-      isExpandingFromPip = false
+      stopPipPlayback()
       return
     }
     if (lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) && hasWindowFocus()) {
       completePipExpansion()
     }
+  }
+
+  private fun stopPipPlayback() {
+    val hadPipSession = wasInPipMode || pendingPipExitResolution
+    pendingPipExitResolution = false
+    wasInPipMode = false
+    isExpandingFromPip = false
+    if (hadPipSession) MediaPlaybackService.stopForTerminalDismissal()
   }
 
   private fun completePipExpansion() {
@@ -398,9 +405,20 @@ class MainActivity : AppCompatActivity() {
   override fun onStop() {
     super.onStop()
     pipHelper.onStop()
-    pendingPipExitResolution = false
-    wasInPipMode = false
-    isExpandingFromPip = false
+    val powerManager = getSystemService(android.os.PowerManager::class.java)
+    val keyguardManager = getSystemService(android.app.KeyguardManager::class.java)
+    if (
+      PlayerLifecyclePolicy.shouldTreatStopAsPipDismissal(
+        wasInPictureInPictureMode = wasInPipMode,
+        isInPictureInPictureMode = isInPictureInPictureMode,
+        isActivityFinishing = isFinishing,
+        isChangingConfigurations = isChangingConfigurations,
+        isScreenOffOrLocked = powerManager?.isInteractive == false || keyguardManager?.isKeyguardLocked == true,
+        alreadyHandled = false,
+      )
+    ) {
+      stopPipPlayback()
+    }
   }
 
   private fun isCurrentMediaAudioOnly(): Boolean {
@@ -437,6 +455,7 @@ class MainActivity : AppCompatActivity() {
   }
 
   override fun onDestroy() {
+    if (!isChangingConfigurations) stopPipPlayback()
     pendingPipExitResolution = false
     wasInPipMode = false
     isExpandingFromPip = false

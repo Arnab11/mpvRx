@@ -198,6 +198,7 @@ object MainScreen : Screen {
           if (showJellyfinTab) add(MainTab.JELLYFIN)
         }
       }
+    val navigationTabs = visibleTabs.takeIf { it.size > 1 }.orEmpty()
 
     // Track whether the floating pill nav bar is on screen so the mini player can
     // sit at the very bottom when navigating to screens without it.
@@ -208,7 +209,7 @@ object MainScreen : Screen {
     }
     SideEffect {
       NavigationBarState.isNavBarVisible =
-        backStack.lastOrNull() == MainScreen && !hideNavigationBar && visibleTabs.isNotEmpty() && !isPermissionDenied
+        backStack.lastOrNull() == MainScreen && !hideNavigationBar && navigationTabs.isNotEmpty() && !isPermissionDenied
     }
 
     val coroutineScope = rememberCoroutineScope()
@@ -294,7 +295,7 @@ object MainScreen : Screen {
 
     val mainNavBar = @Composable { modifier: Modifier ->
       ExpressivePillNavigationBar(
-        visibleTabs = visibleTabs,
+        visibleTabs = navigationTabs,
         selectedTab = selectedTab,
         onTabSelected = onTabSelected,
         pagerState = pagerState,
@@ -311,7 +312,7 @@ object MainScreen : Screen {
     // On portrait phones the edge-to-edge mini player sits above the pill nav bar,
     // so screens/FABs must clear it.
     val miniPlayerNavClearance = if (isMiniPlayerVisible && isPortrait && !isTablet) 96.dp else 0.dp
-    val contentBottomPadding = (if (visibleTabs.isEmpty()) 0.dp else 88.dp) + miniPlayerNavClearance
+    val contentBottomPadding = (if (navigationTabs.isEmpty()) 0.dp else 88.dp) + miniPlayerNavClearance
     val context = androidx.compose.ui.platform.LocalContext.current
     val jellyfinViewModel: app.gyrolet.mpvrx.ui.browser.jellyfin.JellyfinViewModel =
       androidx.lifecycle.viewmodel.compose.viewModel(
@@ -547,7 +548,7 @@ object MainScreen : Screen {
 
         // Animated bottom navigation bar with slide animations
         AnimatedVisibility(
-          visible = !hideNavigationBar && visibleTabs.isNotEmpty() && !isPermissionDenied,
+          visible = !hideNavigationBar && navigationTabs.isNotEmpty() && !isPermissionDenied,
           enter = if (navStyle == NavigationAnimStyle.None) EnterTransition.None else
             slideInVertically(
               animationSpec = tween(duration, easing = FastOutSlowInEasing),
@@ -579,7 +580,7 @@ object MainScreen : Screen {
             )
 
             ExpressivePillNavigationBar(
-              visibleTabs = visibleTabs,
+              visibleTabs = navigationTabs,
               selectedTab = selectedTab,
               onTabSelected = onTabSelected,
               pagerState = pagerState,
