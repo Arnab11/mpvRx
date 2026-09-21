@@ -274,22 +274,8 @@ fun PlaylistSheet(
   // Check portrait mode
   val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-  // Portrait mode => list mode
-  val isListModePreference by playerPreferences.playlistViewMode.collectAsState()
-  var isListMode by remember { mutableStateOf(if (isPortrait) true else isListModePreference) }
-
-  LaunchedEffect(isPortrait) {
-    if (isPortrait && !isListMode) {
-      isListMode = true
-    }
-  }
-
-  // Update preference when view mode changes (only in landscape)
-  LaunchedEffect(isListMode) {
-    if (!isPortrait && isListMode != isListModePreference) {
-      playerPreferences.playlistViewMode.set(isListMode)
-    }
-  }
+  val preferredListMode by playerPreferences.playlistViewMode.collectAsState()
+  val isListMode = isPortrait || preferredListMode
 
   // Scroll state for the playlist
   val lazyListState = rememberLazyListState()
@@ -323,12 +309,11 @@ fun PlaylistSheet(
     }
   }
 
-  val screenWidth = LocalConfiguration.current.screenWidthDp.dp
   val sheetWidth =
-    if (isListMode) {
-      640.dp
-    } else {
-      screenWidth * 0.85f
+    when {
+      isPortrait -> 420.dp
+      isListMode -> 640.dp
+      else -> configuration.screenWidthDp.dp * 0.85f
     }
 
   var showAddToPlaylistDialog by rememberSaveable { mutableStateOf(false) }
@@ -337,10 +322,9 @@ fun PlaylistSheet(
     onDismissRequest = onDismissRequest,
     modifier = Modifier.fillMaxWidth(),
     customMaxWidth = sheetWidth,
-    customMaxHeight = if (isPortrait) LocalConfiguration.current.screenHeightDp.dp * 0.75f else null,
+    customMaxHeight = if (isPortrait) configuration.screenHeightDp.dp * 0.5f else null,
     isSwipeActive = isSwipeActive,
     swipeOffset = swipeOffset,
-    title = stringResource(R.string.ui_playlist),
   ) {
     Surface(
       modifier = Modifier.fillMaxWidth(),
@@ -374,8 +358,9 @@ fun PlaylistSheet(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-          Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.smaller),
             modifier = Modifier.weight(1f),
           ) {
             if (currentItem != null) {
@@ -388,6 +373,11 @@ fun PlaylistSheet(
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
                   ),
+              )
+              Text(
+                text = "\u2022",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
             }
             Text(
@@ -411,10 +401,9 @@ fun PlaylistSheet(
               )
             }
 
-            // Toggle button for list/grid view (only in landscape)
             if (!isPortrait) {
               IconButton(
-                onClick = { isListMode = !isListMode },
+                onClick = { playerPreferences.playlistViewMode.set(!preferredListMode) },
               ) {
                 Icon(
                   imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,

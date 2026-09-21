@@ -18,10 +18,10 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.widthIn
@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.AbsoluteAlignment
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -43,9 +44,10 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetDragHandle
 import app.gyrolet.mpvrx.ui.player.controls.panelCardsColors
@@ -74,30 +76,33 @@ fun DraggablePanel(
 
   val configuration = LocalConfiguration.current
   val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
+  val panelAlignment = AbsoluteAlignment.CenterRight
+  val layoutDirection = LocalLayoutDirection.current
 
   BoxWithConstraints(
     modifier = modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing).padding(12.dp),
-    contentAlignment = if (isPortrait) Alignment.Center else Alignment.CenterEnd,
+    contentAlignment = panelAlignment,
   ) {
-    val density = LocalDensity.current
-    val parentWidthPx = with(density) { maxWidth.toPx() }
+    val freeSpace = (constraints.maxWidth - panelWidth).coerceAtLeast(0)
+    val initialLeft =
+      panelAlignment.align(
+        size = IntSize(panelWidth, 0),
+        space = IntSize(constraints.maxWidth, 0),
+        layoutDirection = layoutDirection,
+      ).x
+    val minOffset = -initialLeft.toFloat()
+    val maxOffset = (freeSpace - initialLeft).toFloat()
 
-    // Calculate bounds for horizontal drag
-    // Panel is aligned to CenterEnd (Right), so offset 0 is the default rightmost position.
-    val freeSpace = (parentWidthPx - panelWidth).coerceAtLeast(0f)
-    val maxOffset = 0f
-    val minOffset = -freeSpace
-
-    val panelMaxHeight = if (isPortrait) maxHeight * 0.85f else maxHeight
+    val panelHeight = if (isPortrait) (configuration.screenHeightDp.dp * 0.5f).coerceAtMost(maxHeight) else maxHeight
 
     val colors = panelCardsColors()
     Surface(
       modifier =
         Modifier
-          .offset { IntOffset(offsetX.coerceIn(minOffset, maxOffset).roundToInt(), 0) }
+          .absoluteOffset { IntOffset(offsetX.coerceIn(minOffset, maxOffset).roundToInt(), 0) }
           .onSizeChanged { panelWidth = it.width }
           .widthIn(max = 380.dp)
-          .heightIn(max = panelMaxHeight),
+          .height(panelHeight),
       shape = shape ?: MaterialTheme.shapes.extraLarge,
       color = containerColor ?: colors.containerColor,
       contentColor = colors.contentColor,
@@ -114,7 +119,7 @@ fun DraggablePanel(
               .pointerInput(maxOffset, minOffset) {
                 detectDragGestures { change, dragAmount ->
                   change.consume()
-                  val newOffset = offsetX + dragAmount.x
+                  val newOffset = offsetX.coerceIn(minOffset, maxOffset) + dragAmount.x
                   offsetX = newOffset.coerceIn(minOffset, maxOffset)
                 }
               },
