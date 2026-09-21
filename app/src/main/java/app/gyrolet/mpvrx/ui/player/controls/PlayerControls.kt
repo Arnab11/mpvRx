@@ -586,9 +586,14 @@ fun PlayerControls(
 
   DoubleTapToSeekOvals(doubleTapSeekAmount, seekText, showDoubleTapOvals, showSeekTime, showSeekTime, interactionSource)
 
-  Box(
-    modifier = modifier.fillMaxSize().clipToBounds(),
+  CompositionLocalProvider(
+    LocalForceDarkPlayerButtonsBackground provides forceDarkButtonBackground,
+    LocalHidePlayerButtonsBackground provides hideBackground,
   ) {
+    PlayerControlsContentTheme {
+      Box(
+        modifier = modifier.fillMaxSize().clipToBounds(),
+      ) {
     VideoOpenAnimationOverlay(
       style = videoOpenAnim,
       speedMultiplier = animSpeed,
@@ -625,13 +630,13 @@ fun PlayerControls(
       modifier = Modifier.fillMaxSize(),
     )
 
-    CompositionLocalProvider(
-      LocalRippleConfiguration provides playerRippleConfiguration,
-      LocalPlayerButtonsClickEvent provides { resetControlsTimestamp = System.currentTimeMillis() },
-      LocalForceDarkPlayerButtonsBackground provides forceDarkButtonBackground,
-      LocalHidePlayerButtonsBackground provides hideBackground,
-      LocalContentColor provides Color.White,
-    ) {
+        CompositionLocalProvider(
+          LocalRippleConfiguration provides playerRippleConfiguration,
+          LocalPlayerButtonsClickEvent provides { resetControlsTimestamp = System.currentTimeMillis() },
+          LocalForceDarkPlayerButtonsBackground provides forceDarkButtonBackground,
+          LocalHidePlayerButtonsBackground provides hideBackground,
+          LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+        ) {
       CompositionLocalProvider(
         LocalLayoutDirection provides LayoutDirection.Ltr,
       ) {
@@ -2117,6 +2122,8 @@ val activePlayerDrawerButtons =
             )
           },
         )
+      }
+        }
       }
     }
   }

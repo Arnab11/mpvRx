@@ -34,9 +34,9 @@ internal fun PlayerButtonTheme(
   )
 }
 
-/** Applies the selected dark app palette only to the contents of one player button. */
+/** Applies the selected dark app palette to the complete player-control layer. */
 @Composable
-internal fun PlayerButtonContentTheme(content: @Composable () -> Unit) {
+internal fun PlayerControlsContentTheme(content: @Composable () -> Unit) {
   val useDarkPalette =
     LocalForceDarkPlayerButtonsBackground.current && !LocalHidePlayerButtonsBackground.current
   val darkColors = LocalDarkAppColorScheme.current
@@ -51,4 +51,9 @@ internal fun PlayerButtonContentTheme(content: @Composable () -> Unit) {
     shapes = MaterialTheme.shapes,
     content = content,
   )
+}
+
+@Composable
+internal fun PlayerButtonContentTheme(content: @Composable () -> Unit) {
+  PlayerControlsContentTheme(content)
 }

@@ -539,11 +539,24 @@ object GesturePreferencesScreen : Screen {
                 value = mediaPreviousGesture,
                 onValueChange = { preferences.mediaPreviousGesture.set(it) },
                 values = SingleActionGesture.entries,
-                valueToText = { AnnotatedString(resources.getString(it.titleRes)) },
+                valueToText = {
+                  AnnotatedString(
+                    resources.getString(
+                      if (it == SingleActionGesture.Seek) R.string.pref_gesture_media_previous else it.titleRes,
+                    ),
+                  )
+                },
                 title = { Text(text = stringResource(R.string.pref_gesture_media_previous)) },
                 summary = {
                   Text(
-                    text = stringResource(mediaPreviousGesture.titleRes),
+                    text =
+                      stringResource(
+                        if (mediaPreviousGesture == SingleActionGesture.Seek) {
+                          R.string.pref_gesture_media_previous
+                        } else {
+                          mediaPreviousGesture.titleRes
+                        },
+                      ),
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },
@@ -578,11 +591,24 @@ object GesturePreferencesScreen : Screen {
                 value = mediaNextGesture,
                 onValueChange = { preferences.mediaNextGesture.set(it) },
                 values = SingleActionGesture.entries,
-                valueToText = { AnnotatedString(resources.getString(it.titleRes)) },
+                valueToText = {
+                  AnnotatedString(
+                    resources.getString(
+                      if (it == SingleActionGesture.Seek) R.string.pref_gesture_media_next else it.titleRes,
+                    ),
+                  )
+                },
                 title = { Text(text = stringResource(R.string.pref_gesture_media_next)) },
                 summary = {
                   Text(
-                    text = stringResource(mediaNextGesture.titleRes),
+                    text =
+                      stringResource(
+                        if (mediaNextGesture == SingleActionGesture.Seek) {
+                          R.string.pref_gesture_media_next
+                        } else {
+                          mediaNextGesture.titleRes
+                        },
+                      ),
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },
