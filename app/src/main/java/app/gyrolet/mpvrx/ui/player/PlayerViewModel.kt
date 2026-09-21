@@ -596,6 +596,10 @@ class PlayerViewModel : ViewModel(),
       val codecDesc = PlaybackSession.getPropertyString("track-list/$i/codec-desc")
       val hlsBitrate = PlaybackSession.getPropertyInt("track-list/$i/hls-bitrate")?.toLong()
       val programId = PlaybackSession.getPropertyInt("track-list/$i/program-id")?.toLong()
+      val programIds =
+        runCatching {
+          PlaybackSession.getPropertyNode("track-list/$i/program-ids")?.toObject<List<Long>>(json)
+        }.getOrNull()
       val demuxW = PlaybackSession.getPropertyInt("track-list/$i/demux-w")?.toLong()
       val demuxH = PlaybackSession.getPropertyInt("track-list/$i/demux-h")?.toLong()
       val demuxFps = PlaybackSession.getPropertyDouble("track-list/$i/demux-fps")
@@ -617,6 +621,7 @@ class PlayerViewModel : ViewModel(),
           codecDesc = codecDesc,
           hlsBitrate = hlsBitrate,
           programId = programId,
+          programIds = programIds,
           demuxW = demuxW,
           demuxH = demuxH,
           demuxFps = demuxFps,
@@ -648,31 +653,15 @@ class PlayerViewModel : ViewModel(),
 
   val videoQualityTracks: StateFlow<List<TrackNode>> =
     combine(allTracks, PlaybackSession.state) { tracks, session ->
-      val item = session.currentItem
-      val isNetworkStream =
-        sequenceOf(item?.originalUri, item?.playableUri)
-          .filterNotNull()
-          .any { uri -> uri.startsWith("http://", true) || uri.startsWith("https://", true) }
-      if (!isNetworkStream) {
+      if (session.phase != PlaybackPhase.READY && session.phase != PlaybackPhase.BACKGROUND) {
         return@combine persistentListOf()
       }
 
       tracks
         .asSequence()
         .filter { track -> track.isVideo && !track.isAlbumArtwork }
-        .sortedByDescending(TrackNode::isSelected)
-        .distinctBy { track ->
-          listOf(
-            track.programId,
-            track.programIds,
-            track.demuxW,
-            track.demuxH,
-            track.demuxFps,
-            track.effectiveBitrate,
-            track.codec,
-            track.effectiveTitle,
-          )
-        }.sortedWith(
+        .distinctBy(TrackNode::id)
+        .sortedWith(
           compareByDescending<TrackNode>(::videoQualityDimension)
             .thenByDescending(::videoPixelCount)
             .thenByDescending { track -> track.demuxFps ?: 0.0 }
@@ -682,16 +671,9 @@ class PlayerViewModel : ViewModel(),
     }.stateIn(viewModelScope, SharingStarted.Eagerly, persistentListOf())
 
   val showVideoQualitySelector: StateFlow<Boolean> =
-    combine(videoQualityTracks, PlaybackSession.state) { qualityTracks, session ->
-      if (qualityTracks.isEmpty()) return@combine false
-
-      val item = session.currentItem
-      val isYtdlpPage =
-        sequenceOf(item?.originalUri, item?.playableUri)
-          .filterNotNull()
-          .any(YtdlpManager::requiresYtdlp)
-      isYtdlpPage || qualityTracks.size > 1
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, false)
+    videoQualityTracks
+      .map { tracks -> tracks.isNotEmpty() }
+      .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
   data class QualityDownloadRequest(
     val sourceUrl: String,
@@ -783,7 +765,13 @@ class PlayerViewModel : ViewModel(),
     }
   }
 
-  fun selectVideoQuality(track: TrackNode) {
+  fun selectVideoQuality(track: TrackNode, expectedGeneration: Long) {
+    val session = PlaybackSession.state.value
+    if (session.generation != expectedGeneration ||
+      session.phase !in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND) ||
+      videoQualityTracks.value.none { candidate -> candidate == track }
+    ) return
+
     if (currentItemRequiresYtdlp() && !MpvConfigOverridePolicy.isOwnedByMpvConf("ytdl-format")) {
       val selectedAudio = pairedYtdlTrack(track, TrackNode::isAudio)
         ?: allTracks.value.firstOrNull { candidate -> candidate.isAudio && candidate.isSelected }
@@ -792,16 +780,19 @@ class PlayerViewModel : ViewModel(),
     }
 
     val selectedProgramIds = track.effectiveProgramIds.toSet()
-    if (selectedProgramIds.isNotEmpty()) {
+    val currentAudio = allTracks.value.firstOrNull { candidate -> candidate.isAudio && candidate.isSelected }
+    val matchingAudio =
       allTracks.value
         .asSequence()
         .filter(TrackNode::isAudio)
         .filter { audioTrack -> audioTrack.effectiveProgramIds.any(selectedProgramIds::contains) }
-        .sortedByDescending(TrackNode::isSelected)
-        .firstOrNull()
-        ?.let { audioTrack -> PlaybackSession.setPropertyInt("aid", audioTrack.id) }
-    }
-    PlaybackSession.setPropertyInt("vid", track.id)
+        .sortedWith(
+          compareByDescending<TrackNode> { candidate -> candidate.id == currentAudio?.id }
+            .thenByDescending { candidate ->
+              currentAudio?.effectiveLang?.equals(candidate.effectiveLang, ignoreCase = true) == true
+            }.thenByDescending { candidate -> candidate.default == true },
+        ).firstOrNull()
+    PlaybackSession.selectVideoTracks(expectedGeneration, track.id, matchingAudio?.id)
   }
 
   fun selectAudioTrack(track: TrackNode) {

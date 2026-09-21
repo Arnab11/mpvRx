@@ -394,9 +394,11 @@ fun PlayerSheets(
 
     Sheets.VideoQuality -> {
       val videoQualityTracks by viewModel.videoQualityTracks.collectAsState()
+      val playbackState by app.gyrolet.mpvrx.ui.player.PlaybackSession.state.composeCollectAsState()
+      val selectionGeneration = playbackState.generation
       VideoQualitySheet(
         tracks = videoQualityTracks,
-        onSelect = viewModel::selectVideoQuality,
+        onSelect = { track -> viewModel.selectVideoQuality(track, selectionGeneration) },
         onDownload = qualityDownloadAction,
         onDismissRequest = onDismissRequest,
       )

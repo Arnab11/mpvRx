@@ -1070,6 +1070,24 @@ object PlaybackSession : MPVLib.EventObserver {
     }
   }
 
+  internal fun selectVideoTracks(
+    expectedGeneration: Long,
+    videoTrackId: Int,
+    audioTrackId: Int?,
+  ) {
+    nativeLock.withLock {
+      val current = _state.value
+      if (!initialized || current.generation != expectedGeneration || loadedGeneration != expectedGeneration ||
+        current.phase !in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND) ||
+        MpvConfigOverridePolicy.isOwnedByMpvConf("vid")
+      ) return@withLock
+
+      val audioEnabled = MPVLib.getPropertyString("aid") != "no"
+      setPropertyInt("vid", videoTrackId)
+      if (audioEnabled && audioTrackId != null) setPropertyInt("aid", audioTrackId)
+    }
+  }
+
   fun getPropertyDouble(property: String): Double? = withReadyCore(null) { MPVLib.getPropertyDouble(property) }
 
   fun setPropertyDouble(

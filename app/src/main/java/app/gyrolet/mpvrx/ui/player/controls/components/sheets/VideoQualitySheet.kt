@@ -143,7 +143,13 @@ private fun qualityDetails(track: TrackNode): String? {
           "${bitsPerSecond / 1_000L} kbps"
         }
       }
-  return listOfNotNull(track.ytdlFormatId?.let { "#$it" }, dimensions, codec, bitrate)
+  return listOfNotNull(
+    track.ytdlFormatId?.let { "#$it" } ?: "#${track.id}",
+    track.effectiveTitle?.takeUnless { it == qualityLabel(track) },
+    dimensions,
+    codec,
+    bitrate,
+  ).distinct()
     .joinToString(" • ")
     .takeIf(String::isNotBlank)
 }
