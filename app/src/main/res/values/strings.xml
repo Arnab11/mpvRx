@@ -2284,7 +2284,7 @@
   <string name="pref_appearance_custom_theme_name_required">Enter a theme name</string>
   <string name="pref_appearance_custom_theme_name_duplicate">A theme with this name already exists</string>
   <string name="pref_appearance_custom_theme_hex_invalid">Use a hex color such as #6750A4</string>
-  <string name="pref_appearance_custom_wallpaper_title">Custom wallpaper</string>
+  <string name="pref_appearance_custom_wallpaper_title">Wallpaper</string>
   <string name="pref_appearance_custom_wallpaper_summary">Show a full-screen image behind browser content and the top bar</string>
   <string name="pref_appearance_custom_wallpaper_choose">Choose wallpaper</string>
   <string name="pref_appearance_custom_wallpaper_replace">Replace wallpaper</string>

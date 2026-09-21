@@ -15,10 +15,10 @@ import android.os.Looper
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -27,9 +27,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
@@ -39,6 +37,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -48,7 +47,6 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -71,16 +69,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
-import app.gyrolet.mpvrx.preferences.MultiChoiceSegmentedButton
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
@@ -103,11 +99,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.collections.immutable.persistentListOf
-import kotlinx.collections.immutable.toImmutableList
 import kotlinx.serialization.Serializable
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import org.koin.compose.koinInject
 
 @Serializable
@@ -298,19 +290,15 @@ data class WallpaperEditorScreen(
         verticalArrangement = Arrangement.spacedBy(12.dp),
       ) {
         item {
-          MultiChoiceSegmentedButton(
-            choices =
-              listOf(
-                stringResource(R.string.pref_appearance_custom_wallpaper_fit),
-                stringResource(R.string.pref_appearance_custom_wallpaper_fill),
-              ).toImmutableList(),
-            selectedIndices = persistentListOf(WallpaperScaleMode.entries.indexOf(scaleMode)),
-            onClick = { index, _ ->
-              scaleMode = WallpaperScaleMode.entries[index]
+          WallpaperScaleModeToggle(
+            selected = scaleMode,
+            onSelect = { mode ->
+              scaleMode = mode
               zoom = 1f
               offsetX = 0f
               offsetY = 0f
             },
+            modifier = Modifier.padding(vertical = 4.dp),
           )
         }
         item {
@@ -481,7 +469,7 @@ data class WallpaperEditorScreen(
                     zoom = 1f
                     offsetX = 0f
                     offsetY = 0f
-                    scaleMode = WallpaperScaleMode.Fill
+                    scaleMode = WallpaperScaleMode.Fit
                   },
                 ) {
                   Canvas(modifier = Modifier.fillMaxSize()) { drawWallpaperPreset(wallpaperPreset) }
@@ -500,6 +488,31 @@ data class WallpaperEditorScreen(
                       contentScale = ContentScale.Crop,
                       modifier = Modifier.fillMaxSize(),
                     )
+                    // Tapping the selected custom image picks a new one, so say so.
+                    Row(
+                      modifier =
+                        Modifier
+                          .align(Alignment.BottomCenter)
+                          .fillMaxWidth()
+                          .background(Color.Black.copy(alpha = 0.55f))
+                          .padding(vertical = 5.dp),
+                      horizontalArrangement = Arrangement.Center,
+                      verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                      Icon(
+                        Icons.RoundedFilled.Refresh,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp),
+                        tint = Color.White,
+                      )
+                      Spacer(modifier = Modifier.width(4.dp))
+                      Text(
+                        text = stringResource(R.string.pref_appearance_custom_wallpaper_replace_action),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        maxLines = 1,
+                      )
+                    }
                   } else {
                     Icon(
                       Icons.RoundedFilled.Add,
@@ -625,163 +638,68 @@ private fun WallpaperSlider(
 }
 
 /**
- * Full-screen preview that mimics the app's home screen (top bar, folder list, bottom nav)
- * drawn over the wallpaper using the *unsaved* editor values. Tap anywhere or press back to close.
+ * Fit / Fill switch. The selected side is a solid primary pill with a check mark, the other one an
+ * outlined pill, so the current mode is obvious at a glance.
  */
 @Composable
-private fun WallpaperHomePreviewDialog(
-  bitmap: Bitmap?,
-  zoom: Float,
-  offsetX: Float,
-  offsetY: Float,
-  scaleMode: WallpaperScaleMode,
-  blur: Float,
-  alpha: Float,
-  onDismiss: () -> Unit,
+private fun WallpaperScaleModeToggle(
+  selected: WallpaperScaleMode,
+  onSelect: (WallpaperScaleMode) -> Unit,
+  modifier: Modifier = Modifier,
 ) {
-  Dialog(
-    onDismissRequest = onDismiss,
-    properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false),
+  val colors = MaterialTheme.colorScheme
+  val options =
+    listOf(
+      WallpaperScaleMode.Fit to stringResource(R.string.pref_appearance_custom_wallpaper_fit),
+      WallpaperScaleMode.Fill to stringResource(R.string.pref_appearance_custom_wallpaper_fill),
+    )
+  Row(
+    modifier = modifier.fillMaxWidth().tvFocusGroup(),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
   ) {
-    val colors = MaterialTheme.colorScheme
-    Box(
-      modifier =
-        Modifier
-          .fillMaxSize()
-          .background(colors.background)
-          .clickable(onClick = onDismiss),
-    ) {
-      if (bitmap != null) {
-        WallpaperImage(
-          bitmap = bitmap,
-          zoom = zoom,
-          offsetX = offsetX,
-          offsetY = offsetY,
-          scaleMode = scaleMode,
-          blurRadius = blur,
-          imageAlpha = alpha,
-          modifier = Modifier.fillMaxSize(),
-        )
-        // Same scrim AppWallpaperHost puts over the wallpaper.
-        Box(
-          modifier =
-            Modifier
-              .fillMaxSize()
-              .background(
-                if (colors.background.luminance() < 0.5f) Color.Black.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
-              ),
-        )
-      }
-
-      Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
-        // Top bar
-        Row(
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Text(
-            text = stringResource(R.string.app_name),
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = colors.onBackground,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.weight(1f),
-          )
-          Icon(Icons.RoundedFilled.Search, contentDescription = null, tint = colors.onBackground)
-          Spacer(Modifier.width(16.dp))
-          Icon(Icons.RoundedFilled.MoreVert, contentDescription = null, tint = colors.onBackground)
-        }
-
-        // Fake folder list
-        Column(
-          modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 16.dp),
-          verticalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-          HOME_PREVIEW_FOLDERS.forEach { (name, count) ->
-            Surface(
-              shape = RoundedCornerShape(20.dp),
-              color = colors.surfaceContainerLow.copy(alpha = 0.88f),
-              modifier = Modifier.fillMaxWidth(),
-            ) {
-              Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 14.dp),
-                verticalAlignment = Alignment.CenterVertically,
-              ) {
-                Icon(Icons.RoundedFilled.Folder, contentDescription = null, tint = colors.primary, modifier = Modifier.size(32.dp))
-                Column(modifier = Modifier.padding(start = 16.dp)) {
-                  Text(name, style = MaterialTheme.typography.titleMedium, color = colors.onSurface, maxLines = 1)
-                  Text(count, style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
-                }
-              }
-            }
-          }
-        }
-
-        // Fake bottom nav pill
-        Row(modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), horizontalArrangement = Arrangement.Center) {
-          Surface(
-            shape = CircleShape,
-            color = colors.surfaceContainer.copy(alpha = 0.92f),
-          ) {
-            Row(
-              modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-              horizontalArrangement = Arrangement.spacedBy(8.dp),
-              verticalAlignment = Alignment.CenterVertically,
-            ) {
-              listOf(Icons.RoundedFilled.Home, Icons.RoundedFilled.VideoLibrary, Icons.RoundedFilled.Download, Icons.RoundedFilled.Settings)
-                .forEachIndexed { index, icon ->
-                  Box(
-                    modifier =
-                      Modifier
-                        .size(width = 64.dp, height = 40.dp)
-                        .clip(CircleShape)
-                        .background(if (index == 0) colors.secondaryContainer else Color.Transparent),
-                    contentAlignment = Alignment.Center,
-                  ) {
-                    Icon(
-                      icon,
-                      contentDescription = null,
-                      tint = if (index == 0) colors.onSecondaryContainer else colors.onSurfaceVariant,
-                    )
-                  }
-                }
-            }
-          }
-        }
-      }
-
-      // Close chip
-      Surface(
-        shape = CircleShape,
-        color = colors.inverseSurface.copy(alpha = 0.85f),
-        modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 4.dp),
+    options.forEach { (mode, label) ->
+      val isSelected = selected == mode
+      val shape = RoundedCornerShape(50)
+      val container by animateColorAsState(
+        targetValue = if (isSelected) colors.primary else colors.surfaceContainerHighest,
+        label = "wallpaperScaleContainer",
+      )
+      val content by animateColorAsState(
+        targetValue = if (isSelected) colors.onPrimary else colors.onSurfaceVariant,
+        label = "wallpaperScaleContent",
+      )
+      Row(
+        modifier =
+          Modifier
+            .weight(1f)
+            .height(48.dp)
+            .tvFocusHighlight(shape, focusedScale = 1.03f)
+            .clip(shape)
+            .background(container)
+            .then(if (isSelected) Modifier else Modifier.border(1.dp, colors.outlineVariant, shape))
+            .selectable(selected = isSelected, role = Role.RadioButton, onClick = { onSelect(mode) }),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Icon(Icons.RoundedFilled.Close, contentDescription = null, tint = colors.inverseOnSurface, modifier = Modifier.size(16.dp))
-          Text(
-            text = stringResource(R.string.pref_appearance_custom_wallpaper_home_preview_close),
-            style = MaterialTheme.typography.labelMedium,
-            color = colors.inverseOnSurface,
-            modifier = Modifier.padding(start = 6.dp),
+        if (isSelected) {
+          Icon(
+            Icons.RoundedFilled.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp),
+            tint = content,
           )
+          Spacer(modifier = Modifier.width(8.dp))
         }
+        Text(
+          text = label,
+          style = MaterialTheme.typography.labelLarge,
+          fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+          color = content,
+        )
       }
     }
   }
 }
-
-private val HOME_PREVIEW_FOLDERS =
-  listOf(
-    "Camera" to "128 videos",
-    "Downloads" to "42 videos",
-    "Movies" to "17 videos",
-    "Screen recordings" to "9 videos",
-    "WhatsApp Video" to "63 videos",
-  )
 
 private data class AspectPreset(
   val label: String,
