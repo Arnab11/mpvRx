@@ -359,7 +359,10 @@ object AppearancePreferencesScreen : Screen {
                     Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                       Text(stringResource(R.string.pref_appearance_custom_wallpaper_title), style = MaterialTheme.typography.titleMedium)
                       Text(stringResource(R.string.pref_appearance_custom_wallpaper_summary), color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.bodySmall)
-                      if (customWallpaperUri.isNotBlank() && !customWallpaperUri.startsWith("data:", ignoreCase = true)) {
+                      if (customWallpaperUri.isNotBlank() &&
+                        !customWallpaperUri.startsWith("data:", ignoreCase = true) &&
+                        !customWallpaperUri.startsWith("preset:", ignoreCase = true)
+                      ) {
                         Text(customWallpaperUri.substringAfterLast('/'), style = MaterialTheme.typography.bodySmall, maxLines = 1)
                       }
                       Row(
@@ -367,7 +370,13 @@ object AppearancePreferencesScreen : Screen {
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                       ) {
                         Button(
-                          onClick = { wallpaperPicker.launch(arrayOf("image/*")) },
+                          onClick = {
+                            if (customWallpaperUri.isBlank()) {
+                              backstack.navigateTo(WallpaperEditorScreen())
+                            } else {
+                              wallpaperPicker.launch(arrayOf("image/*"))
+                            }
+                          },
                           modifier = Modifier.weight(1f),
                           contentPadding = PaddingValues(horizontal = 8.dp),
                         ) {

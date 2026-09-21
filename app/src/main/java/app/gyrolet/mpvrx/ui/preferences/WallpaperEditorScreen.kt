@@ -13,6 +13,10 @@ import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
@@ -63,6 +67,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -80,6 +86,9 @@ import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
 import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
 import app.gyrolet.mpvrx.ui.theme.WallpaperDerivedThemeName
 import app.gyrolet.mpvrx.ui.theme.WallpaperImage
+import app.gyrolet.mpvrx.ui.theme.WallpaperPreset
+import app.gyrolet.mpvrx.ui.theme.drawWallpaperPreset
+import app.gyrolet.mpvrx.ui.preferences.components.WallpaperPresetCard
 import app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode
 import app.gyrolet.mpvrx.ui.theme.extractThemeFromWallpaper
 import app.gyrolet.mpvrx.ui.theme.loadWallpaperBitmap
@@ -142,11 +151,34 @@ data class WallpaperEditorScreen(
     var previewLocked by rememberSaveable(sourceUri) { mutableStateOf(false) }
     var previewAspect by rememberSaveable(sourceUri) { mutableStateOf<Float?>(null) }
     var showHomePreview by rememberSaveable(sourceUri) { mutableStateOf(false) }
-    val bitmap =
-      produceState<Bitmap?>(initialValue = null, resolvedSource) {
-        val loaded = withContext(Dispatchers.IO) { loadWallpaperBitmap(context, resolvedSource) }
-        value = loaded
+    // "" = no wallpaper, "preset:<id>" = code-drawn preset, anything else = user picked image.
+    var selectedSource by rememberSaveable(sourceUri) { mutableStateOf(resolvedSource) }
+    val loadedWallpaper =
+      produceState<Pair<String, Bitmap?>?>(initialValue = null, selectedSource) {
+        val source = selectedSource
+        val loaded = if (source.isBlank()) null else withContext(Dispatchers.IO) { loadWallpaperBitmap(context, source) }
+        value = source to loaded
       }.value
+    // Ignore a bitmap that belongs to the previously selected source while the new one is loading.
+    val bitmap = loadedWallpaper?.takeIf { it.first == selectedSource }?.second
+    val isNoneSelected = selectedSource.isBlank()
+    val isCustomSelected = selectedSource.isNotBlank() && !WallpaperPreset.isPresetUri(selectedSource)
+    val customPicker =
+      rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+          runCatching {
+            context.contentResolver.takePersistableUriPermission(
+              uri,
+              android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+          }
+          selectedSource = uri.toString()
+          zoom = 1f
+          offsetX = 0f
+          offsetY = 0f
+          scaleMode = WallpaperScaleMode.Fit
+        }
+      }
     DisposableEffect(bitmap) {
       val displayedBitmap = bitmap
       onDispose {
@@ -170,12 +202,33 @@ data class WallpaperEditorScreen(
           },
           actions = {
             TextButton(
-              enabled = bitmap != null && !isSaving,
+              enabled = (bitmap != null || isNoneSelected) && !isSaving,
               onClick = {
                 isSaving = true
                 scope.launch {
                   try {
-                    val savedUri = saveWallpaperCopy(context, resolvedSource)
+                    if (isNoneSelected) {
+                      // Same as "Clear" on the appearance screen.
+                      preferences.customWallpaperUri.set("")
+                      preferences.customWallpaperZoom.set(1f)
+                      preferences.customWallpaperOffsetX.set(0f)
+                      preferences.customWallpaperOffsetY.set(0f)
+                      preferences.customWallpaperScaleMode.set(WallpaperScaleMode.Fit)
+                      preferences.customWallpaperBlur.set(0f)
+                      preferences.customWallpaperAlpha.set(1f)
+                      preferences.customWallpaperUseColors.set(false)
+                      val remainingThemes =
+                        CustomThemeDefinition
+                          .parseCollection(preferences.customTheme.get())
+                          .filterNot { it.name == WallpaperDerivedThemeName }
+                      preferences.customTheme.set(CustomThemeDefinition.serializeCollection(remainingThemes))
+                      if (preferences.selectedCustomThemeName.get() == WallpaperDerivedThemeName) {
+                        preferences.selectedCustomThemeName.set("")
+                      }
+                      backStack.popSafely()
+                      return@launch
+                    }
+                    val savedUri = saveWallpaperCopy(context, selectedSource)
                     preferences.customWallpaperZoom.set(zoom)
                     preferences.customWallpaperOffsetX.set(offsetX)
                     preferences.customWallpaperOffsetY.set(offsetY)
@@ -311,13 +364,20 @@ data class WallpaperEditorScreen(
         }
         item {
           BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-            val targetHeight =
-              previewAspect?.let { ratio -> (maxWidth / ratio).coerceIn(160.dp, 640.dp) } ?: 420.dp
+            val aspect = previewAspect
+            val previewHeight =
+              if (aspect == null) {
+                300.dp
+              } else {
+                minOf(320.dp, maxWidth / aspect).coerceAtLeast(120.dp)
+              }
+            val previewWidth = if (aspect == null) maxWidth else minOf(maxWidth, previewHeight * aspect)
             Box(
               modifier =
                 Modifier
-                  .fillMaxWidth()
-                  .height(targetHeight)
+                  .align(Alignment.Center)
+                  .width(previewWidth)
+                  .height(previewHeight)
                   .clip(RoundedCornerShape(8.dp))
                   .clipToBounds()
                   .background(MaterialTheme.colorScheme.surfaceContainerLowest)
@@ -345,6 +405,14 @@ data class WallpaperEditorScreen(
                   modifier = Modifier.fillMaxSize(),
                 )
               }
+              if (isNoneSelected) {
+                Text(
+                  text = stringResource(R.string.wallpaper_none_hint),
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.align(Alignment.Center),
+                )
+              }
               ExtendedFloatingActionButton(
                 onClick = { showHomePreview = true },
                 icon = { Icon(Icons.RoundedFilled.Visibility, contentDescription = null) },
@@ -365,6 +433,79 @@ data class WallpaperEditorScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
+        item {
+          Column {
+            Text(
+              text = stringResource(R.string.wallpaper_presets_label),
+              style = MaterialTheme.typography.labelMedium,
+              color = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.padding(start = 4.dp, bottom = 8.dp),
+            )
+            LazyRow(
+              modifier = Modifier.fillMaxWidth().tvFocusGroup(),
+              horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+              item(key = "wallpaper_none") {
+                WallpaperPresetCard(
+                  label = stringResource(R.string.wallpaper_preset_none),
+                  isSelected = isNoneSelected,
+                  onClick = {
+                    selectedSource = ""
+                    zoom = 1f
+                    offsetX = 0f
+                    offsetY = 0f
+                  },
+                ) {
+                  Icon(
+                    Icons.RoundedFilled.Block,
+                    contentDescription = null,
+                    modifier = Modifier.align(Alignment.Center).size(32.dp),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                }
+              }
+              items(WallpaperPreset.entries, key = { it.id }) { wallpaperPreset ->
+                WallpaperPresetCard(
+                  label = stringResource(wallpaperPreset.labelRes),
+                  isSelected = selectedSource == wallpaperPreset.uri,
+                  onClick = {
+                    selectedSource = wallpaperPreset.uri
+                    zoom = 1f
+                    offsetX = 0f
+                    offsetY = 0f
+                    scaleMode = WallpaperScaleMode.Fill
+                  },
+                ) {
+                  Canvas(modifier = Modifier.fillMaxSize()) { drawWallpaperPreset(wallpaperPreset) }
+                }
+              }
+              item(key = "wallpaper_custom") {
+                WallpaperPresetCard(
+                  label = stringResource(R.string.wallpaper_preset_custom),
+                  isSelected = isCustomSelected,
+                  onClick = { customPicker.launch(arrayOf("image/*")) },
+                ) {
+                  if (isCustomSelected && bitmap != null) {
+                    Image(
+                      bitmap = bitmap.asImageBitmap(),
+                      contentDescription = null,
+                      contentScale = ContentScale.Crop,
+                      modifier = Modifier.fillMaxSize(),
+                    )
+                  } else {
+                    Icon(
+                      Icons.RoundedFilled.Add,
+                      contentDescription = null,
+                      modifier = Modifier.align(Alignment.Center).size(34.dp),
+                      tint = MaterialTheme.colorScheme.primary,
+                    )
+                  }
+                }
+              }
+            }
+          }
+        }
+        if (!isNoneSelected) {
         item {
           WallpaperSlider(
             label = stringResource(R.string.pref_appearance_custom_wallpaper_zoom),
@@ -413,6 +554,7 @@ data class WallpaperEditorScreen(
             summary = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors_summary)) },
           )
         }
+        }
         item {
           Row(
             modifier = Modifier.fillMaxWidth(),
@@ -441,7 +583,7 @@ data class WallpaperEditorScreen(
       }
     }
 
-    if (showHomePreview && bitmap != null) {
+    if (showHomePreview) {
       WallpaperHomePreviewDialog(
         bitmap = bitmap,
         zoom = zoom,
@@ -480,7 +622,7 @@ private fun WallpaperSlider(
  */
 @Composable
 private fun WallpaperHomePreviewDialog(
-  bitmap: Bitmap,
+  bitmap: Bitmap?,
   zoom: Float,
   offsetX: Float,
   offsetY: Float,
@@ -501,25 +643,27 @@ private fun WallpaperHomePreviewDialog(
           .background(colors.background)
           .clickable(onClick = onDismiss),
     ) {
-      WallpaperImage(
-        bitmap = bitmap,
-        zoom = zoom,
-        offsetX = offsetX,
-        offsetY = offsetY,
-        scaleMode = scaleMode,
-        blurRadius = blur,
-        imageAlpha = alpha,
-        modifier = Modifier.fillMaxSize(),
-      )
-      // Same scrim AppWallpaperHost puts over the wallpaper.
-      Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .background(
-              if (colors.background.luminance() < 0.5f) Color.Black.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
-            ),
-      )
+      if (bitmap != null) {
+        WallpaperImage(
+          bitmap = bitmap,
+          zoom = zoom,
+          offsetX = offsetX,
+          offsetY = offsetY,
+          scaleMode = scaleMode,
+          blurRadius = blur,
+          imageAlpha = alpha,
+          modifier = Modifier.fillMaxSize(),
+        )
+        // Same scrim AppWallpaperHost puts over the wallpaper.
+        Box(
+          modifier =
+            Modifier
+              .fillMaxSize()
+              .background(
+                if (colors.background.luminance() < 0.5f) Color.Black.copy(alpha = 0.18f) else Color.White.copy(alpha = 0.30f),
+              ),
+        )
+      }
 
       Column(modifier = Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
         // Top bar

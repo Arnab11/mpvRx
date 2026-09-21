@@ -2299,6 +2299,16 @@
   <string name="pref_appearance_custom_wallpaper_adjust">Adjust</string>
   <string name="pref_appearance_custom_wallpaper_home_preview">Home preview</string>
   <string name="pref_appearance_custom_wallpaper_home_preview_close">Tap anywhere to close</string>
+  <string name="wallpaper_presets_label">Wallpapers</string>
+  <string name="wallpaper_preset_none">None</string>
+  <string name="wallpaper_preset_custom">Custom</string>
+  <string name="wallpaper_preset_aurora">Aurora</string>
+  <string name="wallpaper_preset_sunset">Sunset</string>
+  <string name="wallpaper_preset_ocean">Ocean</string>
+  <string name="wallpaper_preset_midnight">Midnight</string>
+  <string name="wallpaper_preset_mist">Mist</string>
+  <string name="wallpaper_preset_blossom">Blossom</string>
+  <string name="wallpaper_none_hint">No wallpaper</string>
   <string name="pref_appearance_custom_wallpaper_gesture_hint">Drag to reposition. Pinch to zoom.</string>
   <string name="pref_appearance_custom_wallpaper_reset">Reset</string>
   <string name="pref_appearance_custom_wallpaper_fit">Fit</string>
