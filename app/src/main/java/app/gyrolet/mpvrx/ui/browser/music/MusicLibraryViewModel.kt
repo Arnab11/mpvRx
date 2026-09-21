@@ -242,7 +242,8 @@ class MusicLibraryViewModel : ViewModel(), KoinComponent {
 
   private fun buildAlbums(songs: List<MusicSong>): List<MusicAlbum> =
     songs
-      .groupBy { song -> if (song.albumId > 0) song.albumId else song.album.hashCode().toLong() }
+      .filter { it.hasAlbumTag }
+      .groupBy { requireNotNull(it.albumKey) }
       .map { (albumId, albumSongs) ->
         val firstSong = albumSongs.first()
         MusicAlbum(
@@ -252,6 +253,7 @@ class MusicLibraryViewModel : ViewModel(), KoinComponent {
           songCount = albumSongs.size,
           year = albumSongs.maxOfOrNull { it.year } ?: 0,
           albumArtUri = firstSong.albumArtUri,
+          artworkSong = firstSong,
         )
       }
       .sortedBy { it.title.lowercase() }
@@ -265,7 +267,7 @@ class MusicLibraryViewModel : ViewModel(), KoinComponent {
           id = firstSong.artist.hashCode().toLong(),
           name = firstSong.artist,
           songCount = artistSongs.size,
-          albumCount = artistSongs.map { it.albumId }.distinct().size,
+          albumCount = artistSongs.mapNotNull { it.albumKey }.distinct().size,
         )
       }
       .sortedBy { it.name.lowercase() }

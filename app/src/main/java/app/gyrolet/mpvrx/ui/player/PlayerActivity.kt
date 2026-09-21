@@ -3391,6 +3391,7 @@ class PlayerActivity :
     if (extras == null) return
 
     extras.getInt("position", POSITION_NOT_SET).takeIf { it != POSITION_NOT_SET }?.let {
+      intent.removeExtra("position")
       PlaybackSession.setPropertyInt("time-pos", it / MILLISECONDS_TO_SECONDS)
     }
 
@@ -4869,23 +4870,25 @@ class PlayerActivity :
     val saveIdentifier = activeSaveMediaIdentifier.ifBlank { mediaIdentifier }
     if (saveIdentifier.isBlank()) return null
 
-    return PlaybackStateSnapshot(
-      mediaIdentifier = saveIdentifier,
-      mediaTitle = mediaTitle,
-      currentPosition = readMpvIntSeconds("time-pos", viewModel.pos ?: 0),
-      duration = readMpvIntSeconds("duration", viewModel.duration ?: 0),
-      isPositionRestorePending =
-        PlaybackSession.isPositionRestorePending(PlaybackSession.state.value.activeGeneration),
-      playbackSpeed = PlaybackSession.getPropertyDouble("speed") ?: DEFAULT_PLAYBACK_SPEED,
-      videoZoom = PlaybackSession.videoZoom.value,
-      sid = player.sid,
-      secondarySid = player.secondarySid,
-      subDelayMs = ((PlaybackSession.getPropertyDouble("sub-delay") ?: 0.0) * MILLISECONDS_TO_SECONDS).toInt(),
-      subSpeed = PlaybackSession.getPropertyDouble("sub-speed") ?: DEFAULT_SUB_SPEED,
-      aid = player.aid,
-      audioDelayMs = ((PlaybackSession.getPropertyDouble("audio-delay") ?: 0.0) * MILLISECONDS_TO_SECONDS).toInt(),
-      externalSubtitles = viewModel.externalSubtitles.joinToString("|"),
-    )
+    return PlaybackSession.readLoadedPlaybackState(saveIdentifier) { position, duration ->
+      PlaybackStateSnapshot(
+        mediaIdentifier = saveIdentifier,
+        mediaTitle = mediaTitle,
+        currentPosition = position.toInt(),
+        duration = duration.toInt(),
+        isPositionRestorePending =
+          PlaybackSession.isPositionRestorePending(PlaybackSession.state.value.activeGeneration),
+        playbackSpeed = PlaybackSession.getPropertyDouble("speed") ?: DEFAULT_PLAYBACK_SPEED,
+        videoZoom = PlaybackSession.videoZoom.value,
+        sid = player.sid,
+        secondarySid = player.secondarySid,
+        subDelayMs = ((PlaybackSession.getPropertyDouble("sub-delay") ?: 0.0) * MILLISECONDS_TO_SECONDS).toInt(),
+        subSpeed = PlaybackSession.getPropertyDouble("sub-speed") ?: DEFAULT_SUB_SPEED,
+        aid = player.aid,
+        audioDelayMs = ((PlaybackSession.getPropertyDouble("audio-delay") ?: 0.0) * MILLISECONDS_TO_SECONDS).toInt(),
+        externalSubtitles = viewModel.externalSubtitles.joinToString("|"),
+      )
+    }
   }
 
   private fun readMpvIntSeconds(
@@ -4950,7 +4953,7 @@ class PlayerActivity :
 
       if (positionRestoreOverride == null) {
         if (!initialPositionApplied) {
-          restorePlaybackPosition(state)
+          restorePlaybackPosition(state, loadGeneration)
         } else if (
           state != null &&
           playerPreferences.resumePlaybackMode.get() == ResumePlaybackMode.Always &&
@@ -5044,38 +5047,44 @@ class PlayerActivity :
     viewModel.setVideoZoom(state.videoZoom)
   }
 
-private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
+private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGeneration: Long) {
   if (state == null || viewModel.isAudioOnly.value || isCurrentMediaKnownAudio()) return
 
   val resumeMode = playerPreferences.resumePlaybackMode.get()
   val hasValidSavedPosition = state.lastPosition > 3
   if (!playerPreferences.savePositionOnQuit.get() || !hasValidSavedPosition) {
-    PlaybackSession.setPropertyInt("time-pos", 0)
+    PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")
     return
   }
 
   when (resumeMode) {
     ResumePlaybackMode.Always -> {
-      PlaybackSession.setPropertyInt("time-pos", state.lastPosition)
+      if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", state.lastPosition.toString())) return
       if (playerPreferences.showResumeIndicatorOverlay.get()) {
         withContext(Dispatchers.Main) {
-          viewModel.playerUpdate.value = PlayerUpdates.ResumedFrom(state.lastPosition)
+          if (PlaybackSession.isCurrentGeneration(loadGeneration)) {
+            viewModel.playerUpdate.value = PlayerUpdates.ResumedFrom(state.lastPosition)
+          }
         }
       }
     }
 
     ResumePlaybackMode.Ask -> {
-      PlaybackSession.setPropertyInt("time-pos", 0)
+      if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")) return
       withContext(Dispatchers.Main) {
-        viewModel.playerUpdate.value = PlayerUpdates.ResumeAvailable(state.lastPosition)
+        if (PlaybackSession.isCurrentGeneration(loadGeneration)) {
+          viewModel.playerUpdate.value = PlayerUpdates.ResumeAvailable(state.lastPosition)
+        }
       }
     }
 
     ResumePlaybackMode.Never -> {
-      PlaybackSession.setPropertyInt("time-pos", 0)
+      if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")) return
       if (playerPreferences.showResumeIndicatorOverlay.get()) {
         withContext(Dispatchers.Main) {
-          viewModel.playerUpdate.value = PlayerUpdates.StartedAfresh
+          if (PlaybackSession.isCurrentGeneration(loadGeneration)) {
+            viewModel.playerUpdate.value = PlayerUpdates.StartedAfresh
+          }
         }
       }
     }
@@ -7247,6 +7256,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
     }
 
     val uri = playlist[index]
+    intent.removeExtra("position")
     val playableUri = uri.openContentFd(this, allowFdFallback = false) ?: uri.toString()
     currentPlayableUri = playableUri
     val persistedNetworkReference = NetworkPlaybackUri.parse(uri.toString())
@@ -7337,7 +7347,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?) {
     isReady = false
     viewModel.onVideoLoadStarted()
 
-    startMediaLoad(playableUri)
+    startMediaLoad(playableUri, originalUri = uri.toString())
 
     // Update media title (this will trigger UI update)
     val shouldForceTitle =

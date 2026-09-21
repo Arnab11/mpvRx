@@ -97,6 +97,7 @@ fun SharedMusicTrackListItem(
   swipeIdentity: String = title,
   isWatched: Boolean? = null,
   onSwipeAction: ((VideoSwipeAction) -> Unit)? = null,
+  audioSong: MusicSong? = null,
 ) {
   val preferences = koinInject<BrowserPreferences>()
   val leftAction by preferences.videoSwipeLeft.collectAsState()
@@ -154,9 +155,10 @@ fun SharedMusicTrackListItem(
               modifier = Modifier.fillMaxSize(),
             )
           }
-          albumArtUri != null -> {
+          albumArtUri != null || audioSong != null -> {
             LocalAlbumArtImage(
               uri = albumArtUri,
+              audioSong = audioSong,
               contentDescription = title,
               modifier = Modifier.fillMaxSize(),
             )

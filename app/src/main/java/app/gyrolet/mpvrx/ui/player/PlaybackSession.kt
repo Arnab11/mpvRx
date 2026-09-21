@@ -1003,7 +1003,10 @@ object PlaybackSession : MPVLib.EventObserver {
     nativeLock.withLock {
       if (!initialized || _state.value.generation != expectedGeneration) return@withLock false
       if (MpvConfigOverridePolicy.shouldSuppress(command)) return@withLock true
-      if (command.firstOrNull() == "seek") beginSeekAudioGuardLocked()
+      if (command.firstOrNull() == "seek") {
+        loadedAudiobookEnded = false
+        beginSeekAudioGuardLocked()
+      }
       if (!handleAmbientShaderCommandLocked(command)) MPVLib.command(*command)
       true
     }
@@ -1124,6 +1127,21 @@ object PlaybackSession : MPVLib.EventObserver {
     ) return@withReadyCore null
     val position = MPVLib.getPropertyDouble("time-pos")?.takeIf { it.isFinite() && it >= 0 } ?: return@withReadyCore null
     item to (position * 1000).toLong()
+  }
+
+  internal fun <T> readLoadedPlaybackState(
+    mediaIdentifier: String,
+    capture: (positionSeconds: Double, durationSeconds: Double) -> T,
+  ): T? = withReadyCore(null) {
+    val current = _state.value
+    val item = loadedPlaybackItem ?: return@withReadyCore null
+    if (item.stableId != mediaIdentifier || loadedGeneration != current.generation ||
+      current.phase !in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND)
+    ) return@withReadyCore null
+    val position = MPVLib.getPropertyDouble("time-pos")?.takeIf { it.isFinite() && it >= 0.0 }
+      ?: return@withReadyCore null
+    val duration = MPVLib.getPropertyDouble("duration")?.takeIf { it.isFinite() && it >= 0.0 } ?: 0.0
+    capture(position, duration)
   }
 
   internal fun applyAudiobookSpeed(generation: Long, speed: Float) = withCore(Unit) {

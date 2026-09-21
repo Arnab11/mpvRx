@@ -36,8 +36,13 @@ data class MusicSong(
   val trackNumber: Int = 0,
   val year: Int = 0,
   val albumArtUri: Uri? = null,
-  val size: Long = 0L
-)
+  val size: Long = 0L,
+  val hasAlbumTag: Boolean = true,
+  val dateModified: Long = dateAdded,
+) {
+  val albumKey: Long?
+    get() = if (hasAlbumTag) albumId.takeIf { it > 0 } ?: album.hashCode().toLong() else null
+}
 
 @Immutable
 data class MusicAlbum(
@@ -46,7 +51,8 @@ data class MusicAlbum(
   val artist: String,
   val songCount: Int,
   val year: Int = 0,
-  val albumArtUri: Uri? = null
+  val albumArtUri: Uri? = null,
+  val artworkSong: MusicSong? = null,
 )
 
 @Immutable

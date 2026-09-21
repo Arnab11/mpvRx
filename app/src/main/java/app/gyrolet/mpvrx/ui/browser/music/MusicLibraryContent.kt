@@ -180,9 +180,9 @@ private fun MusicSong.toVideo(): Video {
     uri = uri,
     duration = durationMs,
     durationFormatted = DateUtils.formatElapsedTime(durationMs / 1000),
-    size = 0L,
+    size = size,
     sizeFormatted = "",
-    dateModified = dateAdded,
+    dateModified = dateModified,
     dateAdded = dateAdded,
     mimeType = "audio/*",
     bucketId = "",
@@ -311,7 +311,7 @@ fun MusicLibraryContent(
         val selectedAlbums = items as List<MusicAlbum>
         songs
           .filter { song ->
-            selectedAlbums.any { album -> song.albumId == album.id || song.album.equals(album.title, true) }
+            selectedAlbums.any { album -> song.albumKey == album.id }
           }.map { song -> song.toVideo() }
       }
       MusicTab.ARTISTS -> {
@@ -517,7 +517,7 @@ fun MusicLibraryContent(
                   MusicTab.ALBUMS -> {
                     @Suppress("UNCHECKED_CAST")
                     val selAlbums = items as List<MusicAlbum>
-                    val albumSongs = songs.filter { s -> selAlbums.any { a -> s.albumId == a.id || s.album.equals(a.title, ignoreCase = true) } }
+                    val albumSongs = songs.filter { song -> selAlbums.any { album -> song.albumKey == album.id } }
                     musicViewModel.playAllSongs(context, albumSongs, shuffle = false)
                   }
                   MusicTab.ARTISTS -> {
@@ -1023,7 +1023,7 @@ fun MusicLibraryContent(
         // Album Detail Sheet
         selectedAlbum?.let { album ->
           val albumSongs = remember(songs, album) {
-            songs.filter { it.albumId == album.id || it.album.equals(album.title, ignoreCase = true) }
+            songs.filter { it.albumKey == album.id }
           }
           AlbumDetailSheet(
             album = album,
@@ -1088,7 +1088,7 @@ fun MusicLibraryContent(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                   contentAlignment = Alignment.Center
                 ) {
-                  LocalAlbumArtImage(uri = song.albumArtUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+                  LocalAlbumArtImage(uri = song.albumArtUri, contentDescription = null, modifier = Modifier.fillMaxSize(), audioSong = song)
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -1189,7 +1189,7 @@ fun MusicLibraryContent(
         // Album Options Sheet
         selectedAlbumForOptions?.let { album ->
           val albumSongs = remember(songs, album) {
-            songs.filter { it.albumId == album.id || it.album.equals(album.title, ignoreCase = true) }
+            songs.filter { it.albumKey == album.id }
           }
           ModalBottomSheet(
             onDismissRequest = { selectedAlbumForOptions = null },
@@ -1212,7 +1212,7 @@ fun MusicLibraryContent(
                     .background(MaterialTheme.colorScheme.surfaceVariant),
                   contentAlignment = Alignment.Center
                 ) {
-                  LocalAlbumArtImage(uri = album.albumArtUri, contentDescription = null, modifier = Modifier.fillMaxSize())
+                  LocalAlbumArtImage(uri = album.albumArtUri, contentDescription = null, modifier = Modifier.fillMaxSize(), audioSong = album.artworkSong)
                 }
                 Spacer(modifier = Modifier.width(14.dp))
                 Column(modifier = Modifier.weight(1f)) {
@@ -1456,45 +1456,47 @@ fun MusicLibraryContent(
 fun LocalAlbumArtImage(
   uri: Uri?,
   contentDescription: String?,
-  modifier: Modifier = Modifier
+  modifier: Modifier = Modifier,
+  audioSong: MusicSong? = null,
 ) {
   val context = LocalContext.current
-  var bitmap by remember(uri) { mutableStateOf<ImageBitmap?>(null) }
+  val thumbnailRepository = koinInject<app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository>()
+  val video = remember(audioSong) { audioSong?.toVideo() }
+  val density = androidx.compose.ui.platform.LocalDensity.current
+  BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
+    val widthPx = with(density) { if (maxWidth.value.isFinite()) maxWidth.roundToPx().coerceAtLeast(1) else 256 }
+    val heightPx = with(density) { if (maxHeight.value.isFinite()) maxHeight.roundToPx().coerceAtLeast(1) else 256 }
+    var bitmap by remember(uri, video, widthPx, heightPx) { mutableStateOf<ImageBitmap?>(null) }
 
-  LaunchedEffect(uri) {
-    if (uri != null) {
+    LaunchedEffect(uri, video, widthPx, heightPx) {
       bitmap = withContext(Dispatchers.IO) {
         try {
-          context.contentResolver.openInputStream(uri)?.use { stream ->
-            BitmapFactory.decodeStream(stream)?.asImageBitmap()
-          }
-        } catch (e: Exception) {
+          val embeddedArtwork = video?.let { thumbnailRepository.getThumbnail(it, widthPx, heightPx) }
+          (embeddedArtwork ?: uri?.let { source ->
+            context.contentResolver.openInputStream(source)?.use { stream -> BitmapFactory.decodeStream(stream) }
+          })?.asImageBitmap()
+        } catch (error: kotlinx.coroutines.CancellationException) {
+          throw error
+        } catch (_: Exception) {
           null
         }
       }
-    } else {
-      bitmap = null
     }
-  }
 
-  val loaded = bitmap
-  if (loaded != null) {
-    Image(
-      bitmap = loaded,
-      contentDescription = contentDescription,
-      contentScale = ContentScale.Crop,
-      modifier = modifier
-    )
-  } else {
-    Box(
-      modifier = modifier,
-      contentAlignment = Alignment.Center
-    ) {
+    val loaded = bitmap
+    if (loaded != null) {
+      Image(
+        bitmap = loaded,
+        contentDescription = contentDescription,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.fillMaxSize(),
+      )
+    } else {
       Icon(
         imageVector = Icons.RoundedFilled.Audiotrack,
         contentDescription = contentDescription,
         tint = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.size(24.dp)
+        modifier = Modifier.size(24.dp),
       )
     }
   }
@@ -1664,6 +1666,7 @@ private fun SongGridCard(
       ) {
         LocalAlbumArtImage(
           uri = song.albumArtUri,
+          audioSong = song,
           contentDescription = null,
           modifier = Modifier.fillMaxSize()
         )
@@ -1741,6 +1744,7 @@ private fun SongListItem(
     title = song.title,
     subtitle = "${song.artist} • ${song.album}",
     albumArtUri = song.albumArtUri,
+    audioSong = song,
     durationSeconds = song.durationMs / 1000,
     isPlaying = isPlaying,
     isSelected = isSelected,
@@ -1844,6 +1848,7 @@ private fun AlbumGridCard(
       ) {
         LocalAlbumArtImage(
           uri = album.albumArtUri,
+          audioSong = album.artworkSong,
           contentDescription = null,
           modifier = Modifier.fillMaxSize()
         )
@@ -1922,6 +1927,7 @@ private fun AlbumListCard(
       ) {
         LocalAlbumArtImage(
           uri = album.albumArtUri,
+          audioSong = album.artworkSong,
           contentDescription = null,
           modifier = Modifier.fillMaxSize()
         )
@@ -2133,11 +2139,11 @@ private fun ArtistListCard(
 
 @Composable
 private fun PlaylistArtCollage(
-  artUris: List<Uri>,
+  artworkSongs: List<MusicSong>,
   isFavorites: Boolean = false,
   modifier: Modifier = Modifier
 ) {
-  val collageUris = remember(artUris) { artUris.take(4) }
+  val collageSongs = remember(artworkSongs) { artworkSongs.take(4) }
   Box(
     modifier = modifier
       .aspectRatio(1f)
@@ -2145,7 +2151,7 @@ private fun PlaylistArtCollage(
       .background(MaterialTheme.colorScheme.surfaceVariant),
     contentAlignment = Alignment.Center
   ) {
-    when (collageUris.size) {
+    when (collageSongs.size) {
       0 -> {
         Icon(
           imageVector = if (isFavorites) Icons.RoundedFilled.Favorite else Icons.RoundedFilled.QueueMusic,
@@ -2158,7 +2164,8 @@ private fun PlaylistArtCollage(
       }
       1 -> {
         LocalAlbumArtImage(
-          uri = collageUris[0],
+          uri = collageSongs[0].albumArtUri,
+          audioSong = collageSongs[0],
           contentDescription = null,
           modifier = Modifier
             .fillMaxSize()
@@ -2175,7 +2182,8 @@ private fun PlaylistArtCollage(
           horizontalAlignment = Alignment.CenterHorizontally
         ) {
           LocalAlbumArtImage(
-            uri = collageUris[0],
+            uri = collageSongs[0].albumArtUri,
+            audioSong = collageSongs[0],
             contentDescription = null,
             modifier = Modifier
               .weight(1f)
@@ -2183,7 +2191,8 @@ private fun PlaylistArtCollage(
               .clip(CircleShape)
           )
           LocalAlbumArtImage(
-            uri = collageUris[1],
+            uri = collageSongs[1].albumArtUri,
+            audioSong = collageSongs[1],
             contentDescription = null,
             modifier = Modifier
               .weight(1f)
@@ -2201,9 +2210,10 @@ private fun PlaylistArtCollage(
         ) {
           Layout(
             content = {
-              collageUris.forEach { uri ->
+              collageSongs.forEach { song ->
                 LocalAlbumArtImage(
-                  uri = uri,
+                  uri = song.albumArtUri,
+                  audioSong = song,
                   contentDescription = null,
                   modifier = Modifier.clip(CircleShape)
                 )
@@ -2261,7 +2271,8 @@ private fun PlaylistArtCollage(
             horizontalArrangement = Arrangement.spacedBy(2.dp)
           ) {
             LocalAlbumArtImage(
-              uri = collageUris.getOrNull(0),
+              uri = collageSongs.getOrNull(0)?.albumArtUri,
+              audioSong = collageSongs.getOrNull(0),
               contentDescription = null,
               modifier = Modifier
                 .weight(1f)
@@ -2269,7 +2280,8 @@ private fun PlaylistArtCollage(
                 .clip(CircleShape)
             )
             LocalAlbumArtImage(
-              uri = collageUris.getOrNull(1),
+              uri = collageSongs.getOrNull(1)?.albumArtUri,
+              audioSong = collageSongs.getOrNull(1),
               contentDescription = null,
               modifier = Modifier
                 .weight(1f)
@@ -2282,7 +2294,8 @@ private fun PlaylistArtCollage(
             horizontalArrangement = Arrangement.spacedBy(2.dp)
           ) {
             LocalAlbumArtImage(
-              uri = collageUris.getOrNull(2),
+              uri = collageSongs.getOrNull(2)?.albumArtUri,
+              audioSong = collageSongs.getOrNull(2),
               contentDescription = null,
               modifier = Modifier
                 .weight(1f)
@@ -2290,7 +2303,8 @@ private fun PlaylistArtCollage(
                 .clip(CircleShape)
             )
             LocalAlbumArtImage(
-              uri = collageUris.getOrNull(3),
+              uri = collageSongs.getOrNull(3)?.albumArtUri,
+              audioSong = collageSongs.getOrNull(3),
               contentDescription = null,
               modifier = Modifier
                 .weight(1f)
@@ -2309,7 +2323,7 @@ private fun PlaylistArtCollage(
 private fun MusicPlaylistCard(
   playlist: PlaylistEntity,
   itemCount: Int,
-  artUris: List<Uri>,
+  artworkSongs: List<MusicSong>,
   isSelected: Boolean,
   isGridMode: Boolean,
   coverArtSizeDp: Dp = 52.dp,
@@ -2341,7 +2355,7 @@ private fun MusicPlaylistCard(
       ) {
         Box(modifier = Modifier.fillMaxWidth()) {
           PlaylistArtCollage(
-            artUris = artUris,
+            artworkSongs = artworkSongs,
             isFavorites = isFavorites,
             modifier = Modifier.fillMaxWidth()
           )
@@ -2385,7 +2399,7 @@ private fun MusicPlaylistCard(
       ) {
         Box(modifier = Modifier.size(coverArtSizeDp)) {
           PlaylistArtCollage(
-            artUris = artUris,
+            artworkSongs = artworkSongs,
             isFavorites = isFavorites,
             modifier = Modifier.fillMaxSize()
           )
@@ -2431,14 +2445,14 @@ private fun PlaylistsTabContent(
 ) {
   val playlistRepository: PlaylistRepository = koinInject()
 
-  val playlistDetails by produceState<Map<Int, Pair<Int, List<Uri>>>>(initialValue = emptyMap(), playlists, songs) {
+  val playlistDetails by produceState<Map<Int, Pair<Int, List<MusicSong>>>>(initialValue = emptyMap(), playlists, songs) {
     value = withContext(Dispatchers.IO) {
       playlists.associate { playlist ->
         val items = playlistRepository.getPlaylistItems(playlist.id)
-        val artUris = items.take(4).mapNotNull { item ->
-          songs.firstOrNull { it.path == item.filePath }?.albumArtUri
+        val artworkSongs = items.take(4).mapNotNull { item ->
+          songs.firstOrNull { it.path == item.filePath || it.uri.toString() == item.filePath }
         }
-        playlist.id to Pair(items.size, artUris)
+        playlist.id to Pair(items.size, artworkSongs)
       }
     }
   }
@@ -2474,11 +2488,11 @@ private fun PlaylistsTabContent(
           items(playlists, key = { it.id }) { playlist ->
             val details = playlistDetails[playlist.id]
             val itemCount = details?.first ?: 0
-            val artUris = details?.second ?: emptyList()
+            val artworkSongs = details?.second ?: emptyList()
             MusicPlaylistCard(
               playlist = playlist,
               itemCount = itemCount,
-              artUris = artUris,
+              artworkSongs = artworkSongs,
               isSelected = selectionManager.isSelected(playlist),
               isGridMode = true,
               onClick = { onPlaylistClick(playlist) },
@@ -2495,11 +2509,11 @@ private fun PlaylistsTabContent(
           items(playlists, key = { it.id }) { playlist ->
             val details = playlistDetails[playlist.id]
             val itemCount = details?.first ?: 0
-            val artUris = details?.second ?: emptyList()
+            val artworkSongs = details?.second ?: emptyList()
             MusicPlaylistCard(
               playlist = playlist,
               itemCount = itemCount,
-              artUris = artUris,
+              artworkSongs = artworkSongs,
               isSelected = selectionManager.isSelected(playlist),
               isGridMode = false,
               coverArtSizeDp = coverArtSizeDp,
@@ -2551,6 +2565,7 @@ private fun AlbumDetailSheet(
         ) {
           LocalAlbumArtImage(
             uri = album.albumArtUri,
+            audioSong = album.artworkSong,
             contentDescription = null,
             modifier = Modifier.fillMaxSize()
           )

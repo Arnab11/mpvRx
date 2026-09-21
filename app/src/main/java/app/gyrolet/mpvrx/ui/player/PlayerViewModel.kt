@@ -2403,6 +2403,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   fun onVideoLoadStarted() {
+    cancelSeekPreview()
+    cancelFrameSeek()
+    seekCoalesceJob?.cancel()
+    seekCoalesceJob = null
+    pendingSeekOffset = 0
     lyricsLoadJob?.cancel()
     lyricsLoadJob = null
     lyricsTranslateJob?.cancel()
@@ -4611,14 +4616,15 @@ val isBrightnessSliderShown = MutableStateFlow(false)
    */
   fun seekPreviewTo(position: Float) {
     cancelFrameSeek()
+    val generation = PlaybackSession.state.value.generation
     synchronized(seekPreviewLock) {
       pendingSeekPreviewPosition = position.coerceAtLeast(0f)
       if (seekPreviewJob?.isActive == true) return
-      seekPreviewJob = viewModelScope.launch(Dispatchers.IO) { runSeekPreviewLoop() }
+      seekPreviewJob = viewModelScope.launch(Dispatchers.IO) { runSeekPreviewLoop(generation) }
     }
   }
 
-  private suspend fun runSeekPreviewLoop() {
+  private suspend fun runSeekPreviewLoop(generation: Long) {
     while (kotlinx.coroutines.currentCoroutineContext().isActive) {
       val target =
         synchronized(seekPreviewLock) {
@@ -4628,7 +4634,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
               return
             }
         }
-      PlaybackSession.command("seek", target.toString(), "absolute+keyframes")
+      if (!PlaybackSession.commandForGeneration(generation, "seek", target.toString(), "absolute+keyframes")) return
       delay(PREVIEW_SEEK_INTERVAL_MS)
     }
   }
@@ -4647,7 +4653,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   ) {
     cancelFrameSeek()
     cancelSeekPreview()
+    val generation = PlaybackSession.state.value.generation
     viewModelScope.launch(Dispatchers.IO) {
+      if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
       val maxDuration =
         (PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt())
           .coerceAtLeast(0)
@@ -4671,7 +4679,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       // leave sparse-keyframe MP4/MKV files on a black frame. Drag previews always use keyframes.
       val seekMode =
         if (!fast && playerPreferences.usePreciseSeeking.get()) "absolute+exact" else "absolute+keyframes"
-      PlaybackSession.command("seek", clampedPosition.toString(), seekMode)
+      if (!PlaybackSession.commandForGeneration(generation, "seek", clampedPosition.toString(), seekMode)) return@launch
       syncplayManager.updatePlayerState(
         clampedPosition.toDouble(),
         PlaybackSession.getPropertyBoolean("pause") ?: false,
@@ -4681,11 +4689,13 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private fun coalesceSeek(offset: Int) {
+    val generation = PlaybackSession.state.value.generation
     pendingSeekOffset += offset
     seekCoalesceJob?.cancel()
     seekCoalesceJob =
       viewModelScope.launch(Dispatchers.IO) {
         delay(SEEK_COALESCE_DELAY_MS)
+        if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
         val toApply = pendingSeekOffset
         pendingSeekOffset = 0
 
@@ -4759,7 +4769,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             }
           val synchronizedPosition = targetPosition ?: requestedTarget
 
-          PlaybackSession.command("seek", seekValue, seekMode)
+          if (!PlaybackSession.commandForGeneration(generation, "seek", seekValue, seekMode)) return@launch
           syncplayManager.updatePlayerState(
             synchronizedPosition,
             PlaybackSession.getPropertyBoolean("pause") ?: false,
@@ -5767,6 +5777,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     totalFrames: Int,
     finished: Boolean,
   ) {
+    val generation = PlaybackSession.state.value.generation
     val durationSeconds =
       PlaybackSession
         .getPropertyDouble("duration")
@@ -5809,6 +5820,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     cancelFrameSeek()
     frameSeekJob =
       viewModelScope.launch(Dispatchers.IO) {
+        if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
         seekCoalesceJob?.cancel()
         pendingSeekOffset = 0
         if (PlaybackSession.getPropertyBoolean("pause") != true) {
@@ -5821,8 +5833,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         var exactPassCount = 0
         while (exactPassCount < FRAME_SEEK_EXACT_PASSES) {
           exactPassCount += 1
-          PlaybackSession.command("seek", refinedPosition.toString(), "absolute+exact")
+          if (!PlaybackSession.commandForGeneration(generation, "seek", refinedPosition.toString(), "absolute+exact")) return@launch
           awaitFrameSeekSettled()
+          if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
           val observedFrame = PlaybackSession.getPropertyInt("estimated-frame-number") ?: break
           remainingFrameDelta = effectiveTargetFrame - observedFrame
           if (kotlin.math.abs(remainingFrameDelta) <= FRAME_SEEK_MAX_CORRECTION_STEPS) break
@@ -5836,10 +5849,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             ?.takeIf { kotlin.math.abs(it) <= FRAME_SEEK_MAX_CORRECTION_STEPS }
             ?.let { frameDelta ->
               repeat(kotlin.math.abs(frameDelta)) {
-                PlaybackSession.command(
-                  "no-osd",
-                  if (frameDelta > 0) "frame-step" else "frame-back-step",
-                )
+                if (!PlaybackSession.commandForGeneration(
+                    generation,
+                    "no-osd",
+                    if (frameDelta > 0) "frame-step" else "frame-back-step",
+                  )
+                ) return@launch
                 delay(FRAME_SEEK_CORRECTION_INTERVAL_MS)
               }
               kotlin.math.abs(frameDelta)
@@ -5847,6 +5862,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             ?: 0
         if (correctedFrames > 0) delay(FRAME_SEEK_CORRECTION_SETTLE_MS)
 
+        if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
         updateFrameInfo()
         val actualPosition = PlaybackSession.getPropertyDouble("time-pos") ?: refinedPosition
         syncplayManager.updatePlayerState(actualPosition, true, doSeek = true)
