@@ -577,6 +577,8 @@
   <string name="playlist_add_success">Плейлист M3U успешно добавлен</string>
   <string name="playlist_add_error">Не удалось добавить плейлист M3U: %s</string>
   <string name="playlist_create_empty">Создать пустой плейлист</string>
+  <string name="playlist_add_local_folder">Добавить папку локальных плейлистов</string>
+  <string name="playlist_local_access_failed">Нет доступа к этому расположению: %1$s</string>
   <string name="playlist_add_from_url">Добавить по URL M3U/M3U8</string>
   <string name="playlist_refresh_m3u">Обновить плейлист M3U</string>
   <string name="playlist_refresh_success">Плейлист успешно обновлён</string>

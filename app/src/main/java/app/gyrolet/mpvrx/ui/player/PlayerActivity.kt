@@ -646,7 +646,6 @@ class PlayerActivity :
     }
     // Read from the actual launch intent now that it's safe to (see isSecureFolderLaunch kdoc).
     isSecureFolderLaunch = intent.getStringExtra("launch_source") == "secure_folder"
-    applyInitialVideoOrientation(intent)
     setContentView(binding.root)
     setupSystemBarsAutoHide()
     setupPipHelper()

@@ -579,6 +579,8 @@
   <string name="playlist_add_success">已成功添加 M3U 播放列表</string>
   <string name="playlist_add_error">添加 M3U 播放列表失败：%s</string>
   <string name="playlist_create_empty">创建空播放列表</string>
+  <string name="playlist_add_local_folder">添加本地播放列表文件夹</string>
+  <string name="playlist_local_access_failed">无法访问此位置：%1$s</string>
   <string name="playlist_add_from_url">从 M3U/M3U8 URL 添加</string>
   <string name="playlist_refresh_m3u">刷新 M3U 播放列表</string>
   <string name="playlist_refresh_success">播放列表刷新成功</string>

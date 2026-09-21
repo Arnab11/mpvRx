@@ -70,6 +70,22 @@ fun PlaylistActionSheet(
   var showCreateDialog by remember { mutableStateOf(false) }
   var showM3UDialog by remember { mutableStateOf(false) }
   var showXtreamDialog by remember { mutableStateOf(false) }
+  val folderPickerLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+    if (uri != null) {
+      runCatching {
+        context.contentResolver.takePersistableUriPermission(uri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+      }.onSuccess {
+        app.gyrolet.mpvrx.utils.media.MediaLibraryEvents.notifyChanged()
+        onDismiss()
+      }.onFailure { error ->
+        android.widget.Toast.makeText(
+          context,
+          context.getString(app.gyrolet.mpvrx.R.string.playlist_local_access_failed, error.localizedMessage.orEmpty()),
+          android.widget.Toast.LENGTH_LONG,
+        ).show()
+      }
+    }
+  }
 
   if (!isOpen) return
 
@@ -227,6 +243,26 @@ fun PlaylistActionSheet(
         }
       }
 
+      Card(
+        onClick = { folderPickerLauncher.launch(null) },
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+      ) {
+        Row(
+          modifier = Modifier.fillMaxWidth().padding(16.dp),
+          horizontalArrangement = Arrangement.spacedBy(16.dp),
+          verticalAlignment = Alignment.CenterVertically,
+        ) {
+          Icon(Icons.RoundedFilled.Folder, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+          Text(
+            text = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.playlist_add_local_folder),
+            style = MaterialTheme.typography.bodyLarge,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.weight(1f),
+          )
+        }
+      }
+
       Spacer(modifier = Modifier.height(8.dp))
     }
   }
@@ -328,9 +364,19 @@ fun PlaylistActionSheet(
     // File picker launcher
     val filePickerLauncher =
       rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent(),
+        contract = ActivityResultContracts.OpenDocument(),
       ) { uri: Uri? ->
         uri?.let {
+          val permissionGranted = runCatching {
+            context.contentResolver.takePersistableUriPermission(it, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION)
+          }.onFailure { error ->
+            android.widget.Toast.makeText(
+              context,
+              context.getString(app.gyrolet.mpvrx.R.string.playlist_local_access_failed, error.localizedMessage.orEmpty()),
+              android.widget.Toast.LENGTH_LONG,
+            ).show()
+          }.isSuccess
+          if (!permissionGranted) return@rememberLauncherForActivityResult
           isLoading = true
           coroutineScope.launch {
             val result = onCreateM3UPlaylistFromFile(it)
@@ -434,7 +480,7 @@ fun PlaylistActionSheet(
             // Local file picker button
             OutlinedButton(
               onClick = {
-                filePickerLauncher.launch("*/*")
+              filePickerLauncher.launch(arrayOf("*/*"))
               },
               enabled = !isLoading,
               modifier = Modifier.fillMaxWidth(),

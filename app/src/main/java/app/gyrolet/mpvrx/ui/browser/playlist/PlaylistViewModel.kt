@@ -20,12 +20,21 @@ import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.NetworkProtocol
 import app.gyrolet.mpvrx.repository.MediaFileRepository
 import app.gyrolet.mpvrx.repository.NetworkRepository
+import app.gyrolet.mpvrx.utils.media.MediaLibraryEvents
+import app.gyrolet.mpvrx.utils.storage.LocalPlaylistScanner
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 import java.io.File
@@ -48,7 +57,8 @@ class PlaylistViewModel(
   private val _playlistsWithCount = MutableStateFlow<List<PlaylistWithCount>>(emptyList())
   val playlistsWithCount: StateFlow<List<PlaylistWithCount>> = _playlistsWithCount.asStateFlow()
 
-  private val _isLoading = MutableStateFlow(false)
+  private val refreshMutex = Mutex()
+  private val _isLoading = MutableStateFlow(true)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
 
   // Track if initial load has completed to prevent empty state flicker
@@ -81,6 +91,8 @@ class PlaylistViewModel(
           _playlistsWithCount.value = quickLoad
           _hasCompletedInitialLoad.value = true
         }
+      } catch (e: CancellationException) {
+        throw e
       } catch (e: Exception) {
         Log.e(TAG, "Error loading cached playlists", e)
       }
@@ -91,6 +103,13 @@ class PlaylistViewModel(
       repository.observeAllPlaylists().collectLatest { playlistsFromDb ->
         _playlistsWithCount.value = loadPlaylistsWithCounts(playlistsFromDb)
         _hasCompletedInitialLoad.value = true
+      }
+    }
+    refresh(scanLocalFiles = true)
+    viewModelScope.launch {
+      merge(MediaLibraryEvents.changes, LocalPlaylistScanner.changes(getApplication())).collectLatest {
+        delay(750)
+        withContext(Dispatchers.IO) { refreshPlaylists(scanLocalFiles = true) }
       }
     }
   }
@@ -113,14 +132,14 @@ class PlaylistViewModel(
     playlist: PlaylistEntity,
     protocolById: Map<Long, NetworkProtocol>,
   ): PlaylistStats {
-    val items = repository.getPlaylistItems(playlist.id)
-    if (items.isEmpty()) return PlaylistStats(0, emptyList())
-
     // M3U entries are remote streams rather than files, so those cards keep their playlist-type
     // badge instead of per-source chips.
     if (playlist.isM3uPlaylist) {
-      return PlaylistStats(items.size, emptyList())
+      return PlaylistStats(repository.getPlaylistItemCount(playlist.id), emptyList())
     }
+
+    val items = repository.getPlaylistItems(playlist.id)
+    if (items.isEmpty()) return PlaylistStats(0, emptyList())
 
     // Parsed once per entry: constructing the URI is the costly part and both the counting and the
     // source badges need the same answer.
@@ -172,18 +191,24 @@ class PlaylistViewModel(
   private fun visiblePlaylists(playlists: List<PlaylistEntity>): List<PlaylistEntity> =
     repository.prioritizeFavorites(playlists)
 
-  fun refresh() {
+  fun refresh(scanLocalFiles: Boolean = false): Job =
     viewModelScope.launch(Dispatchers.IO) {
-      try {
-        _isLoading.value = true
-        val playlistsFromDb = repository.getAllPlaylists()
+      refreshPlaylists(scanLocalFiles, forceLocalFiles = scanLocalFiles)
+    }
 
-        _playlistsWithCount.value = loadPlaylistsWithCounts(playlistsFromDb)
-      } catch (e: Exception) {
-        Log.e(TAG, "Error refreshing playlists", e)
-      } finally {
-        _isLoading.value = false
-      }
+  private suspend fun refreshPlaylists(scanLocalFiles: Boolean, forceLocalFiles: Boolean = false) = refreshMutex.withLock {
+    try {
+      _isLoading.value = true
+      if (scanLocalFiles) repository.discoverLocalPlaylists(force = forceLocalFiles)
+      val playlistsFromDb = repository.getAllPlaylists()
+      _playlistsWithCount.value = loadPlaylistsWithCounts(playlistsFromDb)
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: Exception) {
+      Log.e(TAG, "Error refreshing playlists", e)
+    } finally {
+      _hasCompletedInitialLoad.value = true
+      _isLoading.value = false
     }
   }
 

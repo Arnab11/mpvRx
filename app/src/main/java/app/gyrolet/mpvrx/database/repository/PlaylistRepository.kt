@@ -25,11 +25,16 @@ import app.gyrolet.mpvrx.utils.media.HttpUtils
 import app.gyrolet.mpvrx.utils.media.M3UParseResult
 import app.gyrolet.mpvrx.utils.media.M3UParser
 import app.gyrolet.mpvrx.utils.media.M3UPlaylistItem
+import app.gyrolet.mpvrx.utils.storage.LocalPlaylistScanner
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import java.net.URLDecoder
@@ -63,6 +68,9 @@ class PlaylistRepository(
 
   private val playlistWriteMutex = Mutex()
   private val remotePlaylistWriteMutex = Mutex()
+  private val localPlaylistScanMutex = Mutex()
+  private val localPlaylistRevisions = mutableMapOf<String, Triple<String, Long, Long>>()
+  private val localPlaylistPreferences = applicationContext.getSharedPreferences("local_playlist_discovery", Context.MODE_PRIVATE)
 
   // Playlist operations
   suspend fun createPlaylist(
@@ -169,7 +177,14 @@ class PlaylistRepository(
 
   suspend fun deletePlaylist(playlist: PlaylistEntity) {
     if (isProtectedPlaylist(playlist)) return
-    playlistDao.deletePlaylist(playlist)
+    withContext(Dispatchers.IO) {
+      remotePlaylistWriteMutex.withLock {
+        playlistDao.deletePlaylist(playlist)
+        localPlaylistSourceKey(playlist.m3uSourceUrl)?.let { key ->
+          localPlaylistPreferences.edit().putStringSet("ignored_sources", ignoredLocalPlaylistSources() + key).apply()
+        }
+      }
+    }
   }
 
   fun prioritizeFavorites(playlists: List<PlaylistEntity>): List<PlaylistEntity> {
@@ -327,6 +342,9 @@ class PlaylistRepository(
 
   fun observePlaylistItems(playlistId: Int): Flow<List<PlaylistItemEntity>> =
     playlistDao.observePlaylistItems(playlistId)
+
+  fun observeFirstPlaylistItem(playlistId: Int): Flow<PlaylistItemEntity?> =
+    playlistDao.observeFirstPlaylistItem(playlistId)
 
   suspend fun getPlaylistItems(playlistId: Int): List<PlaylistItemEntity> = playlistDao.getPlaylistItems(playlistId)
 
@@ -502,6 +520,43 @@ class PlaylistRepository(
       Result.failure(error)
     }
 
+  suspend fun discoverLocalPlaylists(force: Boolean = false): Unit = withContext(Dispatchers.IO) {
+    localPlaylistScanMutex.withLock {
+      val seenSources = mutableSetOf<String>()
+      val storedSources = playlistDao.getAllPlaylists().mapNotNull { localPlaylistSourceKey(it.m3uSourceUrl) }.toSet()
+      LocalPlaylistScanner.scan(applicationContext) { file ->
+        val key = LocalPlaylistScanner.sourceKey(applicationContext, file.uri)
+        seenSources.add(key)
+        if (key in ignoredLocalPlaylistSources()) return@scan true
+        val revision = Triple(file.uri.toString(), file.modifiedAt, file.size)
+        if (!force && file.modifiedAt > 0L && file.size > 0L && key in storedSources && localPlaylistRevisions[key] == revision) return@scan true
+        when (val parsed = M3UParser.parseFromUri(applicationContext, file.uri)) {
+          is M3UParseResult.Success -> {
+            currentCoroutineContext().ensureActive()
+            remotePlaylistWriteMutex.withLock {
+              if (key !in ignoredLocalPlaylistSources()) {
+                persistM3UPlaylistLocked(parsed, parsed.playlistName, file.uri.toString(), null)
+                localPlaylistRevisions[key] = revision
+              }
+            }
+            true
+          }
+          is M3UParseResult.Error -> M3UParser.shouldPlayHlsDirectly(parsed)
+        }
+      }
+      localPlaylistRevisions.keys.retainAll(seenSources)
+    }
+  }
+
+  private fun localPlaylistSourceKey(source: String?): String? {
+    val uri = source?.let(Uri::parse) ?: return null
+    if (uri.scheme != "file" && uri.scheme != "content") return null
+    return LocalPlaylistScanner.sourceKey(applicationContext, uri)
+  }
+
+  private fun ignoredLocalPlaylistSources(): Set<String> =
+    localPlaylistPreferences.getStringSet("ignored_sources", emptySet()).orEmpty().toSet()
+
   suspend fun createM3UPlaylistFromFile(
     context: Context,
     uri: Uri,
@@ -515,7 +570,7 @@ class PlaylistRepository(
             persistM3UPlaylist(
               parseResult = parseResult,
               name = parseResult.playlistName,
-              sourceUrl = null,
+              sourceUrl = uri.toString(),
             )
           Result.success(playlistId)
         }
@@ -595,16 +650,24 @@ class PlaylistRepository(
         return Result.failure(Exception("Not an M3U playlist or no source URL available"))
       }
 
-      val remotePlaylist =
-        loadRemotePlaylist(playlist.m3uSourceUrl, playlist.userAgent)
-          .getOrElse { error -> return Result.failure(error) }
+      val sourceUri = Uri.parse(playlist.m3uSourceUrl)
+      val parseResult =
+        if (sourceUri.scheme == "content" || sourceUri.scheme == "file") {
+          when (val result = M3UParser.parseFromUri(applicationContext, sourceUri)) {
+            is M3UParseResult.Success -> result
+            is M3UParseResult.Error -> return Result.failure(Exception(result.message, result.exception))
+          }
+        } else {
+          loadRemotePlaylist(playlist.m3uSourceUrl, playlist.userAgent)
+            .getOrElse { error -> return Result.failure(error) }.parseResult
+        }
       remotePlaylistWriteMutex.withLock {
         val currentPlaylist =
           getPlaylistById(playlistId)
             ?: return Result.failure(Exception("Playlist not found"))
         replaceRemotePlaylist(
           playlist = currentPlaylist,
-          parseResult = remotePlaylist.parseResult,
+          parseResult = parseResult,
           name = currentPlaylist.name,
           userAgent = playlist.userAgent,
         )
@@ -740,33 +803,68 @@ class PlaylistRepository(
     name: String,
     sourceUrl: String?,
     userAgent: String? = null,
-  ): Long = remotePlaylistWriteMutex.withLock {
+  ): Long = withContext(Dispatchers.IO) {
+    remotePlaylistWriteMutex.withLock {
+      persistM3UPlaylistLocked(parseResult, name, sourceUrl, userAgent)
+    }
+  }
+
+  private suspend fun persistM3UPlaylistLocked(
+    parseResult: M3UParseResult.Success,
+    name: String,
+    sourceUrl: String?,
+    userAgent: String?,
+  ): Long {
     val now = System.currentTimeMillis()
+    val localSourceKey = localPlaylistSourceKey(sourceUrl)
+    val localCandidates = if (localSourceKey != null) {
+      playlistDao.getAllPlaylists().filter { it.isM3uPlaylist && !it.isXtreamPlaylist }
+    } else emptyList()
     val existingPlaylist = sourceUrl?.let { playlistDao.getRemotePlaylistBySourceUrl(it) }
-    if (existingPlaylist != null) {
+      ?: localSourceKey?.let { key ->
+        localCandidates.firstOrNull { localPlaylistSourceKey(it.m3uSourceUrl) == key }
+      }
+      ?: localCandidates.firstOrNull { candidate ->
+        if (candidate.m3uSourceUrl != null || candidate.name != name) {
+          false
+        } else {
+          val items = playlistDao.getPlaylistItems(candidate.id)
+          items.size == parseResult.items.size && items.withIndex().all { (index, item) ->
+            M3UParser.normalizeLocalMediaReference(item.filePath) == M3UParser.normalizeLocalMediaReference(parseResult.items[index].url)
+          }
+        }
+      }
+    val playlistId = if (existingPlaylist != null) {
       replaceRemotePlaylist(
-        playlist = existingPlaylist,
+        playlist = existingPlaylist.copy(m3uSourceUrl = sourceUrl),
         parseResult = parseResult,
         name = existingPlaylist.name,
         userAgent = userAgent ?: existingPlaylist.userAgent,
       )
-      return@withLock existingPlaylist.id.toLong()
+      existingPlaylist.id.toLong()
+    } else {
+      val playlist =
+        PlaylistEntity(
+          name = name,
+          createdAt = now,
+          updatedAt = now,
+          m3uSourceUrl = sourceUrl,
+          isM3uPlaylist = true,
+          userAgent = userAgent,
+        )
+      val items =
+        parseResult.items.mapIndexed { index, item ->
+          item.toEntity(playlistId = 0, position = index, now = now)
+        }
+      playlistDao.insertPlaylistWithItems(playlist, items)
     }
-
-    val playlist =
-      PlaylistEntity(
-        name = name,
-        createdAt = now,
-        updatedAt = now,
-        m3uSourceUrl = sourceUrl,
-        isM3uPlaylist = true,
-        userAgent = userAgent,
-      )
-    val items =
-      parseResult.items.mapIndexed { index, item ->
-        item.toEntity(playlistId = 0, position = index, now = now)
+    if (localSourceKey != null) {
+      val ignored = ignoredLocalPlaylistSources()
+      if (localSourceKey in ignored) {
+        localPlaylistPreferences.edit().putStringSet("ignored_sources", ignored - localSourceKey).apply()
       }
-    playlistDao.insertPlaylistWithItems(playlist, items)
+    }
+    return playlistId
   }
 
   private suspend fun replaceRemotePlaylist(

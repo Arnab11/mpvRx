@@ -577,6 +577,8 @@
   <string name="playlist_add_success">تمت إضافة قائمة تشغيل M3U بنجاح</string>
   <string name="playlist_add_error">فشل إضافة قائمة تشغيل M3U: %s</string>
   <string name="playlist_create_empty">إنشاء قائمة تشغيل فارغة</string>
+  <string name="playlist_add_local_folder">إضافة مجلد قوائم تشغيل محلي</string>
+  <string name="playlist_local_access_failed">تعذر الوصول إلى هذا الموقع: %1$s</string>
   <string name="playlist_add_from_url">إضافة من عنوان URL بصيغة M3U/M3U8</string>
   <string name="playlist_refresh_m3u">تحديث قائمة تشغيل M3U</string>
   <string name="playlist_refresh_success">تم تحديث قائمة التشغيل بنجاح</string>

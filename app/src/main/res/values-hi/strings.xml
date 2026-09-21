@@ -571,6 +571,8 @@
   <string name="playlist_add_success">M3U प्लेलिस्ट सफलतापूर्वक जोड़ी गई</string>
   <string name="playlist_add_error">M3U प्लेलिस्ट जोड़ना नाकाम: %s</string>
   <string name="playlist_create_empty">खाली प्लेलिस्ट बनाएं</string>
+  <string name="playlist_add_local_folder">स्थानीय प्लेलिस्ट फ़ोल्डर जोड़ें</string>
+  <string name="playlist_local_access_failed">इस स्थान तक पहुँच नहीं हो सकी: %1$s</string>
   <string name="playlist_add_from_url">M3U/M3U8 URL से जोड़ें</string>
   <string name="playlist_refresh_m3u">M3U प्लेलिस्ट रिफ्रेश करें</string>
   <string name="playlist_refresh_success">प्लेलिस्ट सफलतापूर्वक रिफ्रेश हुई</string>

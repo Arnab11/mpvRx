@@ -9,22 +9,41 @@
 
 package app.gyrolet.mpvrx.ui.browser.cards
 
+import android.graphics.Bitmap
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.domain.network.NetworkProtocol
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.database.repository.PlaylistRepository
+import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.media.model.VideoFolder
+import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
+import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
+import app.gyrolet.mpvrx.preferences.AppearancePreferences
+import app.gyrolet.mpvrx.preferences.BrowserPreferences
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
+import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
+import java.io.File
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 
 /**
  * Card for displaying a playlist item
@@ -53,6 +72,66 @@ fun PlaylistCard(
   /** Source kinds present in this playlist; null means a local file. Empty for M3U playlists. */
   sources: List<NetworkProtocol?> = emptyList(),
 ) {
+  val context = LocalContext.current
+  val repository = koinInject<PlaylistRepository>()
+  val thumbnailRepository = koinInject<ThumbnailRepository>()
+  val preferences = koinInject<BrowserPreferences>()
+  val appearancePreferences = koinInject<AppearancePreferences>()
+  val thumbnailQuality by preferences.thumbnailQuality.collectAsState()
+  val thumbnailMode by preferences.thumbnailMode.collectAsState()
+  val thumbnailFramePosition by preferences.thumbnailFramePosition.collectAsState()
+  val showNetworkThumbnails by appearancePreferences.showNetworkThumbnails.collectAsState()
+  val firstItem by remember(repository, playlist.id) {
+    repository.observeFirstPlaylistItem(playlist.id)
+  }.collectAsState(initial = null)
+  val thumbnailSizePx = with(LocalDensity.current) { (if (isGridMode) 192.dp else 96.dp).roundToPx() }
+  val resolvedThumbnail by produceState<Bitmap?>(
+    initialValue = thumbnail,
+    playlist.id, thumbnail, firstItem?.filePath, firstItem?.tvgLogo, firstItem?.addedAt,
+    firstItem?.licenseType, thumbnailSizePx, thumbnailQuality, thumbnailMode, thumbnailFramePosition, showNetworkThumbnails,
+  ) {
+    value = thumbnail
+    if (thumbnail != null) return@produceState
+    val item = firstItem ?: return@produceState
+    value = withContext(Dispatchers.IO) {
+      try {
+        EmbeddedArtworkResolver.decodeArtworkUri(context, item.tvgLogo) ?: if (item.licenseType.isNullOrBlank()) {
+          val path = item.filePath.substringBefore('|')
+          val uri = Uri.parse(path).let { if (it.scheme.isNullOrBlank()) Uri.fromFile(File(path)) else it }
+          val isAudio = FileTypeUtils.isAudioFile(File(path))
+          thumbnailRepository.getThumbnail(
+            Video(
+              id = item.id.toLong(),
+              title = item.fileName,
+              displayName = item.fileName,
+              path = path,
+              uri = uri,
+              duration = 0L,
+              durationFormatted = "",
+              size = item.fileSize ?: 0L,
+              sizeFormatted = "",
+              dateModified = item.addedAt / 1000L,
+              dateAdded = item.addedAt / 1000L,
+              mimeType = if (isAudio) "audio/*" else "video/*",
+              bucketId = "",
+              bucketDisplayName = "",
+              width = 0,
+              height = 0,
+              fps = 0f,
+              resolution = "",
+              isAudio = isAudio,
+            ),
+            thumbnailSizePx,
+            thumbnailSizePx,
+          )
+        } else null
+      } catch (error: CancellationException) {
+        throw error
+      } catch (_: Exception) {
+        null
+      }
+    }
+  }
   val isFavorites = playlist.name.equals(PlaylistRepository.FAVORITES_PLAYLIST_NAME, ignoreCase = true)
   val displayName =
     when {
@@ -119,7 +198,7 @@ fun PlaylistCard(
     }
   }
 
-  val thumbnailBitmap = remember(thumbnail) { thumbnail?.asImageBitmap() }
+  val thumbnailBitmap = remember(resolvedThumbnail) { resolvedThumbnail?.asImageBitmap() }
 
   // Use the FolderCard component with playlist-specific customizations
   FolderCard(

@@ -124,6 +124,9 @@ interface PlaylistDao {
   @Query("SELECT * FROM PlaylistItemEntity WHERE playlistId = :playlistId ORDER BY position ASC")
   fun observePlaylistItems(playlistId: Int): Flow<List<PlaylistItemEntity>>
 
+  @Query("SELECT * FROM PlaylistItemEntity WHERE playlistId = :playlistId ORDER BY position ASC, id ASC LIMIT 1")
+  fun observeFirstPlaylistItem(playlistId: Int): Flow<PlaylistItemEntity?>
+
   @Query("SELECT * FROM PlaylistItemEntity WHERE playlistId = :playlistId ORDER BY position ASC")
   suspend fun getPlaylistItems(playlistId: Int): List<PlaylistItemEntity>
 

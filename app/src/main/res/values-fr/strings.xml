@@ -577,6 +577,8 @@ Suivant : NEXT</string>
   <string name="playlist_add_success">Liste de lecture M3U ajoutée</string>
   <string name="playlist_add_error">Échec de l’ajout de la liste M3U : %s</string>
   <string name="playlist_create_empty">Créer une liste de lecture vide</string>
+  <string name="playlist_add_local_folder">Ajouter un dossier de listes locales</string>
+  <string name="playlist_local_access_failed">Accès impossible à cet emplacement : %1$s</string>
   <string name="playlist_add_from_url">Ajouter depuis une URL M3U/M3U8</string>
   <string name="playlist_refresh_m3u">Actualiser la liste M3U</string>
   <string name="playlist_refresh_success">Liste de lecture actualisée</string>

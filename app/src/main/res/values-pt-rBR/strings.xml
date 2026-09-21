@@ -577,6 +577,8 @@ Próximo: NEXT</string>
   <string name="playlist_add_success">Playlist M3U adicionada com sucesso</string>
   <string name="playlist_add_error">Falha ao adicionar playlist M3U: %s</string>
   <string name="playlist_create_empty">Criar playlist vazia</string>
+  <string name="playlist_add_local_folder">Adicionar pasta de playlists locais</string>
+  <string name="playlist_local_access_failed">Não foi possível acessar este local: %1$s</string>
   <string name="playlist_add_from_url">Adicionar por URL M3U/M3U8</string>
   <string name="playlist_refresh_m3u">Atualizar playlist M3U</string>
   <string name="playlist_refresh_success">Playlist atualizada com sucesso</string>

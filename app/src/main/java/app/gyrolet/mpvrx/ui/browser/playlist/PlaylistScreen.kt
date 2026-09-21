@@ -27,6 +27,7 @@ import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -78,7 +79,7 @@ import org.koin.compose.koinInject
 
 @Serializable
 object PlaylistScreen : Screen {
-  @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
+  @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class, com.google.accompanist.permissions.ExperimentalPermissionsApi::class)
   @Composable
   override fun Content() {
     val context = LocalContext.current
@@ -95,6 +96,9 @@ object PlaylistScreen : Screen {
     val playlistsWithCount by viewModel.playlistsWithCount.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val hasCompletedInitialLoad by viewModel.hasCompletedInitialLoad.collectAsState()
+    app.gyrolet.mpvrx.utils.permission.PermissionUtils.handleStoragePermission {
+      viewModel.refresh(scanLocalFiles = true)
+    }
 
     // Search state
     var searchQuery by rememberSaveable { mutableStateOf("") }
@@ -279,6 +283,10 @@ object PlaylistScreen : Screen {
             message = "Try a different search term",
           )
         }
+      } else if (playlistsWithCount.isEmpty() && isLoading) {
+        Box(Modifier.fillMaxSize().padding(paddingValues), contentAlignment = Alignment.Center) {
+          CircularProgressIndicator()
+        }
       } else if (playlistsWithCount.isEmpty() && hasCompletedInitialLoad) {
         Box(
           modifier =
@@ -304,7 +312,7 @@ object PlaylistScreen : Screen {
           listState = listState,
           gridState = gridState,
           isRefreshing = isRefreshing,
-          onRefresh = { viewModel.refresh() },
+          onRefresh = { viewModel.refresh(scanLocalFiles = true).join() },
           selectionManager = selectionManager,
           onPlaylistClick = { playlistWithCount ->
             if (selectionManager.isInSelectionMode) {

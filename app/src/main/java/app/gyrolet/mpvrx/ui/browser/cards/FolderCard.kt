@@ -108,12 +108,13 @@ fun FolderCard(
 
   LaunchedEffect(
     folder.bucketId,
+    folder.path,
     showFolderThumbnails,
     thumbnailQuality,
     isGridMode,
     thumbnailSize,
   ) {
-    if (isGridMode && showFolderThumbnails && thumbnailSize.width > 0 && thumbnailSize.height > 0) {
+    if (folder.path.isNotBlank() && isGridMode && showFolderThumbnails && thumbnailSize.width > 0 && thumbnailSize.height > 0) {
       withContext(Dispatchers.IO) {
         val videos =
           app.gyrolet.mpvrx.repository.MediaFileRepository
@@ -220,12 +221,7 @@ fun FolderCard(
             contentAlignment = Alignment.Center,
           ) {
             val folderImageBitmap = remember(folderThumbnail) { folderThumbnail?.asImageBitmap() }
-            val resolvedThumbnail =
-              if (showFolderThumbnails) {
-                thumbnail ?: folderImageBitmap
-              } else {
-                null
-              }
+            val resolvedThumbnail = thumbnail ?: folderImageBitmap.takeIf { showFolderThumbnails }
             if (resolvedThumbnail != null) {
               androidx.compose.foundation.Image(
                 bitmap = resolvedThumbnail,

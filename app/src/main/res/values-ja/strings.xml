@@ -577,6 +577,8 @@
   <string name="playlist_add_success">M3Uプレイリストを追加しました</string>
   <string name="playlist_add_error">M3Uプレイリストを追加できませんでした：%s</string>
   <string name="playlist_create_empty">空のプレイリストを作成</string>
+  <string name="playlist_add_local_folder">ローカルのプレイリストフォルダーを追加</string>
+  <string name="playlist_local_access_failed">この場所にアクセスできません: %1$s</string>
   <string name="playlist_add_from_url">M3U/M3U8 URLから追加</string>
   <string name="playlist_refresh_m3u">M3Uプレイリストを更新</string>
   <string name="playlist_refresh_success">プレイリストを更新しました</string>

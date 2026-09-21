@@ -577,6 +577,8 @@ Weiter: NEXT</string>
   <string name="playlist_add_success">M3U-Wiedergabeliste erfolgreich hinzugefügt</string>
   <string name="playlist_add_error">M3U-Wiedergabeliste konnte nicht hinzugefügt werden: %s</string>
   <string name="playlist_create_empty">Leere Wiedergabeliste erstellen</string>
+  <string name="playlist_add_local_folder">Lokalen Wiedergabelistenordner hinzufügen</string>
+  <string name="playlist_local_access_failed">Zugriff auf diesen Speicherort nicht möglich: %1$s</string>
   <string name="playlist_add_from_url">Über M3U/M3U8-URL hinzufügen</string>
   <string name="playlist_refresh_m3u">M3U-Wiedergabeliste aktualisieren</string>
   <string name="playlist_refresh_success">Wiedergabeliste erfolgreich aktualisiert</string>
