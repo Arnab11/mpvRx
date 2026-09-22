@@ -67,6 +67,7 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -95,6 +96,7 @@ import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.popSafely
+import kotlin.math.roundToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.launch
@@ -527,54 +529,73 @@ data class WallpaperEditorScreen(
           }
         }
         if (!isNoneSelected) {
-        item {
-          WallpaperSlider(
-            label = stringResource(R.string.pref_appearance_custom_wallpaper_zoom),
-            value = zoom,
-            valueRange = 1f..3f,
-            onValueChange = { zoom = it },
-          )
-        }
-        item {
-          WallpaperSlider(
-            label = stringResource(R.string.pref_appearance_custom_wallpaper_horizontal),
-            value = offsetX,
-            valueRange = -1f..1f,
-            onValueChange = { offsetX = it },
-          )
-        }
-        item {
-          WallpaperSlider(
-            label = stringResource(R.string.pref_appearance_custom_wallpaper_vertical),
-            value = offsetY,
-            valueRange = -1f..1f,
-            onValueChange = { offsetY = it },
-          )
-        }
-        item {
-          WallpaperSlider(
-            label = stringResource(R.string.pref_appearance_custom_wallpaper_blur),
-            value = blur,
-            valueRange = 0f..40f,
-            onValueChange = { blur = it },
-          )
-        }
-        item {
-          WallpaperSlider(
-            label = stringResource(R.string.pref_appearance_custom_wallpaper_transparency),
-            value = alpha,
-            valueRange = 0f..1f,
-            onValueChange = { alpha = it },
-          )
-        }
-        item {
-          SwitchPreference(
-            value = useColors,
-            onValueChange = { useColors = it },
-            title = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors)) },
-            summary = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors_summary)) },
-          )
-        }
+          item {
+            Text(
+              text = stringResource(R.string.pref_appearance_custom_wallpaper_crop_title),
+              style = MaterialTheme.typography.labelMedium,
+              color = MaterialTheme.colorScheme.primary,
+              modifier = Modifier.padding(start = 4.dp, bottom = 4.dp),
+            )
+          }
+          item {
+            PreferenceCard {
+              SwitchPreference(
+                value = useColors,
+                onValueChange = { useColors = it },
+                title = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors)) },
+                summary = { Text(stringResource(R.string.pref_appearance_custom_wallpaper_use_colors_summary)) },
+                icon = {
+                  Icon(
+                    Icons.RoundedFilled.Palette,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                  )
+                },
+              )
+              PreferenceDivider()
+              WallpaperSlider(
+                icon = Icons.RoundedFilled.ZoomIn,
+                label = stringResource(R.string.pref_appearance_custom_wallpaper_zoom),
+                value = zoom,
+                valueRange = 1f..3f,
+                onValueChange = { zoom = it },
+                valueText = { "${(it * 100).roundToInt()}%" },
+              )
+              WallpaperSlider(
+                icon = Icons.RoundedFilled.Tune,
+                label = stringResource(R.string.pref_appearance_custom_wallpaper_horizontal),
+                value = offsetX,
+                valueRange = -1f..1f,
+                onValueChange = { offsetX = it },
+                valueText = { "${(it * 100).roundToInt()}%" },
+              )
+              WallpaperSlider(
+                icon = Icons.RoundedFilled.SwapVert,
+                label = stringResource(R.string.pref_appearance_custom_wallpaper_vertical),
+                value = offsetY,
+                valueRange = -1f..1f,
+                onValueChange = { offsetY = it },
+                valueText = { "${(it * 100).roundToInt()}%" },
+              )
+              WallpaperSlider(
+                icon = Icons.RoundedFilled.BlurOn,
+                label = stringResource(R.string.pref_appearance_custom_wallpaper_blur),
+                value = blur,
+                valueRange = 0f..40f,
+                onValueChange = { blur = it },
+                valueText = { "${it.roundToInt()}" },
+              )
+              WallpaperSlider(
+                icon = Icons.RoundedFilled.Opacity,
+                label = stringResource(R.string.pref_appearance_custom_wallpaper_transparency),
+                value = alpha,
+                valueRange = 0f..1f,
+                onValueChange = { alpha = it },
+                valueText = { "${(it * 100).roundToInt()}%" },
+                isLast = true,
+              )
+            }
+          }
         }
         item {
           Row(
@@ -621,20 +642,45 @@ data class WallpaperEditorScreen(
 
 @Composable
 private fun WallpaperSlider(
+  icon: ImageVector,
   label: String,
   value: Float,
   valueRange: ClosedFloatingPointRange<Float>,
   onValueChange: (Float) -> Unit,
+  valueText: (Float) -> String,
+  isLast: Boolean = false,
 ) {
-  Column {
-    Text(label, style = MaterialTheme.typography.labelLarge)
+  Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+      Icon(
+        icon,
+        contentDescription = null,
+        modifier = Modifier.size(20.dp),
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+      )
+      Text(
+        text = label,
+        style = MaterialTheme.typography.bodyMedium,
+        modifier = Modifier.padding(start = 12.dp).weight(1f),
+      )
+      Text(
+        text = valueText(value),
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+      )
+    }
     Slider(
       value = value,
       onValueChange = onValueChange,
       valueRange = valueRange,
-      modifier = Modifier.fillMaxWidth().tvFocusHighlight(RoundedCornerShape(12.dp), focusedScale = 1.01f),
+      modifier =
+        Modifier
+          .fillMaxWidth()
+          .padding(start = 32.dp)
+          .tvFocusHighlight(RoundedCornerShape(12.dp), focusedScale = 1.01f),
     )
   }
+  if (!isLast) PreferenceDivider()
 }
 
 /**
