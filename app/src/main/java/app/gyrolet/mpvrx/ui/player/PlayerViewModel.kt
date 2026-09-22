@@ -42,6 +42,7 @@ import app.gyrolet.mpvrx.domain.autocrop.AutoCropAnalyzer
 import app.gyrolet.mpvrx.domain.autocrop.AutoCropEdges
 import app.gyrolet.mpvrx.domain.hdr.HdrToysManager
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
+import app.gyrolet.mpvrx.domain.network.XtreamPlaybackUri
 import app.gyrolet.mpvrx.domain.torrent.TorrentStreamingState
 import app.gyrolet.mpvrx.domain.torrent.formatTorrentSpeed
 import app.gyrolet.mpvrx.domain.syncplay.SyncplayFile
@@ -657,7 +658,7 @@ class PlayerViewModel : ViewModel(),
         return@combine persistentListOf()
       }
 
-      tracks
+      val qualityTracks = tracks
         .asSequence()
         .filter { track -> track.isVideo && !track.isAlbumArtwork }
         .distinctBy(TrackNode::id)
@@ -667,7 +668,11 @@ class PlayerViewModel : ViewModel(),
             .thenByDescending { track -> track.demuxFps ?: 0.0 }
             .thenByDescending { track -> track.effectiveBitrate ?: 0L },
         ).toList()
-        .toImmutableList()
+      if (qualityTracks.size <= 1 || !supportsOnlineVideoQualitySelection(session.currentItem)) {
+        persistentListOf()
+      } else {
+        qualityTracks.toImmutableList()
+      }
     }.stateIn(viewModelScope, SharingStarted.Eagerly, persistentListOf())
 
   val showVideoQualitySelector: StateFlow<Boolean> =
@@ -819,6 +824,23 @@ class PlayerViewModel : ViewModel(),
     return sequenceOf(item?.originalUri, item?.playableUri)
       .filterNotNull()
       .any(YtdlpManager::requiresYtdlp)
+  }
+
+  private fun supportsOnlineVideoQualitySelection(item: PlaybackItem?): Boolean {
+    item ?: return false
+    val sources = sequenceOf(item.originalUri, item.playableUri)
+      .map(String::trim)
+      .filter(String::isNotBlank)
+      .toList()
+    if (sources.any(YtdlpManager::requiresYtdlp)) return true
+    if (M3uPlaybackPolicy.looksLikeM3uForPlayback(item.playableUri, item.originalUri, item.title.orEmpty(), item.mimeType)) return true
+    if (item.networkSource != null || sources.any { NetworkPlaybackUri.parse(it) != null || XtreamPlaybackUri.parse(it) != null }) return true
+    return sources.any { source ->
+      runCatching {
+        val scheme = Uri.parse(source).scheme?.lowercase(Locale.ROOT)
+        scheme != null && scheme in VIDEO_QUALITY_STREAM_SCHEMES
+      }.getOrDefault(false)
+    }
   }
 
   private fun currentYouTubeSource(): String? {
@@ -2896,6 +2918,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     const val FRAME_SEEK_CORRECTION_INTERVAL_MS = 24L
     const val FRAME_SEEK_CORRECTION_SETTLE_MS = 40L
     val QUALITY_HEIGHT_REGEX = Regex("""(?i)(\d{3,4})p""")
+    val VIDEO_QUALITY_STREAM_SCHEMES = setOf(
+      "http", "https", "ftp", "ftps", "rtmp", "rtmps", "rtsp", "rtsps", "mms", "mmsh",
+      "srt", "rist", "udp", "tcp", NetworkPlaybackUri.SCHEME, XtreamPlaybackUri.SCHEME,
+    )
     const val NATIVE_LINEAR_HDR_YOUTUBE_BLUR_RADIUS = 100.0
     val MPV_ONLY_PSEUDO_PROTOCOLS =
       setOf("fd", "fdclose", "edl", "memory", "null", "av", "lavf", "archive", "slice", "mf", "hex", "bd", "dvd", "dvb")
