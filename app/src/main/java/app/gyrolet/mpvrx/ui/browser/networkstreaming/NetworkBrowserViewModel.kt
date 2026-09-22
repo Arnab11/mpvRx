@@ -24,6 +24,7 @@ import app.gyrolet.mpvrx.domain.network.NetworkFile
 import app.gyrolet.mpvrx.domain.network.NetworkPath
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.NetworkProtocol
+import app.gyrolet.mpvrx.domain.network.isNetworkImageFile
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.NetworkSortType
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
@@ -107,9 +108,12 @@ class NetworkBrowserViewModel(
           .listFiles(connection, currentPath)
           .onSuccess { fileList ->
             _files.value =
+              // A stable base order for consumers that do not re-sort. Display order is applied in
+              // NetworkBrowserScreen and the playback queue re-sorts in
+              // currentDirectoryPlayableFiles, so the preference-based sort that used to run here
+              // was always overwritten.
               fileList.sortedWith(
-                compareBy<NetworkFile> { !it.isDirectory }
-                  .thenBy { it.name.lowercase() },
+                compareBy<NetworkFile> { !it.isDirectory }.thenBy { it.name.lowercase() },
               )
           }.onFailure { e ->
             _error.value = e.message ?: "Unknown error"
@@ -132,7 +136,7 @@ class NetworkBrowserViewModel(
           repository.getConnectionById(connectionId)
             ?: throw Exception("Connection not found")
 
-        if (isM3uFile(file)) {
+        if (file.isNetworkPlaylistFile()) {
           openM3uFile(connection, file)
         } else {
           playVideoInternal(connection, file)
@@ -329,8 +333,6 @@ class NetworkBrowserViewModel(
       else -> 80
     }
 
-  private fun isM3uFile(file: NetworkFile): Boolean = file.isNetworkPlaylistFile()
-
   companion object {
     private const val TAG = "NetworkBrowserVM"
 
@@ -382,7 +384,9 @@ internal fun List<NetworkFile>.sortedForNetworkBrowser(
   sortType: NetworkSortType,
   sortOrder: SortOrder,
 ): List<NetworkFile> {
-  val (directories, media) = partition(NetworkFile::isDirectory)
+  val directories = filter(NetworkFile::isDirectory)
+  val images = filter { it.isNetworkImageFile() }
+  val media = filter { !it.isDirectory && !it.isNetworkImageFile() }
 
   fun List<NetworkFile>.sortedGroup(): List<NetworkFile> =
     when (sortType) {
@@ -394,5 +398,5 @@ internal fun List<NetworkFile>.sortedForNetworkBrowser(
         if (sortOrder.isAscending) sortedBy(NetworkFile::size) else sortedByDescending(NetworkFile::size)
     }
 
-  return directories.sortedGroup() + media.sortedGroup()
+  return directories.sortedGroup() + media.sortedGroup() + images.sortedGroup()
 }

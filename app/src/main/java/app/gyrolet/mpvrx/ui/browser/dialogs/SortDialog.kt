@@ -94,6 +94,7 @@ fun SortDialog(
   icons: List<AppIcon>,
   getLabelForType: (String, Boolean) -> Pair<String, String>,
   modifier: Modifier = Modifier,
+  mediaTypeToggles: List<VisibilityToggle> = emptyList(),
   visibilityToggles: List<VisibilityToggle> = emptyList(),
   viewModeSelector: MultiViewModeSelector? = null,
   layoutModeSelector: ViewModeSelector? = null,
@@ -289,6 +290,12 @@ fun SortDialog(
             videoGridColumnSelector = videoGridColumnSelector,
           )
 
+          if (mediaTypeToggles.isNotEmpty()) {
+            HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
+            DialogSectionTitle(text = "Media Types")
+            ToggleChipRow(mediaTypeToggles)
+          }
+
           if (visibilityToggles.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
             Column(
@@ -321,30 +328,7 @@ fun SortDialog(
                 )
               }
               if (isFieldsExpanded) {
-                FlowRow(
-                  modifier =
-                    Modifier
-                      .fillMaxWidth()
-                      .wrapContentHeight(align = Alignment.Top),
-                  horizontalArrangement = Arrangement.spacedBy(6.dp),
-                  verticalArrangement = Arrangement.spacedBy(4.dp),
-                ) {
-                  visibilityToggles.forEach { toggle ->
-                    FilterChip(
-                      selected = toggle.checked,
-                      onClick = { toggle.onCheckedChange(!toggle.checked) },
-                      enabled = toggle.enabled,
-                      label = { Text(text = toggle.label) },
-                      border =
-                        FilterChipDefaults.filterChipBorder(
-                          enabled = toggle.enabled,
-                          selected = toggle.checked,
-                          selectedBorderWidth = 1.dp,
-                          selectedBorderColor = MaterialTheme.colorScheme.primary,
-                        ),
-                    )
-                  }
-                }
+                ToggleChipRow(visibilityToggles)
               }
             }
           }
@@ -517,6 +501,35 @@ private fun DialogSectionTitle(text: String) {
     style = MaterialTheme.typography.titleSmall,
     modifier = Modifier.padding(top = 12.dp, bottom = 4.dp),
   )
+}
+
+/** Shared by the Media Types and Fields groups so the two chip rows cannot drift apart. */
+@Composable
+private fun ToggleChipRow(toggles: List<VisibilityToggle>) {
+  FlowRow(
+    modifier =
+      Modifier
+        .fillMaxWidth()
+        .wrapContentHeight(align = Alignment.Top),
+    horizontalArrangement = Arrangement.spacedBy(6.dp),
+    verticalArrangement = Arrangement.spacedBy(4.dp),
+  ) {
+    toggles.forEach { toggle ->
+      FilterChip(
+        selected = toggle.checked,
+        onClick = { toggle.onCheckedChange(!toggle.checked) },
+        enabled = toggle.enabled,
+        label = { Text(text = toggle.label) },
+        border =
+          FilterChipDefaults.filterChipBorder(
+            enabled = toggle.enabled,
+            selected = toggle.checked,
+            selectedBorderWidth = 1.dp,
+            selectedBorderColor = MaterialTheme.colorScheme.primary,
+          ),
+      )
+    }
+  }
 }
 
 @Composable

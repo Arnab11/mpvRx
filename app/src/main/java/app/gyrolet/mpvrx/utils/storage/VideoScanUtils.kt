@@ -560,6 +560,11 @@ object FileTypeUtils {
       "midi",
     )
 
+  val IMAGE_EXTENSIONS =
+    setOf(
+      "jpg", "jpeg", "png", "webp", "gif", "bmp", "heic", "heif", "avif"
+    )
+
   /**
    * Checks if a file is a video based on extension
    */

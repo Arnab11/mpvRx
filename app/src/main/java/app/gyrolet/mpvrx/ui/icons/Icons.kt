@@ -146,6 +146,7 @@ object Icons {
     val NewReleases by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.New_releases) }
     val Home by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Home) }
     val Info by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Info) }
+    val Image by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Image) }
     val InsertDriveFile by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Description) }
     val Jellyfin by lazy(LazyThreadSafetyMode.NONE) {
       AppIcon(app.gyrolet.mpvrx.R.drawable.ic_jellyfin)
@@ -386,6 +387,7 @@ object Icons {
     val History get() = Shared.History
     val NewReleases get() = Shared.NewReleases
     val Home get() = Shared.Home
+    val Image get() = Shared.Image
     val Info get() = Shared.Info
     val InsertDriveFile get() = Shared.InsertDriveFile
     val Jellyfin get() = Shared.Jellyfin
