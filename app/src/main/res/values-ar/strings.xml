@@ -1851,6 +1851,8 @@
   <string name="pref_nav_music_summary">إظهار الموسيقى أو إخفاؤها في شريط التنقل السفلي</string>
   <string name="player_up_next_title">قائمة التشغيل</string>
   <string name="player_lyrics_title">كلمات الأغاني</string>
+  <string name="lyrics_loading_label">جارٍ جلب الكلمات…</string>
+  <string name="instrumental">موسيقى فقط</string>
   <string name="lyrics_source_embedded">مضمنة</string>
   <string name="lyrics_source_online">عبر الإنترنت</string>
   <string name="lyrics_source_local">محلي (.lrc)</string>

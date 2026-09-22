@@ -1839,6 +1839,8 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="pref_nav_music_summary">Afficher ou masquer Musique dans la barre de navigation inférieure</string>
   <string name="player_up_next_title">File d\'attente</string>
   <string name="player_lyrics_title">Paroles</string>
+  <string name="lyrics_loading_label">Chargement des paroles…</string>
+  <string name="instrumental">Instrumental</string>
   <string name="lyrics_source_embedded">Intégrées</string>
   <string name="lyrics_source_online">En ligne</string>
   <string name="lyrics_source_local">Locale (.lrc)</string>

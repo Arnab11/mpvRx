@@ -1847,6 +1847,8 @@
   <string name="pref_nav_music_summary">Показывать или скрывать «Музыку» на нижней панели навигации</string>
   <string name="player_up_next_title">Плейлист</string>
   <string name="player_lyrics_title">Текст песни</string>
+  <string name="lyrics_loading_label">Загрузка текста…</string>
+  <string name="instrumental">Инструментал</string>
   <string name="lyrics_source_embedded">Встроенный</string>
   <string name="lyrics_source_online">Онлайн</string>
   <string name="lyrics_source_local">Локальный (.lrc)</string>

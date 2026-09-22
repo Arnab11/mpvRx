@@ -117,7 +117,13 @@ class LyricsRepository(
     }
 
     val defaultSelected = when {
-      embedded != null && embedded.isValid() -> embedded.sourceType
+      embedded != null && embedded.isValid() -> {
+        if (embedded.synced.isNullOrEmpty() && online != null && !online.synced.isNullOrEmpty()) {
+          LyricsSourceType.ONLINE
+        } else {
+          embedded.sourceType
+        }
+      }
       online != null && online.isValid() -> LyricsSourceType.ONLINE
       else -> LyricsSourceType.EMBEDDED
     }

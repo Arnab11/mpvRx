@@ -1852,6 +1852,8 @@
   <string name="pref_nav_music_summary">在底部导航栏中显示或隐藏音乐</string>
   <string name="player_up_next_title">播放列表</string>
   <string name="player_lyrics_title">歌词</string>
+  <string name="lyrics_loading_label">正在获取歌词…</string>
+  <string name="instrumental">纯音乐</string>
   <string name="lyrics_source_embedded">内嵌</string>
   <string name="lyrics_source_online">在线</string>
   <string name="lyrics_source_local">本地 (.lrc)</string>

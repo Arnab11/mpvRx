@@ -1748,6 +1748,8 @@
   <string name="pref_nav_music_summary">नीचे दिए नेविगेशन बार में म्यूज़िक दिखाएँ या छिपाएँ</string>
   <string name="player_up_next_title">प्लेलिस्ट</string>
   <string name="player_lyrics_title">बोल</string>
+  <string name="lyrics_loading_label">गीत के बोल लोड हो रहे हैं…</string>
+  <string name="instrumental">वाद्य संगीत</string>
   <string name="lyrics_source_embedded">एंबेडेड</string>
   <string name="lyrics_source_online">ऑनलाइन</string>
   <string name="lyrics_source_local">लोकल (.lrc)</string>

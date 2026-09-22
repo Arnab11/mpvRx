@@ -1839,6 +1839,8 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_nav_music_summary">Musik in der unteren Navigationsleiste anzeigen oder ausblenden</string>
   <string name="player_up_next_title">Wiedergabeliste</string>
   <string name="player_lyrics_title">Songtext</string>
+  <string name="lyrics_loading_label">Songtext wird geladen…</string>
+  <string name="instrumental">Instrumental</string>
   <string name="lyrics_source_embedded">Eingebettet</string>
   <string name="lyrics_source_online">Online</string>
   <string name="lyrics_source_local">Lokal (.lrc)</string>
