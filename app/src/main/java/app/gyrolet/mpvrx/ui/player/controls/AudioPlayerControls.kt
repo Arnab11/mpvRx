@@ -1249,14 +1249,22 @@ fun AudioPlayerControls(
     val headerBar = @Composable {
       Box(modifier = Modifier.fillMaxWidth()) {
         ReactiveIconButton(
-          onClick = onBackPress,
+          onClick = {
+            if (isLyricsFullscreen) {
+              isLyricsFullscreen = false
+            } else if (showInPlaceLyrics) {
+              showInPlaceLyrics = false
+            } else {
+              onBackPress()
+            }
+          },
           modifier = Modifier.align(Alignment.CenterStart),
         ) {
           Icon(
-            imageVector = Icons.RoundedFilled.ExpandMore,
-            contentDescription = stringResource(R.string.ui_close),
+            imageVector = if (showInPlaceLyrics || isLyricsFullscreen) Icons.RoundedFilled.ArrowBack else Icons.RoundedFilled.ExpandMore,
+            contentDescription = stringResource(if (showInPlaceLyrics || isLyricsFullscreen) R.string.back else R.string.ui_close),
             tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(if (showInPlaceLyrics || isLyricsFullscreen) 28.dp else 32.dp),
           )
         }
 
@@ -1285,7 +1293,7 @@ fun AudioPlayerControls(
     }
 
     val losslessBadge = @Composable {
-      if (collapsedAudioBadgeLabel.isNotBlank()) {
+      if (!showInPlaceLyrics && !isLyricsFullscreen && collapsedAudioBadgeLabel.isNotBlank()) {
         Surface(
           shape = RoundedCornerShape(4.dp),
           color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
@@ -1837,10 +1845,8 @@ fun AudioPlayerControls(
       val smoothPositionMs = rememberSmoothedPositionMs(currentPosMs, paused == false, playbackSpeed ?: 1f)
 
       val currentLine = syncedLines?.getOrNull(activeIndex)
-      val isInstrumentalGap = !syncedLines.isNullOrEmpty() && (currentLine == null || currentLine.line.isBlank())
-      val hasNoLyrics = syncedLines.isNullOrEmpty() && activeLyrics?.plain.isNullOrEmpty() && !lyricsState.isLoading
-      val isInstrumental = isInstrumentalGap || hasNoLyrics
-      val canOpenLyrics = !isInstrumental && (activeLyrics?.isValid() == true || lyricsState.isLoading)
+      val hasSyncedLyrics = !syncedLines.isNullOrEmpty()
+      val isInstrumentalGap = hasSyncedLyrics && (currentLine == null || currentLine.line.isBlank() || currentLine.line.trim().equals("[instrumental]", ignoreCase = true) || currentLine.line.trim().equals("instrumental", ignoreCase = true))
 
       Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1848,20 +1854,14 @@ fun AudioPlayerControls(
         modifier = Modifier
           .fillMaxWidth()
           .clip(RoundedCornerShape(8.dp))
-          .then(
-            if (canOpenLyrics) {
-              Modifier.clickable {
-                if (isTabletLandscape) {
-                  tabletDualPaneTab = 1
-                } else {
-                  showInPlaceLyrics = true
-                }
-                resetInactivityTimer()
-              }
+          .clickable {
+            if (isTabletLandscape) {
+              tabletDualPaneTab = 1
             } else {
-              Modifier
-            },
-          )
+              showInPlaceLyrics = true
+            }
+            resetInactivityTimer()
+          }
           .padding(horizontal = 4.dp, vertical = 4.dp),
       ) {
         Box(
@@ -1892,8 +1892,8 @@ fun AudioPlayerControls(
                 textAlign = TextAlign.Start,
               )
             }
-          } else if (!syncedLines.isNullOrEmpty()) {
-            if (isInstrumental) {
+          } else if (hasSyncedLyrics) {
+            if (isInstrumentalGap) {
               Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Start,
@@ -1926,7 +1926,7 @@ fun AudioPlayerControls(
                 currentLine?.line?.trim() ?: ""
               }
 
-              val hasWords = !currentLine?.words.isNullOrEmpty()
+              val words = currentLine?.words
 
               AnimatedContent(
                 targetState = activeIndex to displayText,
@@ -1944,7 +1944,6 @@ fun AudioPlayerControls(
                 contentAlignment = Alignment.CenterStart,
                 modifier = Modifier.wrapContentSize(Alignment.CenterStart),
               ) { (_, text) ->
-                val words = currentLine?.words
                 if (!words.isNullOrEmpty()) {
                   val activeColor = MaterialTheme.colorScheme.onSurface
                   val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
@@ -2021,18 +2020,18 @@ fun AudioPlayerControls(
               horizontalArrangement = Arrangement.Start,
             ) {
               Icon(
-                imageVector = Icons.RoundedFilled.Audiotrack,
+                imageVector = Icons.RoundedFilled.Lyrics,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
                 modifier = Modifier.size(18.dp),
               )
               Spacer(Modifier.width(6.dp))
               Text(
-                text = stringResource(R.string.instrumental),
+                text = if (isAudiobook) stringResource(R.string.audiobook_no_text) else stringResource(R.string.player_lyrics_title),
                 style = MaterialTheme.typography.titleMedium.copy(
                   fontSize = 18.sp,
                   fontWeight = FontWeight.Normal,
-                  fontFamily = fontFamilyForText(stringResource(R.string.instrumental)),
+                  fontFamily = fontFamilyForText(stringResource(R.string.player_lyrics_title)),
                 ),
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                 maxLines = 1,
@@ -2043,15 +2042,13 @@ fun AudioPlayerControls(
           }
         }
 
-        if (canOpenLyrics) {
-          Spacer(Modifier.width(6.dp))
-          Icon(
-            imageVector = Icons.RoundedFilled.ChevronRight,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-            modifier = Modifier.size(18.dp),
-          )
-        }
+        Spacer(Modifier.width(6.dp))
+        Icon(
+          imageVector = Icons.RoundedFilled.ChevronRight,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+          modifier = Modifier.size(18.dp),
+        )
       }
     }
 
