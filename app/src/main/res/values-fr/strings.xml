@@ -1277,6 +1277,8 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_toggle_menu">Afficher/masquer le menu</string>
   <string name="ui_quick_play">Lecture rapide</string>
   <string name="ui_open_file">Ouvrir un fichier</string>
+  <string name="ui_open_zip_folder">Ouvrir un dossier ZIP</string>
+  <string name="ui_cannot_open_zip">Impossible d\'ouvrir l\'archive ZIP</string>
   <string name="ui_open_link">Ouvrir un lien</string>
   <string name="ui_search_folders_and_videos">Rechercher des dossiers et des vidéos...</string>
   <string name="ui_pinned">Épinglé</string>

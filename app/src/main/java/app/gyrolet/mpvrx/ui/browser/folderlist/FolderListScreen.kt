@@ -338,6 +338,37 @@ object FolderListScreen : Screen {
         }
       }
 
+    // ZIP picker
+    val zipPicker =
+      rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+      ) { uri ->
+        uri?.let {
+          runCatching {
+            context.contentResolver.takePersistableUriPermission(
+              it,
+              Intent.FLAG_GRANT_READ_URI_PERMISSION,
+            )
+          }
+          val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
+          if (resolvedPath != null && File(resolvedPath).canRead()) {
+            val archiveFile = File(resolvedPath)
+            val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
+            if (isDualPaneActive) {
+              selectedFolderBucketId = bucketId
+              selectedFolderName = archiveFile.name
+            } else {
+              backstack.navigateTo(
+                app.gyrolet.mpvrx.ui.browser.videolist
+                  .VideoListScreen(bucketId, archiveFile.name, isAudio = audioOnly),
+              )
+            }
+          } else {
+            Toast.makeText(context, context.getString(R.string.ui_cannot_open_zip), Toast.LENGTH_SHORT).show()
+          }
+        }
+      }
+
     // Sorting and filtering
     val sortedFolders =
       remember(videoFolders, folderSortType, folderSortOrder, pinnedFolderPaths) {
@@ -749,7 +780,7 @@ object FolderListScreen : Screen {
               FloatingActionButtonMenuItem(
                 onClick = {
                   isFabExpanded.value = false
-                  filePicker.launch(arrayOf("video/*"))
+                  filePicker.launch(if (audioOnly) arrayOf("audio/*") else arrayOf("video/*"))
                 },
                 icon = { Icon(Icons.RoundedFilled.FileOpen, contentDescription = null) },
                 text = {
@@ -757,6 +788,28 @@ object FolderListScreen : Screen {
                     text =
                       androidx.compose.ui.res
                         .stringResource(app.gyrolet.mpvrx.R.string.ui_open_file),
+                  )
+                },
+              )
+
+              FloatingActionButtonMenuItem(
+                onClick = {
+                  isFabExpanded.value = false
+                  zipPicker.launch(
+                    arrayOf(
+                      "application/zip",
+                      "application/x-zip-compressed",
+                      "application/x-zip",
+                      "application/octet-stream",
+                    ),
+                  )
+                },
+                icon = { Icon(Icons.RoundedFilled.FolderZip, contentDescription = null) },
+                text = {
+                  Text(
+                    text =
+                      androidx.compose.ui.res
+                        .stringResource(app.gyrolet.mpvrx.R.string.ui_open_zip_folder),
                   )
                 },
               )

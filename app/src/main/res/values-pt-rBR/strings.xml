@@ -1277,6 +1277,8 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="ui_toggle_menu">Alternar menu</string>
   <string name="ui_quick_play">Reprodução rápida</string>
   <string name="ui_open_file">Abrir arquivo</string>
+  <string name="ui_open_zip_folder">Abrir pasta ZIP</string>
+  <string name="ui_cannot_open_zip">Não foi possível abrir o arquivo ZIP</string>
   <string name="ui_open_link">Abrir link</string>
   <string name="ui_search_folders_and_videos">Pesquisar pastas e vídeos...</string>
   <string name="ui_pinned">Fixado</string>

@@ -1215,6 +1215,8 @@
   <string name="ui_toggle_menu">मेनू टॉगल करें</string>
   <string name="ui_quick_play">क्विक प्ले</string>
   <string name="ui_open_file">फाइल खोलें</string>
+  <string name="ui_open_zip_folder">ZIP फ़ोल्डर खोलें</string>
+  <string name="ui_cannot_open_zip">ZIP संग्रह नहीं खोला जा सका</string>
   <string name="ui_open_link">लिंक खोलें</string>
   <string name="ui_search_folders_and_videos">फोल्डर और वीडियो खोजें...</string>
   <string name="ui_pinned">पिन किया गया</string>
