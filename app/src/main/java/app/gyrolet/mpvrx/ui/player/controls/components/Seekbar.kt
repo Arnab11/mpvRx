@@ -312,6 +312,7 @@ internal fun SeekbarWithTimers(
   isPortrait: Boolean = false,
   applyHorizontalPadding: Boolean = true,
   timerTextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
+  centerContent: @Composable () -> Unit = {},
   modifier: Modifier = Modifier,
 ) {
   val clickEvent = LocalPlayerButtonsClickEvent.current
@@ -392,6 +393,8 @@ internal fun SeekbarWithTimers(
             positionTimerOnClick()
           },
         )
+
+        centerContent()
 
         VideoTimer(
           value = if (timersInverted.second) -remaining else duration,

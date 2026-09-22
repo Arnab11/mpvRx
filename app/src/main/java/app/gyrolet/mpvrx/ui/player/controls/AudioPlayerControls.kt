@@ -1293,7 +1293,7 @@ fun AudioPlayerControls(
     }
 
     val losslessBadge = @Composable {
-      if (!showInPlaceLyrics && !isLyricsFullscreen && collapsedAudioBadgeLabel.isNotBlank()) {
+      if (collapsedAudioBadgeLabel.isNotBlank()) {
         Surface(
           shape = RoundedCornerShape(4.dp),
           color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
@@ -2087,8 +2087,9 @@ fun AudioPlayerControls(
         waveSheetOpen = isSheetOpen,
         loopStart = abLoopA?.toFloat()?.plus(bookOffset),
         loopEnd = abLoopB?.toFloat()?.plus(bookOffset),
-        isPortrait = isPortrait,
+        isPortrait = true,
         applyHorizontalPadding = false,
+        centerContent = losslessBadge,
         modifier = Modifier.fillMaxWidth(),
       )
       }
@@ -2373,7 +2374,6 @@ fun AudioPlayerControls(
               horizontalAlignment = Alignment.CenterHorizontally,
             ) {
               headerBar()
-              losslessBadge()
             }
           }
         } else {
@@ -2386,7 +2386,6 @@ fun AudioPlayerControls(
           ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
               headerBar()
-              losslessBadge()
               Spacer(modifier = Modifier.height(16.dp))
             }
           }
@@ -2413,9 +2412,9 @@ fun AudioPlayerControls(
               Spacer(modifier = Modifier.height(10.dp))
             }
             seekbarView()
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(28.dp))
             playbackControlsRow()
-            Spacer(modifier = Modifier.height(48.dp))
+            Spacer(modifier = Modifier.height(30.dp))
             bottomActionRow()
           }
         }
@@ -2446,15 +2445,11 @@ fun AudioPlayerControls(
                 horizontalAlignment = Alignment.CenterHorizontally,
               ) {
                 headerBar()
-                Spacer(modifier = Modifier.height(4.dp))
-                losslessBadge()
               }
             }
           } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
               headerBar()
-              Spacer(modifier = Modifier.height(4.dp))
-              losslessBadge()
               Spacer(modifier = Modifier.height(6.dp))
             }
             centerVisualizerView(
@@ -2475,9 +2470,9 @@ fun AudioPlayerControls(
               Spacer(modifier = Modifier.height(8.dp))
             }
             seekbarView()
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(14.dp))
             playbackControlsRow()
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(16.dp))
             bottomActionRow()
           }
         }
@@ -2526,7 +2521,6 @@ fun AudioPlayerControls(
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           headerBar()
-          losslessBadge()
           trackMetadataView()
           seekbarView()
           playbackControlsRow()
