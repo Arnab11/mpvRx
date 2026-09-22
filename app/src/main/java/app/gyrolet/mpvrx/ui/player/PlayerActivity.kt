@@ -1621,6 +1621,11 @@ class PlayerActivity :
 
   private fun observePlaybackSessionQueue() {
     lifecycleScope.launch {
+      PlaybackSession.state.collect {
+        finishStoppedBackgroundPlaybackIfNeeded()
+      }
+    }
+    lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.STARTED) {
         PlaybackSession.queue
           .collect { queueState ->
@@ -2002,9 +2007,29 @@ class PlayerActivity :
 
   fun getCurrentPlayableUriForLookup(): String? = currentPlayableUri ?: intent?.dataString
 
+  private fun finishStoppedBackgroundPlaybackIfNeeded(): Boolean {
+    if (!mpvInitialized || !ownsPlaybackSession() || !isBackgroundPlaybackSessionActive ||
+      isFinishing || isDestroyed || scriptRuntimeRestartPending
+    ) return false
+
+    val playbackState = PlaybackSession.state.value
+    if (playbackState.phase != PlaybackPhase.STOPPING &&
+      (playbackState.phase != PlaybackPhase.IDLE || playbackState.currentItem != null)
+    ) return false
+
+    isBackgroundPlaybackSessionActive = false
+    pendingBackgroundTransition = false
+    pendingBackNavigationBackgroundTransition = false
+    isReady = false
+    isUserFinishing = true
+    finish()
+    return true
+  }
+
   override fun onStart() {
     super.onStart()
     if (!mpvInitialized || !ownsPlaybackSession()) return
+    if (finishStoppedBackgroundPlaybackIfNeeded()) return
     MediaPlaybackService.activityForeground = true
 
     runCatching {
