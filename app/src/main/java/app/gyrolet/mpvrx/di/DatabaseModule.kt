@@ -23,6 +23,7 @@ import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.database.repository.RecentlyPlayedRepositoryImpl
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.recentlyplayed.repository.RecentlyPlayedRepository
+import app.gyrolet.mpvrx.domain.network.NetworkImageRepository
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
@@ -983,6 +984,7 @@ val DatabaseModule =
     }
 
     single { ThumbnailRepository(androidContext()) }
+    single { NetworkImageRepository(context = androidContext(), networkRepository = get()) }
 
     single { get<MpvRxDatabase>().audiobookDao() }
     single { get<MpvRxDatabase>().playbackBookmarkDao() }

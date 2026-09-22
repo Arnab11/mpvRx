@@ -312,6 +312,7 @@ dependencies {
   implementation(libs.lazycolumnscrollbar)
   implementation(libs.reorderable)
   implementation(libs.androidx.biometric)
+  implementation(libs.telephoto.zoomable)
 
   // libtorrent4j's Java API plus the native library for every enabled APK ABI.
   implementation(libs.libtorrent4j)

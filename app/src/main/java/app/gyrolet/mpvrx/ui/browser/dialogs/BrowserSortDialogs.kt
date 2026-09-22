@@ -1205,6 +1205,7 @@ fun NetworkSortDialog(
   val showExtensionField by browserPreferences.showExtensionField.collectAsState()
   val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
   val centerGridTitles by browserPreferences.centerGridTitles.collectAsState()
+  val includeImages by browserPreferences.includeImagesInBrowser.collectAsState()
   val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
   val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
   val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
@@ -1299,6 +1300,20 @@ fun NetworkSortDialog(
       ),
     videoGridColumnSelector = videoGridColumnSelector,
     enableLayoutModeOptions = true,
+    mediaTypeToggles =
+      listOf(
+        VisibilityToggle(
+          label = "Videos",
+          checked = true,
+          onCheckedChange = { },
+          enabled = false,
+        ),
+        VisibilityToggle(
+          label = "Images",
+          checked = includeImages,
+          onCheckedChange = { browserPreferences.includeImagesInBrowser.set(it) },
+        ),
+      ),
     visibilityToggles =
       buildList {
         add(

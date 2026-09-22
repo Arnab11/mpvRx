@@ -249,6 +249,7 @@ class ThumbnailRepository(
         File(context.cacheDir, "thumbnails"),
         File(context.filesDir, "thumbnails"),
         File(context.cacheDir, "remote_images"),
+        File(context.cacheDir, "network_images"),
       ).forEach(::deleteCacheDirectory)
       check(localDiskDir.mkdirs() || localDiskDir.isDirectory) {
         "Unable to recreate thumbnail cache directory: ${localDiskDir.absolutePath}"
@@ -256,6 +257,10 @@ class ThumbnailRepository(
       check(networkDiskDir.mkdirs() || networkDiskDir.isDirectory) {
         "Unable to recreate thumbnail cache directory: ${networkDiskDir.absolutePath}"
       }
+      // NetworkImageRepository owns this directory but is a Koin singleton, so its mkdirs() only
+      // ever ran once at construction. Recreate it here or every network image load silently fails
+      // until the process restarts.
+      File(context.cacheDir, "network_images").mkdirs()
     }
   }
 

@@ -18,8 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyItemScope
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridItemScope
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
@@ -52,6 +56,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import android.widget.Toast
@@ -62,6 +67,7 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
 import app.gyrolet.mpvrx.domain.network.NetworkFile
 import app.gyrolet.mpvrx.domain.network.NetworkPath
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
+import app.gyrolet.mpvrx.domain.network.isNetworkImageFile
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.MediaLayoutMode
 import app.gyrolet.mpvrx.preferences.NetworkBookmarkPreferences
@@ -72,9 +78,13 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.presentation.components.pullrefresh.PullRefreshBox
 import app.gyrolet.mpvrx.ui.browser.cards.NetworkFolderCard
+import app.gyrolet.mpvrx.ui.browser.cards.NetworkImageCard
 import app.gyrolet.mpvrx.ui.browser.cards.NetworkVideoCard
+import app.gyrolet.mpvrx.ui.imageviewer.ImageViewerItem
+import app.gyrolet.mpvrx.ui.imageviewer.ImageViewerScreen
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.ExpressiveScrollBar
+import app.gyrolet.mpvrx.ui.browser.components.NetworkMediaType
 import app.gyrolet.mpvrx.ui.browser.components.fastScrollGlyph
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.NetworkSortDialog
@@ -128,6 +138,7 @@ data class NetworkBrowserScreen(
     val videoGridColumnsPortrait by browserPreferences.videoGridColumnsPortrait.collectAsState()
     val videoGridColumnsLandscape by browserPreferences.videoGridColumnsLandscape.collectAsState()
     val includeAudioInBrowser by browserPreferences.includeAudioBrowser.collectAsState()
+    val includeImagesInBrowser by browserPreferences.includeImagesInBrowser.collectAsState()
     val bookmarks by bookmarkPreferences.bookmarks.collectAsState()
     val normalizedPath = remember(currentPath) { NetworkPath.from(currentPath) }
     val canBookmarkCurrentFolder = normalizedPath.segments.isNotEmpty()
@@ -410,6 +421,26 @@ data class NetworkBrowserScreen(
           if (video.path in selectablePaths) selectionManager.handleLongClick(video)
         },
         isVideoSelected = { video -> selectionManager.isSelected(video) },
+        includeImages = includeImagesInBrowser,
+        onImageClick = { image, visibleImages ->
+          val index = visibleImages.indexOfFirst { it.path == image.path }
+          if (index >= 0) {
+            backstack.navigateTo(
+              ImageViewerScreen(
+                connectionId = connectionId,
+                folderPath = currentPath,
+                items = visibleImages.map {
+                  ImageViewerItem(
+                    path = it.path,
+                    name = it.name,
+                    lastModified = it.lastModified,
+                  )
+                },
+                initialIndex = index,
+              ),
+            )
+          }
+        },
         modifier = Modifier.padding(padding),
       )
 
@@ -437,6 +468,72 @@ data class NetworkBrowserScreen(
   }
 }
 
+/** Minimum total item count before the scrollbar is shown. */
+private const val SCROLLBAR_MIN_ITEM_COUNT = 20
+
+@Composable
+private fun BrowserSectionHeader(text: String, topPadding: Dp = 16.dp) {
+  Text(
+    text = text,
+    style = MaterialTheme.typography.titleMedium,
+    color = MaterialTheme.colorScheme.primary,
+    modifier = Modifier.padding(start = 16.dp, top = topPadding, bottom = 8.dp),
+  )
+}
+
+private inline fun LazyGridScope.browserSection(
+  gridColumns: Int,
+  items: List<NetworkFile>,
+  headerText: String?,
+  topPadding: Dp = 16.dp,
+  crossinline itemContent: @Composable LazyGridItemScope.(NetworkFile) -> Unit,
+) {
+  if (items.isNotEmpty()) {
+    headerText?.let { header ->
+      item(span = { GridItemSpan(gridColumns) }) {
+        BrowserSectionHeader(header, topPadding)
+      }
+    }
+    items(items, key = { it.path }) { itemContent(it) }
+  }
+}
+
+private inline fun LazyListScope.browserSection(
+  items: List<NetworkFile>,
+  headerText: String?,
+  topPadding: Dp = 16.dp,
+  crossinline itemContent: @Composable LazyItemScope.(NetworkFile) -> Unit,
+) {
+  if (items.isNotEmpty()) {
+    headerText?.let { header ->
+      item {
+        BrowserSectionHeader(header, topPadding)
+      }
+    }
+    items(items, key = { it.path }) { itemContent(it) }
+  }
+}
+
+/**
+ * Corner label for a row in the videos or images run, or null when it should carry none.
+ *
+ * Images are only badged while the Images toggle is on — that is the only time the two kinds share
+ * one list, and with images off this row set is unambiguous. Audio and playlist rows are left
+ * unlabelled on purpose: they share the videos run but calling them "Video" would be a lie.
+ */
+private fun mediaTypeBadgeFor(
+  file: NetworkFile,
+  includeImages: Boolean,
+  isImage: Boolean,
+): NetworkMediaType? =
+  when {
+    isImage -> NetworkMediaType.IMAGE.takeIf { includeImages }
+    !includeImages -> null
+    file.isPlayableNetworkVideo() -> NetworkMediaType.VIDEO
+    file.isPlayableNetworkAudio() -> NetworkMediaType.AUDIO
+    else -> null
+  }
+
 @Composable
 private fun NetworkBrowserContent(
   files: List<NetworkFile>,
@@ -457,6 +554,8 @@ private fun NetworkBrowserContent(
   onVideoClick: (NetworkFile) -> Unit,
   onVideoLongClick: ((NetworkFile) -> Unit)? = null,
   isVideoSelected: (NetworkFile) -> Boolean = { false },
+  includeImages: Boolean = false,
+  onImageClick: (NetworkFile, List<NetworkFile>) -> Unit = { _, _ -> },
   modifier: Modifier = Modifier,
 ) {
   val sortedFiles =
@@ -510,7 +609,7 @@ private fun NetworkBrowserContent(
         EmptyState(
           icon = Icons.RoundedFilled.Folder,
           title = stringResource(R.string.ui_empty_folder),
-          message = "This folder contains no files or directories",
+          message = stringResource(R.string.ui_folder_no_files_or_folders),
         )
       }
     }
@@ -523,7 +622,7 @@ private fun NetworkBrowserContent(
         EmptyState(
           icon = Icons.RoundedFilled.Search,
           title = stringResource(R.string.settings_search_title),
-          message = "No items match '$searchQuery'",
+          message = stringResource(R.string.ui_no_items_match, searchQuery),
         )
       }
     }
@@ -534,6 +633,32 @@ private fun NetworkBrowserContent(
         remember(filteredFiles, includeAudio) {
           filteredFiles.filter { it.isPlayableNetworkMedia(includeAudio) || it.isNetworkPlaylistFile() }
         }
+      val images =
+        remember(filteredFiles, includeImages) {
+          if (includeImages) filteredFiles.filter { it.isNetworkImageFile() } else emptyList()
+        }
+      // Images hidden by the toggle still count as "the folder has content" — reporting an empty
+      // folder here would be wrong and leaves the user no way to discover the toggle.
+      val hasHiddenImages = !includeImages && filteredFiles.any { it.isNetworkImageFile() }
+      if (folders.isEmpty() && videos.isEmpty() && images.isEmpty()) {
+        Box(
+          modifier = modifier.fillMaxSize(),
+          contentAlignment = Alignment.Center,
+        ) {
+          EmptyState(
+            icon = Icons.RoundedFilled.Image,
+            title = stringResource(R.string.ui_no_items),
+            message =
+              when {
+                hasHiddenImages -> stringResource(R.string.ui_folder_only_images_hidden)
+                includeImages -> stringResource(R.string.ui_folder_no_media)
+                else -> stringResource(R.string.ui_folder_no_videos_or_folders)
+              },
+          )
+        }
+        return
+      }
+
       val isGrid = networkLayoutMode == MediaLayoutMode.GRID
 
       val configuration = LocalConfiguration.current
@@ -550,7 +675,7 @@ private fun NetworkBrowserContent(
 
       val listState = rememberLazyListState()
       val gridState = rememberLazyGridState()
-      val hasEnoughItems = (folders.size + videos.size) > 20
+      val hasEnoughItems = (folders.size + videos.size + images.size) > SCROLLBAR_MIN_ITEM_COUNT
 
       val scrollbarAlpha by androidx.compose.animation.core.animateFloatAsState(
         targetValue = if (hasEnoughItems) 1f else 0f,
@@ -569,16 +694,16 @@ private fun NetworkBrowserContent(
         modifier = modifier.fillMaxSize(),
       ) {
         val scrollbarLabels =
-          remember(folders, videos) {
+          remember(folders, videos, images) {
             buildList<String?> {
+              // Only the folders run renders a header item, so only it needs a placeholder slot for
+              // the glyph list to stay aligned with the rows.
               if (folders.isNotEmpty()) {
                 add(null)
                 addAll(folders.map { it.name })
               }
-              if (videos.isNotEmpty()) {
-                add(null)
-                addAll(videos.map { it.name })
-              }
+              addAll(videos.map { it.name })
+              addAll(images.map { it.name })
             }
           }
         val navigationBarHeight = app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight.current
@@ -588,6 +713,8 @@ private fun NetworkBrowserContent(
               .fillMaxSize()
               .padding(bottom = navigationBarHeight),
         ) {
+          val folderHeaderText = stringResource(R.string.pref_folders_title)
+
           if (isGrid) {
             LazyVerticalGrid(
               columns = GridCells.Fixed(gridColumns),
@@ -603,52 +730,35 @@ private fun NetworkBrowserContent(
               horizontalArrangement = Arrangement.spacedBy(2.dp),
               verticalArrangement = Arrangement.spacedBy(2.dp),
             ) {
-              if (folders.isNotEmpty()) {
-                item(span = { GridItemSpan(gridColumns) }) {
-                  Text(
-                    text = stringResource(R.string.pref_folders_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
-                  )
-                }
-                items(
-                  items = folders,
-                  key = { it.path },
-                ) { folder ->
-                  NetworkFolderCard(
-                    file = folder,
-                    onClick = { onFolderClick(folder) },
+              browserSection(gridColumns, folders, folderHeaderText, topPadding = 8.dp) { folder ->
+                NetworkFolderCard(
+                  file = folder,
+                  onClick = { onFolderClick(folder) },
+                  isGridMode = true,
+                )
+              }
+              browserSection(gridColumns, videos, null) { video ->
+                connection?.let { conn ->
+                  NetworkVideoCard(
+                    file = video,
+                    connection = conn,
+                    onClick = { onVideoClick(video) },
+                    onLongClick = onVideoLongClick?.let { handler -> { handler(video) } },
+                    isSelected = isVideoSelected(video),
                     isGridMode = true,
-                    modifier = Modifier,
+                    mediaType = mediaTypeBadgeFor(video, includeImages, isImage = false),
                   )
                 }
               }
-
-              if (videos.isNotEmpty()) {
-                item(span = { GridItemSpan(gridColumns) }) {
-                  Text(
-                    text = stringResource(R.string.ui_videos),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+              browserSection(gridColumns, images, null) { image ->
+                connection?.let { conn ->
+                  NetworkImageCard(
+                    file = image,
+                    connection = conn,
+                    onClick = { onImageClick(image, images) },
+                    isGridMode = true,
+                    mediaType = mediaTypeBadgeFor(image, includeImages, isImage = true),
                   )
-                }
-                items(
-                  items = videos,
-                  key = { it.path },
-                ) { video ->
-                  connection?.let { conn ->
-                    NetworkVideoCard(
-                      file = video,
-                      connection = conn,
-                      onClick = { onVideoClick(video) },
-                      onLongClick = onVideoLongClick?.let { handler -> { handler(video) } },
-                      isSelected = isVideoSelected(video),
-                      isGridMode = true,
-                      modifier = Modifier,
-                    )
-                  }
                 }
               }
             }
@@ -664,52 +774,35 @@ private fun NetworkBrowserContent(
                   bottom = navigationBarHeight,
                 ),
             ) {
-              if (folders.isNotEmpty()) {
-                item {
-                  Text(
-                    text = stringResource(R.string.pref_folders_title),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 8.dp),
-                  )
-                }
-                items(
-                  items = folders,
-                  key = { it.path },
-                ) { folder ->
-                  NetworkFolderCard(
-                    file = folder,
-                    onClick = { onFolderClick(folder) },
+              browserSection(folders, folderHeaderText, topPadding = 8.dp) { folder ->
+                NetworkFolderCard(
+                  file = folder,
+                  onClick = { onFolderClick(folder) },
+                  isGridMode = false,
+                )
+              }
+              browserSection(videos, null) { video ->
+                connection?.let { conn ->
+                  NetworkVideoCard(
+                    file = video,
+                    connection = conn,
+                    onClick = { onVideoClick(video) },
+                    onLongClick = onVideoLongClick?.let { handler -> { handler(video) } },
+                    isSelected = isVideoSelected(video),
                     isGridMode = false,
-                    modifier = Modifier,
+                    mediaType = mediaTypeBadgeFor(video, includeImages, isImage = false),
                   )
                 }
               }
-
-              if (videos.isNotEmpty()) {
-                item {
-                  Text(
-                    text = stringResource(R.string.ui_videos),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 8.dp),
+              browserSection(images, null) { image ->
+                connection?.let { conn ->
+                  NetworkImageCard(
+                    file = image,
+                    connection = conn,
+                    onClick = { onImageClick(image, images) },
+                    isGridMode = false,
+                    mediaType = mediaTypeBadgeFor(image, includeImages, isImage = true),
                   )
-                }
-                items(
-                  items = videos,
-                  key = { it.path },
-                ) { video ->
-                  connection?.let { conn ->
-                    NetworkVideoCard(
-                      file = video,
-                      connection = conn,
-                      onClick = { onVideoClick(video) },
-                      onLongClick = onVideoLongClick?.let { handler -> { handler(video) } },
-                      isSelected = isVideoSelected(video),
-                      isGridMode = false,
-                      modifier = Modifier,
-                    )
-                  }
                 }
               }
             }

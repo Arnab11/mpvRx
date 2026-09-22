@@ -49,6 +49,8 @@ import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.ui.browser.components.MediaTypeBadge
+import app.gyrolet.mpvrx.ui.browser.components.NetworkMediaType
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
@@ -71,6 +73,8 @@ fun NetworkVideoCard(
   onLongClick: (() -> Unit)? = null,
   isSelected: Boolean = false,
   isGridMode: Boolean = false,
+  /** Corner label naming the media type; null hides it (shown only when images are mixed in). */
+  mediaType: NetworkMediaType? = null,
 ) {
   val appearancePreferences = koinInject<AppearancePreferences>()
   val browserPreferences = koinInject<BrowserPreferences>()
@@ -213,6 +217,12 @@ fun NetworkVideoCard(
               tint = MaterialTheme.colorScheme.secondary,
             )
           }
+          if (mediaType != null) {
+            MediaTypeBadge(
+              type = mediaType,
+              modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+            )
+          }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Text(
@@ -234,7 +244,7 @@ fun NetworkVideoCard(
         ) {
           if (showSizeChip && file.size > 0) {
             Text(
-              formatFileSize(file.size),
+              formatCardFileSize(file.size),
               style = MaterialTheme.typography.labelSmall,
               modifier =
                 Modifier
@@ -247,7 +257,7 @@ fun NetworkVideoCard(
           }
           if (showDateChip && file.lastModified > 0) {
             Text(
-              formatDate(file.lastModified),
+              formatCardDate(file.lastModified),
               style = MaterialTheme.typography.labelSmall,
               modifier =
                 Modifier
@@ -302,6 +312,12 @@ fun NetworkVideoCard(
               tint = MaterialTheme.colorScheme.secondary,
             )
           }
+          if (mediaType != null) {
+            MediaTypeBadge(
+              type = mediaType,
+              modifier = Modifier.align(Alignment.BottomEnd).padding(4.dp),
+            )
+          }
         }
         Spacer(modifier = Modifier.width(12.dp))
         Column(
@@ -325,7 +341,7 @@ fun NetworkVideoCard(
           ) {
             if (showSizeChip && file.size > 0) {
               Text(
-                formatFileSize(file.size),
+                formatCardFileSize(file.size),
                 style = MaterialTheme.typography.labelSmall,
                 modifier =
                   Modifier
@@ -338,7 +354,7 @@ fun NetworkVideoCard(
             }
             if (showDateChip && file.lastModified > 0) {
               Text(
-                formatDate(file.lastModified),
+                formatCardDate(file.lastModified),
                 style = MaterialTheme.typography.labelSmall,
                 modifier =
                   Modifier
@@ -356,21 +372,3 @@ fun NetworkVideoCard(
     }
   }
 }
-
-private fun formatFileSize(bytes: Long): String =
-  when {
-    bytes < 1024 -> "$bytes B"
-    bytes < 1024 * 1024 -> "${bytes / 1024} KB"
-    bytes < 1024 * 1024 * 1024 -> "${bytes / (1024 * 1024)} MB"
-    else -> String.format("%.2f GB", bytes / (1024.0 * 1024.0 * 1024.0))
-  }
-
-// Hoisted because a card formats a date on every recomposition and SimpleDateFormat construction
-// parses the pattern and clones a Calendar each time.
-private val NETWORK_CARD_DATE_FORMATTER: java.time.format.DateTimeFormatter =
-  java.time.format.DateTimeFormatter
-    .ofPattern("MMM dd")
-    .withZone(java.time.ZoneId.systemDefault())
-
-private fun formatDate(timestamp: Long): String =
-  NETWORK_CARD_DATE_FORMATTER.format(java.time.Instant.ofEpochMilli(timestamp))

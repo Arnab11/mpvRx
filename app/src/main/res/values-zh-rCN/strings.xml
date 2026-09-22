@@ -1288,6 +1288,14 @@
   <string name="ui_failed_to_delete">删除失败</string>
   <string name="ui_play_recently_played_or_first_video">播放最近或第一个视频</string>
   <string name="ui_videos">视频</string>
+  <string name="ui_retry">重试</string>
+  <string name="ui_image_load_failed">这张图片加载失败</string>
+  <string name="ui_no_items">没有内容</string>
+  <string name="ui_no_items_match">没有匹配「%1$s」的内容</string>
+  <string name="ui_folder_no_files_or_folders">此文件夹没有文件或文件夹</string>
+  <string name="ui_folder_no_media">此文件夹没有媒体文件</string>
+  <string name="ui_folder_no_videos_or_folders">此文件夹没有视频或文件夹</string>
+  <string name="ui_folder_only_images_hidden">此文件夹只有图片。可在「排序与视图选项」中开启「图片」以显示。</string>
   <string name="ui_add_connection">添加连接</string>
   <string name="ui_local_network">本地网络</string>
   <string name="ui_no_network_connections">没有网络连接</string>

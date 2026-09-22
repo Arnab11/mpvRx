@@ -30,6 +30,7 @@ import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.presentation.crash.CrashActivity
 import app.gyrolet.mpvrx.presentation.crash.CrashReportStore
+import app.gyrolet.mpvrx.domain.network.NetworkImageRepository
 import app.gyrolet.mpvrx.repository.NetworkRepository
 import app.gyrolet.mpvrx.ui.player.PlaybackPerformanceTrace
 import app.gyrolet.mpvrx.ui.player.PlaybackPhase
@@ -59,6 +60,7 @@ class App :
   private val networkAutoConnectStarted = AtomicBoolean(false)
   private val metadataMaintenanceStarted = AtomicBoolean(false)
   private val fastThumbnailsStarted = AtomicBoolean(false)
+  private val imageCacheCleanupStarted = AtomicBoolean(false)
   private var startedActivityCount = 0
 
   companion object {
@@ -182,6 +184,7 @@ class App :
       getKoin().get<app.gyrolet.mpvrx.domain.syncplay.SyncplayManager>().onAppForegrounded()
       scheduleFastThumbnailWarmupOnce()
       scheduleMetadataMaintenanceOnce()
+      scheduleImageCacheCleanupOnce()
     }
   }
 
@@ -396,6 +399,24 @@ class App :
       } catch (error: Exception) {
         metadataMaintenanceStarted.set(false)
         Log.w(TAG, "Deferred metadata maintenance failed", error)
+      }
+    }
+  }
+
+  private fun scheduleImageCacheCleanupOnce() {
+    if (!imageCacheCleanupStarted.compareAndSet(false, true)) return
+    applicationScope.launch(Dispatchers.IO) {
+      try {
+        delay(POST_START_MAINTENANCE_DELAY_MS)
+        val imageRepository: NetworkImageRepository = getKoin().get()
+        imageRepository.evictStaleImageCaches()
+        Log.d(TAG, "Network image cache cleanup completed")
+      } catch (cancellation: CancellationException) {
+        imageCacheCleanupStarted.set(false)
+        throw cancellation
+      } catch (error: Exception) {
+        imageCacheCleanupStarted.set(false)
+        Log.w(TAG, "Network image cache cleanup failed", error)
       }
     }
   }
