@@ -173,6 +173,8 @@ suspend fun saveWallpaperCopy(
   context: android.content.Context,
   sourceUri: String,
 ): String = withContext(Dispatchers.IO) {
+  // Presets are drawn in code, so only the tiny "preset:<id>" reference is stored.
+  if (WallpaperPreset.isPresetUri(sourceUri)) return@withContext sourceUri
   val bitmap = requireNotNull(loadWallpaperBitmap(context, sourceUri)) {
     context.getString(app.gyrolet.mpvrx.R.string.wallpaper_save_failed)
   }
@@ -198,6 +200,7 @@ fun loadWallpaperBitmap(
   wallpaperUri: String,
 ): Bitmap? =
   runCatching {
+    WallpaperPreset.fromUri(wallpaperUri)?.let { return@runCatching createWallpaperPresetBitmap(it) }
     val uri = Uri.parse(wallpaperUri)
     if (uri.scheme.equals("file", ignoreCase = true)) {
       val file = uri.path?.let { java.io.File(it) }?.takeIf { it.isFile && it.canRead() } ?: return@runCatching null

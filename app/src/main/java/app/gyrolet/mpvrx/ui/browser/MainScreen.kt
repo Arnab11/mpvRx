@@ -612,7 +612,7 @@ object MainScreen : Screen {
 }
 
 @Composable
-private fun ExpressivePillNavigationBar(
+internal fun ExpressivePillNavigationBar(
   visibleTabs: List<MainScreen.MainTab>,
   selectedTab: MainScreen.MainTab,
   onTabSelected: (MainScreen.MainTab) -> Unit,

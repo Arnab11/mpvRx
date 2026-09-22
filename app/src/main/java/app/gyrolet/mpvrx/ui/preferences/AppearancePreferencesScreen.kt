@@ -11,14 +11,11 @@ package app.gyrolet.mpvrx.ui.preferences
 
 import android.app.Activity
 import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -26,9 +23,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Button
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -47,7 +41,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
@@ -72,6 +65,7 @@ import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.preferences.components.ThemePicker
 import app.gyrolet.mpvrx.ui.theme.DarkMode
 import app.gyrolet.mpvrx.ui.theme.CustomThemeDefinition
+import app.gyrolet.mpvrx.ui.theme.WallpaperDerivedThemeName
 import app.gyrolet.mpvrx.ui.theme.LocalThemeTransitionState
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.LocalShowSettingsBackArrow
@@ -124,18 +118,13 @@ object AppearancePreferencesScreen : Screen {
     val thumbnailMode = storedThumbnailMode
     val customThemes = remember(customTheme) { CustomThemeDefinition.parseCollection(customTheme) }
     val selectedCustomTheme = customThemes.firstOrNull { it.name == selectedCustomThemeName }
-
-    val wallpaperPicker =
-      rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
-        if (uri != null) {
-          runCatching {
-            context.contentResolver.takePersistableUriPermission(
-              uri,
-              android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION,
-            )
-          }
-          backstack.navigateTo(WallpaperEditorScreen(uri.toString()))
-        }
+    // The wallpaper-derived theme is managed from the wallpaper editor, so it's hidden from the picker.
+    val pickerThemes = remember(customThemes) { customThemes.filterNot { it.name == WallpaperDerivedThemeName } }
+    val selectedThemeLabel =
+      if (selectedCustomTheme?.name == WallpaperDerivedThemeName) {
+        stringResource(R.string.pref_appearance_custom_wallpaper_title)
+      } else {
+        selectedCustomTheme?.name ?: stringResource(appTheme.titleRes)
       }
 
     // Determine if we're in dark mode for theme preview
@@ -268,7 +257,7 @@ object AppearancePreferencesScreen : Screen {
                     fontWeight = FontWeight.SemiBold,
                   )
                   Text(
-                    text = "${stringResource(darkMode.titleRes)} · ${selectedCustomTheme?.name ?: stringResource(appTheme.titleRes)}",
+                    text = "${stringResource(darkMode.titleRes)} · $selectedThemeLabel",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.outline,
                   )
@@ -312,7 +301,7 @@ object AppearancePreferencesScreen : Screen {
                   val amoledMode by preferences.amoledMode.collectAsState()
                   ThemePicker(
                     currentTheme = appTheme,
-                    customThemes = customThemes,
+                    customThemes = pickerThemes,
                     selectedCustomThemeName = selectedCustomThemeName,
                     isDarkMode = isDarkMode,
                     onThemeSelected = { theme, position ->
@@ -346,61 +335,10 @@ object AppearancePreferencesScreen : Screen {
 
                   PreferenceDivider()
 
-                  PreferenceCard {
-                    Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                      Text(stringResource(R.string.pref_appearance_custom_wallpaper_title), style = MaterialTheme.typography.titleMedium)
-                      Text(stringResource(R.string.pref_appearance_custom_wallpaper_summary), color = MaterialTheme.colorScheme.outline, style = MaterialTheme.typography.bodySmall)
-                      if (customWallpaperUri.isNotBlank() && !customWallpaperUri.startsWith("data:", ignoreCase = true)) {
-                        Text(customWallpaperUri.substringAfterLast('/'), style = MaterialTheme.typography.bodySmall, maxLines = 1)
-                      }
-                      Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                      ) {
-                        Button(
-                          onClick = { wallpaperPicker.launch(arrayOf("image/*")) },
-                          modifier = Modifier.weight(1f),
-                          contentPadding = PaddingValues(horizontal = 8.dp),
-                        ) {
-                          Text(
-                            stringResource(if (customWallpaperUri.isBlank()) R.string.pref_appearance_custom_wallpaper_choose else R.string.pref_appearance_custom_wallpaper_replace_action),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                          )
-                        }
-                        if (customWallpaperUri.isNotBlank()) {
-                          OutlinedButton(
-                            onClick = { backstack.navigateTo(WallpaperEditorScreen()) },
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                          ) {
-                            Text(
-                              stringResource(R.string.pref_appearance_custom_wallpaper_adjust),
-                              maxLines = 1,
-                              overflow = TextOverflow.Ellipsis,
-                            )
-                          }
-                          TextButton(
-                            onClick = {
-                              preferences.customWallpaperUri.set("")
-                              preferences.customWallpaperZoom.set(1f)
-                              preferences.customWallpaperOffsetX.set(0f)
-                              preferences.customWallpaperOffsetY.set(0f)
-                              preferences.customWallpaperScaleMode.set(app.gyrolet.mpvrx.ui.theme.WallpaperScaleMode.Fit)
-                            },
-                            modifier = Modifier.weight(1f),
-                            contentPadding = PaddingValues(horizontal = 8.dp),
-                          ) {
-                            Text(
-                              stringResource(R.string.pref_appearance_custom_wallpaper_clear_action),
-                              maxLines = 1,
-                              overflow = TextOverflow.Ellipsis,
-                            )
-                          }
-                        }
-                      }
-                    }
-                  }
+                  WallpaperPreferenceCard(
+                    wallpaperUri = customWallpaperUri,
+                    onClick = { backstack.navigateTo(WallpaperEditorScreen()) },
+                  )
 
                   PreferenceDivider()
 

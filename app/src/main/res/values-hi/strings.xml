@@ -2100,11 +2100,30 @@
   <string name="pref_server_set_active">सक्रिय के रूप में सेट करें</string>
   <string name="pref_server_more_options">अधिक विकल्प</string>
   <string name="jellyfin_no_music_library">इस Jellyfin सर्वर पर कोई संगीत लाइब्रेरी नहीं मिली</string>
-  <string name="pref_appearance_custom_theme_title">कस्टम थीम</string><string name="pref_appearance_custom_theme_name">थीम का नाम</string><string name="pref_appearance_custom_theme_light_primary">हल्का प्राथमिक रंग</string><string name="pref_appearance_custom_theme_dark_primary">गहरा प्राथमिक रंग</string><string name="pref_appearance_custom_theme_light_background">हल्का पृष्ठभूमि रंग</string><string name="pref_appearance_custom_theme_dark_background">गहरा पृष्ठभूमि रंग</string><string name="pref_appearance_custom_theme_none">कोई कस्टम थीम सेव नहीं है</string><string name="pref_appearance_custom_theme_edit">बनाएं या संपादित करें</string><string name="pref_appearance_custom_theme_clear">साफ़ करें</string><string name="pref_appearance_custom_theme_save">सेव करें</string><string name="pref_appearance_custom_wallpaper_title">कस्टम वॉलपेपर</string><string name="pref_appearance_custom_wallpaper_summary">ब्राउज़र सामग्री और ऊपरी बार के पीछे पूरी स्क्रीन पर चित्र दिखाएं</string><string name="pref_appearance_custom_wallpaper_choose">वॉलपेपर चुनें</string><string name="pref_appearance_custom_wallpaper_replace">वॉलपेपर बदलें</string><string name="pref_appearance_custom_wallpaper_clear">वॉलपेपर साफ़ करें</string>
+  <string name="pref_appearance_custom_theme_title">कस्टम थीम</string><string name="pref_appearance_custom_theme_name">थीम का नाम</string><string name="pref_appearance_custom_theme_light_primary">हल्का प्राथमिक रंग</string><string name="pref_appearance_custom_theme_dark_primary">गहरा प्राथमिक रंग</string><string name="pref_appearance_custom_theme_light_background">हल्का पृष्ठभूमि रंग</string><string name="pref_appearance_custom_theme_dark_background">गहरा पृष्ठभूमि रंग</string><string name="pref_appearance_custom_theme_none">कोई कस्टम थीम सेव नहीं है</string><string name="pref_appearance_custom_theme_edit">बनाएं या संपादित करें</string><string name="pref_appearance_custom_theme_clear">साफ़ करें</string><string name="pref_appearance_custom_theme_save">सेव करें</string><string name="pref_appearance_custom_wallpaper_title">वॉलपेपर</string><string name="pref_appearance_custom_wallpaper_summary">ब्राउज़र सामग्री और ऊपरी बार के पीछे पूरी स्क्रीन पर चित्र दिखाएं</string><string name="pref_appearance_custom_wallpaper_choose">वॉलपेपर चुनें</string><string name="pref_appearance_custom_wallpaper_replace">वॉलपेपर बदलें</string><string name="pref_appearance_custom_wallpaper_clear">वॉलपेपर साफ़ करें</string>
+  <string name="pref_appearance_custom_wallpaper_home_preview">होम प्रीव्यू</string>
+  <string name="pref_appearance_custom_wallpaper_home_preview_close">बंद करने के लिए कहीं भी टैप करें</string>
+  <string name="wallpaper_aspect_device">डिवाइस</string>
+  <string name="wallpaper_presets_label">वॉलपेपर</string>
+  <string name="wallpaper_preset_none">कोई नहीं</string>
+  <string name="wallpaper_preset_custom">कस्टम</string>
+  <string name="wallpaper_preset_aurora">ऑरोरा</string>
+  <string name="wallpaper_preset_sunset">सूर्यास्त</string>
+  <string name="wallpaper_preset_ocean">महासागर</string>
+  <string name="wallpaper_preset_midnight">मध्यरात्रि</string>
+  <string name="wallpaper_preset_mist">कोहरा</string>
+  <string name="wallpaper_preset_blossom">फूल</string>
+  <string name="wallpaper_none_hint">कोई वॉलपेपर नहीं</string>
+  <string name="pref_appearance_custom_wallpaper_preview_locked">प्रीव्यू लॉक है</string>
+  <string name="pref_appearance_custom_wallpaper_preview_unlocked">प्रीव्यू अनलॉक है</string>
+  <string name="pref_appearance_custom_wallpaper_aspect_free">फ्री</string>
   <string name="pref_appearance_custom_wallpaper_crop_title">वॉलपेपर समायोजित करें</string><string name="pref_appearance_custom_wallpaper_zoom">ज़ूम</string><string name="pref_appearance_custom_wallpaper_horizontal">क्षैतिज स्थिति</string><string name="pref_appearance_custom_wallpaper_vertical">ऊर्ध्वाधर स्थिति</string><string name="pref_appearance_custom_wallpaper_save">वॉलपेपर सेव करें</string>
   <string name="pref_appearance_custom_theme_new">नई कस्टम थीम</string><string name="pref_appearance_custom_theme_edit_title">कस्टम थीम संपादित करें</string><string name="pref_appearance_custom_theme_preview">पूर्वावलोकन</string><string name="pref_appearance_custom_theme_live_preview">लाइव पूर्वावलोकन</string><string name="pref_appearance_custom_theme_name_required">थीम का नाम दर्ज करें</string><string name="pref_appearance_custom_theme_name_duplicate">इस नाम की थीम पहले से मौजूद है</string><string name="pref_appearance_custom_theme_hex_invalid">#6750A4 जैसा हेक्स रंग उपयोग करें</string><string name="pref_appearance_custom_wallpaper_adjust">समायोजित करें</string><string name="pref_appearance_custom_wallpaper_gesture_hint">स्थान बदलने के लिए खींचें। ज़ूम करने के लिए पिंच करें।</string><string name="pref_appearance_custom_wallpaper_reset">रीसेट</string>
   <string name="pref_appearance_custom_theme_light_secondary">हल्का द्वितीयक रंग</string><string name="pref_appearance_custom_theme_dark_secondary">गहरा द्वितीयक रंग</string><string name="pref_appearance_custom_theme_light_tertiary">हल्का तृतीयक रंग</string><string name="pref_appearance_custom_theme_dark_tertiary">गहरा तृतीयक रंग</string>
   <string name="pref_appearance_custom_wallpaper_fit">फिट</string><string name="pref_appearance_custom_wallpaper_fill">भरें</string><string name="pref_appearance_custom_wallpaper_replace_action">बदलें</string><string name="pref_appearance_custom_wallpaper_clear_action">साफ़ करें</string>
+  <string name="pref_appearance_custom_wallpaper_use_colors">वॉलपेपर के रंग इस्तेमाल करें</string>
+  <string name="pref_appearance_custom_wallpaper_use_colors_summary">इस वॉलपेपर के रंगों से ऐप थीम बनाएं</string>
+  <string name="pref_appearance_custom_wallpaper_colors_failed">इस वॉलपेपर से रंग नहीं निकाले जा सके</string>
   <string name="wallpaper_save_failed">वॉलपेपर सहेजा नहीं जा सका। कृपया चित्र फिर से चुनें।</string>
   <string name="pref_haptic_feedback_title">हैप्टिक फ़ीडबैक</string>
   <string name="pref_haptic_feedback_summary">चयन, खींचने और नियंत्रण समायोजन पर स्पर्श प्रतिक्रिया। सिस्टम सेटिंग का पालन करता है।</string>
