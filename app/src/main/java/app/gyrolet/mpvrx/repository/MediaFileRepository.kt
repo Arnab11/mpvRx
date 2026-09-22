@@ -131,8 +131,7 @@ object MediaFileRepository : KoinComponent {
             currentScanOptions(includeAudioOverride),
             database.directoryScanDao(),
           )
-        val archiveFolders = ZipArchiveMedia.mediaStoreFolders(context, currentScanOptions(includeAudioOverride).includeAudio)
-        (mediaStoreFolders + indexedFolders + archiveFolders)
+        (mediaStoreFolders + indexedFolders)
           .distinctBy { it.path.lowercase(Locale.ROOT) }
           .sortedBy { it.name.lowercase(Locale.getDefault()) }
       } catch (e: Exception) {
@@ -155,7 +154,7 @@ object MediaFileRepository : KoinComponent {
           context = context,
           options = options,
           forceFileSystemCheck = forceFileSystemCheck,
-        ) + ZipArchiveMedia.mediaStoreFolders(context, options.includeAudio)
+        )
       folders.distinctBy { it.path.lowercase(Locale.ROOT) }
         .sortedBy { it.name.lowercase(Locale.getDefault()) }
         .also { onProgress?.invoke(it.size) }

@@ -16,6 +16,7 @@ import android.text.format.Formatter
 import app.gyrolet.mpvrx.domain.browser.FileSystemItem
 import app.gyrolet.mpvrx.domain.browser.PathComponent
 import app.gyrolet.mpvrx.domain.media.model.Video
+import app.gyrolet.mpvrx.ui.player.resolveLocalPath
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import java.io.File
 import java.io.IOException
@@ -56,6 +57,29 @@ object ZipArchiveMedia {
   private val statsCache = ConcurrentHashMap<StatsKey, ArchiveStats>()
 
   fun isZipFile(file: File): Boolean = file.isFile && file.extension.equals("zip", ignoreCase = true)
+
+  fun resolveZipPath(context: Context, uri: Uri): String? {
+    val candidatePath: String? = when (uri.scheme?.lowercase()) {
+      "file" -> uri.path
+      "content" -> uri.resolveLocalPath(context) ?: runCatching {
+        context.contentResolver.openFileDescriptor(uri, "r")?.use { pfd ->
+          `is`.xyz.mpv.Utils.findRealPath(pfd.fd)
+        }
+      }.getOrNull()
+      else -> null
+    }
+    if (candidatePath == null) return null
+
+    val file = File(candidatePath)
+    if (!file.exists() || !file.canRead()) return null
+    if (isZipFile(file)) return file.absolutePath
+
+    val isZip = runCatching {
+      ZipFile(file).use { true }
+    }.getOrDefault(false)
+
+    return if (isZip) file.absolutePath else null
+  }
 
   fun browserPath(archivePath: String, directory: String = ""): String {
     val normalizedDirectory = normalizeEntryPath(directory).orEmpty()
