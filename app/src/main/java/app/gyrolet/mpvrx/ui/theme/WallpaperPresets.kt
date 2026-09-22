@@ -25,11 +25,15 @@ import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
+import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.LayoutDirection
 import app.gyrolet.mpvrx.R
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.math.pow
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -166,27 +170,6 @@ private fun DrawScope.stars(
   }
 }
 
-/** A handful of larger stars with a soft halo and a little cross-shaped glint. */
-private fun DrawScope.brightStars(
-  seed: Int,
-  count: Int,
-  maxY: Float,
-) {
-  val unit = size.width / 1080f
-  val random = Random(seed)
-  repeat(count) {
-    val x = random.nextFloat() * size.width
-    val y = random.nextFloat() * maxY
-    val r = (2.4f + random.nextFloat() * 1.8f) * unit
-    val arm = r * 4.5f
-    val glint = Color.White.copy(alpha = 0.55f)
-    glow(Color(0xFFCFE8FF), x, y, r * 7f, 0.30f)
-    drawCircle(Color.White, radius = r, center = Offset(x, y))
-    drawLine(glint, Offset(x - arm, y), Offset(x + arm, y), strokeWidth = r * 0.35f, cap = StrokeCap.Round)
-    drawLine(glint, Offset(x, y - arm), Offset(x, y + arm), strokeWidth = r * 0.35f, cap = StrokeCap.Round)
-  }
-}
-
 /** Three stacked triangles, base at [baseY], used as tree silhouettes on the ridges. */
 private fun DrawScope.pine(
   cx: Float,
@@ -228,75 +211,6 @@ private fun DrawScope.pinesAlongRidge(
     val ridgeY = baseY - amplitude * waveAt(t, freqA, phaseA, freqB, phaseB)
     pine(t * size.width, ridgeY + height * 0.06f, height, color)
   }
-}
-
-/** Thin vertical shafts of light standing on [baseY], brighter towards the bottom. */
-private fun DrawScope.verticalRays(
-  baseY: Float,
-  seed: Int,
-  count: Int,
-  color: Color,
-  maxLength: Float,
-  alpha: Float,
-  fromX: Float,
-  toX: Float,
-) {
-  val unit = size.width / 1080f
-  val random = Random(seed)
-  repeat(count) {
-    val x = fromX + random.nextFloat() * (toX - fromX)
-    val rayWidth = (4f + random.nextFloat() * 18f) * unit
-    val length = maxLength * (0.35f + 0.65f * random.nextFloat())
-    val rayAlpha = alpha * (0.35f + 0.65f * random.nextFloat())
-    drawRect(
-      brush =
-        Brush.verticalGradient(
-          listOf(Color.Transparent, color.copy(alpha = rayAlpha)),
-          startY = baseY - length,
-          endY = baseY,
-        ),
-      topLeft = Offset(x, baseY - length),
-      size = Size(rayWidth, length),
-    )
-  }
-}
-
-/** One aurora "curtain": a wavy bright lower edge fading upwards. */
-private fun DrawScope.auroraCurtain(
-  baseY: Float,
-  amplitude: Float,
-  height: Float,
-  freqA: Float,
-  phaseA: Float,
-  freqB: Float,
-  phaseB: Float,
-  color: Color,
-  alpha: Float,
-) {
-  val steps = 48
-  val path = Path()
-  for (i in 0..steps) {
-    val t = i / steps.toFloat()
-    val y = baseY - amplitude * waveAt(t, freqA, phaseA, freqB, phaseB)
-    if (i == 0) path.moveTo(0f, y) else path.lineTo(t * size.width, y)
-  }
-  for (i in steps downTo 0) {
-    val t = i / steps.toFloat()
-    val lower = baseY - amplitude * waveAt(t, freqA, phaseA, freqB, phaseB)
-    val reach = height * (0.55f + 0.45f * sin(t * 5f + phaseA))
-    path.lineTo(t * size.width, lower - reach)
-  }
-  path.close()
-  drawPath(
-    path,
-    Brush.verticalGradient(
-      0f to Color.Transparent,
-      0.55f to color.copy(alpha = alpha * 0.5f),
-      1f to color.copy(alpha = alpha),
-      startY = baseY - amplitude - height,
-      endY = baseY + amplitude,
-    ),
-  )
 }
 
 /** Soft cones of light fanning out from ([cx], [cy]); [angles] are degrees from straight down. */
@@ -349,116 +263,224 @@ private fun DrawScope.fogBand(
   )
 }
 
+/** Smooth pseudo-random value in 0..1 that varies along [t] (0..1); a/b/c pick the pattern. */
+private fun noise01(
+  t: Float,
+  a: Float,
+  b: Float,
+  c: Float,
+): Float =
+  0.5f +
+    0.5f *
+    (
+      0.5f * sin(t * a * 6.2832f + b) +
+        0.3f * sin(t * (a * 2.3f + 1f) * 6.2832f + c) +
+        0.2f * sin(t * (a * 4.1f + 2f) * 6.2832f + b * 2f + c)
+    )
+
+/** A few larger stars with a soft halo. Each entry is (x fraction, y fraction, radius in 1080p px). */
+private fun DrawScope.brightStars(stars: List<Triple<Float, Float, Float>>) {
+  val unit = size.width / 1080f
+  stars.forEach { (fx, fy, radius) ->
+    val x = size.width * fx
+    val y = size.height * fy
+    glow(Color(0xFFCFE8FF), x, y, radius * unit * 7f, 0.30f)
+    drawCircle(Color.White, radius = radius * unit, center = Offset(x, y))
+  }
+}
+
+/**
+ * One aurora curtain, drawn as many thin vertical strips that share a single gradient (bright and
+ * sharp at the bottom, fading upwards). Each strip is scaled to its own height and alpha, which
+ * gives the streaky, folded look of a real aurora.
+ */
+private fun DrawScope.auroraCurtain(
+  baseY: Float,
+  amplitude: Float,
+  maxHeight: Float,
+  freqA: Float,
+  phaseA: Float,
+  freqB: Float,
+  phaseB: Float,
+  top: Color,
+  mid: Color,
+  low: Color,
+  alpha: Float,
+  seed: Float,
+  strips: Int = 240,
+) {
+  val brush =
+    Brush.verticalGradient(
+      0f to top.copy(alpha = 0f),
+      0.30f to top.copy(alpha = 0.16f),
+      0.62f to mid.copy(alpha = 0.42f),
+      0.90f to low.copy(alpha = 0.85f),
+      1f to low.copy(alpha = 0.95f),
+      startY = -maxHeight,
+      endY = 0f,
+    )
+  val stripWidth = size.width / strips
+  for (i in 0 until strips) {
+    val t = (i + 0.5f) / strips
+    val baseline = baseY - amplitude * waveAt(t, freqA, phaseA, freqB, phaseB)
+    val stripHeight = maxHeight * (0.30f + 0.70f * noise01(t, 2.2f, seed, seed * 1.7f))
+    val stripAlpha = alpha * (0.55f + 0.45f * noise01(t, 6.0f, seed * 2.1f, seed * 0.3f))
+    withTransform({
+      translate(t * size.width - stripWidth / 2f, baseline)
+      scale(1f, stripHeight / maxHeight, pivot = Offset.Zero)
+    }) {
+      drawRect(
+        brush = brush,
+        topLeft = Offset(0f, -maxHeight),
+        size = Size(stripWidth + 1.2f, maxHeight + 2f),
+        alpha = stripAlpha,
+      )
+    }
+  }
+}
+
+/** Jagged mountain range: [count] peaks along the width, each with a sharp summit. */
+private fun DrawScope.jaggedRange(
+  baseY: Float,
+  amplitude: Float,
+  seed: Int,
+  count: Int,
+  brush: Brush,
+) {
+  val random = Random(seed)
+  val xs = FloatArray(count + 1) { it / count.toFloat() }
+  val ys = FloatArray(count + 1) { baseY - amplitude * (0.25f + 0.75f * random.nextFloat()) }
+  val path = Path()
+  path.moveTo(0f, size.height)
+  path.lineTo(0f, ys[0])
+  for (i in 1..count) {
+    val summitX = (xs[i - 1] + xs[i]) / 2f + (random.nextFloat() - 0.5f) / count * 0.5f
+    val summitY = minOf(ys[i - 1], ys[i]) - amplitude * (0.15f + 0.45f * random.nextFloat())
+    path.lineTo(summitX * size.width, summitY)
+    path.lineTo(xs[i] * size.width, ys[i])
+  }
+  path.lineTo(size.width, size.height)
+  path.close()
+  drawPath(path, brush)
+}
+
 private fun DrawScope.drawAurora() {
   val w = size.width
   val h = size.height
   drawRect(
-    Brush.verticalGradient(listOf(Color(0xFF030716), Color(0xFF081842), Color(0xFF0B3A4A))),
+    Brush.verticalGradient(
+      0f to Color(0xFF02040F),
+      0.45f to Color(0xFF061336),
+      0.78f to Color(0xFF0A2E4A),
+      1f to Color(0xFF0B3B48),
+    ),
   )
-  stars(seed = 11, count = 150, maxY = h * 0.66f)
-  brightStars(seed = 3, count = 7, maxY = h * 0.40f)
-  glow(Color(0xFF2AF5B0), w * 0.28f, h * 0.30f, w * 0.85f, 0.45f)
-  glow(Color(0xFF8A5CFF), w * 0.80f, h * 0.46f, w * 0.75f, 0.42f)
-  glow(Color(0xFF29B6F6), w * 0.35f, h * 0.72f, w * 0.80f, 0.30f)
-  // Shafts of light standing under the curtains.
-  verticalRays(
-    baseY = h * 0.50f,
-    seed = 21,
-    count = 30,
-    color = Color(0xFF2AF5B0),
-    maxLength = h * 0.30f,
-    alpha = 0.30f,
-    fromX = 0f,
-    toX = w * 0.75f,
+  stars(seed = 11, count = 170, maxY = h * 0.62f)
+  brightStars(
+    listOf(
+      Triple(0.14f, 0.070f, 3.4f),
+      Triple(0.83f, 0.120f, 3.0f),
+      Triple(0.55f, 0.045f, 2.6f),
+      Triple(0.32f, 0.200f, 2.8f),
+      Triple(0.90f, 0.290f, 2.4f),
+      Triple(0.08f, 0.310f, 2.6f),
+    ),
   )
-  verticalRays(
-    baseY = h * 0.58f,
-    seed = 22,
-    count = 22,
-    color = Color(0xFF9B6BFF),
-    maxLength = h * 0.24f,
-    alpha = 0.26f,
-    fromX = w * 0.25f,
-    toX = w,
+  // Light pooling behind the curtains.
+  glow(Color(0xFF2AF5B0), w * 0.40f, h * 0.50f, w * 0.95f, 0.28f)
+  glow(Color(0xFF7B5CFF), w * 0.85f, h * 0.40f, w * 0.70f, 0.22f)
+  auroraCurtain(
+    baseY = h * 0.60f,
+    amplitude = h * 0.050f,
+    maxHeight = h * 0.36f,
+    freqA = 0.8f,
+    phaseA = 0.7f,
+    freqB = 1.9f,
+    phaseB = 2.1f,
+    top = Color(0xFF8A5CFF),
+    mid = Color(0xFF2AF5B0),
+    low = Color(0xFF7CFFC8),
+    alpha = 0.70f,
+    seed = 1.3f,
   )
   auroraCurtain(
-    baseY = h * 0.48f,
-    amplitude = h * 0.035f,
-    height = h * 0.30f,
-    freqA = 0.9f,
-    phaseA = 0.6f,
-    freqB = 2.1f,
-    phaseB = 1.7f,
-    color = Color(0xFF2AF5B0),
-    alpha = 0.62f,
-  )
-  auroraCurtain(
-    baseY = h * 0.57f,
-    amplitude = h * 0.030f,
-    height = h * 0.22f,
-    freqA = 1.3f,
-    phaseA = 2.2f,
-    freqB = 2.8f,
-    phaseB = 0.4f,
-    color = Color(0xFF9B6BFF),
+    baseY = h * 0.66f,
+    amplitude = h * 0.045f,
+    maxHeight = h * 0.30f,
+    freqA = 1.2f,
+    phaseA = 3.9f,
+    freqB = 2.6f,
+    phaseB = 0.6f,
+    top = Color(0xFFFF6BD6),
+    mid = Color(0xFF6C7CFF),
+    low = Color(0xFF3BE0FF),
     alpha = 0.50f,
+    seed = 4.1f,
   )
   auroraCurtain(
-    baseY = h * 0.68f,
-    amplitude = h * 0.028f,
-    height = h * 0.16f,
-    freqA = 1.0f,
-    phaseA = 4.0f,
-    freqB = 3.2f,
-    phaseB = 2.5f,
-    color = Color(0xFF29D6F6),
-    alpha = 0.34f,
+    baseY = h * 0.55f,
+    amplitude = h * 0.040f,
+    maxHeight = h * 0.20f,
+    freqA = 0.7f,
+    phaseA = 5.0f,
+    freqB = 2.4f,
+    phaseB = 1.4f,
+    top = Color(0xFF6B7CFF),
+    mid = Color(0xFF29D6F6),
+    low = Color(0xFF6BFFD0),
+    alpha = 0.42f,
+    seed = 7.7f,
   )
-  // Far ridge with a light treeline.
+  // Faint reflection of the aurora on a lake.
+  val lakeGlow = Color(0xFF2AF5B0)
+  drawRect(
+    brush =
+      Brush.verticalGradient(
+        0f to lakeGlow.copy(alpha = 0f),
+        0.5f to lakeGlow.copy(alpha = 0.10f),
+        1f to lakeGlow.copy(alpha = 0f),
+        startY = h * 0.80f,
+        endY = h * 0.92f,
+      ),
+    topLeft = Offset(0f, h * 0.80f),
+    size = Size(w, h * 0.12f),
+  )
+  // Far range, near range, then the treeline.
+  jaggedRange(
+    baseY = h * 0.79f,
+    amplitude = h * 0.075f,
+    seed = 5,
+    count = 9,
+    brush = Brush.verticalGradient(listOf(Color(0xFF123048), Color(0xFF08182A)), startY = h * 0.70f, endY = h * 0.86f),
+  )
+  jaggedRange(
+    baseY = h * 0.865f,
+    amplitude = h * 0.060f,
+    seed = 8,
+    count = 7,
+    brush = Brush.verticalGradient(listOf(Color(0xFF06141D), Color(0xFF030A10)), startY = h * 0.80f, endY = h * 0.93f),
+  )
   ridge(
-    baseY = h * 0.84f,
-    amplitude = h * 0.04f,
-    freqA = 0.8f,
-    phaseA = 2.0f,
-    freqB = 2.0f,
-    phaseB = 0.5f,
-    brush = Brush.verticalGradient(listOf(Color(0xFF0D2B36), Color(0xFF07161F)), startY = h * 0.80f, endY = h),
-  )
-  pinesAlongRidge(
-    baseY = h * 0.84f,
-    amplitude = h * 0.04f,
-    freqA = 0.8f,
-    phaseA = 2.0f,
-    freqB = 2.0f,
-    phaseB = 0.5f,
-    seed = 31,
-    count = 16,
-    minHeight = h * 0.018f,
-    maxHeight = h * 0.030f,
-    color = Color(0xFF0A222C),
-  )
-  // Near ridge with a dark treeline.
-  ridge(
-    baseY = h * 0.90f,
-    amplitude = h * 0.03f,
-    freqA = 1.2f,
+    baseY = h * 0.925f,
+    amplitude = h * 0.018f,
+    freqA = 1.3f,
     phaseA = 0.4f,
-    freqB = 2.6f,
+    freqB = 3.0f,
     phaseB = 1.1f,
-    brush = Brush.verticalGradient(listOf(Color(0xFF07161F), Color(0xFF030A10)), startY = h * 0.85f, endY = h),
+    brush = Brush.verticalGradient(listOf(Color(0xFF02070C), Color(0xFF010306)), startY = h * 0.90f, endY = h),
   )
   pinesAlongRidge(
-    baseY = h * 0.90f,
-    amplitude = h * 0.03f,
-    freqA = 1.2f,
+    baseY = h * 0.925f,
+    amplitude = h * 0.018f,
+    freqA = 1.3f,
     phaseA = 0.4f,
-    freqB = 2.6f,
+    freqB = 3.0f,
     phaseB = 1.1f,
     seed = 32,
-    count = 14,
-    minHeight = h * 0.030f,
-    maxHeight = h * 0.055f,
-    color = Color(0xFF030A10),
+    count = 22,
+    minHeight = h * 0.028f,
+    maxHeight = h * 0.060f,
+    color = Color(0xFF02070C),
   )
 }
 
@@ -498,34 +520,95 @@ private fun DrawScope.drawSunset() {
   )
 }
 
+/** Underwater scene: light from the surface, drifting bubbles and kelp on a dark seabed. */
 private fun DrawScope.drawOcean() {
   val w = size.width
   val h = size.height
+  val unit = w / 1080f
   drawRect(
-    Brush.verticalGradient(listOf(Color(0xFF03122E), Color(0xFF0A4D8C), Color(0xFF1AA6B7))),
+    Brush.verticalGradient(
+      0f to Color(0xFF46D2DC),
+      0.16f to Color(0xFF1AA3C6),
+      0.42f to Color(0xFF0B66A6),
+      0.72f to Color(0xFF073A78),
+      1f to Color(0xFF021535),
+    ),
   )
-  glow(Color(0xFF7FE7FF), w * 0.75f, h * 0.18f, w * 0.7f, 0.30f)
-  val layers = 5
-  for (i in 0 until layers) {
-    val t = i / (layers - 1).toFloat()
-    ridge(
-      baseY = h * (0.50f + 0.11f * i),
-      amplitude = h * (0.020f + 0.006f * i),
-      freqA = 1.6f + 0.5f * i,
-      phaseA = i * 1.3f,
-      freqB = 3.1f + 0.4f * i,
-      phaseB = i * 0.7f + 1f,
-      brush =
-        Brush.verticalGradient(
-          listOf(
-            Color(0xFF0E7FB8).copy(alpha = 0.25f + 0.10f * t),
-            Color(0xFF031B3F).copy(alpha = 0.60f + 0.10f * t),
-          ),
-          startY = h * (0.45f + 0.11f * i),
-          endY = h,
-        ),
-    )
+  val lightX = w * 0.74f
+  val lightY = -h * 0.05f
+  glow(Color(0xFFD6FBFF), lightX, -h * 0.03f, w * 1.0f, 0.60f)
+  val rayColor = Color(0xFFE6FDFF)
+  lightBeams(lightX, lightY, h * 0.95f, listOf(-52f, -36f, -22f, -9f, 4f, 16f, 28f), w * 0.14f, rayColor, 0.10f)
+  lightBeams(lightX, lightY, h * 0.80f, listOf(-44f, -28f, -15f, -2f, 10f, 22f), w * 0.05f, rayColor, 0.12f)
+  lightBeams(lightX, lightY, h * 0.60f, listOf(-31f, -6f, 14f), w * 0.02f, rayColor, 0.14f)
+
+  // Floating plankton.
+  val plankton = Random(3)
+  repeat(70) {
+    val x = plankton.nextFloat() * w
+    val y = plankton.nextFloat() * h * 0.85f
+    val a = 0.12f + 0.25f * plankton.nextFloat()
+    val r = (0.8f + 1.8f * plankton.nextFloat()) * unit
+    drawCircle(rayColor.copy(alpha = a), radius = r, center = Offset(x, y))
   }
+
+  // Bubbles: a soft ring with a small highlight.
+  val bubbles = Random(14)
+  repeat(30) {
+    val cx = (0.12f + 0.80f * bubbles.nextFloat()) * w
+    val cy = h * (0.10f + 0.78f * bubbles.nextFloat().pow(1.2f))
+    val squared = bubbles.nextFloat()
+    val r = (5f + 20f * squared * squared) * unit
+    val ring =
+      Brush.radialGradient(
+        0f to Color.White.copy(alpha = 0f),
+        0.62f to Color.White.copy(alpha = 0.06f),
+        0.90f to Color.White.copy(alpha = 0.55f),
+        1f to Color.White.copy(alpha = 0f),
+        center = Offset(cx, cy),
+        radius = r,
+      )
+    drawCircle(ring, radius = r, center = Offset(cx, cy))
+    drawCircle(Color.White.copy(alpha = 0.7f), radius = r * 0.16f, center = Offset(cx - r * 0.35f, cy - r * 0.38f))
+  }
+
+  // Seabed dunes with kelp swaying in front of the far one.
+  ridge(
+    baseY = h * 0.86f,
+    amplitude = h * 0.030f,
+    freqA = 1.0f,
+    phaseA = 2.0f,
+    freqB = 2.4f,
+    phaseB = 0.5f,
+    brush =
+      Brush.verticalGradient(
+        listOf(Color(0xFF0B5E8C).copy(alpha = 0.85f), Color(0xFF04264B).copy(alpha = 0.95f)),
+        startY = h * 0.82f,
+        endY = h,
+      ),
+  )
+  val kelp = Random(21)
+  for (i in 0 until 9) {
+    val baseX = (0.04f + 0.92f * (i + kelp.nextFloat() * 0.6f) / 9f) * w
+    val baseY = h * (0.90f + 0.03f * kelp.nextFloat())
+    val height = h * (0.10f + 0.16f * kelp.nextFloat())
+    val sway = (30f + 50f * kelp.nextFloat()) * unit * (if (i % 2 == 1) 1f else -1f)
+    val color = lerp(Color(0xFF0E6B62), Color(0xFF2BA37A), kelp.nextFloat()).copy(alpha = 0.9f)
+    val p0 = Offset(baseX, baseY)
+    val p1 = Offset(baseX + sway * 0.9f, baseY - height * 0.35f)
+    val p2 = Offset(baseX - sway * 0.7f, baseY - height * 0.70f)
+    val p3 = Offset(baseX + sway * 0.4f, baseY - height)
+    drawTaperedCurve(color, 14f * unit, 4f * unit, 26) { bezierPoint(p0, p1, p2, p3, it) }
+  }
+  ridge(
+    baseY = h * 0.93f,
+    amplitude = h * 0.022f,
+    freqA = 1.4f,
+    phaseA = 0.6f,
+    freqB = 3.1f,
+    phaseB = 1.7f,
+    brush = Brush.verticalGradient(listOf(Color(0xFF031B3A), Color(0xFF010A1E)), startY = h * 0.90f, endY = h),
+  )
 }
 
 private fun DrawScope.drawMidnight() {
@@ -649,27 +732,62 @@ private fun DrawScope.drawBlossom() {
   val h = size.height
   val unit = w / 1080f
   drawRect(
-    Brush.verticalGradient(listOf(Color(0xFFFFE8EF), Color(0xFFFFD9E2), Color(0xFFFFEEDC))),
+    Brush.verticalGradient(
+      0f to Color(0xFFF3B8D1),
+      0.45f to Color(0xFFE087AC),
+      1f to Color(0xFF6E5A96),
+    ),
   )
-  glow(Color(0xFFFF8FB1), w * 0.15f, h * 0.18f, w * 0.85f, 0.65f)
-  glow(Color(0xFFFFB98A), w * 0.90f, h * 0.48f, w * 0.80f, 0.60f)
-  glow(Color(0xFFB79CFF), w * 0.25f, h * 0.86f, w * 0.90f, 0.55f)
+  glow(Color(0xFFFF6FA0), w * 0.12f, h * 0.16f, w * 0.90f, 0.42f)
+  glow(Color(0xFFFF9E5C), w * 0.95f, h * 0.52f, w * 0.85f, 0.34f)
+  glow(Color(0xFF7C5FCF), w * 0.22f, h * 0.88f, w * 0.95f, 0.40f)
 
-  // Out-of-focus light spots.
+  // Out-of-focus light spots (kept subtle so they don't wash out foreground UI/text).
   val bokeh = Random(9)
-  repeat(9) {
-    val color = if (bokeh.nextBoolean()) Color.White else Color(0xFFFFB3C7)
+  repeat(8) {
+    val color = if (bokeh.nextBoolean()) Color(0xFFFFE3EF) else Color(0xFFFF8FB6)
     glow(
       color,
       bokeh.nextFloat() * w,
-      h * (0.10f + 0.85f * bokeh.nextFloat()),
-      (36f + bokeh.nextFloat() * 74f) * unit,
-      0.10f + bokeh.nextFloat() * 0.10f,
+      h * (0.25f + 0.70f * bokeh.nextFloat()),
+      (40f + bokeh.nextFloat() * 80f) * unit,
+      0.07f + bokeh.nextFloat() * 0.06f,
     )
   }
+  // A few soft, blurred blossoms in the far distance for depth.
+  softBlossom(w * -0.02f, h * 0.30f, w * 0.22f, 20f, 0.30f)
+  softBlossom(w * 1.02f, h * 0.70f, w * 0.26f, 200f, 0.26f)
+  softBlossom(w * 0.12f, h * 0.93f, w * 0.20f, 75f, 0.24f)
 
   drawSakuraBranch()
   drawFallingPetals()
+}
+
+/** An unfocused, translucent blossom used only for background depth (no stem or stamens). */
+private fun DrawScope.softBlossom(
+  cx: Float,
+  cy: Float,
+  r: Float,
+  rotation: Float,
+  alpha: Float,
+) {
+  val center = Offset(cx, cy)
+  val brush =
+    Brush.radialGradient(
+      colors =
+        listOf(
+          Color(0xFFFF7FA8).copy(alpha = alpha),
+          Color(0xFFFFB3CB).copy(alpha = alpha * 0.8f),
+          Color(0xFFFFEAF1).copy(alpha = alpha * 0.35f),
+        ),
+      center = center,
+      radius = r * 1.05f,
+    )
+  for (i in 0 until 5) {
+    rotate(rotation + i * 72f, center) {
+      drawPath(petalPath(cx, cy, r), brush)
+    }
+  }
 }
 
 private fun bezierPoint(
@@ -776,79 +894,138 @@ private fun DrawScope.sakuraBud(
 }
 
 /** Sakura branch reaching in from the top-right corner, with blossoms and a few buds. */
+/** One rigid segment of branch: a dark bark stroke plus a thinner highlight along its top edge. */
+private fun DrawScope.limb(
+  p0: Offset,
+  p1: Offset,
+  p2: Offset,
+  p3: Offset,
+  startWidth: Float,
+  endWidth: Float,
+  unit: Float,
+) {
+  drawTaperedCurve(BARK_COLOR, startWidth * unit, endWidth * unit, 30) { bezierPoint(p0, p1, p2, p3, it) }
+  drawTaperedCurve(BARK_HIGHLIGHT, startWidth * 0.32f * unit, endWidth * 0.30f * unit, 30) {
+    bezierPoint(p0, p1, p2, p3, it) + Offset(-3f * unit, -4f * unit)
+  }
+}
+
+private val BARK_COLOR = Color(0xFF5B3445)
+private val BARK_HIGHLIGHT = Color(0xFF8A566A).copy(alpha = 0.55f)
+
+/** Sakura branch reaching in from the top-right corner: two limbs, twigs, blossoms and buds. */
 private fun DrawScope.drawSakuraBranch() {
   val w = size.width
   val h = size.height
   val unit = w / 1080f
-  val bark = Color(0xFF5B3445)
-  val barkLight = Color(0xFF7D4B5F).copy(alpha = 0.55f)
-
-  val p0 = Offset(w * 1.06f, h * 0.030f)
-  val p1 = Offset(w * 0.88f, h * 0.015f)
-  val p2 = Offset(w * 0.66f, h * 0.090f)
-  val p3 = Offset(w * 0.30f, h * 0.112f)
-
-  drawTaperedCurve(bark, 16f * unit, 6f * unit) { bezierPoint(p0, p1, p2, p3, it) }
-  drawTaperedCurve(barkLight, 5f * unit, 2f * unit) { bezierPoint(p0, p1, p2, p3, it) + Offset(-2f * unit, -3f * unit) }
-
-  // Twigs: where they leave the main branch (0..1), then a control point and an end point.
-  val twigs =
-    listOf(
-      Triple(0.12f, Offset(0.97f * w, 0.075f * h), Offset(0.90f * w, 0.115f * h)),
-      Triple(0.28f, Offset(0.90f * w, 0.105f * h), Offset(0.82f * w, 0.175f * h)),
-      Triple(0.52f, Offset(0.71f * w, 0.150f * h), Offset(0.62f * w, 0.205f * h)),
-      Triple(0.76f, Offset(0.56f * w, 0.140f * h), Offset(0.46f * w, 0.190f * h)),
-      Triple(0.92f, Offset(0.36f * w, 0.100f * h), Offset(0.24f * w, 0.135f * h)),
-    )
-  val baseRadius = w * 0.036f
   val flowers = ArrayList<Triple<Offset, Float, Float>>() // centre, radius factor, rotation
   val buds = ArrayList<Pair<Offset, Float>>() // centre, radius factor
 
-  twigs.forEachIndexed { index, (t, control, end) ->
-    val start = bezierPoint(p0, p1, p2, p3, t)
-    drawTaperedCurve(bark, 8f * unit, 3f * unit) { quadPoint(start, control, end, it) }
-    flowers.add(Triple(end, 1.0f + 0.12f * (index % 2), index * 37f))
-    flowers.add(Triple(quadPoint(start, control, end, 0.55f), 0.70f + 0.08f * (index % 3), index * 53f + 20f))
-    buds.add(quadPoint(start, control, end, 0.80f) + Offset(10f * unit, 16f * unit) to 0.55f)
-  }
-  listOf(0.10f to 1.10f, 0.36f to 0.90f, 0.62f to 1.20f, 0.86f to 0.95f).forEachIndexed { index, (t, factor) ->
-    val onBranch = bezierPoint(p0, p1, p2, p3, t)
-    flowers.add(Triple(onBranch + Offset(0f, -6f * unit), factor, index * 71f + 9f))
+  fun addTwigs(
+    main: List<Offset>,
+    specs: List<Triple<Float, Offset, Offset>>,
+    widths: List<Float>,
+  ) {
+    specs.forEachIndexed { index, (t, control, end) ->
+      val start = bezierPoint(main[0], main[1], main[2], main[3], t)
+      val width = widths[index]
+      drawTaperedCurve(BARK_COLOR, width * unit, width * 0.38f * unit, 20) { quadPoint(start, control, end, it) }
+      flowers.add(Triple(end, 1.0f + 0.14f * (index % 3), index * 37f + 11f))
+      flowers.add(Triple(quadPoint(start, control, end, 0.55f), 0.74f + 0.08f * (index % 3), index * 53f + 20f))
+      val q = quadPoint(start, control, end, 0.78f)
+      buds.add(q + Offset(12f * unit, 14f * unit) to 0.55f)
+    }
   }
 
+  // Main limb.
+  val m1 = listOf(Offset(w * 1.10f, h * 0.045f), Offset(w * 0.95f, h * 0.000f), Offset(w * 0.56f, h * 0.170f), Offset(w * 0.10f, h * 0.125f))
+  limb(m1[0], m1[1], m1[2], m1[3], 30f, 8f, unit)
+  addTwigs(
+    m1,
+    listOf(
+      Triple(0.10f, Offset(w * 0.99f, h * 0.100f), Offset(w * 0.93f, h * 0.155f)),
+      Triple(0.24f, Offset(w * 0.90f, h * 0.130f), Offset(w * 0.84f, h * 0.225f)),
+      Triple(0.42f, Offset(w * 0.74f, h * 0.210f), Offset(w * 0.68f, h * 0.285f)),
+      Triple(0.60f, Offset(w * 0.55f, h * 0.220f), Offset(w * 0.47f, h * 0.285f)),
+      Triple(0.78f, Offset(w * 0.32f, h * 0.190f), Offset(w * 0.24f, h * 0.245f)),
+      Triple(0.94f, Offset(w * 0.16f, h * 0.170f), Offset(w * 0.06f, h * 0.190f)),
+    ),
+    listOf(13f, 14f, 14f, 12f, 11f, 9f),
+  )
+  listOf(0.06f to 1.25f, 0.19f to 1.05f, 0.33f to 1.25f, 0.50f to 1.00f, 0.67f to 1.20f, 0.85f to 1.0f)
+    .forEachIndexed { index, (t, factor) ->
+      val onBranch = bezierPoint(m1[0], m1[1], m1[2], m1[3], t)
+      flowers.add(Triple(onBranch + Offset(0f, -8f * unit), factor, index * 71f + 9f))
+    }
+
+  // Secondary, shorter limb branching lower down.
+  val m2 = listOf(Offset(w * 1.08f, h * 0.30f), Offset(w * 0.96f, h * 0.26f), Offset(w * 0.80f, h * 0.34f), Offset(w * 0.60f, h * 0.36f))
+  limb(m2[0], m2[1], m2[2], m2[3], 20f, 6f, unit)
+  addTwigs(
+    m2,
+    listOf(
+      Triple(0.35f, Offset(w * 0.90f, h * 0.33f), Offset(w * 0.86f, h * 0.395f)),
+      Triple(0.72f, Offset(w * 0.72f, h * 0.375f), Offset(w * 0.66f, h * 0.44f)),
+    ),
+    listOf(10f, 9f),
+  )
+  listOf(0.10f to 1.1f, 0.55f to 1.0f, 0.98f to 0.9f).forEachIndexed { index, (t, factor) ->
+    val onBranch = bezierPoint(m2[0], m2[1], m2[2], m2[3], t)
+    flowers.add(Triple(onBranch + Offset(0f, -6f * unit), factor, index * 61f + 5f))
+  }
+
+  val baseRadius = w * 0.050f
   buds.forEach { (center, factor) -> sakuraBud(center.x, center.y, baseRadius * factor) }
   flowers.forEach { (center, factor, rotation) -> sakuraFlower(center.x, center.y, baseRadius * factor, rotation) }
 }
 
-/** Petals drifting down across the whole wallpaper, denser near the top where they fall from. */
+/** One petal drawn with a small gradient (base colour deepening towards a warmer pink) instead of a flat fill. */
+private fun DrawScope.gradientPetal(
+  x: Float,
+  y: Float,
+  r: Float,
+  rotation: Float,
+  color: Color,
+  alpha: Float,
+) {
+  val tip = Offset(x, y + r * 0.5f)
+  val brush =
+    Brush.radialGradient(
+      colors = listOf(lerp(color, Color(0xFFFF7FA8), 0.55f).copy(alpha = alpha), color.copy(alpha = alpha)),
+      center = tip,
+      radius = r * 0.95f,
+    )
+  rotate(rotation, Offset(x, y)) {
+    drawPath(petalPath(x, y + r * 0.5f, r), brush)
+  }
+}
+
+/** Petals drifting down: most stream diagonally away from the branch, the rest scattered loosely. */
 private fun DrawScope.drawFallingPetals() {
   val w = size.width
   val h = size.height
   val unit = w / 1080f
+  val palette = listOf(Color(0xFFFFB3C7), Color(0xFFFFC7D6), Color(0xFFFF9DB8), Color(0xFFFFDCE6), Color(0xFFFFFFFF))
   val random = Random(21)
-  val palette =
-    listOf(Color(0xFFFFB3C7), Color(0xFFFFC7D6), Color(0xFFFF9DB8), Color(0xFFFFDCE6), Color(0xFFFFFFFF))
-  repeat(48) {
+  repeat(72) { i ->
     val depth = random.nextFloat()
     val fall = random.nextFloat()
-    val x = random.nextFloat() * w
-    val y = h * (0.05f + 0.90f * fall * fall)
-    val r = (10f + 26f * depth * depth) * unit
-    val alpha = 0.55f + 0.40f * random.nextFloat()
-    val rotation = random.nextFloat() * 360f
-    val color = palette[random.nextInt(palette.size)].copy(alpha = alpha)
-    rotate(rotation, Offset(x, y)) {
-      drawPath(petalPath(x, y + r * 0.5f, r), color)
-    }
+    val y = h * (0.08f + 0.90f * fall.pow(1.15f))
+    val x =
+      if (i % 5 < 3) {
+        w * (0.86f - 0.70f * (y / h)) + (random.nextFloat() - 0.5f) * w * 0.55f
+      } else {
+        random.nextFloat() * w
+      }
+    val r = (14f + 40f * depth * depth) * unit
+    val alpha = 0.60f + 0.38f * random.nextFloat()
+    gradientPetal(x, y, r, random.nextFloat() * 360f, palette[random.nextInt(palette.size)], alpha)
   }
   // A few big, faint petals close to the camera.
-  repeat(6) {
+  repeat(5) {
     val x = random.nextFloat() * w
-    val y = h * (0.10f + 0.85f * random.nextFloat())
-    val r = (60f + random.nextFloat() * 40f) * unit
-    val rotation = random.nextFloat() * 360f
-    rotate(rotation, Offset(x, y)) {
-      drawPath(petalPath(x, y + r * 0.5f, r), Color(0xFFFFB3C7).copy(alpha = 0.26f))
-    }
+    val y = h * (0.15f + 0.8f * random.nextFloat())
+    val r = (75f + random.nextFloat() * 50f) * unit
+    gradientPetal(x, y, r, random.nextFloat() * 360f, Color(0xFFFFB3C7), 0.22f)
   }
 }
