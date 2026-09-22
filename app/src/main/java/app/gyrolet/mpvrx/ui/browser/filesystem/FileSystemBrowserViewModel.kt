@@ -15,6 +15,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.gyrolet.mpvrx.domain.browser.FileSystemItem
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.domain.browser.PathComponent
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
@@ -248,7 +249,7 @@ class FileSystemBrowserViewModel(
       val path = _currentPath.value
 
       // Skip if we're at storage roots marker
-      if (path == STORAGE_ROOTS_MARKER) {
+      if (path == STORAGE_ROOTS_MARKER || ZipArchiveMedia.isBrowserPath(path)) {
         return
       }
 
@@ -451,7 +452,11 @@ class FileSystemBrowserViewModel(
         } else {
           // Update breadcrumbs for real paths
           // Similar to Fossify's Breadcrumbs.setBreadcrumb()
-          _breadcrumbs.value = MediaFileRepository.getPathComponents(path)
+          _breadcrumbs.value = if (ZipArchiveMedia.isBrowserPath(path)) {
+            ZipArchiveMedia.breadcrumbs(path)
+          } else {
+            MediaFileRepository.getPathComponents(path)
+          }
           Log.d(TAG, "Breadcrumbs updated: ${_breadcrumbs.value.size} components")
 
           // Get hidden files preference
@@ -491,6 +496,7 @@ class FileSystemBrowserViewModel(
                 if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
                   Log.d(TAG, "Metadata chips enabled, enriching $videoCount videos")
                   val videoFiles = items.filterIsInstance<FileSystemItem.VideoFile>()
+                    .filterNot { ZipArchiveMedia.isPlaybackUri(it.video.uri.toString()) }
                   val videos = videoFiles.map { it.video }
                   val enrichedVideos =
                     withContext(Dispatchers.IO) {

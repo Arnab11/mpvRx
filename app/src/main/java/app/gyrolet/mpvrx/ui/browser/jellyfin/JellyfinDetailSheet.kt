@@ -103,6 +103,7 @@ import app.gyrolet.mpvrx.domain.jellyfin.JellyfinServer
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.icons.AppIcon
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -1229,26 +1230,45 @@ fun JellyfinDetailSheet(
 
         val technicalDetails =
           listOf(
-            R.string.media_info_tab_video to item.videoCodec,
-            R.string.ui_resolution to item.videoResolution,
-            R.string.media_info_tab_audio to item.audioCodec,
-            R.string.media_info_stat_channels to item.audioChannels,
-            R.string.ytdlp_container to item.container?.uppercase(Locale.ROOT),
-          ).mapNotNull { (label, value) ->
-            value?.trim()?.takeIf(String::isNotEmpty)?.let { label to it }
+            Triple(R.string.media_info_tab_video, item.videoCodec, Icons.RoundedFilled.Movie),
+            Triple(R.string.ui_resolution, item.videoResolution, Icons.RoundedFilled.AspectRatio),
+            Triple(R.string.media_info_tab_audio, item.audioCodec, Icons.RoundedFilled.Audiotrack),
+            Triple(R.string.media_info_stat_channels, item.audioChannels, Icons.RoundedFilled.VolumeUp),
+            Triple(R.string.ytdlp_container, item.container?.uppercase(Locale.ROOT), Icons.RoundedFilled.InsertDriveFile),
+          ).mapNotNull { (label, value, icon) ->
+            value?.trim()?.takeIf(String::isNotEmpty)?.let { Triple(label, it, icon) }
           }
         if (technicalDetails.isNotEmpty()) {
           Column(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
           ) {
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Text(
-              text = stringResource(R.string.jellyfin_technical_details),
-              modifier = Modifier.semantics { heading() },
-              style = MaterialTheme.typography.titleMedium,
-              fontWeight = FontWeight.SemiBold,
-            )
+            Row(
+              modifier = Modifier.fillMaxWidth(),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+              Box(
+                modifier = Modifier
+                  .size(40.dp)
+                  .clip(CircleShape)
+                  .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center,
+              ) {
+                Icon(
+                  imageVector = Icons.RoundedFilled.Tune,
+                  contentDescription = null,
+                  tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                  modifier = Modifier.size(21.dp),
+                )
+              }
+              Text(
+                text = stringResource(R.string.jellyfin_technical_details),
+                modifier = Modifier.semantics { heading() },
+                style = MaterialTheme.typography.titleLarge,
+                fontWeight = FontWeight.Bold,
+              )
+            }
             BoxWithConstraints(Modifier.fillMaxWidth()) {
               val columns = when {
                 maxWidth >= 600.dp -> 3
@@ -1262,24 +1282,51 @@ fun JellyfinDetailSheet(
                     horizontalArrangement = Arrangement.spacedBy(16.dp),
                     verticalAlignment = Alignment.Top,
                   ) {
-                    detailsRow.forEach { (label, value) ->
-                      Column(
+                    detailsRow.forEach { (label, value, icon) ->
+                      Surface(
                         modifier = Modifier.weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(4.dp),
+                        shape = RoundedCornerShape(20.dp),
+                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                        tonalElevation = 2.dp,
+                        border = BorderStroke(
+                          width = 1.dp,
+                          color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
+                        ),
                       ) {
-                        Text(
-                          text = stringResource(label),
-                          style = MaterialTheme.typography.labelMedium,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        SelectionContainer {
+                        Column(
+                          modifier = Modifier.padding(14.dp),
+                          verticalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                          Box(
+                            modifier = Modifier
+                              .size(34.dp)
+                              .clip(RoundedCornerShape(12.dp))
+                              .background(MaterialTheme.colorScheme.secondaryContainer),
+                            contentAlignment = Alignment.Center,
+                          ) {
+                            Icon(
+                              imageVector = icon,
+                              contentDescription = null,
+                              tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                              modifier = Modifier.size(19.dp),
+                            )
+                          }
                           Text(
-                            text = value,
-                            modifier = Modifier.fillMaxWidth(),
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            text = stringResource(label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                           )
+                          SelectionContainer {
+                            Text(
+                              text = value,
+                              modifier = Modifier.fillMaxWidth(),
+                              style = MaterialTheme.typography.titleMedium,
+                              fontWeight = FontWeight.Bold,
+                              color = MaterialTheme.colorScheme.onSurface,
+                              maxLines = 2,
+                              overflow = TextOverflow.Ellipsis,
+                            )
+                          }
                         }
                       }
                     }

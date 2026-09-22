@@ -73,13 +73,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.database.repository.SecureFolderRepository
 import app.gyrolet.mpvrx.domain.media.model.Video
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
 import app.gyrolet.mpvrx.preferences.MediaLayoutMode
 import app.gyrolet.mpvrx.preferences.SortOrder
-import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.SecureFolderPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
@@ -148,7 +148,6 @@ data class VideoListScreen(
     val browserPreferences = koinInject<BrowserPreferences>()
     val appearancePreferences = koinInject<app.gyrolet.mpvrx.preferences.AppearancePreferences>()
     val showQuickPlayFab by appearancePreferences.showQuickPlayFab.collectAsState()
-    val playerPreferences = koinInject<PlayerPreferences>()
     val navigationBarHeight = app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight.current
 
     // ViewModel
@@ -162,8 +161,8 @@ data class VideoListScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val recentlyPlayedFilePath by viewModel.recentlyPlayedFilePath.collectAsState()
     val lastPlayedInFolderPath by viewModel.lastPlayedInFolderPath.collectAsState()
-    val playlistMode by playerPreferences.playlistMode.collectAsState()
     val videosWereDeletedOrMoved by viewModel.videosWereDeletedOrMoved.collectAsState()
+    val archiveFolder = remember(bucketId) { ZipArchiveMedia.isBrowserPath(bucketId) }
 
     // Sorting
     val videoSortType by browserPreferences.videoSortType.collectAsState()
@@ -459,7 +458,9 @@ data class VideoListScreen(
                       File(it.filePath).parent == folderPath
                     }
 
-                  if (lastPlayedInFolder != null) {
+                  if (archiveFolder) {
+                    MediaUtils.playFiles(sortedVideos, context, launchSource = "zip_folder")
+                  } else if (lastPlayedInFolder != null) {
                     MediaUtils.playFile(lastPlayedInFolder.filePath, context, "recently_played_button")
                   } else {
                     MediaUtils.playFile(sortedVideosWithInfo.first().video, context, "first_video_button")
@@ -493,16 +494,18 @@ data class VideoListScreen(
           onRefresh = { viewModel.refresh() },
           selectionManager = selectionManager,
           onVideoClick = { video ->
-            if (selectionManager.isInSelectionMode) {
+            if (selectionManager.isInSelectionMode && !archiveFolder) {
               selectionManager.toggleFromUser(video)
-            } else {
-              // Always use MediaUtils.playFile which lets PlayerActivity auto-generate playlist
-              // This avoids TransactionTooLargeException from passing large playlists
-              // PlayerActivity will auto-generate playlist from folder if playlistMode is enabled
-              MediaUtils.playFile(video, context, "video_list")
+            } else if (!selectionManager.isInSelectionMode) {
+              if (archiveFolder) {
+                val startIndex = sortedVideos.indexOfFirst { it.id == video.id }.coerceAtLeast(0)
+                MediaUtils.playFiles(sortedVideos, context, startIndex, "zip_folder")
+              } else {
+                MediaUtils.playFile(video, context, "video_list")
+              }
             }
           },
-          onVideoLongClick = { video -> selectionManager.handleLongClick(video) },
+          onVideoLongClick = { video -> if (!archiveFolder) selectionManager.handleLongClick(video) },
           isFabVisible = isFabVisible,
           modifier = Modifier.padding(padding),
           showFloatingBottomBar = showFloatingBottomBar,
@@ -812,6 +815,7 @@ internal fun VideoListContent(
   onFabExpandedChange: (Boolean) -> Unit = {},
   isDualPane: Boolean = false,
 ) {
+  val archiveFolder = remember(folderId) { ZipArchiveMedia.isBrowserPath(folderId) }
   val swipeScope = rememberCoroutineScope()
   val swipeActions = rememberVideoSwipeActions(audioOnly = isAudio) { swipeScope.launch { onRefresh() } }
   val thumbnailRepository = koinInject<ThumbnailRepository>()
@@ -1166,9 +1170,9 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       onClick = { onVideoClick(videoWithInfo.video) },
-                      onLongClick = { onVideoLongClick(videoWithInfo.video) },
+                      onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =
-                        if (tapThumbnailToSelect) {
+                        if (tapThumbnailToSelect && !archiveFolder) {
                           { selectionManager.toggleFromUser(videoWithInfo.video) }
                         } else {
                           { onVideoClick(videoWithInfo.video) }
@@ -1179,7 +1183,7 @@ internal fun VideoListContent(
                       thumbnailHeightPx = thumbHeightPx,
                       showSubtitleIndicator = showSubtitleIndicator,
                       allowThumbnailGeneration = false,
-                      allowThumbnailLoading = allowThumbnailLoading,
+                      allowThumbnailLoading = allowThumbnailLoading && !archiveFolder,
                       uiConfig = videoCardUiConfig,
                   )
                 }
@@ -1233,18 +1237,18 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       onClick = { onVideoClick(videoWithInfo.video) },
-                      onLongClick = { onVideoLongClick(videoWithInfo.video) },
+                      onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =
-                        if (tapThumbnailToSelect) {
+                        if (tapThumbnailToSelect && !archiveFolder) {
                           { selectionManager.toggleFromUser(videoWithInfo.video) }
                         } else {
                           { onVideoClick(videoWithInfo.video) }
                         },
                       isGridMode = false,
-                      onSwipeAction = swipeActions.video.takeUnless { selectionManager.isInSelectionMode },
+                      onSwipeAction = swipeActions.video.takeUnless { archiveFolder || selectionManager.isInSelectionMode },
                       showSubtitleIndicator = showSubtitleIndicator,
                       allowThumbnailGeneration = false,
-                      allowThumbnailLoading = allowThumbnailLoading,
+                      allowThumbnailLoading = allowThumbnailLoading && !archiveFolder,
                       uiConfig = videoCardUiConfig,
                       thumbnailWidthPx = if (isAudio) with(density) { musicCoverArtSize.dp.roundToPx() } else null,
                       thumbnailHeightPx = if (isAudio) with(density) { musicCoverArtSize.dp.roundToPx() } else null,

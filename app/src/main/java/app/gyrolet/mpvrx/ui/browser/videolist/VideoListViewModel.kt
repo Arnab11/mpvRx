@@ -17,6 +17,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.gyrolet.mpvrx.database.entities.PlaybackStateEntity
 import app.gyrolet.mpvrx.domain.media.model.Video
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.repository.MediaFileRepository
 import app.gyrolet.mpvrx.ui.browser.base.BaseBrowserViewModel
@@ -177,7 +178,7 @@ class VideoListViewModel(
     FolderViewScanner.clearCache()
 
     // Trigger media scan before loading to ensure MediaStore is up-to-date
-    triggerMediaScan()
+    if (!ZipArchiveMedia.isBrowserPath(bucketId)) triggerMediaScan()
 
     loadVideos(forceFileSystemCheck = true)
   }
@@ -198,7 +199,8 @@ class VideoListViewModel(
         }
 
         // Enrich with metadata only if chips are enabled
-        if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
+        val archiveFolder = ZipArchiveMedia.isBrowserPath(bucketId)
+        if (!archiveFolder && MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
           Log.d(tag, "Metadata chips enabled, enriching ${videoList.size} videos")
           videoList =
             MetadataRetrieval.enrichVideosIfNeeded(
@@ -223,7 +225,7 @@ class VideoListViewModel(
         // Update previous count
         previousVideoCount = videoList.size
 
-        if (videoList.isEmpty()) {
+        if (videoList.isEmpty() && !archiveFolder) {
           Log.d(tag, "No videos found for bucket $bucketId - attempting media rescan")
           triggerMediaScan()
           delay(1000)
@@ -365,6 +367,7 @@ class VideoListViewModel(
   }
 
   private fun triggerMediaScan() {
+    if (ZipArchiveMedia.isBrowserPath(bucketId)) return
     try {
       // Trigger a targeted media scan for the specific folder
       val folder = File(bucketId)

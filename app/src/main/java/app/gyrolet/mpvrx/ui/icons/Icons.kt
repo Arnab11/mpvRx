@@ -114,6 +114,7 @@ object Icons {
     val Folder by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Folder) }
     val FolderOff by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Folder_off) }
     val FolderOpen by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Folder_open) }
+    val FolderZip by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Folder_zip) }
     val FormatAlignCenter by lazy(
       LazyThreadSafetyMode.NONE,
     ) { AppIcon(MaterialSymbols.RoundedFilled.Format_align_center) }
@@ -362,6 +363,7 @@ object Icons {
     val Folder get() = Shared.Folder
     val FolderOff get() = Shared.FolderOff
     val FolderOpen get() = Shared.FolderOpen
+    val FolderZip get() = Shared.FolderZip
     val FormatAlignCenter get() = Shared.FormatAlignCenter
     val FormatAlignJustify get() = Shared.FormatAlignJustify
     val FormatAlignLeft get() = Shared.FormatAlignLeft

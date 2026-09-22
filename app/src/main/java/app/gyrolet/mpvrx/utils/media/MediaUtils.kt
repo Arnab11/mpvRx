@@ -146,7 +146,7 @@ object MediaUtils {
       videos.map { video ->
         PlaybackItem.fromUri(
           uri = video.uri.toString(),
-          stableId = video.path.takeIf(String::isNotBlank)?.let(PlaybackIdentity::forLocalPath),
+          stableId = playbackIdentity(video),
           title = video.displayName,
           mimeType = if (video.isAudio) "audio/*" else video.mimeType,
           durationSeconds = (video.duration / 1000L).toInt().takeIf { it > 0 },
@@ -175,7 +175,7 @@ object MediaUtils {
         putExtra("launch_source", launchSource)
         putExtra("is_audio", selected.isAudio)
         putExtra("title", selected.displayName)
-        putExtra("local_media_path", selected.path)
+        localPlaybackPath(selected)?.let { putExtra("local_media_path", it) }
         putExtra(PlayerActivity.EXTRA_VIDEO_WIDTH, selected.width)
         putExtra(PlayerActivity.EXTRA_VIDEO_HEIGHT, selected.height)
       }
@@ -220,7 +220,7 @@ object MediaUtils {
     val videoSource = source as? Video
     val localPath =
       when {
-        videoSource != null -> videoSource.path.takeIf(String::isNotBlank)
+        videoSource != null -> localPlaybackPath(videoSource)
         source is String && source.startsWith("file://", ignoreCase = true) -> source.removePrefix("file://")
         source is String && source.startsWith("/") -> source
         source is Uri && source.scheme.equals("file", ignoreCase = true) -> source.path
@@ -363,6 +363,18 @@ object MediaUtils {
       "source=${launchSource ?: (if (videoSource != null) "library" else "direct")} kind=${if (videoSource != null) "video" else (playbackUri.scheme ?: "path")}",
     )
     context.startActivity(intent)
+  }
+
+  private fun playbackIdentity(video: Video): String =
+    if (video.uri.scheme.equals("archive", ignoreCase = true)) {
+      PlaybackIdentity.forUri(video.uri.toString())
+    } else {
+      video.path.takeIf(String::isNotBlank)?.let(PlaybackIdentity::forLocalPath)
+        ?: PlaybackIdentity.forUri(video.uri.toString())
+    }
+
+  private fun localPlaybackPath(video: Video): String? = video.path.takeIf { path ->
+    path.isNotBlank() && Uri.parse(path).scheme?.lowercase() in setOf(null, "file")
   }
 
   private fun String?.isHistoryResumeLaunch(): Boolean =

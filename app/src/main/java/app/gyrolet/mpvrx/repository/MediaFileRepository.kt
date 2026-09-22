@@ -15,6 +15,7 @@ import android.os.Environment
 import android.provider.MediaStore
 import android.util.Log
 import app.gyrolet.mpvrx.database.MpvRxDatabase
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.domain.browser.FileSystemItem
 import app.gyrolet.mpvrx.domain.browser.PathComponent
 import app.gyrolet.mpvrx.domain.media.model.Video
@@ -130,7 +131,8 @@ object MediaFileRepository : KoinComponent {
             currentScanOptions(includeAudioOverride),
             database.directoryScanDao(),
           )
-        (mediaStoreFolders + indexedFolders)
+        val archiveFolders = ZipArchiveMedia.mediaStoreFolders(context, currentScanOptions(includeAudioOverride).includeAudio)
+        (mediaStoreFolders + indexedFolders + archiveFolders)
           .distinctBy { it.path.lowercase(Locale.ROOT) }
           .sortedBy { it.name.lowercase(Locale.getDefault()) }
       } catch (e: Exception) {
@@ -147,12 +149,16 @@ object MediaFileRepository : KoinComponent {
     includeAudioOverride: Boolean? = null,
   ): List<VideoFolder> =
     withContext(Dispatchers.IO) {
-      FolderViewScanner
+      val options = currentScanOptions(includeAudioOverride)
+      val folders = FolderViewScanner
         .getAllVideoFolders(
           context = context,
-          options = currentScanOptions(includeAudioOverride),
+          options = options,
           forceFileSystemCheck = forceFileSystemCheck,
-        ).also { onProgress?.invoke(it.size) }
+        ) + ZipArchiveMedia.mediaStoreFolders(context, options.includeAudio)
+      folders.distinctBy { it.path.lowercase(Locale.ROOT) }
+        .sortedBy { it.name.lowercase(Locale.getDefault()) }
+        .also { onProgress?.invoke(it.size) }
     }
 
   suspend fun getIndexedNoMediaFolders(): List<VideoFolder> =
@@ -358,6 +364,13 @@ object MediaFileRepository : KoinComponent {
   ): List<Video> =
     withContext(Dispatchers.IO) {
       try {
+        if (ZipArchiveMedia.isBrowserPath(bucketId)) {
+          return@withContext ZipArchiveMedia.allMedia(
+            context,
+            bucketId,
+            currentScanOptions(includeAudioOverride).includeAudio,
+          ).getOrThrow()
+        }
         VideoScanUtils.getVideosInFolder(
           context,
           bucketId,
@@ -611,6 +624,10 @@ object MediaFileRepository : KoinComponent {
   ): Result<List<FileSystemItem>> =
     withContext(Dispatchers.IO) {
       try {
+        val scanOptions = currentScanOptions()
+        if (ZipArchiveMedia.isBrowserPath(path)) {
+          return@withContext ZipArchiveMedia.scan(context, path, scanOptions.includeAudio)
+        }
         val directory = File(path)
 
         // Validation checks
@@ -629,7 +646,6 @@ object MediaFileRepository : KoinComponent {
         val items = mutableListOf<FileSystemItem>()
 
         // Get folders using TreeViewScanner (instant from cache)
-        val scanOptions = currentScanOptions()
         val (showNewLabels, thresholdDays, playedMediaTitles, newLabelOverrides) = getTreeViewNewBadgeParams()
         val folders =
           TreeViewScanner.getFoldersInDirectory(
@@ -657,6 +673,8 @@ object MediaFileRepository : KoinComponent {
             ),
           )
         }
+
+        items.addAll(ZipArchiveMedia.archiveFoldersIn(directory, scanOptions.includeAudio))
 
         // Get videos in current directory
         val videos = VideoScanUtils.getVideosInFolder(context, path, scanOptions, forceFileSystemCheck)

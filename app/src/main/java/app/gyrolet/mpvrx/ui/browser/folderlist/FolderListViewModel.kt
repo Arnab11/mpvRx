@@ -16,6 +16,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.media.model.VideoFolder
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.FoldersPreferences
@@ -498,6 +499,7 @@ class FolderListViewModel(
           var needsEnrichment = false
           val foldersForEnrichment =
             visibleFolders.map { folder ->
+              if (ZipArchiveMedia.isBrowserPath(folder.path)) return@map folder
               val cached = previousFolders[folderKey(folder)]
               val cachedIsComplete = cached != null && (cached.videoCount == 0 || cached.totalDuration > 0)
               if (cached != null &&
@@ -513,15 +515,17 @@ class FolderListViewModel(
             }
           _allVideoFolders.value = foldersForEnrichment
 
-          val needsDurationEnrichment = needsEnrichment && MetadataRetrieval.isFolderMetadataNeeded(browserPreferences)
+          val enrichableFolders = foldersForEnrichment.filterNot { ZipArchiveMedia.isBrowserPath(it.path) }
+          val needsDurationEnrichment = needsEnrichment && enrichableFolders.isNotEmpty() &&
+            MetadataRetrieval.isFolderMetadataNeeded(browserPreferences)
           if (!needsDurationEnrichment) return@launch
 
           _isEnriching.value = true
           _scanStatus.value = "Processing metadata..."
-          val enrichedFolders =
+          val enrichedPhysicalFolders =
             MetadataRetrieval.enrichFoldersIfNeeded(
               context = getApplication(),
-              folders = foldersForEnrichment,
+              folders = enrichableFolders,
               browserPreferences = browserPreferences,
               metadataCache = metadataCache,
               onProgress = { processed, total ->
@@ -530,7 +534,8 @@ class FolderListViewModel(
             )
 
           ensureActive()
-          _allVideoFolders.value = enrichedFolders
+          val enrichedByKey = enrichedPhysicalFolders.associateBy(::folderKey)
+          _allVideoFolders.value = foldersForEnrichment.map { enrichedByKey[folderKey(it)] ?: it }
         } catch (e: kotlinx.coroutines.CancellationException) {
           Log.d(TAG, "Scan cancelled (new scan started)")
           throw e

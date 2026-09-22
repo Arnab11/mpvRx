@@ -92,6 +92,7 @@ import app.gyrolet.mpvrx.ui.browser.components.rememberSwipePlaybackInfo
 import app.gyrolet.mpvrx.domain.browser.FileSystemItem
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.media.model.VideoFolder
+import app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.FolderViewMode
@@ -869,9 +870,9 @@ object FolderListScreen : Screen {
                   selectionManager = selectionManager,
                   onRefresh = { viewModel.refresh() },
                   onFolderClick = { folder ->
-                    if (selectionManager.isInSelectionMode) {
+                    if (selectionManager.isInSelectionMode && !ZipArchiveMedia.isBrowserPath(folder.path)) {
                       selectionManager.toggleFromUser(folder)
-                    } else {
+                    } else if (!selectionManager.isInSelectionMode) {
                       if (isDualPaneActive) {
                         selectedFolderBucketId = folder.bucketId
                         selectedFolderName = folder.name
@@ -884,7 +885,7 @@ object FolderListScreen : Screen {
                     }
                   },
                   onFolderLongClick = { folder ->
-                    selectionManager.handleLongClick(folder)
+                    if (!ZipArchiveMedia.isBrowserPath(folder.path)) selectionManager.handleLongClick(folder)
                   },
                   onTogglePin = { folder ->
                     coroutineScope.launch {
@@ -1345,6 +1346,7 @@ private fun GridContent(
     ) {
       items(count = folders.size, key = { index -> folders[index].bucketId }) { index ->
         val folder = folders[index]
+        val archiveFolder = ZipArchiveMedia.isBrowserPath(folder.path)
         val isRecentlyPlayed = recentlyPlayedParent == folder.path
         val newCount = newCountByBucketId[folder.bucketId] ?: 0
 
@@ -1355,14 +1357,15 @@ private fun GridContent(
           isSelected = selectionManager.isSelected(folder),
           isRecentlyPlayed = isRecentlyPlayed,
           onClick = { onFolderClick(folder) },
-          onLongClick = { onFolderLongClick(folder) },
+          onLongClick = if (archiveFolder) null else ({ onFolderLongClick(folder) }),
           onThumbClick =
-            if (tapThumbnailToSelect) {
+            if (tapThumbnailToSelect && !archiveFolder) {
               { selectionManager.toggleFromUser(folder) }
             } else {
               { onFolderClick(folder) }
             },
           newVideoCount = newCount,
+          customIcon = if (archiveFolder) Icons.RoundedFilled.FolderZip else null,
           isGridMode = true,
           isPinned = folder.path in pinnedFolderPaths,
           onPinClick =
@@ -1437,6 +1440,7 @@ private fun ListContent(
         ),
     ) {
       items(folders, key = { it.bucketId }) { folder ->
+        val archiveFolder = ZipArchiveMedia.isBrowserPath(folder.path)
         val isRecentlyPlayed = recentlyPlayedParent == folder.path
         val newCount = newCountByBucketId[folder.bucketId] ?: 0
 
@@ -1447,16 +1451,17 @@ private fun ListContent(
           isSelected = selectionManager.isSelected(folder),
           isRecentlyPlayed = isRecentlyPlayed,
           onClick = { onFolderClick(folder) },
-          onLongClick = { onFolderLongClick(folder) },
+          onLongClick = if (archiveFolder) null else ({ onFolderLongClick(folder) }),
           onThumbClick =
-            if (tapThumbnailToSelect) {
+            if (tapThumbnailToSelect && !archiveFolder) {
               { selectionManager.toggleFromUser(folder) }
             } else {
               { onFolderClick(folder) }
             },
           newVideoCount = newCount,
+          customIcon = if (archiveFolder) Icons.RoundedFilled.FolderZip else null,
           isGridMode = false,
-          onSwipeAction = onFolderSwipe,
+          onSwipeAction = onFolderSwipe.takeUnless { archiveFolder },
           isPinned = folder.path in pinnedFolderPaths,
           onPinClick =
             if (!selectionManager.isInSelectionMode) {
@@ -1623,15 +1628,17 @@ private fun SearchResultsContent(
             span = { GridItemSpan(spansInfo.folderSpan) },
           ) { index ->
             val folder = folders[index]
+            val archiveFolder = ZipArchiveMedia.isBrowserPath(folder.path)
             FolderCard(
               folder = folder,
               isSelected = false,
               isRecentlyPlayed = false,
               onClick = { onFolderClick(folder) },
-              onLongClick = {},
+              onLongClick = null,
               onThumbClick = { onFolderClick(folder) },
               newVideoCount = 0,
               isGridMode = true,
+              customIcon = if (archiveFolder) Icons.RoundedFilled.FolderZip else null,
             )
           }
 
@@ -1642,16 +1649,19 @@ private fun SearchResultsContent(
             span = { GridItemSpan(spansInfo.videoSpan) },
           ) { index ->
             val video = videos[index]
+            val archiveEntry = ZipArchiveMedia.isPlaybackUri(video.uri.toString())
             VideoCard(
               video = video,
               isWatched = swipePlaybackInfo[video.path]?.isWatched == true,
               isOldAndUnplayed = swipePlaybackInfo[video.path]?.isOldAndUnplayed == true,
               isSelected = false,
               onClick = { onVideoClick(video) },
-              onLongClick = {},
+              onLongClick = null,
               onThumbClick = { onVideoClick(video) },
               isGridMode = true,
               showSubtitleIndicator = showSubtitleIndicator,
+              allowThumbnailGeneration = !archiveEntry,
+              allowThumbnailLoading = !archiveEntry,
               uiConfig = videoCardUiConfig,
             )
           }
@@ -1674,16 +1684,18 @@ private fun SearchResultsContent(
           contentType = { "folder_item" },
         ) { index ->
           val folder = folders[index]
+          val archiveFolder = ZipArchiveMedia.isBrowserPath(folder.path)
           FolderCard(
             folder = folder,
             isSelected = false,
             isRecentlyPlayed = false,
             onClick = { onFolderClick(folder) },
-            onLongClick = {},
+            onLongClick = null,
             onThumbClick = { onFolderClick(folder) },
             newVideoCount = 0,
             isGridMode = false,
-                onSwipeAction = swipeActions.folder,
+            customIcon = if (archiveFolder) Icons.RoundedFilled.FolderZip else null,
+            onSwipeAction = swipeActions.folder.takeUnless { archiveFolder },
           )
         }
 
@@ -1693,17 +1705,20 @@ private fun SearchResultsContent(
           contentType = { "video_item" },
         ) { index ->
           val video = videos[index]
+          val archiveEntry = ZipArchiveMedia.isPlaybackUri(video.uri.toString())
           VideoCard(
             video = video,
             isSelected = false,
             onClick = { onVideoClick(video) },
-            onLongClick = {},
+            onLongClick = null,
             onThumbClick = { onVideoClick(video) },
             isGridMode = false,
-                onSwipeAction = swipeActions.video,
+              onSwipeAction = swipeActions.video.takeUnless { archiveEntry },
             isWatched = swipePlaybackInfo[video.path]?.isWatched == true,
             isOldAndUnplayed = swipePlaybackInfo[video.path]?.isOldAndUnplayed == true,
             showSubtitleIndicator = showSubtitleIndicator,
+            allowThumbnailGeneration = !archiveEntry,
+            allowThumbnailLoading = !archiveEntry,
             uiConfig = videoCardUiConfig,
           )
         }
