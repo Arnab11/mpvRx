@@ -130,154 +130,168 @@ object AudiobookLibraryScreen : Screen {
   @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
-    val model: AudiobookLibraryViewModel = viewModel()
-    val books by model.library.collectAsStateWithLifecycle()
-    val importing by model.progress.collectAsStateWithLifecycle()
-    val error by model.error.collectAsStateWithLifecycle()
-    val backStack = LocalBackStack.current
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
-    val haptics = rememberAppHaptics()
+    AudiobookLibraryContent(isMusicTabMode = false)
+  }
+}
 
-    val browserPreferences = koinInject<BrowserPreferences>()
-    val mediaServerPreferences = koinInject<MediaServerPreferences>()
-    val currentSource by mediaServerPreferences.audiobookSourceProvider.collectAsState()
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AudiobookLibraryContent(
+  isMusicTabMode: Boolean = false,
+) {
+  val model: AudiobookLibraryViewModel = viewModel()
+  val books by model.library.collectAsStateWithLifecycle()
+  val importing by model.progress.collectAsStateWithLifecycle()
+  val error by model.error.collectAsStateWithLifecycle()
+  val backStack = LocalBackStack.current
+  val context = LocalContext.current
+  val scope = rememberCoroutineScope()
+  val haptics = rememberAppHaptics()
 
-    val absModel: AudiobookshelfViewModel = viewModel(factory = AudiobookshelfViewModel.factory(context.applicationContext as Application))
-    val absState by absModel.uiState.collectAsStateWithLifecycle()
+  val browserPreferences = koinInject<BrowserPreferences>()
+  val mediaServerPreferences = koinInject<MediaServerPreferences>()
+  val currentSource by mediaServerPreferences.audiobookSourceProvider.collectAsState()
 
-    val sortType by browserPreferences.audiobookSortType.collectAsState()
-    val sortOrder by browserPreferences.audiobookSortOrder.collectAsState()
-    val layoutMode by browserPreferences.audiobookLayoutMode.collectAsState()
+  val absModel: AudiobookshelfViewModel = viewModel(factory = AudiobookshelfViewModel.factory(context.applicationContext as Application))
+  val absState by absModel.uiState.collectAsStateWithLifecycle()
 
-    var isSortMenuExpanded by remember { mutableStateOf(false) }
-    var query by rememberSaveable { mutableStateOf("") }
-    var filter by rememberSaveable { mutableStateOf(0) }
-    var search by rememberSaveable { mutableStateOf(false) }
-    var importMenu by remember { mutableStateOf(false) }
-    var detailsId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var absDetailsBook by remember { mutableStateOf<AudiobookshelfBook?>(null) }
-    var absSearchOnlineBook by remember { mutableStateOf<AudiobookshelfBook?>(null) }
-    var removeId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var editing by remember { mutableStateOf<AudiobookEntity?>(null) }
-    var opening by remember { mutableStateOf(false) }
-    var playbackError by remember { mutableStateOf<String?>(null) }
-    var isLibDropdownOpen by remember { mutableStateOf(false) }
+  val sortType by browserPreferences.audiobookSortType.collectAsState()
+  val sortOrder by browserPreferences.audiobookSortOrder.collectAsState()
+  val layoutMode by browserPreferences.audiobookLayoutMode.collectAsState()
 
-    val files = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { model.importFiles(it) }
-    val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-      if (uri != null) model.importFiles(emptyList(), uri)
+  var isSortMenuExpanded by remember { mutableStateOf(false) }
+  var query by rememberSaveable { mutableStateOf("") }
+  var filter by rememberSaveable { mutableStateOf(0) }
+  var search by rememberSaveable { mutableStateOf(false) }
+  var importMenu by remember { mutableStateOf(false) }
+  var detailsId by rememberSaveable { mutableStateOf<Long?>(null) }
+  var absDetailsBook by remember { mutableStateOf<AudiobookshelfBook?>(null) }
+  var absSearchOnlineBook by remember { mutableStateOf<AudiobookshelfBook?>(null) }
+  var removeId by rememberSaveable { mutableStateOf<Long?>(null) }
+  var editing by remember { mutableStateOf<AudiobookEntity?>(null) }
+  var opening by remember { mutableStateOf(false) }
+  var playbackError by remember { mutableStateOf<String?>(null) }
+  var isLibDropdownOpen by remember { mutableStateOf(false) }
+
+  val files = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { model.importFiles(it) }
+  val folder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+    if (uri != null) model.importFiles(emptyList(), uri)
+  }
+
+  val visibleLocalBooks = remember(books, query, filter, sortType, sortOrder) {
+    val filtered = books.orEmpty().filter { !it.book.sourceKey.startsWith("abs:") }.filter { book ->
+      val matches = when (filter) {
+        1 -> book.book.progressMs > 0 && !book.book.finished
+        2 -> book.book.finished
+        3 -> book.book.progressMs == 0L && !book.book.finished
+        else -> true
+      }
+      matches && listOf(book.book.title, book.book.author, book.book.narrator, book.book.series)
+        .any { it.contains(query, ignoreCase = true) }
     }
-
-    val visibleLocalBooks = remember(books, query, filter, sortType, sortOrder) {
-      val filtered = books.orEmpty().filter { !it.book.sourceKey.startsWith("abs:") }.filter { book ->
-        val matches = when (filter) {
-          1 -> book.book.progressMs > 0 && !book.book.finished
-          2 -> book.book.finished
-          3 -> book.book.progressMs == 0L && !book.book.finished
-          else -> true
-        }
-        matches && listOf(book.book.title, book.book.author, book.book.narrator, book.book.series)
-          .any { it.contains(query, ignoreCase = true) }
-      }
-      val comparator = when (sortType) {
-        AudiobookSortType.Title -> compareBy<Audiobook, String>(String.CASE_INSENSITIVE_ORDER) { it.book.title }
-        AudiobookSortType.Author -> compareBy<Audiobook, String>(String.CASE_INSENSITIVE_ORDER) { it.book.author }
-        AudiobookSortType.Duration -> compareBy { it.durationMs }
-        AudiobookSortType.Progress -> compareBy { it.progress }
-        AudiobookSortType.LastPlayed -> compareBy { it.book.lastPlayedAt }
-        AudiobookSortType.DateAdded -> compareBy { it.book.addedAt }
-      }
-      if (sortOrder == SortOrder.Descending) {
-        filtered.sortedWith(comparator.reversed())
-      } else {
-        filtered.sortedWith(comparator)
-      }
+    val comparator = when (sortType) {
+      AudiobookSortType.Title -> compareBy<Audiobook, String>(String.CASE_INSENSITIVE_ORDER) { it.book.title }
+      AudiobookSortType.Author -> compareBy<Audiobook, String>(String.CASE_INSENSITIVE_ORDER) { it.book.author }
+      AudiobookSortType.Duration -> compareBy { it.durationMs }
+      AudiobookSortType.Progress -> compareBy { it.progress }
+      AudiobookSortType.LastPlayed -> compareBy { it.book.lastPlayedAt }
+      AudiobookSortType.DateAdded -> compareBy { it.book.addedAt }
     }
-
-    val visibleAbsBooks = remember(absState.books, query, filter, sortType, sortOrder) {
-      val filtered = absState.books.filter { book ->
-        val matches = when (filter) {
-          1 -> book.progressMs > 0 && !book.isFinished
-          2 -> book.isFinished
-          3 -> book.progressMs == 0L && !book.isFinished
-          else -> true
-        }
-        matches && listOf(book.title, book.author, book.narrator, book.series, book.description)
-          .any { it.contains(query, ignoreCase = true) }
-      }
-      val comparator = when (sortType) {
-        AudiobookSortType.Title -> compareBy<AudiobookshelfBook, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
-        AudiobookSortType.Author -> compareBy<AudiobookshelfBook, String>(String.CASE_INSENSITIVE_ORDER) { it.author }
-        AudiobookSortType.Duration -> compareBy { it.durationMs }
-        AudiobookSortType.Progress -> compareBy { it.progressPercent }
-        AudiobookSortType.LastPlayed -> compareBy { it.updatedAt }
-        AudiobookSortType.DateAdded -> compareBy { it.addedAt }
-      }
-      if (sortOrder == SortOrder.Descending) {
-        filtered.sortedWith(comparator.reversed())
-      } else {
-        filtered.sortedWith(comparator)
-      }
+    if (sortOrder == SortOrder.Descending) {
+      filtered.sortedWith(comparator.reversed())
+    } else {
+      filtered.sortedWith(comparator)
     }
+  }
 
-    val isAbsSource = currentSource == AudiobookSourceProvider.AUDIOBOOKSHELF
-    val totalCount = if (isAbsSource) visibleAbsBooks.size else visibleLocalBooks.size
-
-    fun playLocal(book: Audiobook, restart: Boolean = false) {
-      if (opening) return
-      opening = true
-      scope.launch {
-        try {
-          AudiobookPlayback.launch(context, book.book.id, fromBeginning = restart)
-          detailsId = null
-        } catch (cancelled: CancellationException) {
-          throw cancelled
-        } catch (failure: Exception) {
-          playbackError = context.getString(R.string.audiobook_play_failed)
-        } finally {
-          opening = false
-        }
+  val visibleAbsBooks = remember(absState.books, query, filter, sortType, sortOrder) {
+    val filtered = absState.books.filter { book ->
+      val matches = when (filter) {
+        1 -> book.progressMs > 0 && !book.isFinished
+        2 -> book.isFinished
+        3 -> book.progressMs == 0L && !book.isFinished
+        else -> true
       }
+      matches && listOf(book.title, book.author, book.narrator, book.series, book.description)
+        .any { it.contains(query, ignoreCase = true) }
     }
+    val comparator = when (sortType) {
+      AudiobookSortType.Title -> compareBy<AudiobookshelfBook, String>(String.CASE_INSENSITIVE_ORDER) { it.title }
+      AudiobookSortType.Author -> compareBy<AudiobookshelfBook, String>(String.CASE_INSENSITIVE_ORDER) { it.author }
+      AudiobookSortType.Duration -> compareBy { it.durationMs }
+      AudiobookSortType.Progress -> compareBy { it.progressPercent }
+      AudiobookSortType.LastPlayed -> compareBy { it.updatedAt }
+      AudiobookSortType.DateAdded -> compareBy { it.addedAt }
+    }
+    if (sortOrder == SortOrder.Descending) {
+      filtered.sortedWith(comparator.reversed())
+    } else {
+      filtered.sortedWith(comparator)
+    }
+  }
 
-    fun playAbs(book: AudiobookshelfBook, restart: Boolean = false) {
-      if (opening) return
-      opening = true
-      scope.launch {
-        try {
-          absModel.playBook(context, book, startTrackIndex = 0, startPositionMs = if (restart) 0L else book.progressMs, restart = restart)
-          absDetailsBook = null
-        } catch (cancelled: CancellationException) {
-          throw cancelled
-        } catch (failure: Exception) {
-          playbackError = context.getString(R.string.audiobook_play_failed)
-        } finally {
-          opening = false
-        }
+  val isAbsSource = currentSource == AudiobookSourceProvider.AUDIOBOOKSHELF
+  val totalCount = if (isAbsSource) visibleAbsBooks.size else visibleLocalBooks.size
+
+  fun playLocal(book: Audiobook, restart: Boolean = false) {
+    if (opening) return
+    opening = true
+    scope.launch {
+      try {
+        AudiobookPlayback.launch(context, book.book.id, fromBeginning = restart)
+        detailsId = null
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (failure: Exception) {
+        playbackError = context.getString(R.string.audiobook_play_failed)
+      } finally {
+        opening = false
       }
     }
+  }
 
-    BackHandler(search) { search = false; query = "" }
-    val navBarHeight = LocalNavigationBarHeight.current.takeIf { it > 0.dp } ?: 88.dp
+  fun playAbs(book: AudiobookshelfBook, restart: Boolean = false) {
+    if (opening) return
+    opening = true
+    scope.launch {
+      try {
+        absModel.playBook(context, book, startTrackIndex = 0, startPositionMs = if (restart) 0L else book.progressMs, restart = restart)
+        absDetailsBook = null
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (failure: Exception) {
+        playbackError = context.getString(R.string.audiobook_play_failed)
+      } finally {
+        opening = false
+      }
+    }
+  }
 
-    Scaffold(
-      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
-      topBar = {
-        BrowserTopBar(
-          title = if (isAbsSource) {
-            absState.activeServer?.name ?: stringResource(R.string.audiobook_source_audiobookshelf)
-          } else {
-            stringResource(R.string.audiobooks_title)
-          },
-          isInSelectionMode = false,
-          selectedCount = 0,
-          totalCount = totalCount,
-          onBackClick = { backStack.popSafely() },
-          onCancelSelection = { },
-          onSortClick = { isSortMenuExpanded = true },
-          onSearchClick = { search = !search },
-          onSettingsClick = { backStack.navigateTo(PreferencesScreen) },
+  BackHandler(search) { search = false; query = "" }
+  val navBarHeight = LocalNavigationBarHeight.current.takeIf { it > 0.dp } ?: 88.dp
+
+  Scaffold(
+    containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
+    topBar = {
+      BrowserTopBar(
+        title = if (isMusicTabMode) {
+          stringResource(R.string.ui_music)
+        } else if (isAbsSource) {
+          absState.activeServer?.name ?: stringResource(R.string.audiobook_source_audiobookshelf)
+        } else {
+          stringResource(R.string.audiobooks_title)
+        },
+        isInSelectionMode = false,
+        selectedCount = 0,
+        totalCount = totalCount,
+        onBackClick = if (isMusicTabMode) null else { { backStack.popSafely() } },
+        onCancelSelection = { },
+        onSortClick = { isSortMenuExpanded = true },
+        onSearchClick = { search = !search },
+        onSettingsClick = { backStack.navigateTo(PreferencesScreen) },
+        titleTrailing = if (isMusicTabMode) {
+          { app.gyrolet.mpvrx.ui.browser.music.MusicSourceDropdown() }
+        } else null,
           preSearchActions = {
             if (absState.servers.isNotEmpty()) {
               var isSourceDropdownOpen by remember { mutableStateOf(false) }
@@ -817,7 +831,6 @@ object AudiobookLibraryScreen : Screen {
         confirmButton = { TextButton(onClick = { model.dismissError(); playbackError = null }) { Text(stringResource(R.string.generic_ok)) } })
     }
   }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

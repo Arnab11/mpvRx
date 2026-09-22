@@ -530,6 +530,10 @@ object MainScreen : Screen {
                         isMusicOnlyMode = true,
                       )
                     }
+                  } else if (musicSourceProvider == MusicSourceProvider.AUDIOBOOKS) {
+                    app.gyrolet.mpvrx.ui.browser.audiobooks.AudiobookLibraryContent(
+                      isMusicTabMode = true,
+                    )
                   } else {
                     MusicLibraryContent(
                       jellyfinViewModel = jellyfinViewModel,

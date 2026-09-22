@@ -111,6 +111,7 @@ fun BrowserTopBar(
   preSearchActions: @Composable RowScope.() -> Unit = { },
   postSearchActions: @Composable RowScope.() -> Unit = { },
   additionalActions: @Composable RowScope.() -> Unit = { },
+  titleTrailing: (@Composable RowScope.() -> Unit)? = null,
   onTitleLongPress: (() -> Unit)? = null,
   onTitleDoubleTap: (() -> Unit)? = null,
   onMoveToSecureClick: (() -> Unit)? = null,
@@ -185,6 +186,7 @@ fun BrowserTopBar(
         preSearchActions = preSearchActions,
         postSearchActions = postSearchActions,
         additionalActions = additionalActions,
+        titleTrailing = titleTrailing,
         modifier = toolbarModifier,
         onTitleLongPress = onTitleLongPress,
         onTitleDoubleTap = onTitleDoubleTap,
@@ -211,6 +213,7 @@ private fun NormalTopBar(
   preSearchActions: @Composable RowScope.() -> Unit = { },
   postSearchActions: @Composable RowScope.() -> Unit = { },
   additionalActions: @Composable RowScope.() -> Unit,
+  titleTrailing: (@Composable RowScope.() -> Unit)? = null,
   modifier: Modifier = Modifier,
   onTitleLongPress: (() -> Unit)?,
   onTitleDoubleTap: (() -> Unit)? = null,
@@ -309,40 +312,46 @@ private fun NormalTopBar(
             )
           }
 
-      Text(
-        buildAnnotatedString {
-          append(title)
-          if (showBetaBadge) {
-            withStyle(
-              SpanStyle(
-                fontSize = MaterialTheme.typography.labelSmall.fontSize,
-                fontWeight = FontWeight.SemiBold,
-                baselineShift = BaselineShift.Superscript,
-              ),
-            ) {
-              append(betaBadgeSuffix)
-            }
-          }
-        },
-        style =
-          if (forceHeadlineSmall || onBackClick != null) {
-            MaterialTheme.typography.headlineSmall
-          } else {
-            MaterialTheme.typography.headlineMedium
-          },
-        fontWeight = FontWeight.ExtraBold,
-        color = MaterialTheme.colorScheme.primary,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
         modifier =
-          titleModifier.then(
-            if (onBackClick == null) {
-              Modifier.padding(start = 8.dp)
+          if (onBackClick == null) {
+            Modifier.padding(start = 8.dp)
+          } else {
+            Modifier
+          },
+      ) {
+        Text(
+          buildAnnotatedString {
+            append(title)
+            if (showBetaBadge) {
+              withStyle(
+                SpanStyle(
+                  fontSize = MaterialTheme.typography.labelSmall.fontSize,
+                  fontWeight = FontWeight.SemiBold,
+                  baselineShift = BaselineShift.Superscript,
+                ),
+              ) {
+                append(betaBadgeSuffix)
+              }
+            }
+          },
+          style =
+            if (forceHeadlineSmall || onBackClick != null) {
+              MaterialTheme.typography.headlineSmall
             } else {
-              Modifier
+              MaterialTheme.typography.headlineMedium
             },
-          ),
-      )
+          fontWeight = FontWeight.ExtraBold,
+          color = MaterialTheme.colorScheme.primary,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = titleModifier,
+        )
+        if (titleTrailing != null) {
+          titleTrailing()
+        }
+      }
     },
     navigationIcon = {
       if (onBackClick != null) {

@@ -2261,7 +2261,7 @@
   <string name="pref_audiobookshelf_add_another_server_desc">Connect an additional Audiobookshelf server</string>
   <string name="audiobook_source_audiobookshelf">Audiobookshelf</string>
   <string name="audiobook_source_audiobookshelf_desc">Stream audiobooks from your Audiobookshelf server</string>
-  <string name="audiobook_source_local">Local Audiobooks</string>
+  <string name="audiobook_source_local">Local</string>
   <string name="pref_audiobookshelf_no_server">No Audiobookshelf server connected</string>
   <string name="pref_appearance_custom_theme_title">Custom theme</string>
   <string name="pref_appearance_custom_theme_name">Theme name</string>
