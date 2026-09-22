@@ -67,7 +67,6 @@ import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -79,6 +78,7 @@ import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.presentation.Screen
+import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
@@ -642,7 +642,7 @@ data class WallpaperEditorScreen(
 
 @Composable
 private fun WallpaperSlider(
-  icon: ImageVector,
+  icon: AppIcon,
   label: String,
   value: Float,
   valueRange: ClosedFloatingPointRange<Float>,
