@@ -15,7 +15,8 @@ import app.gyrolet.mpvrx.preferences.preference.getEnum
 enum class MusicSourceProvider(val id: String) {
   LOCAL("local"),
   JELLYFIN("jellyfin"),
-  NAVIDROME("navidrome");
+  NAVIDROME("navidrome"),
+  AUDIOBOOKS("audiobooks");
 
   companion object {
     fun fromId(id: String): MusicSourceProvider =
