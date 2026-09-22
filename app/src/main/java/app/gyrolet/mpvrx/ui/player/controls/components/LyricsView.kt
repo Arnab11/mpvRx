@@ -6,7 +6,9 @@ package app.gyrolet.mpvrx.ui.player.controls.components
 
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.SizeTransform
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.Spring
@@ -14,6 +16,14 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -542,14 +552,17 @@ fun LyricsView(
         )
       }
 
-      // Bottom Bar: Translate Button & Sync Timing Adjustments (Only visible when synced lyrics are present)
+      // Bottom Bar: Translate Button on Left & Sync Timing Button on Right (Expanding into remaining space)
       AnimatedVisibility(visible = state.lyrics?.synced?.isNotEmpty() == true) {
-        Column(
+        var isSyncExpanded by rememberSaveable { mutableStateOf(false) }
+
+        Row(
           modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 10.dp, bottom = 4.dp),
+            .padding(top = 8.dp, bottom = 4.dp),
+          verticalAlignment = Alignment.CenterVertically,
         ) {
-          // Medium size Translate button (Square with rounded corners)
+          // Translate button on Left (40.dp square with rounded corners)
           Surface(
             onClick = { showTranslateDialog = true },
             shape = RoundedCornerShape(12.dp),
@@ -574,47 +587,106 @@ fun LyricsView(
             }
           }
 
-          Spacer(modifier = Modifier.height(8.dp))
+          Spacer(modifier = Modifier.width(8.dp))
 
-          // Sync offset pill: equal-weight buttons that always fit the available width, with the
-          // current offset shown (and reset) via the center segment.
-          Surface(
-            shape = RoundedCornerShape(14.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-            modifier = Modifier.fillMaxWidth(),
+          // Sync Section on the Right (pinned to right when collapsed, expands leftwards across remaining space)
+          Box(
+            modifier = Modifier
+              .weight(1f)
+              .height(40.dp),
+            contentAlignment = Alignment.CenterEnd,
           ) {
-            Row(
-              modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-              verticalAlignment = Alignment.CenterVertically,
+            // When expanded, the sync control bar slides in from right to left, filling the remaining space
+            androidx.compose.animation.AnimatedVisibility(
+              visible = isSyncExpanded,
+              enter = fadeIn(animationSpec = tween(220)) +
+                slideInHorizontally(initialOffsetX = { it }, animationSpec = spring(dampingRatio = 0.85f, stiffness = 350f)) +
+                expandHorizontally(expandFrom = Alignment.End, animationSpec = spring(dampingRatio = 0.85f, stiffness = 350f)),
+              exit = fadeOut(animationSpec = tween(180)) +
+                slideOutHorizontally(targetOffsetX = { it }, animationSpec = tween(180)) +
+                shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = tween(180)),
             ) {
-              SyncOffsetButton(
-                label = "-0.5s",
-                modifier = Modifier.weight(1f),
-                onClick = { viewModel.adjustLyricsSyncOffset(-500) },
-              )
-              SyncOffsetButton(
-                label = "-0.1s",
-                modifier = Modifier.weight(1f),
-                onClick = { viewModel.adjustLyricsSyncOffset(-100) },
-              )
-              SyncOffsetButton(
-                label = "${if (state.syncOffsetMs >= 0) "+" else ""}${state.syncOffsetMs / 1000f}s",
-                modifier = Modifier.weight(1.2f),
-                emphasized = true,
-                onClick = { viewModel.resetLyricsSyncOffset() },
-              )
-              SyncOffsetButton(
-                label = "+0.1s",
-                modifier = Modifier.weight(1f),
-                onClick = { viewModel.adjustLyricsSyncOffset(100) },
-              )
-              SyncOffsetButton(
-                label = "+0.5s",
-                modifier = Modifier.weight(1f),
-                onClick = { viewModel.adjustLyricsSyncOffset(500) },
-              )
+              Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.65f),
+                modifier = Modifier
+                  .fillMaxWidth()
+                  .height(40.dp),
+              ) {
+                Row(
+                  modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 4.dp),
+                  verticalAlignment = Alignment.CenterVertically,
+                ) {
+                  SyncOffsetButton(
+                    label = "-0.5s",
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.adjustLyricsSyncOffset(-500) },
+                  )
+                  SyncOffsetButton(
+                    label = "-0.1s",
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.adjustLyricsSyncOffset(-100) },
+                  )
+                  SyncOffsetButton(
+                    label = "${if (state.syncOffsetMs >= 0) "+" else ""}${state.syncOffsetMs / 1000f}s",
+                    modifier = Modifier.weight(1.2f),
+                    emphasized = true,
+                    onClick = { viewModel.resetLyricsSyncOffset() },
+                  )
+                  SyncOffsetButton(
+                    label = "+0.1s",
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.adjustLyricsSyncOffset(100) },
+                  )
+                  SyncOffsetButton(
+                    label = "+0.5s",
+                    modifier = Modifier.weight(1f),
+                    onClick = { viewModel.adjustLyricsSyncOffset(500) },
+                  )
+                  // Collapse close button
+                  Box(
+                    modifier = Modifier
+                      .clip(RoundedCornerShape(8.dp))
+                      .clickable { isSyncExpanded = false }
+                      .padding(horizontal = 6.dp, vertical = 6.dp),
+                    contentAlignment = Alignment.Center,
+                  ) {
+                    Icon(
+                      imageVector = Icons.RoundedFilled.Close,
+                      contentDescription = stringResource(R.string.ui_close),
+                      tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                      modifier = Modifier.size(16.dp),
+                    )
+                  }
+                }
+              }
+            }
+
+            // When collapsed, the sync icon button sits on the far right
+            androidx.compose.animation.AnimatedVisibility(
+              visible = !isSyncExpanded,
+              enter = fadeIn(animationSpec = tween(220)) +
+                expandHorizontally(expandFrom = Alignment.End, animationSpec = spring(dampingRatio = 0.85f, stiffness = 350f)),
+              exit = fadeOut(animationSpec = tween(180)) +
+                shrinkHorizontally(shrinkTowards = Alignment.End, animationSpec = tween(180)),
+            ) {
+              Surface(
+                onClick = { isSyncExpanded = true },
+                shape = RoundedCornerShape(12.dp),
+                color = if (state.syncOffsetMs != 0) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.size(40.dp),
+              ) {
+                Box(contentAlignment = Alignment.Center) {
+                  Icon(
+                    imageVector = Icons.RoundedFilled.Timer,
+                    contentDescription = "Sync timing",
+                    tint = if (state.syncOffsetMs != 0) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.size(22.dp),
+                  )
+                }
+              }
             }
           }
         }
@@ -642,7 +714,7 @@ private fun SyncOffsetButton(
     modifier = modifier
       .clip(RoundedCornerShape(10.dp))
       .clickable(onClick = onClick)
-      .padding(vertical = 8.dp),
+      .padding(horizontal = 6.dp, vertical = 6.dp),
     contentAlignment = Alignment.Center,
   ) {
     Text(
@@ -652,7 +724,6 @@ private fun SyncOffsetButton(
       maxLines = 1,
       color = if (emphasized) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
       textAlign = TextAlign.Center,
-      modifier = Modifier.fillMaxWidth(),
     )
   }
 }
@@ -663,7 +734,7 @@ private fun SyncOffsetButton(
  * a stalled poll cannot run ahead.
  */
 @Composable
-private fun rememberSmoothedPositionMs(
+internal fun rememberSmoothedPositionMs(
   rawPositionMs: Long,
   isPlaying: Boolean,
   speed: Float,
@@ -733,7 +804,7 @@ private fun rememberSmoothedPositionMs(
 
 /** Smooth karaoke fill: a glowing active layer is revealed continuously from left to right. */
 @Composable
-private fun AnimatedLyricWord(
+internal fun AnimatedLyricWord(
   word: SyncedWord,
   endTimeMs: Long,
   positionMs: State<Long>,

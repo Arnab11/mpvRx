@@ -117,7 +117,13 @@ class LyricsRepository(
     }
 
     val defaultSelected = when {
-      embedded != null && embedded.isValid() -> embedded.sourceType
+      embedded != null && embedded.isValid() -> {
+        if (embedded.synced.isNullOrEmpty() && online != null && !online.synced.isNullOrEmpty()) {
+          LyricsSourceType.ONLINE
+        } else {
+          embedded.sourceType
+        }
+      }
       online != null && online.isValid() -> LyricsSourceType.ONLINE
       else -> LyricsSourceType.EMBEDDED
     }
@@ -156,6 +162,7 @@ class LyricsRepository(
     val validMetadataArtist = if (!isChannel) cleanRawArtist else ""
 
     val attempted = mutableSetOf<String>()
+    var plainFallback: Lyrics? = null
 
     suspend fun tryGet(track: String, artistName: String): Lyrics? {
       val cleanT = track.trim()
@@ -163,16 +170,25 @@ class LyricsRepository(
       if (cleanT.isBlank() || cleanA.isBlank()) return null
       val key = "get:$cleanT:$cleanA".lowercase(Locale.ROOT)
       if (attempted.size >= MAX_ONLINE_LOOKUP_ATTEMPTS || !attempted.add(key)) return null
+
+      // Try with exact duration first if available
       val resp = lrcLibApiService.getLyrics(
         trackName = cleanT,
         artistName = cleanA,
         duration = if (durationSeconds > 0) durationSeconds else null,
-      )
+      ) ?: if (durationSeconds > 0) {
+        // If exact duration get failed (e.g. slight mismatch), try without duration
+        lrcLibApiService.getLyrics(trackName = cleanT, artistName = cleanA, duration = null)
+      } else null
+
       if (resp != null) {
-        val raw = resp.syncedLyrics ?: resp.plainLyrics
-        if (!raw.isNullOrBlank()) {
-          val parsed = LyricsUtils.parseLyrics(raw, sourceType = LyricsSourceType.ONLINE)
-          if (parsed.isValid()) return parsed
+        if (!resp.syncedLyrics.isNullOrBlank()) {
+          val parsed = LyricsUtils.parseLyrics(resp.syncedLyrics, sourceType = LyricsSourceType.ONLINE)
+          if (parsed.isValid() && !parsed.synced.isNullOrEmpty()) return parsed
+        }
+        if (!resp.plainLyrics.isNullOrBlank() && plainFallback == null) {
+          val parsed = LyricsUtils.parseLyrics(resp.plainLyrics, sourceType = LyricsSourceType.ONLINE)
+          if (parsed.isValid()) plainFallback = parsed
         }
       }
       return null
@@ -190,7 +206,12 @@ class LyricsRepository(
         trackName = cleanT,
         artistName = cleanA,
       )
-      return extractBestMatch(res, durationSeconds)
+      val best = extractBestMatch(res, durationSeconds)
+      if (best != null) {
+        if (!best.synced.isNullOrEmpty()) return best
+        if (plainFallback == null) plainFallback = best
+      }
+      return null
     }
 
     try {
@@ -237,23 +258,25 @@ class LyricsRepository(
       }
 
       // 4. Title-only searches (pure song title search without artist constraints)
-      trySearch(q = primaryTitle)?.let { return@withContext it }
       trySearch(track = primaryTitle)?.let { return@withContext it }
+      trySearch(q = primaryTitle)?.let { return@withContext it }
 
       // 5. Fallback with raw first segment
       val rawFirstClean = cleanTitle(firstSeg)
       if (rawFirstClean != primaryTitle && rawFirstClean.isNotBlank()) {
-        trySearch(q = rawFirstClean)?.let { return@withContext it }
         trySearch(track = rawFirstClean)?.let { return@withContext it }
+        trySearch(q = rawFirstClean)?.let { return@withContext it }
       }
 
+      // Return plainFallback if no synced lyrics were found
+      return@withContext plainFallback
     } catch (cancellation: CancellationException) {
       throw cancellation
     } catch (e: Exception) {
       Log.w(TAG, "Failed to fetch online lyrics: ${e.message}")
     }
 
-    null
+    plainFallback
   }
 
   private fun extractBestMatch(
@@ -264,14 +287,23 @@ class LyricsRepository(
     val candidates = responses.filter { !it.syncedLyrics.isNullOrBlank() || !it.plainLyrics.isNullOrBlank() }
     if (candidates.isEmpty()) return null
 
-    val bestMatch = if (targetDurationSec > 0) {
-      candidates.minByOrNull { item ->
-        val durationDiff = if (item.duration > 0) Math.abs(item.duration - targetDurationSec) else 1000.0
-        val syncedPenalty = if (!item.syncedLyrics.isNullOrBlank()) 0.0 else 500.0
-        durationDiff + syncedPenalty
-      } ?: candidates.first()
+    val syncedCandidates = candidates.filter { !it.syncedLyrics.isNullOrBlank() }
+    val bestMatch = if (syncedCandidates.isNotEmpty()) {
+      if (targetDurationSec > 0) {
+        syncedCandidates.minByOrNull { item ->
+          if (item.duration > 0) Math.abs(item.duration - targetDurationSec) else 20.0
+        } ?: syncedCandidates.first()
+      } else {
+        syncedCandidates.first()
+      }
     } else {
-      candidates.firstOrNull { !it.syncedLyrics.isNullOrBlank() } ?: candidates.first()
+      if (targetDurationSec > 0) {
+        candidates.minByOrNull { item ->
+          if (item.duration > 0) Math.abs(item.duration - targetDurationSec) else 20.0
+        } ?: candidates.first()
+      } else {
+        candidates.first()
+      }
     }
 
     val raw = bestMatch.syncedLyrics ?: bestMatch.plainLyrics ?: return null

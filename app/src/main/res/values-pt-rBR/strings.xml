@@ -1839,6 +1839,8 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="pref_nav_music_summary">Mostrar ou ocultar Música na barra de navegação inferior</string>
   <string name="player_up_next_title">Lista de reprodução</string>
   <string name="player_lyrics_title">Letra</string>
+  <string name="lyrics_loading_label">Buscando letra…</string>
+  <string name="instrumental">Instrumental</string>
   <string name="lyrics_source_embedded">Embutida</string>
   <string name="lyrics_source_online">Online</string>
   <string name="lyrics_source_local">Local (.lrc)</string>

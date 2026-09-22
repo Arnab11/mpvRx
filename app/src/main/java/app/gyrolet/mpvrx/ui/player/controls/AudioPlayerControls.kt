@@ -40,7 +40,9 @@ import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -74,11 +76,14 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -117,6 +122,8 @@ import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.player.resolveUri
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
+import app.gyrolet.mpvrx.ui.player.controls.components.rememberSmoothedPositionMs
+import app.gyrolet.mpvrx.ui.player.controls.components.AnimatedLyricWord
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.PlaylistItem
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
@@ -149,6 +156,7 @@ import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -168,6 +176,7 @@ import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.AudioVisualizerStyle
 import app.gyrolet.mpvrx.preferences.GesturePreferences
+import app.gyrolet.mpvrx.preferences.LyricsTranslationDisplayMode
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -646,6 +655,7 @@ fun AudioPlayerControls(
 
   var showInPlaceLyrics by rememberSaveable { mutableStateOf(false) }
   var wasLyricsActiveBeforeLandscape by rememberSaveable { mutableStateOf(false) }
+  var tabletDualPaneTab by rememberSaveable { mutableIntStateOf(0) }
   var isLyricsFullscreen by remember { mutableStateOf(false) }
   var lastUserInteractionTime by remember { mutableLongStateOf(System.currentTimeMillis()) }
 
@@ -656,8 +666,12 @@ fun AudioPlayerControls(
     }
   }
 
-  BackHandler(enabled = isLyricsFullscreen) {
-    resetInactivityTimer()
+  BackHandler(enabled = isLyricsFullscreen || showInPlaceLyrics) {
+    if (isLyricsFullscreen) {
+      resetInactivityTimer()
+    } else if (showInPlaceLyrics) {
+      showInPlaceLyrics = false
+    }
   }
 
   val currentPath by PlaybackSession.propString["path"].collectAsState()
@@ -1097,12 +1111,13 @@ fun AudioPlayerControls(
 
   LaunchedEffect(isTabletLandscape) {
     if (isTabletLandscape) {
-      if (showInPlaceLyrics) {
+      if (showInPlaceLyrics || wasLyricsActiveBeforeLandscape) {
+        tabletDualPaneTab = 1
         wasLyricsActiveBeforeLandscape = true
         showInPlaceLyrics = false
       }
     } else {
-      if (wasLyricsActiveBeforeLandscape) {
+      if (wasLyricsActiveBeforeLandscape || tabletDualPaneTab == 1) {
         showInPlaceLyrics = true
         wasLyricsActiveBeforeLandscape = false
       }
@@ -1234,14 +1249,22 @@ fun AudioPlayerControls(
     val headerBar = @Composable {
       Box(modifier = Modifier.fillMaxWidth()) {
         ReactiveIconButton(
-          onClick = onBackPress,
+          onClick = {
+            if (isLyricsFullscreen) {
+              isLyricsFullscreen = false
+            } else if (showInPlaceLyrics) {
+              showInPlaceLyrics = false
+            } else {
+              onBackPress()
+            }
+          },
           modifier = Modifier.align(Alignment.CenterStart),
         ) {
           Icon(
-            imageVector = Icons.RoundedFilled.ExpandMore,
-            contentDescription = stringResource(R.string.ui_close),
+            imageVector = if (showInPlaceLyrics || isLyricsFullscreen) Icons.RoundedFilled.ArrowBack else Icons.RoundedFilled.ExpandMore,
+            contentDescription = stringResource(if (showInPlaceLyrics || isLyricsFullscreen) R.string.back else R.string.ui_close),
             tint = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.size(32.dp),
+            modifier = Modifier.size(if (showInPlaceLyrics || isLyricsFullscreen) 28.dp else 32.dp),
           )
         }
 
@@ -1270,7 +1293,7 @@ fun AudioPlayerControls(
     }
 
     val losslessBadge = @Composable {
-      if (collapsedAudioBadgeLabel.isNotBlank()) {
+      if (!showInPlaceLyrics && !isLyricsFullscreen && collapsedAudioBadgeLabel.isNotBlank()) {
         Surface(
           shape = RoundedCornerShape(4.dp),
           color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.6f),
@@ -1806,6 +1829,229 @@ fun AudioPlayerControls(
       }
     }
 
+    val currentLyricStripView = @Composable {
+      val lyricsState by viewModel.lyricsUiState.collectAsState()
+      val translationDisplayMode by audioPreferences.lyricsTranslationDisplayMode.collectAsState()
+      val activeLyrics = lyricsState.lyrics
+      val syncedLines = activeLyrics?.synced
+      val activeIndex = lyricsState.activeLineIndex
+      val precisePosition by viewModel.precisePosition.collectAsStateWithLifecycle()
+      val paused by PlaybackSession.propBoolean["pause"].collectAsState()
+      val playbackSpeed by PlaybackSession.propFloat["speed"].collectAsState()
+
+      val currentPosMs = remember(precisePosition, lyricsState.syncOffsetMs) {
+        (precisePosition * 1000).toLong() + lyricsState.syncOffsetMs
+      }
+      val smoothPositionMs = rememberSmoothedPositionMs(currentPosMs, paused == false, playbackSpeed ?: 1f)
+
+      val currentLine = syncedLines?.getOrNull(activeIndex)
+      val hasSyncedLyrics = !syncedLines.isNullOrEmpty()
+      val isInstrumentalGap = hasSyncedLyrics && (currentLine == null || currentLine.line.isBlank() || currentLine.line.trim().equals("[instrumental]", ignoreCase = true) || currentLine.line.trim().equals("instrumental", ignoreCase = true))
+
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start,
+        modifier = Modifier
+          .fillMaxWidth()
+          .clip(RoundedCornerShape(8.dp))
+          .clickable {
+            if (isTabletLandscape) {
+              tabletDualPaneTab = 1
+            } else {
+              showInPlaceLyrics = true
+            }
+            resetInactivityTimer()
+          }
+          .padding(horizontal = 4.dp, vertical = 4.dp),
+      ) {
+        Box(
+          modifier = Modifier.weight(1f, fill = false),
+          contentAlignment = Alignment.CenterStart,
+        ) {
+          if (lyricsState.isLoading) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Start,
+            ) {
+              CircularProgressIndicator(
+                modifier = Modifier.size(14.dp),
+                strokeWidth = 2.dp,
+                color = MaterialTheme.colorScheme.primary,
+              )
+              Spacer(Modifier.width(8.dp))
+              Text(
+                text = stringResource(R.string.lyrics_loading_label),
+                style = MaterialTheme.typography.titleMedium.copy(
+                  fontSize = 18.sp,
+                  fontWeight = FontWeight.Bold,
+                  fontFamily = fontFamilyForText(stringResource(R.string.lyrics_loading_label)),
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+              )
+            }
+          } else if (hasSyncedLyrics) {
+            if (isInstrumentalGap) {
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Start,
+              ) {
+                Icon(
+                  imageVector = Icons.RoundedFilled.Audiotrack,
+                  contentDescription = null,
+                  tint = MaterialTheme.colorScheme.primary,
+                  modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                  text = stringResource(R.string.instrumental),
+                  style = MaterialTheme.typography.titleMedium.copy(
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium,
+                    fontFamily = fontFamilyForText(stringResource(R.string.instrumental)),
+                  ),
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  maxLines = 1,
+                  overflow = TextOverflow.Ellipsis,
+                  textAlign = TextAlign.Start,
+                )
+              }
+            } else {
+              val rawTrans = currentLine?.translation?.trim()
+              val displayText = if (translationDisplayMode == LyricsTranslationDisplayMode.Replace && !rawTrans.isNullOrBlank()) {
+                rawTrans
+              } else {
+                currentLine?.line?.trim() ?: ""
+              }
+
+              val words = currentLine?.words
+
+              AnimatedContent(
+                targetState = activeIndex to displayText,
+                transitionSpec = {
+                  (fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
+                    slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) { height -> (height * 0.4f).toInt() })
+                    .togetherWith(
+                      fadeOut(animationSpec = tween(280, easing = FastOutSlowInEasing)) +
+                        slideOutVertically(animationSpec = tween(280, easing = FastOutSlowInEasing)) { height -> -(height * 0.4f).toInt() },
+                    ).using(
+                      SizeTransform(clip = false),
+                    )
+                },
+                label = "currentLyricTransition",
+                contentAlignment = Alignment.CenterStart,
+                modifier = Modifier.wrapContentSize(Alignment.CenterStart),
+              ) { (_, text) ->
+                if (!words.isNullOrEmpty()) {
+                  val activeColor = MaterialTheme.colorScheme.onSurface
+                  val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
+                  Row(
+                    modifier = Modifier
+                      .wrapContentWidth(Alignment.Start)
+                      .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                  ) {
+                    currentLine.words.forEachIndexed { wordIndex, word ->
+                      val wordStartMs = word.time.toLong()
+                      val wordEndMs =
+                        currentLine.words.getOrNull(wordIndex + 1)?.time?.toLong()
+                          ?.takeIf { it > wordStartMs }
+                          ?: syncedLines.getOrNull(activeIndex + 1)?.time?.toLong()
+                            ?.coerceAtMost(currentLine.time.toLong() + 8_000L)
+                            ?.takeIf { it > wordStartMs }
+                          ?: (wordStartMs + 600L)
+                      AnimatedLyricWord(
+                        word = word,
+                        endTimeMs = wordEndMs,
+                        positionMs = smoothPositionMs,
+                        activeColor = activeColor,
+                        inactiveColor = inactiveColor,
+                        fontSize = 19.sp,
+                      )
+                    }
+                  }
+                } else {
+                  Text(
+                    text = text,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                      fontSize = 19.sp,
+                      fontWeight = FontWeight.ExtraBold,
+                      fontFamily = fontFamilyForText(text),
+                    ),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    textAlign = TextAlign.Start,
+                  )
+                }
+              }
+            }
+          } else if (!activeLyrics?.plain.isNullOrEmpty()) {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Start,
+            ) {
+              Icon(
+                imageVector = Icons.RoundedFilled.Audiotrack,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(18.dp),
+              )
+              Spacer(Modifier.width(6.dp))
+              Text(
+                text = stringResource(R.string.player_lyrics_title),
+                style = MaterialTheme.typography.titleMedium.copy(
+                  fontSize = 18.sp,
+                  fontWeight = FontWeight.Bold,
+                  fontFamily = fontFamilyForText(stringResource(R.string.player_lyrics_title)),
+                ),
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+              )
+            }
+          } else {
+            Row(
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.Start,
+            ) {
+              Icon(
+                imageVector = Icons.RoundedFilled.Lyrics,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                modifier = Modifier.size(18.dp),
+              )
+              Spacer(Modifier.width(6.dp))
+              Text(
+                text = if (isAudiobook) stringResource(R.string.audiobook_no_text) else stringResource(R.string.player_lyrics_title),
+                style = MaterialTheme.typography.titleMedium.copy(
+                  fontSize = 18.sp,
+                  fontWeight = FontWeight.Normal,
+                  fontFamily = fontFamilyForText(stringResource(R.string.player_lyrics_title)),
+                ),
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Start,
+              )
+            }
+          }
+        }
+
+        Spacer(Modifier.width(6.dp))
+        Icon(
+          imageVector = Icons.RoundedFilled.ChevronRight,
+          contentDescription = null,
+          tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+          modifier = Modifier.size(18.dp),
+        )
+      }
+    }
+
     val seekbarView = @Composable {
       val position by PlaybackSession.propInt["time-pos"].collectAsStateWithLifecycle()
       val remaining  by PlaybackSession.propFloat["playtime-remaining"].collectAsState()
@@ -2061,16 +2307,6 @@ fun AudioPlayerControls(
                   tint = if (showVisualizer) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
                 )
               }
-              ReactiveIconButton(
-                onClick = { showInPlaceLyrics = !showInPlaceLyrics },
-                modifier = Modifier.size(40.dp),
-              ) {
-                Icon(
-                  imageVector = Icons.RoundedFilled.Lyrics,
-                  contentDescription = "Lyrics",
-                  tint = if (showInPlaceLyrics) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              }
               if (!isAudiobook) ReactiveIconButton(
                 onClick = {
                   val act = context as? PlayerActivity
@@ -2169,7 +2405,13 @@ fun AudioPlayerControls(
           ) {
             Spacer(modifier = Modifier.height(4.dp))
             trackMetadataView()
-            Spacer(modifier = Modifier.height(10.dp))
+            if (!showInPlaceLyrics) {
+              Spacer(modifier = Modifier.height(6.dp))
+              currentLyricStripView()
+              Spacer(modifier = Modifier.height(4.dp))
+            } else {
+              Spacer(modifier = Modifier.height(10.dp))
+            }
             seekbarView()
             Spacer(modifier = Modifier.height(14.dp))
             playbackControlsRow()
@@ -2225,7 +2467,13 @@ fun AudioPlayerControls(
           ) {
             Spacer(modifier = Modifier.height(6.dp))
             trackMetadataView()
-            Spacer(modifier = Modifier.height(8.dp))
+            if (tabletDualPaneTab != 1) {
+              Spacer(modifier = Modifier.height(4.dp))
+              currentLyricStripView()
+              Spacer(modifier = Modifier.height(4.dp))
+            } else {
+              Spacer(modifier = Modifier.height(8.dp))
+            }
             seekbarView()
             Spacer(modifier = Modifier.height(8.dp))
             playbackControlsRow()
@@ -2253,7 +2501,8 @@ fun AudioPlayerControls(
           DualPaneSidePanel(
             viewModel = viewModel,
             playlist = filteredPlaylist,
-            initialLyricsActive = wasLyricsActiveBeforeLandscape,
+            selectedTab = tabletDualPaneTab,
+            onTabSelected = { tabletDualPaneTab = it },
           )
         }
       }
@@ -2339,11 +2588,11 @@ fun AudioPlayerControls(
 private fun DualPaneSidePanel(
   viewModel: PlayerViewModel,
   playlist: List<PlaylistItem>,
-  initialLyricsActive: Boolean = false,
+  selectedTab: Int = 0,
+  onTabSelected: (Int) -> Unit = {},
 ) {
   val playbackState by PlaybackSession.state.collectAsStateWithLifecycle()
   val isAudiobook = playbackState.currentItem?.audiobook != null
-  var selectedTab by remember(initialLyricsActive) { mutableIntStateOf(if (initialLyricsActive) 1 else 0) }
 
   Column(
     modifier = Modifier
@@ -2359,7 +2608,7 @@ private fun DualPaneSidePanel(
     ) {
       androidx.compose.material3.FilterChip(
         selected = selectedTab == 0,
-        onClick = { selectedTab = 0 },
+        onClick = { onTabSelected(0) },
         label = {
           Text(
             text = if (isAudiobook) stringResource(R.string.audiobook_chapters) else stringResource(R.string.player_up_next_title),
@@ -2373,7 +2622,7 @@ private fun DualPaneSidePanel(
       )
       androidx.compose.material3.FilterChip(
         selected = selectedTab == 1,
-        onClick = { selectedTab = 1 },
+        onClick = { onTabSelected(1) },
         label = { Text(stringResource(R.string.player_lyrics_title), fontWeight = FontWeight.Bold) },
         colors = androidx.compose.material3.FilterChipDefaults.filterChipColors(
           selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,

@@ -1835,6 +1835,8 @@
   <string name="pref_nav_music_summary">下部ナビゲーションバーに音楽を表示または非表示</string>
   <string name="player_up_next_title">プレイリスト</string>
   <string name="player_lyrics_title">歌詞</string>
+  <string name="lyrics_loading_label">歌詞を取得中…</string>
+  <string name="instrumental">インストゥルメンタル</string>
   <string name="lyrics_source_embedded">埋め込み</string>
   <string name="lyrics_source_online">オンライン</string>
   <string name="lyrics_source_local">ローカル (.lrc)</string>
