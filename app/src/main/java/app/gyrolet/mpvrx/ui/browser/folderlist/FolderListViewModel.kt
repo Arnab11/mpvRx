@@ -65,6 +65,8 @@ class FolderListViewModel(
   private val playbackStateRepository: PlaybackStateRepository by inject()
 
   private val _allVideoFolders = MutableStateFlow<List<VideoFolder>>(emptyList())
+  private val pendingFolderDeletionKeys = MutableStateFlow<Set<String>>(emptySet())
+  private val completedFolderDeletionKeys = MutableStateFlow<Set<String>>(emptySet())
   private val _videoFolders = MutableStateFlow<List<VideoFolder>>(emptyList())
   val videoFolders: StateFlow<List<VideoFolder>> = _videoFolders.asStateFlow()
 
@@ -156,12 +158,13 @@ class FolderListViewModel(
     }
 
     viewModelScope.launch {
-      combine(_allVideoFolders, blacklistFlow) { folders, blacklist ->
+      combine(_allVideoFolders, blacklistFlow, pendingFolderDeletionKeys) { folders, blacklist, pendingDeletions ->
         folders.filter { folder ->
-          blacklist.none { blacklisted ->
-            folder.path.equals(blacklisted, ignoreCase = true) ||
-              folder.path.startsWith(if (blacklisted.endsWith("/")) blacklisted else "$blacklisted/", ignoreCase = true)
-          }
+          folderKey(folder) !in pendingDeletions &&
+            blacklist.none { blacklisted ->
+              folder.path.equals(blacklisted, ignoreCase = true) ||
+                folder.path.startsWith(if (blacklisted.endsWith("/")) blacklisted else "$blacklisted/", ignoreCase = true)
+            }
         }
       }.collectLatest { filteredFolders ->
         // Check if folders became empty after having folders
@@ -178,8 +181,9 @@ class FolderListViewModel(
 
         _videoFolders.value = filteredFolders
 
-        // Save to cache for next app launch (save unfiltered list)
-        saveFoldersToCache(_allVideoFolders.value)
+        // Pending deletions must not leak back into the next launch through the cache.
+        val pendingDeletions = pendingFolderDeletionKeys.value
+        saveFoldersToCache(_allVideoFolders.value.filterNot { folderKey(it) in pendingDeletions })
       }
     }
 
@@ -357,6 +361,32 @@ class FolderListViewModel(
     }
   }
 
+  fun beginFolderDeletion(folders: List<VideoFolder>) {
+    val keys = folders.mapTo(mutableSetOf(), ::folderKey)
+    if (keys.isEmpty()) return
+    completedFolderDeletionKeys.update { it - keys }
+    pendingFolderDeletionKeys.update { it + keys }
+    _allVideoFolders.update { current -> current.filterNot { folderKey(it) in keys } }
+    folderContentRevision.update { it + 1 }
+  }
+
+  fun finishFolderDeletion(
+    requestedFolders: List<VideoFolder>,
+    failedFolders: List<VideoFolder>,
+  ) {
+    val requestedKeys = requestedFolders.mapTo(mutableSetOf(), ::folderKey)
+    val failedKeys = failedFolders.mapTo(mutableSetOf(), ::folderKey)
+    val successfulKeys = requestedKeys - failedKeys
+
+    if (failedFolders.isNotEmpty()) {
+      _allVideoFolders.update { current -> mergeFolders(current, failedFolders) }
+      pendingFolderDeletionKeys.update { it - failedKeys }
+    }
+    // Successful keys remain hidden until a complete scan confirms they disappeared.
+    completedFolderDeletionKeys.update { (it - requestedKeys) + successfulKeys }
+    folderContentRevision.update { it + 1 }
+  }
+
   override fun refresh() {
     Log.d(TAG, "Hard refreshing folder list")
 
@@ -418,7 +448,7 @@ class FolderListViewModel(
                 minimumAudioDurationSeconds = browserPreferences.minimumAudioDurationSeconds.get(),
               )
             ensureActive()
-            _allVideoFolders.value = folders
+            publishFinalFolders(folders)
             _isLoading.value = false
             _hasCompletedInitialLoad.value = true
           } catch (error: kotlinx.coroutines.CancellationException) {
@@ -493,6 +523,7 @@ class FolderListViewModel(
             _allVideoFolders.value = visibleFolders
           }
 
+          publishFinalFolders(visibleFolders)
           if (visibleFolders.isEmpty()) return@launch
 
           var needsEnrichment = false
@@ -555,6 +586,16 @@ class FolderListViewModel(
       .replace('\\', '/')
       .trimEnd('/')
       .lowercase(Locale.ROOT)
+
+  private fun publishFinalFolders(folders: List<VideoFolder>) {
+    val incomingKeys = folders.mapTo(mutableSetOf(), ::folderKey)
+    val confirmedDeletionKeys = completedFolderDeletionKeys.value - incomingKeys
+    if (confirmedDeletionKeys.isNotEmpty()) {
+      pendingFolderDeletionKeys.update { it - confirmedDeletionKeys }
+      completedFolderDeletionKeys.update { it - confirmedDeletionKeys }
+    }
+    _allVideoFolders.value = folders
+  }
 
   private fun mergeFolders(vararg groups: List<VideoFolder>): List<VideoFolder> {
     val merged = linkedMapOf<String, VideoFolder>()

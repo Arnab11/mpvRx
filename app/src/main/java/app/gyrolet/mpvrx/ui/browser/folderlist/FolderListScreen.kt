@@ -140,12 +140,23 @@ import app.gyrolet.mpvrx.utils.sort.SortUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionStatus
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import java.io.File
+
+private data class FolderDeletionResult(
+  val deleted: Int,
+  val failed: Int,
+  val failedFolders: List<VideoFolder>,
+)
 
 @Serializable
 object FolderListScreen : Screen {
@@ -172,6 +183,7 @@ object FolderListScreen : Screen {
     val context = LocalContext.current
     val backstack = LocalBackStack.current
     val coroutineScope = rememberCoroutineScope()
+    val folderDeletionMutex = remember { Mutex() }
 
     // ViewModels and preferences
     val viewModel: FolderListViewModel =
@@ -381,15 +393,17 @@ object FolderListScreen : Screen {
 
     val filteredFolders = sortedFolders
 
-    suspend fun deleteFolders(folders: List<VideoFolder>): Pair<Int, Int> {
+    suspend fun deleteFolders(folders: List<VideoFolder>): FolderDeletionResult {
       var deleted = 0
       var failed = 0
+      val failedFolders = mutableListOf<VideoFolder>()
       val deleteAll = browserPreferences.deleteFolderAllContents.get()
       // The audio-only folder browser must always be able to delete the audio files it shows,
       // regardless of the general "include audio in browser" preference (which only governs the
       // regular video browser). The regular (video) browser keeps its existing preference-driven behavior.
       val includeAudio = audioOnly || browserPreferences.includeAudioBrowser.get()
       for (folder in folders) {
+        var folderFailed = false
         try {
           if (deleteAll) {
             val ids = setOf(folder.bucketId)
@@ -400,6 +414,7 @@ object FolderListScreen : Screen {
               val (d, f) = viewModel.deleteVideos(videos)
               deleted += d
               failed += f
+              folderFailed = f > 0
             }
             val dir = java.io.File(folder.path)
             if (dir.exists()) {
@@ -407,6 +422,7 @@ object FolderListScreen : Screen {
                 deleted++
               } else {
                 failed++
+                folderFailed = true
               }
             }
           } else {
@@ -430,14 +446,35 @@ object FolderListScreen : Screen {
               deleted++
             } else {
               failed++
+              folderFailed = true
             }
           }
         } catch (e: Exception) {
           Log.e("FolderListScreen", "Error deleting folder ${folder.path}", e)
           failed++
+          folderFailed = true
         }
+        if (folderFailed) failedFolders += folder
       }
-      return Pair(deleted, failed)
+      return FolderDeletionResult(deleted, failed, failedFolders)
+    }
+
+    suspend fun deleteFoldersInBackground(folders: List<VideoFolder>): FolderDeletionResult =
+      withContext(Dispatchers.IO) {
+        folderDeletionMutex.withLock { deleteFolders(folders) }
+      }
+
+    fun clearSelectedFolderForDeletion(folders: List<VideoFolder>): VideoFolder? {
+      val selectedFolder = folders.firstOrNull { it.bucketId == selectedFolderBucketId } ?: return null
+      selectedFolderBucketId = null
+      selectedFolderName = null
+      return selectedFolder
+    }
+
+    fun restoreSelectedFolderAfterFailure(folder: VideoFolder?) {
+      folder ?: return
+      selectedFolderBucketId = folder.bucketId
+      selectedFolderName = folder.name
     }
 
     // Selection manager
@@ -445,7 +482,22 @@ object FolderListScreen : Screen {
       rememberSelectionManager(
         items = sortedFolders,
         getId = { it.bucketId },
-        onDeleteItems = { folders, _ -> deleteFolders(folders) },
+        onDeleteItems = { folders, _ ->
+          val selectedFolder = clearSelectedFolderForDeletion(folders)
+          viewModel.beginFolderDeletion(folders)
+          try {
+            val result = deleteFoldersInBackground(folders)
+            viewModel.finishFolderDeletion(folders, result.failedFolders)
+            if (selectedFolder != null && result.failedFolders.any { it.bucketId == selectedFolder.bucketId }) {
+              restoreSelectedFolderAfterFailure(selectedFolder)
+            }
+            result.deleted to result.failed
+          } catch (error: Exception) {
+            viewModel.finishFolderDeletion(folders, folders)
+            restoreSelectedFolderAfterFailure(selectedFolder)
+            throw error
+          }
+        },
         onOperationComplete = { viewModel.refresh() },
       )
 
@@ -1202,17 +1254,24 @@ object FolderListScreen : Screen {
         onConfirm = {
           val foldersToDelete = pendingDeleteFolders
           pendingDeleteFolders = emptyList()
+          val selectedFolder = clearSelectedFolderForDeletion(foldersToDelete)
+          viewModel.beginFolderDeletion(foldersToDelete)
+          selectionManager.clear()
           coroutineScope.launch {
-            runCatching {
-              val (deleted, failed) = deleteFolders(foldersToDelete)
-              if (deleted > 0) {
+            try {
+              val result = deleteFoldersInBackground(foldersToDelete)
+              viewModel.finishFolderDeletion(foldersToDelete, result.failedFolders)
+              if (selectedFolder != null && result.failedFolders.any { it.bucketId == selectedFolder.bucketId }) {
+                restoreSelectedFolderAfterFailure(selectedFolder)
+              }
+              if (result.deleted > 0) {
                 android.widget.Toast
                   .makeText(
                     context,
                     context.getString(app.gyrolet.mpvrx.R.string.ui_deleted_successfully),
                     android.widget.Toast.LENGTH_SHORT,
                   ).show()
-              } else if (failed > 0) {
+              } else if (result.failed > 0) {
                 android.widget.Toast
                   .makeText(
                     context,
@@ -1220,19 +1279,25 @@ object FolderListScreen : Screen {
                     android.widget.Toast.LENGTH_SHORT,
                   ).show()
               }
-            }.onFailure {
+            } catch (cancellation: CancellationException) {
+              viewModel.finishFolderDeletion(foldersToDelete, foldersToDelete)
+              restoreSelectedFolderAfterFailure(selectedFolder)
+              throw cancellation
+            } catch (error: Exception) {
+              viewModel.finishFolderDeletion(foldersToDelete, foldersToDelete)
+              restoreSelectedFolderAfterFailure(selectedFolder)
               android.widget.Toast
                 .makeText(
                   context,
                   context.getString(
                     R.string.toast_failed_to_delete_reason,
-                    it.message ?: context.getString(R.string.generic_unknown_error),
+                    error.message ?: context.getString(R.string.generic_unknown_error),
                   ),
                   android.widget.Toast.LENGTH_SHORT,
                 ).show()
+            } finally {
+              viewModel.refresh()
             }
-            selectionManager.clear()
-            viewModel.refresh()
           }
         },
         itemType = "folder",
