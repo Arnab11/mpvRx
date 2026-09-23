@@ -1201,6 +1201,30 @@
   <string name="pref_section_support">Support</string>
   <string name="pref_section_updates">Updates</string>
   <string name="pref_section_system">System</string>
+  <string name="pref_hall_of_fame_title">Hall of Fame</string>
+  <string name="pref_hall_of_fame_summary">Creators, contributors and community</string>
+  <string name="hall_of_fame_original_developer">mpvEx original developer</string>
+  <string name="hall_of_fame_maintainer">mpvRx maintainer</string>
+  <string name="hall_of_fame_active_title">Active contributors</string>
+  <string name="hall_of_fame_active_period">Commits in the last 90 days</string>
+  <string name="hall_of_fame_feedback_title">Issue reporters &amp; testers</string>
+  <string name="hall_of_fame_feedback_summary">Issue reports and community feedback</string>
+  <string name="hall_of_fame_all_title">All contributors</string>
+  <string name="hall_of_fame_all_period">Across the project history</string>
+  <string name="hall_of_fame_view_profile">View %1$s on GitHub</string>
+  <string name="hall_of_fame_view_github">View on GitHub</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="one">%1$d commit</item>
+    <item quantity="other">%1$d commits</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="one">%1$d issue reported</item>
+    <item quantity="other">%1$d issues reported</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="one">%1$d feedback comment</item>
+    <item quantity="other">%1$d feedback comments</item>
+  </plurals>
   <string name="pref_section_contributors">Contributors</string>
   <string name="contributors_loading">Loading contributors...</string>
   <string name="contributors_load_error">Couldn\'t load contributors</string>

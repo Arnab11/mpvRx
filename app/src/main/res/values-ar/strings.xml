@@ -1055,6 +1055,42 @@
   <string name="pref_section_support">الدعم</string>
   <string name="pref_section_updates">التحديثات</string>
   <string name="pref_section_system">النظام</string>
+  <string name="pref_hall_of_fame_title">قاعة المشاهير</string>
+  <string name="pref_hall_of_fame_summary">المطورون والمساهمون والمجتمع</string>
+  <string name="hall_of_fame_original_developer">المطور الأصلي لـ mpvEx</string>
+  <string name="hall_of_fame_maintainer">المشرف على mpvRx</string>
+  <string name="hall_of_fame_active_title">المساهمون النشطون</string>
+  <string name="hall_of_fame_active_period">التعديلات البرمجية خلال آخر 90 يومًا</string>
+  <string name="hall_of_fame_feedback_title">مبلّغو المشكلات والمختبرون</string>
+  <string name="hall_of_fame_feedback_summary">بلاغات المشكلات وملاحظات المجتمع</string>
+  <string name="hall_of_fame_all_title">جميع المساهمين</string>
+  <string name="hall_of_fame_all_period">على امتداد تاريخ المشروع</string>
+  <string name="hall_of_fame_view_profile">عرض %1$s على GitHub</string>
+  <string name="hall_of_fame_view_github">عرض على GitHub</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="zero">%1$d تعديل برمجي</item>
+    <item quantity="one">%1$d تعديل برمجي</item>
+    <item quantity="two">%1$d تعديلان برمجيان</item>
+    <item quantity="few">%1$d تعديلات برمجية</item>
+    <item quantity="many">%1$d تعديلًا برمجيًا</item>
+    <item quantity="other">%1$d تعديل برمجي</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="zero">%1$d بلاغ مشكلة</item>
+    <item quantity="one">%1$d بلاغ مشكلة</item>
+    <item quantity="two">%1$d بلاغا مشكلة</item>
+    <item quantity="few">%1$d بلاغات مشكلات</item>
+    <item quantity="many">%1$d بلاغ مشكلة</item>
+    <item quantity="other">%1$d بلاغ مشكلة</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="zero">%1$d تعليق</item>
+    <item quantity="one">%1$d تعليق</item>
+    <item quantity="two">%1$d تعليقان</item>
+    <item quantity="few">%1$d تعليقات</item>
+    <item quantity="many">%1$d تعليقًا</item>
+    <item quantity="other">%1$d تعليق</item>
+  </plurals>
   <string name="pref_section_contributors">المساهمون</string>
   <string name="contributors_loading">جارٍ تحميل المساهمين...</string>
   <string name="contributors_load_error">تعذر تحميل المساهمين</string>

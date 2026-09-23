@@ -987,6 +987,30 @@
   <string name="pref_section_support">सपोर्ट</string>
   <string name="pref_section_updates">अपडेट</string>
   <string name="pref_section_system">सिस्टम</string>
+  <string name="pref_hall_of_fame_title">गौरव दीर्घा</string>
+  <string name="pref_hall_of_fame_summary">निर्माता, योगदानकर्ता और समुदाय</string>
+  <string name="hall_of_fame_original_developer">mpvEx के मूल डेवलपर</string>
+  <string name="hall_of_fame_maintainer">mpvRx के अनुरक्षक</string>
+  <string name="hall_of_fame_active_title">सक्रिय योगदानकर्ता</string>
+  <string name="hall_of_fame_active_period">पिछले 90 दिनों के कमिट</string>
+  <string name="hall_of_fame_feedback_title">समस्या रिपोर्टकर्ता और परीक्षक</string>
+  <string name="hall_of_fame_feedback_summary">समस्या रिपोर्ट और समुदाय की प्रतिक्रिया</string>
+  <string name="hall_of_fame_all_title">सभी योगदानकर्ता</string>
+  <string name="hall_of_fame_all_period">परियोजना के पूरे इतिहास में</string>
+  <string name="hall_of_fame_view_profile">GitHub पर %1$s को देखें</string>
+  <string name="hall_of_fame_view_github">GitHub पर देखें</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="one">%1$d कमिट</item>
+    <item quantity="other">%1$d कमिट</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="one">%1$d समस्या रिपोर्ट की</item>
+    <item quantity="other">%1$d समस्याएँ रिपोर्ट कीं</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="one">%1$d प्रतिक्रिया टिप्पणी</item>
+    <item quantity="other">%1$d प्रतिक्रिया टिप्पणियाँ</item>
+  </plurals>
   <string name="pref_section_contributors">योगदानकर्ता</string>
   <string name="contributors_loading">योगदानकर्ताओं को लोड किया जा रहा है...</string>
   <string name="contributors_load_error">योगदानकर्ताओं को लोड नहीं किया जा सका</string>

@@ -1055,6 +1055,27 @@
   <string name="pref_section_support">サポート</string>
   <string name="pref_section_updates">アップデート</string>
   <string name="pref_section_system">システム</string>
+  <string name="pref_hall_of_fame_title">殿堂</string>
+  <string name="pref_hall_of_fame_summary">開発者、貢献者、コミュニティ</string>
+  <string name="hall_of_fame_original_developer">mpvEx のオリジナル開発者</string>
+  <string name="hall_of_fame_maintainer">mpvRx のメンテナー</string>
+  <string name="hall_of_fame_active_title">アクティブな貢献者</string>
+  <string name="hall_of_fame_active_period">過去90日間のコミット</string>
+  <string name="hall_of_fame_feedback_title">問題報告者とテスター</string>
+  <string name="hall_of_fame_feedback_summary">問題報告とコミュニティのフィードバック</string>
+  <string name="hall_of_fame_all_title">すべての貢献者</string>
+  <string name="hall_of_fame_all_period">プロジェクトの全履歴</string>
+  <string name="hall_of_fame_view_profile">GitHub で %1$s を表示</string>
+  <string name="hall_of_fame_view_github">GitHub で表示</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="other">%1$d 件のコミット</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="other">%1$d 件の問題報告</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="other">%1$d 件のフィードバック</item>
+  </plurals>
   <string name="pref_section_contributors">貢献者</string>
   <string name="contributors_loading">貢献者を読み込んでいます...</string>
   <string name="contributors_load_error">貢献者を読み込めませんでした</string>

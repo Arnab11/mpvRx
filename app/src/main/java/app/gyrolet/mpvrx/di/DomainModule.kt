@@ -61,7 +61,7 @@ val domainModule =
     single { MpvRxSubtitleHubRepository(get(), get(), get(), get()) }
     single { OnlineSubtitleOrchestrator(get<WyzieSearchRepository>(), get<MpvRxSubtitleHubRepository>()) }
     single { IntroDbRepository(get(), get(), androidContext()) }
-    single { GitHubContributorsRepository(get(), get()) }
+    single { GitHubContributorsRepository(get(), get(), androidContext()) }
     single { OpenCodeClient(get(), get()) }
     single { GroqClient(get(), get()) }
     single { OpenAiClient(get(), get()) }
@@ -101,4 +101,3 @@ val domainModule =
     single { TorrentStreamingEngine(androidContext()) }
     single { app.gyrolet.mpvrx.repository.SeerrRepository(get(), get(), get()) }
   }
-

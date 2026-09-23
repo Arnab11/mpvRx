@@ -1055,6 +1055,36 @@
   <string name="pref_section_support">Поддержка</string>
   <string name="pref_section_updates">Обновления</string>
   <string name="pref_section_system">Система</string>
+  <string name="pref_hall_of_fame_title">Зал славы</string>
+  <string name="pref_hall_of_fame_summary">Создатели, участники и сообщество</string>
+  <string name="hall_of_fame_original_developer">Первоначальный разработчик mpvEx</string>
+  <string name="hall_of_fame_maintainer">Разработчик mpvRx</string>
+  <string name="hall_of_fame_active_title">Активные участники</string>
+  <string name="hall_of_fame_active_period">Коммиты за последние 90 дней</string>
+  <string name="hall_of_fame_feedback_title">Авторы отчётов и тестировщики</string>
+  <string name="hall_of_fame_feedback_summary">Сообщения о проблемах и отзывы сообщества</string>
+  <string name="hall_of_fame_all_title">Все участники</string>
+  <string name="hall_of_fame_all_period">За всю историю проекта</string>
+  <string name="hall_of_fame_view_profile">Открыть %1$s на GitHub</string>
+  <string name="hall_of_fame_view_github">Открыть на GitHub</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="one">%1$d коммит</item>
+    <item quantity="few">%1$d коммита</item>
+    <item quantity="many">%1$d коммитов</item>
+    <item quantity="other">%1$d коммита</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="one">%1$d отчёт о проблеме</item>
+    <item quantity="few">%1$d отчёта о проблемах</item>
+    <item quantity="many">%1$d отчётов о проблемах</item>
+    <item quantity="other">%1$d отчёта о проблемах</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="one">%1$d комментарий</item>
+    <item quantity="few">%1$d комментария</item>
+    <item quantity="many">%1$d комментариев</item>
+    <item quantity="other">%1$d комментария</item>
+  </plurals>
   <string name="pref_section_contributors">Участники</string>
   <string name="contributors_loading">Загрузка списка участников...</string>
   <string name="contributors_load_error">Не удалось загрузить список участников</string>

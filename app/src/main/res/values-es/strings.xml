@@ -1055,6 +1055,30 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="pref_section_support">Soporte</string>
   <string name="pref_section_updates">Actualizaciones</string>
   <string name="pref_section_system">Sistema</string>
+  <string name="pref_hall_of_fame_title">Salón de la fama</string>
+  <string name="pref_hall_of_fame_summary">Creadores, colaboradores y comunidad</string>
+  <string name="hall_of_fame_original_developer">Desarrollador original de mpvEx</string>
+  <string name="hall_of_fame_maintainer">Responsable de mpvRx</string>
+  <string name="hall_of_fame_active_title">Colaboradores activos</string>
+  <string name="hall_of_fame_active_period">Commits en los últimos 90 días</string>
+  <string name="hall_of_fame_feedback_title">Informantes de problemas y probadores</string>
+  <string name="hall_of_fame_feedback_summary">Informes de problemas y comentarios de la comunidad</string>
+  <string name="hall_of_fame_all_title">Todos los colaboradores</string>
+  <string name="hall_of_fame_all_period">A lo largo de la historia del proyecto</string>
+  <string name="hall_of_fame_view_profile">Ver a %1$s en GitHub</string>
+  <string name="hall_of_fame_view_github">Ver en GitHub</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="one">%1$d commit</item>
+    <item quantity="other">%1$d commits</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="one">%1$d problema informado</item>
+    <item quantity="other">%1$d problemas informados</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="one">%1$d comentario</item>
+    <item quantity="other">%1$d comentarios</item>
+  </plurals>
   <string name="pref_section_contributors">Colaboradores</string>
   <string name="contributors_loading">Cargando colaboradores...</string>
   <string name="contributors_load_error">No se pudieron cargar los colaboradores</string>

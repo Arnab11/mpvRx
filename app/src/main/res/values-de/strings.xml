@@ -1055,6 +1055,30 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_section_support">Support</string>
   <string name="pref_section_updates">Updates</string>
   <string name="pref_section_system">System</string>
+  <string name="pref_hall_of_fame_title">Ruhmeshalle</string>
+  <string name="pref_hall_of_fame_summary">Entwickler, Mitwirkende und Community</string>
+  <string name="hall_of_fame_original_developer">Ursprünglicher mpvEx-Entwickler</string>
+  <string name="hall_of_fame_maintainer">mpvRx-Betreuer</string>
+  <string name="hall_of_fame_active_title">Aktive Mitwirkende</string>
+  <string name="hall_of_fame_active_period">Commits der letzten 90 Tage</string>
+  <string name="hall_of_fame_feedback_title">Problemmelder und Tester</string>
+  <string name="hall_of_fame_feedback_summary">Problemmeldungen und Community-Feedback</string>
+  <string name="hall_of_fame_all_title">Alle Mitwirkenden</string>
+  <string name="hall_of_fame_all_period">Über die gesamte Projektgeschichte</string>
+  <string name="hall_of_fame_view_profile">%1$s auf GitHub ansehen</string>
+  <string name="hall_of_fame_view_github">Auf GitHub ansehen</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="one">%1$d Commit</item>
+    <item quantity="other">%1$d Commits</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="one">%1$d gemeldetes Problem</item>
+    <item quantity="other">%1$d gemeldete Probleme</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="one">%1$d Feedback-Kommentar</item>
+    <item quantity="other">%1$d Feedback-Kommentare</item>
+  </plurals>
   <string name="pref_section_contributors">Mitwirkende</string>
   <string name="contributors_loading">Mitwirkende werden geladen...</string>
   <string name="contributors_load_error">Mitwirkende konnten nicht geladen werden</string>

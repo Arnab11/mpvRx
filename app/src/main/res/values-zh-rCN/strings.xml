@@ -1057,6 +1057,27 @@
   <string name="pref_section_support">支持</string>
   <string name="pref_section_updates">更新</string>
   <string name="pref_section_system">系统</string>
+  <string name="pref_hall_of_fame_title">荣誉堂</string>
+  <string name="pref_hall_of_fame_summary">创作者、贡献者与社区</string>
+  <string name="hall_of_fame_original_developer">mpvEx 原始开发者</string>
+  <string name="hall_of_fame_maintainer">mpvRx 维护者</string>
+  <string name="hall_of_fame_active_title">活跃贡献者</string>
+  <string name="hall_of_fame_active_period">最近 90 天的提交</string>
+  <string name="hall_of_fame_feedback_title">问题报告者与测试者</string>
+  <string name="hall_of_fame_feedback_summary">问题报告与社区反馈</string>
+  <string name="hall_of_fame_all_title">所有贡献者</string>
+  <string name="hall_of_fame_all_period">项目整个历史中的贡献</string>
+  <string name="hall_of_fame_view_profile">在 GitHub 上查看 %1$s</string>
+  <string name="hall_of_fame_view_github">在 GitHub 上查看</string>
+  <plurals name="hall_of_fame_commit_count">
+    <item quantity="other">%1$d 次提交</item>
+  </plurals>
+  <plurals name="hall_of_fame_issue_count">
+    <item quantity="other">%1$d 个问题报告</item>
+  </plurals>
+  <plurals name="hall_of_fame_feedback_count">
+    <item quantity="other">%1$d 条反馈评论</item>
+  </plurals>
   <string name="pref_section_contributors">贡献者</string>
   <string name="contributors_loading">正在加载贡献者...</string>
   <string name="contributors_load_error">无法加载贡献者</string>
