@@ -96,6 +96,8 @@ import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.navigateTo
 import app.gyrolet.mpvrx.ui.browser.folderlist.FolderListScreen
 import app.gyrolet.mpvrx.ui.browser.music.MusicLibraryContent
+import app.gyrolet.mpvrx.ui.browser.music.MusicLibraryViewModel
+import app.gyrolet.mpvrx.ui.browser.music.MusicTab
 import app.gyrolet.mpvrx.ui.browser.networkstreaming.NetworkStreamingScreen
 import app.gyrolet.mpvrx.ui.browser.playlist.PlaylistScreen
 import app.gyrolet.mpvrx.ui.browser.recentlyplayed.RecentlyPlayedScreen
@@ -170,6 +172,8 @@ object MainScreen : Screen {
     var persistentSelectedTab by rememberSaveable { mutableStateOf(MainTab.HOME) }
     val mediaServerPreferences = koinInject<MediaServerPreferences>()
     val musicSourceProvider by mediaServerPreferences.musicSourceProvider.collectAsState()
+    val musicLibraryViewModel: MusicLibraryViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    val localMusicTabs by musicLibraryViewModel.visibleTabs.collectAsState()
     val showMusicTab by appearancePreferences.showMusicTab.collectAsState()
     val showRecentsTab by appearancePreferences.showRecentsTab.collectAsState()
     val showPlaylistsTab by appearancePreferences.showPlaylistsTab.collectAsState()
@@ -256,6 +260,12 @@ object MainScreen : Screen {
 
     val targetPage = pagerState.targetPage.coerceIn(0, (visibleTabs.size - 1).coerceAtLeast(0))
     val selectedTab = visibleTabs.getOrNull(targetPage) ?: visibleTabs.firstOrNull() ?: MainTab.HOME
+
+    LaunchedEffect(persistentSelectedTab) {
+      if (persistentSelectedTab == MainTab.MUSIC) {
+        musicLibraryViewModel.setTab(localMusicTabs.firstOrNull() ?: MusicTab.SONGS)
+      }
+    }
 
     val onTabSelected: (MainScreen.MainTab) -> Unit = { tab ->
       val targetIndex = visibleTabs.indexOf(tab)
@@ -536,6 +546,7 @@ object MainScreen : Screen {
                     )
                   } else {
                     MusicLibraryContent(
+                      musicViewModel = musicLibraryViewModel,
                       jellyfinViewModel = jellyfinViewModel,
                       navidromeViewModel = navidromeViewModel,
                     )
