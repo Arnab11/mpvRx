@@ -104,11 +104,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -135,6 +137,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.drawWithCache
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
@@ -168,6 +171,7 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import kotlin.math.abs
+import kotlinx.coroutines.flow.collect
 import kotlin.math.roundToInt
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
@@ -1926,10 +1930,8 @@ fun AudioPlayerControls(
                 currentLine?.line?.trim() ?: ""
               }
 
-              val words = currentLine?.words
-
               AnimatedContent(
-                targetState = activeIndex to displayText,
+                targetState = Triple(currentLine, syncedLines?.getOrNull(activeIndex + 1)?.time, displayText),
                 transitionSpec = {
                   (fadeIn(animationSpec = tween(300, easing = FastOutSlowInEasing)) +
                     slideInVertically(animationSpec = tween(300, easing = FastOutSlowInEasing)) { height -> (height * 0.4f).toInt() })
@@ -1942,40 +1944,83 @@ fun AudioPlayerControls(
                 },
                 label = "currentLyricTransition",
                 contentAlignment = Alignment.CenterStart,
-                modifier = Modifier.wrapContentSize(Alignment.CenterStart),
-              ) { (_, text) ->
+                modifier = Modifier.fillMaxWidth(),
+              ) { (line, nextLineTime, text) ->
+                val words = if (line != null && text == line.line.trim()) line.words else null
+                val scrollState = rememberScrollState()
+                val wordWidths = remember(line, text) { mutableStateMapOf<Int, Int>() }
+                val lineStartMs = line?.time?.toLong() ?: 0L
+                val lineEndMs = nextLineTime?.toLong()?.takeIf { it > lineStartMs } ?: (lineStartMs + 8_000L)
+                val wordEndTimes = remember(words, lineStartMs, nextLineTime) {
+                  words.orEmpty().mapIndexed { wordIndex, word ->
+                    val wordStartMs = word.time.toLong()
+                    words?.getOrNull(wordIndex + 1)?.time?.toLong()
+                      ?.takeIf { it > wordStartMs }
+                      ?: nextLineTime?.toLong()
+                        ?.coerceAtMost(lineStartMs + 8_000L)
+                        ?.takeIf { it > wordStartMs }
+                      ?: (wordStartMs + 600L)
+                  }
+                }
+
+                LaunchedEffect(line, nextLineTime, text, scrollState) {
+                  snapshotFlow {
+                    val maxScroll = scrollState.maxValue
+                    val viewportWidth = scrollState.viewportSize
+                    if (maxScroll <= 0 || maxScroll == Int.MAX_VALUE || viewportWidth <= 0) {
+                      0
+                    } else {
+                      val positionMs = smoothPositionMs.value
+                      val highlightPosition = if (!words.isNullOrEmpty()) {
+                        val activeWordIndex = words.indexOfLast { it.time.toLong() <= positionMs }
+                        if (activeWordIndex < 0 || wordWidths.size != words.size) {
+                          0f
+                        } else {
+                          val wordStartMs = words[activeWordIndex].time.toLong()
+                          val wordDurationMs = (wordEndTimes[activeWordIndex] - wordStartMs).coerceAtLeast(1L)
+                          val progress = ((positionMs - wordStartMs).toFloat() / wordDurationMs).coerceIn(0f, 1f)
+                          val precedingWidth = (0 until activeWordIndex).sumOf { wordWidths[it] ?: 0 }
+                          precedingWidth + (wordWidths[activeWordIndex] ?: 0) * progress
+                        }
+                      } else {
+                        val progress = ((positionMs - lineStartMs).toFloat() / (lineEndMs - lineStartMs))
+                          .coerceIn(0f, 1f)
+                        (maxScroll.toFloat() + viewportWidth) * progress
+                      }
+                      (highlightPosition - viewportWidth * 0.65f).roundToInt().coerceIn(0, maxScroll)
+                    }
+                  }.collect { offset ->
+                    scrollState.scrollTo(offset)
+                  }
+                }
+
                 if (!words.isNullOrEmpty()) {
                   val activeColor = MaterialTheme.colorScheme.onSurface
                   val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
                   Row(
                     modifier = Modifier
-                      .wrapContentWidth(Alignment.Start)
-                      .horizontalScroll(rememberScrollState()),
+                      .fillMaxWidth()
+                      .horizontalScroll(scrollState, enabled = false),
                     horizontalArrangement = Arrangement.Start,
                     verticalAlignment = Alignment.CenterVertically,
                   ) {
-                    currentLine.words.forEachIndexed { wordIndex, word ->
-                      val wordStartMs = word.time.toLong()
-                      val wordEndMs =
-                        currentLine.words.getOrNull(wordIndex + 1)?.time?.toLong()
-                          ?.takeIf { it > wordStartMs }
-                          ?: syncedLines.getOrNull(activeIndex + 1)?.time?.toLong()
-                            ?.coerceAtMost(currentLine.time.toLong() + 8_000L)
-                            ?.takeIf { it > wordStartMs }
-                          ?: (wordStartMs + 600L)
-                      AnimatedLyricWord(
-                        word = word,
-                        endTimeMs = wordEndMs,
-                        positionMs = smoothPositionMs,
-                        activeColor = activeColor,
-                        inactiveColor = inactiveColor,
-                        fontSize = 19.sp,
-                      )
+                    words.forEachIndexed { wordIndex, word ->
+                      Box(Modifier.onSizeChanged { wordWidths[wordIndex] = it.width }) {
+                        AnimatedLyricWord(
+                          word = word,
+                          endTimeMs = wordEndTimes[wordIndex],
+                          positionMs = smoothPositionMs,
+                          activeColor = activeColor,
+                          inactiveColor = inactiveColor,
+                          fontSize = 19.sp,
+                        )
+                      }
                     }
                   }
                 } else {
                   Text(
                     text = text,
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(scrollState, enabled = false),
                     style = MaterialTheme.typography.titleMedium.copy(
                       fontSize = 19.sp,
                       fontWeight = FontWeight.ExtraBold,
@@ -1983,7 +2028,8 @@ fun AudioPlayerControls(
                     ),
                     color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
+                    softWrap = false,
+                    overflow = TextOverflow.Clip,
                     textAlign = TextAlign.Start,
                   )
                 }
