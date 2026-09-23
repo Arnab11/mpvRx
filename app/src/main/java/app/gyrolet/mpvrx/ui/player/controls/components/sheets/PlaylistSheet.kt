@@ -307,20 +307,12 @@ fun PlaylistSheet(
     }
   }
 
-  val screenWidth = LocalConfiguration.current.screenWidthDp.dp
-  val sheetWidth =
-    if (isListMode) {
-      640.dp
-    } else {
-      screenWidth * 0.85f
-    }
-
   var showAddToPlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
   PlayerSheet(
     onDismissRequest = onDismissRequest,
     modifier = Modifier.fillMaxWidth(),
-    customMaxWidth = sheetWidth,
+    customMaxWidth = 640.dp,
     customMaxHeight = if (isPortrait) LocalConfiguration.current.screenHeightDp.dp * 0.75f else null,
     isSwipeActive = isSwipeActive,
     swipeOffset = swipeOffset,
@@ -490,6 +482,7 @@ fun PlaylistSheet(
           // Horizontal grid mode
           LazyRow(
             state = lazyListState,
+            modifier = Modifier.fillMaxWidth(),
             contentPadding =
               PaddingValues(
                 horizontal = if (isListMode) MaterialTheme.spacing.medium else 0.dp,

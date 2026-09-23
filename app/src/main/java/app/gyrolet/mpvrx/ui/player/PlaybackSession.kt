@@ -198,6 +198,7 @@ object PlaybackSession : MPVLib.EventObserver {
   @Volatile
   private var initialized = false
   private var nativeCoreReady = false
+  private var pendingEofSeekGeneration: Long? = null
   private var applicationContext: Context? = null
   private var desiredVideoOutput = "gpu"
   private var activeCoreConfigurationKey: String? = null
@@ -1009,12 +1010,9 @@ object PlaybackSession : MPVLib.EventObserver {
   fun command(vararg command: String) {
     if (MpvConfigOverridePolicy.shouldSuppress(command)) return
     withCore(Unit) {
-      if (command.firstOrNull() == "seek") {
-        loadedAudiobookEnded = false
-        beginSeekAudioGuardLocked()
-      }
-      if (handleAmbientShaderCommandLocked(command)) return@withCore
-      MPVLib.command(*command)
+      val preparedCommand = prepareSeekCommandLocked(command)
+      if (handleAmbientShaderCommandLocked(preparedCommand)) return@withCore
+      MPVLib.command(*preparedCommand)
     }
   }
 
@@ -1026,11 +1024,8 @@ object PlaybackSession : MPVLib.EventObserver {
     nativeLock.withLock {
       if (!initialized || _state.value.generation != expectedGeneration) return@withLock false
       if (MpvConfigOverridePolicy.shouldSuppress(command)) return@withLock true
-      if (command.firstOrNull() == "seek") {
-        loadedAudiobookEnded = false
-        beginSeekAudioGuardLocked()
-      }
-      if (!handleAmbientShaderCommandLocked(command)) MPVLib.command(*command)
+      val preparedCommand = prepareSeekCommandLocked(command)
+      if (!handleAmbientShaderCommandLocked(preparedCommand)) MPVLib.command(*preparedCommand)
       true
     }
 
@@ -1128,6 +1123,10 @@ object PlaybackSession : MPVLib.EventObserver {
           desiredAmbientScaleY = value
           MPVLib.setPropertyDouble(property, value)
         }
+        "time-pos" -> {
+          rememberEofSeekLocked(value, listOf("absolute"))
+          MPVLib.setPropertyDouble(property, value)
+        }
         else -> MPVLib.setPropertyDouble(property, value)
       }
     }
@@ -1201,6 +1200,7 @@ object PlaybackSession : MPVLib.EventObserver {
     withCore(Unit) {
       if (property == "pause") {
         AudiobookPlayback.onPauseRequested(value)
+        if (!value && _state.value.phase != PlaybackPhase.LOADING) prepareResumeFromEofLocked()
         desiredPaused = value
         // Loading may include an asynchronous saved-position restore. Record user/service intent
         // now, then apply it once the load owner publishes READY.
@@ -1228,6 +1228,58 @@ object PlaybackSession : MPVLib.EventObserver {
     }
   }
 
+  private fun rememberEofSeekLocked(target: Double, flags: List<String>): Boolean {
+    val current = _state.value
+    if (!target.isFinite() || current.currentItem == null || current.currentItem.audiobook != null ||
+      loadedGeneration != current.generation ||
+      (current.phase != PlaybackPhase.READY && current.phase != PlaybackPhase.BACKGROUND) ||
+      MPVLib.getPropertyBoolean("eof-reached") != true || MPVLib.getPropertyBoolean("seekable") == false
+    ) return false
+
+    val seeksBackwards = when {
+      "absolute-percent" in flags -> target < 100.0
+      "absolute" in flags -> target < (MPVLib.getPropertyDouble("duration") ?: Double.POSITIVE_INFINITY)
+      else -> target < 0.0
+    }
+    if (!seeksBackwards) return false
+    if (pendingEofSeekGeneration != current.generation) {
+      desiredPaused = MPVLib.getPropertyBoolean("pause") ?: current.paused
+    }
+    pendingEofSeekGeneration = current.generation
+    return true
+  }
+
+  private fun prepareSeekCommandLocked(command: Array<out String>): Array<out String> {
+    if (command.firstOrNull() != "seek") return command
+    loadedAudiobookEnded = false
+    beginSeekAudioGuardLocked()
+    val target = command.getOrNull(1)?.toDoubleOrNull() ?: return command
+    val flags = command.getOrNull(2)?.split('+') ?: listOf("relative")
+    val fromEof = rememberEofSeekLocked(target, flags)
+    if (!fromEof || target != 0.0 || "exact" in flags ||
+      ("absolute" !in flags && "absolute-percent" !in flags)
+    ) return command
+
+    return command.toMutableList().apply {
+      this[2] = (flags.filterNot { it == "keyframes" } + "exact").joinToString("+")
+    }.toTypedArray()
+  }
+
+  private fun prepareResumeFromEofLocked() {
+    val current = _state.value
+    if (current.currentItem == null || current.currentItem.audiobook != null ||
+      loadedGeneration != current.generation || pendingEofSeekGeneration == current.generation ||
+      (current.phase != PlaybackPhase.READY && current.phase != PlaybackPhase.BACKGROUND) ||
+      MPVLib.getPropertyBoolean("eof-reached") != true || MPVLib.getPropertyBoolean("seeking") == true ||
+      MPVLib.getPropertyBoolean("seekable") == false
+    ) return
+
+    val duration = MPVLib.getPropertyDouble("duration")?.takeIf { it.isFinite() && it > 0.0 } ?: return
+    val position = MPVLib.getPropertyDouble("time-pos")?.takeIf { it.isFinite() } ?: return
+    if (position < duration - 2.0) return
+    MPVLib.command(*prepareSeekCommandLocked(arrayOf("seek", "0", "absolute+exact")))
+  }
+
   /** Atomically toggles pause so rapid UI/media-button taps cannot race separate reads and writes. */
   fun togglePause(): Boolean? =
     withCore(default = null) {
@@ -1239,6 +1291,7 @@ object PlaybackSession : MPVLib.EventObserver {
         }
       val nextPaused = !currentPaused
       AudiobookPlayback.onPauseRequested(nextPaused)
+      if (!nextPaused && _state.value.phase != PlaybackPhase.LOADING) prepareResumeFromEofLocked()
       desiredPaused = nextPaused
       if (_state.value.phase != PlaybackPhase.LOADING) {
         MPVLib.setPropertyBoolean("pause", nextPaused)
@@ -1433,6 +1486,7 @@ object PlaybackSession : MPVLib.EventObserver {
             }
             supersededStopGeneration = 0L
             loadedGeneration = current.generation
+            pendingEofSeekGeneration = null
             loadedPlaybackItem = current.currentItem
             loadedAudiobookEnded = false
             loadedAudiobookDurationMs = ((MPVLib.getPropertyDouble("duration") ?: 0.0) * 1000).toLong().coerceAtLeast(0)
@@ -1476,6 +1530,15 @@ object PlaybackSession : MPVLib.EventObserver {
             true
           }
           MPVLib.MpvEvent.MPV_EVENT_PLAYBACK_RESTART -> {
+            val current = _state.value
+            if (pendingEofSeekGeneration == current.generation && loadedGeneration == current.generation &&
+              (current.phase == PlaybackPhase.READY || current.phase == PlaybackPhase.BACKGROUND)
+            ) {
+              MPVLib.setPropertyBoolean("pause", desiredPaused)
+              updateState { it.copy(paused = desiredPaused) }
+              propBoolean.emit("pause", desiredPaused)
+            }
+            pendingEofSeekGeneration = null
             scheduleSeekAudioGuardRestoreLocked(SEEK_AUDIO_RESTORE_DELAY_MS)
             if (_state.value.phase != PlaybackPhase.STOPPING) {
               schedulePlaybackTransitionAudioGuardRestoreLocked(PLAYBACK_TRANSITION_AUDIO_RESTORE_DELAY_MS)
@@ -1483,6 +1546,7 @@ object PlaybackSession : MPVLib.EventObserver {
             true
           }
           MPVLib.MpvEvent.MPV_EVENT_END_FILE -> {
+            pendingEofSeekGeneration = null
             val current = _state.value
             val reason = parseEndFileReason(data)
             if (
@@ -1553,6 +1617,7 @@ object PlaybackSession : MPVLib.EventObserver {
             deferredVideoSelectionGeneration = null
             desiredPaused = true
             loadedGeneration = 0L
+            pendingEofSeekGeneration = null
             defaultUserAgent = null
             pendingPositionRestoreGeneration = 0L
             pendingPositionRestoreOverride = null
