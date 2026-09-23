@@ -53,6 +53,7 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.media.model.VideoFolder
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
+import app.gyrolet.mpvrx.preferences.BrowserPageViewPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.VideoSwipeAction
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
@@ -89,17 +90,20 @@ fun FolderCard(
   isAudioOnly: Boolean = false,
   onSwipeAction: ((VideoFolder, VideoSwipeAction) -> Unit)? = null,
   placeholderIconSize: Dp? = null,
+  viewPreferences: BrowserPageViewPreferences? = null,
 ) {
   val appearancePreferences = koinInject<AppearancePreferences>()
   val browserPreferences = koinInject<BrowserPreferences>()
-  val unlimitedNameLines by appearancePreferences.unlimitedNameLines.collectAsState()
-  val showTotalVideosChip by browserPreferences.showTotalVideosChip.collectAsState()
+  val unlimitedNameLines by
+    (viewPreferences?.unlimitedNameLines ?: appearancePreferences.unlimitedNameLines).collectAsState()
+  val showTotalVideosChip by (viewPreferences?.showItemCount ?: browserPreferences.showTotalVideosChip).collectAsState()
   val showTotalDurationChip by browserPreferences.showTotalDurationChip.collectAsState()
   val showTotalSizeChip by browserPreferences.showTotalSizeChip.collectAsState()
-  val showDateChip by browserPreferences.showDateChip.collectAsState()
+  val showDateChip by (viewPreferences?.showDateChip ?: browserPreferences.showDateChip).collectAsState()
   val showFolderPath by browserPreferences.showFolderPath.collectAsState()
-  val centerGridTitles by browserPreferences.centerGridTitles.collectAsState()
-  val showFolderThumbnails by browserPreferences.showFolderThumbnails.collectAsState()
+  val centerGridTitles by (viewPreferences?.centerGridTitles ?: browserPreferences.centerGridTitles).collectAsState()
+  val showFolderThumbnails by
+    (viewPreferences?.showThumbnails ?: browserPreferences.showFolderThumbnails).collectAsState()
   val thumbnailQuality by browserPreferences.thumbnailQuality.collectAsState()
   val includeAudio by browserPreferences.includeAudioBrowser.collectAsState()
   val swipeLeft by browserPreferences.videoSwipeLeft.collectAsState()

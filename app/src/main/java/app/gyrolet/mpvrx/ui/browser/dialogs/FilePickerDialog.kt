@@ -21,21 +21,20 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -111,6 +110,7 @@ fun FilePickerDialog(
       // Fallback / raw text
       "txt",
     ),
+  title: String? = null,
 ) {
   if (!isOpen) return
 
@@ -193,51 +193,53 @@ fun FilePickerDialog(
 
   val configuration = LocalConfiguration.current
   val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-  val dialogWidth =
-    (configuration.screenWidthDp.dp * (if (isPortrait) 0.85f else 0.5f))
-      .coerceAtMost(if (isPortrait) 360.dp else 480.dp)
 
   androidx.compose.ui.window.Dialog(
     onDismissRequest = onDismiss,
     properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
     Surface(
-      modifier = modifier.width(dialogWidth).then(
-        if (isPortrait) Modifier.height(configuration.screenHeightDp.dp * 0.5f) else Modifier.fillMaxHeight(),
-      ),
+      modifier = modifier
+        .widthIn(max = 900.dp)
+        .fillMaxWidth(0.96f)
+        .fillMaxHeight(if (isPortrait) 0.9f else 0.96f),
       shape = MaterialTheme.shapes.extraLarge,
       color = MaterialTheme.colorScheme.surface,
       tonalElevation = 6.dp,
     ) {
       Column(
-        modifier = Modifier.padding(if (isPortrait) 20.dp else 16.dp),
-        verticalArrangement = Arrangement.spacedBy(if (isPortrait) 12.dp else 8.dp),
+        modifier = Modifier.padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
       ) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
           Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically,
           ) {
             Text(
               text =
-                androidx.compose.ui.res
-                  .stringResource(app.gyrolet.mpvrx.R.string.ui_select_subtitle),
-              style = MaterialTheme.typography.titleLarge,
+                title ?: androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_select_subtitle),
+              style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.SemiBold,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis,
               modifier = Modifier.weight(1f),
             )
-            if (!isPortrait) {
-              Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                NavigationButtons(
-                  selectedPath = selectedPath,
-                  onBack = { selectedPath = currentDir?.parent },
-                  onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
-                  onSystemPicker = onSystemPickerRequest,
-                  buttonSize = 40.dp,
-                  iconSize = 24.dp,
+            Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+              NavigationButtons(
+                selectedPath = selectedPath,
+                onBack = { selectedPath = currentDir?.parent },
+                onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
+                onSystemPicker = onSystemPickerRequest,
+                buttonSize = 40.dp,
+                iconSize = 24.dp,
+              )
+              IconButton(onClick = onDismiss, modifier = Modifier.size(40.dp)) {
+                Icon(
+                  Icons.RoundedFilled.Close,
+                  contentDescription =
+                    androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
                 )
               }
             }
@@ -250,21 +252,6 @@ fun FilePickerDialog(
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth(),
           )
-          if (isPortrait) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally),
-            ) {
-              NavigationButtons(
-                selectedPath = selectedPath,
-                onBack = { selectedPath = currentDir?.parent },
-                onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
-                onSystemPicker = onSystemPickerRequest,
-                buttonSize = 48.dp,
-                iconSize = 26.dp,
-              )
-            }
-          }
         }
 
         // Content Section
@@ -326,24 +313,6 @@ fun FilePickerDialog(
                 }
               }
             }
-          }
-        }
-
-        // Footer Section (Analyze padding here)
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.End,
-        ) {
-          TextButton(
-            onClick = onDismiss,
-            shape = MaterialTheme.shapes.extraLarge,
-            // Reduced padding for the button itself if needed, or rely on Row padding
-          ) {
-            Text(
-              androidx.compose.ui.res
-                .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
-              fontWeight = FontWeight.Medium,
-            )
           }
         }
       }

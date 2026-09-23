@@ -779,7 +779,7 @@ private fun MainTabIcon(
     MainScreen.MainTab.HOME -> Icons.RoundedFilled.Home
     MainScreen.MainTab.MUSIC -> Icons.RoundedFilled.Audiotrack
     MainScreen.MainTab.RECENTS -> Icons.RoundedFilled.History
-    MainScreen.MainTab.PLAYLISTS -> Icons.RoundedFilled.PlaylistPlay
+    MainScreen.MainTab.PLAYLISTS -> Icons.RoundedFilled.Subscriptions
     MainScreen.MainTab.NETWORK -> Icons.RoundedFilled.BringYourOwnIp
     MainScreen.MainTab.JELLYFIN -> null
   }

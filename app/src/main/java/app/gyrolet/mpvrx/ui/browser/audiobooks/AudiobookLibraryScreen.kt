@@ -50,8 +50,11 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FloatingActionButtonMenu
+import androidx.compose.material3.FloatingActionButtonMenuItem
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -65,6 +68,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.ToggleFloatingActionButton
+import androidx.compose.material3.ToggleFloatingActionButtonDefaults.animateIcon
 import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipAnchorPosition
 import androidx.compose.material3.TooltipDefaults
@@ -134,7 +139,7 @@ object AudiobookLibraryScreen : Screen {
   }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 fun AudiobookLibraryContent(
   isMusicTabMode: Boolean = false,
@@ -267,7 +272,17 @@ fun AudiobookLibraryContent(
     }
   }
 
-  BackHandler(search) { search = false; query = "" }
+  BackHandler(search || importMenu) {
+    if (importMenu) {
+      importMenu = false
+    } else {
+      search = false
+      query = ""
+    }
+  }
+  LaunchedEffect(isAbsSource, importing) {
+    if (isAbsSource || importing != null) importMenu = false
+  }
   val navBarHeight = LocalNavigationBarHeight.current.takeIf { it > 0.dp } ?: 88.dp
 
   Scaffold(
@@ -427,23 +442,7 @@ fun AudiobookLibraryContent(
             }
           },
           additionalActions = {
-            if (!isAbsSource) {
-              Box {
-                AudiobookIconButton(Icons.RoundedFilled.Add, stringResource(R.string.audiobook_import_files), importing == null) { importMenu = true }
-                DropdownMenu(importMenu, onDismissRequest = { importMenu = false }) {
-                  DropdownMenuItem(
-                    text = { Text(stringResource(R.string.audiobook_import_files)) },
-                    leadingIcon = { Icon(Icons.RoundedFilled.Add, null) },
-                    onClick = { importMenu = false; files.launch(arrayOf("*/*")) }
-                  )
-                  DropdownMenuItem(
-                    text = { Text(stringResource(R.string.audiobook_import_folder)) },
-                    leadingIcon = { Icon(Icons.RoundedFilled.FolderOpen, null) },
-                    onClick = { importMenu = false; folder.launch(null) }
-                  )
-                }
-              }
-            } else if (absState.libraries.size > 1) {
+            if (isAbsSource && absState.libraries.size > 1) {
               Box {
                 AudiobookIconButton(Icons.RoundedFilled.Folder, "Switch Library", true) { isLibDropdownOpen = true }
                 DropdownMenu(isLibDropdownOpen, onDismissRequest = { isLibDropdownOpen = false }) {
@@ -469,6 +468,51 @@ fun AudiobookLibraryContent(
             }
           },
         )
+      },
+      floatingActionButton = {
+        if (!isAbsSource && importing == null) {
+          FloatingActionButtonMenu(
+            modifier = Modifier.padding(bottom = (navBarHeight - 16.dp).coerceAtLeast(0.dp)),
+            expanded = importMenu,
+            button = {
+              TooltipBox(
+                positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                  if (importMenu) TooltipAnchorPosition.Start else TooltipAnchorPosition.Above,
+                ),
+                tooltip = { PlainTooltip { Text(stringResource(R.string.ui_toggle_menu)) } },
+                state = rememberTooltipState(),
+              ) {
+                ToggleFloatingActionButton(
+                  checked = importMenu,
+                  onCheckedChange = { importMenu = it },
+                ) {
+                  Icon(
+                    imageVector = if (checkedProgress > 0.5f) Icons.RoundedFilled.Close else Icons.RoundedFilled.Add,
+                    contentDescription = stringResource(R.string.ui_toggle_menu),
+                    modifier = Modifier.animateIcon({ checkedProgress }),
+                  )
+                }
+              }
+            },
+          ) {
+            FloatingActionButtonMenuItem(
+              text = { Text(stringResource(R.string.audiobook_import_files)) },
+              icon = { Icon(Icons.RoundedFilled.FileOpen, contentDescription = null) },
+              onClick = {
+                importMenu = false
+                files.launch(arrayOf("*/*"))
+              },
+            )
+            FloatingActionButtonMenuItem(
+              text = { Text(stringResource(R.string.audiobook_import_folder)) },
+              icon = { Icon(Icons.RoundedFilled.FolderOpen, contentDescription = null) },
+              onClick = {
+                importMenu = false
+                folder.launch(null)
+              },
+            )
+          }
+        }
       },
     ) { padding ->
       Column(Modifier.fillMaxSize().padding(padding)) {
@@ -633,7 +677,7 @@ fun AudiobookLibraryContent(
             layoutMode == MediaLayoutMode.GRID -> LazyVerticalGrid(
               columns = GridCells.Adaptive(minSize = 145.dp),
               modifier = Modifier.fillMaxSize(),
-              contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = navBarHeight + 16.dp),
+              contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = navBarHeight + 88.dp),
               verticalArrangement = Arrangement.spacedBy(14.dp),
               horizontalArrangement = Arrangement.spacedBy(14.dp)
             ) {
@@ -653,7 +697,7 @@ fun AudiobookLibraryContent(
             }
             else -> LazyColumn(
               modifier = Modifier.fillMaxSize(),
-              contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = navBarHeight + 16.dp),
+              contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = navBarHeight + 88.dp),
               verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
               items(visibleLocalBooks, key = { it.book.id }) { book ->

@@ -345,6 +345,9 @@ fun PlayerSheets(
       if (showAudioFilePicker) {
         app.gyrolet.mpvrx.ui.browser.dialogs.FilePickerDialog(
           isOpen = true,
+          title = androidx.compose.ui.res.stringResource(
+            app.gyrolet.mpvrx.R.string.player_sheets_external_audio_tracks,
+          ),
           currentPath = savedPickerPath,
           onDismiss = { showAudioFilePicker = false },
           onPathChanged = { path ->

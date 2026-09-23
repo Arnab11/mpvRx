@@ -203,6 +203,7 @@ object Icons {
     val HelpOutline by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Help) }
     val PlaylistAdd by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Playlist_add) }
     val PlaylistPlay get() = PlayArrow
+    val Subscriptions by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Subscriptions) }
     val PushPin by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Push_pin) }
     val QueueMusic by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Queue_music) }
     val Refresh by lazy(LazyThreadSafetyMode.NONE) { AppIcon(MaterialSymbols.RoundedFilled.Refresh) }
@@ -431,6 +432,7 @@ object Icons {
     val HelpOutline get() = Shared.HelpOutline
     val PlaylistAdd get() = Shared.PlaylistAdd
     val PlaylistPlay get() = Shared.PlaylistPlay
+    val Subscriptions get() = Shared.Subscriptions
     val PushPin get() = Shared.PushPin
     val QueueMusic get() = Shared.QueueMusic
     val Refresh get() = Shared.Refresh

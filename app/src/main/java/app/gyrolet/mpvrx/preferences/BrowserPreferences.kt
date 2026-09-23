@@ -64,6 +64,11 @@ class BrowserPreferences(
   val playlistSortOrder = preferenceStore.getEnum("playlist_sort_order", SortOrder.Ascending)
   val playlistItemSortType = preferenceStore.getEnum("playlist_item_sort_type", PlaylistSortType.Original)
   val playlistItemSortOrder = preferenceStore.getEnum("playlist_item_sort_order", SortOrder.Ascending)
+  val recentSortType = preferenceStore.getEnum("recent_sort_type", RecentSortType.LastPlayed)
+  val recentSortOrder = preferenceStore.getEnum("recent_sort_order", SortOrder.Descending)
+  val recentView = BrowserPageViewPreferences(preferenceStore, "recent")
+  val playlistView = BrowserPageViewPreferences(preferenceStore, "playlist_library", folderDefaults = true)
+  val playlistItemView = BrowserPageViewPreferences(preferenceStore, "playlist_item")
   val showPlaylistLocation = preferenceStore.getBoolean("show_playlist_location", true)
   val showPlaylistCategory = preferenceStore.getBoolean("show_playlist_category", true)
   val showPlaylistStreamDetails = preferenceStore.getBoolean("show_playlist_stream_details", true)
@@ -160,6 +165,65 @@ class BrowserPreferences(
 
   // When deleting a folder, delete all files instead of only media files
   val deleteFolderAllContents = preferenceStore.getBoolean("delete_folder_all_contents", false)
+}
+
+class BrowserPageViewPreferences internal constructor(
+  private val preferenceStore: PreferenceStore,
+  private val prefix: String,
+  folderDefaults: Boolean = false,
+) {
+  val layoutMode = preferenceStore.getEnum("${prefix}_layout_mode", MediaLayoutMode.LIST)
+    .initializeFrom(preferenceStore.getEnum("media_layout_mode", MediaLayoutMode.LIST))
+  val manualGridColumnsEnabled = boolean("manual_grid_columns_enabled", false)
+  val gridColumnsPortrait = integer(
+    "grid_columns_portrait",
+    0,
+    if (folderDefaults) "folder_grid_columns_portrait" else "video_grid_columns_portrait",
+  )
+  val gridColumnsLandscape = integer(
+    "grid_columns_landscape",
+    0,
+    if (folderDefaults) "folder_grid_columns_landscape" else "video_grid_columns_landscape",
+  )
+  val showThumbnails = boolean(
+    "show_thumbnails",
+    !folderDefaults,
+    if (folderDefaults) "show_folder_thumbnails" else "show_video_thumbnails",
+  )
+  val unlimitedNameLines = boolean("unlimited_name_lines", false)
+  val centerGridTitles = boolean("center_grid_titles", true)
+  val showExtensionField = boolean("show_extension_field", false)
+  val showDurationField = boolean("show_duration_field", true)
+  val showSizeChip = boolean("show_size_chip", true)
+  val showResolutionChip = boolean("show_resolution_chip", false)
+  val showFramerateInResolution = boolean("show_framerate_in_resolution", false)
+  val showSubtitleIndicator = boolean("show_subtitle_indicator", false)
+  val showCodecSupportIndicator = boolean("show_codec_support_indicator", false)
+  val showProgressBar = boolean("show_progress_bar", true)
+  val showDateChip = boolean("show_date_chip", false)
+  val showItemCount = boolean("show_item_count", true, "show_total_videos_chip")
+  val showLocation = boolean("show_location", true, "show_playlist_location")
+  val showCategory = boolean("show_category", true, "show_playlist_category")
+  val showStreamDetails = boolean("show_stream_details", true, "show_playlist_stream_details")
+  val audioCoverArtSize = integer("audio_cover_art_size", 48, "music_cover_art_size")
+
+  private fun boolean(key: String, defaultValue: Boolean, legacyKey: String = key): Preference<Boolean> =
+    preferenceStore.getBoolean("${prefix}_$key", defaultValue)
+      .initializeFrom(preferenceStore.getBoolean(legacyKey, defaultValue))
+
+  private fun integer(key: String, defaultValue: Int, legacyKey: String): Preference<Int> =
+    preferenceStore.getInt("${prefix}_$key", defaultValue)
+      .initializeFrom(preferenceStore.getInt(legacyKey, defaultValue))
+
+  private fun <T> Preference<T>.initializeFrom(legacy: Preference<T>): Preference<T> =
+    apply {
+      if (!isSet()) set(legacy.get())
+    }
+}
+
+enum class RecentSortType {
+  LastPlayed,
+  Name,
 }
 
 /**

@@ -179,7 +179,7 @@ object PlaylistScreen : Screen {
     app.gyrolet.mpvrx.ui.browser.NavigationBarSelectionEffect(selectionManager.isInSelectionMode)
 
     // Track scroll for FAB visibility
-    val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
+    val mediaLayoutMode by browserPreferences.playlistView.layoutMode.collectAsState()
     app.gyrolet.mpvrx.ui.browser.fab.FabScrollHelper.trackScrollForFabVisibility(
       listState = listState,
       gridState = if (mediaLayoutMode == MediaLayoutMode.GRID) gridState else null,
@@ -452,10 +452,11 @@ object PlaylistScreen : Screen {
     isInSelectionMode: Boolean = false,
   ) {
     val browserPreferences = koinInject<app.gyrolet.mpvrx.preferences.BrowserPreferences>()
-    val mediaLayoutMode by browserPreferences.mediaLayoutMode.collectAsState()
-    val manualGridColumnsEnabled by browserPreferences.manualGridColumnsEnabled.collectAsState()
-    val folderGridColumnsPortrait by browserPreferences.folderGridColumnsPortrait.collectAsState()
-    val folderGridColumnsLandscape by browserPreferences.folderGridColumnsLandscape.collectAsState()
+    val viewPreferences = browserPreferences.playlistView
+    val mediaLayoutMode by viewPreferences.layoutMode.collectAsState()
+    val manualGridColumnsEnabled by viewPreferences.manualGridColumnsEnabled.collectAsState()
+    val folderGridColumnsPortrait by viewPreferences.gridColumnsPortrait.collectAsState()
+    val folderGridColumnsLandscape by viewPreferences.gridColumnsLandscape.collectAsState()
 
     val isGridMode = mediaLayoutMode == MediaLayoutMode.GRID
 

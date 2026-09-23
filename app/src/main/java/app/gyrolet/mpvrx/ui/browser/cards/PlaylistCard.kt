@@ -78,11 +78,12 @@ fun PlaylistCard(
   val thumbnailRepository = koinInject<ThumbnailRepository>()
   val preferences = koinInject<BrowserPreferences>()
   val appearancePreferences = koinInject<AppearancePreferences>()
+  val viewPreferences = preferences.playlistView
   val thumbnailQuality by preferences.thumbnailQuality.collectAsState()
   val thumbnailMode by preferences.thumbnailMode.collectAsState()
   val thumbnailFramePosition by preferences.thumbnailFramePosition.collectAsState()
-  val showThumbnails by preferences.showFolderThumbnails.collectAsState()
-  val showLocation by preferences.showPlaylistLocation.collectAsState()
+  val showThumbnails by viewPreferences.showThumbnails.collectAsState()
+  val showLocation by viewPreferences.showLocation.collectAsState()
   val sourceLocation = remember(playlist.m3uSourceUrl, playlist.xtreamServerUrl) {
     app.gyrolet.mpvrx.ui.browser.playlist.playlistSourceLocation(playlist.m3uSourceUrl ?: playlist.xtreamServerUrl)
   }
@@ -237,5 +238,6 @@ fun PlaylistCard(
     isGridMode = isGridMode,
     thumbnail = thumbnailBitmap,
     placeholderIconSize = if (isFavorites) (if (isGridMode) 40.dp else 32.dp) else null,
+    viewPreferences = viewPreferences,
   )
 }
