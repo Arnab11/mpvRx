@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.HorizontalDivider
@@ -24,11 +25,16 @@ import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.gyrolet.mpvrx.preferences.PlayerPreferences
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetDragHandle
+import org.koin.compose.koinInject
 
 data class AudioPropertyItem(
   val label: String,
@@ -42,6 +48,7 @@ fun AudioPropertiesSheet(
   onDismissRequest: () -> Unit,
   modifier: Modifier = Modifier,
 ) {
+  val dimBackground by koinInject<PlayerPreferences>().reduceMotion.collectAsState()
   val sheetState =
     rememberBottomSheetState(
       initialValue = SheetValue.Hidden,
@@ -52,6 +59,7 @@ fun AudioPropertiesSheet(
     onDismissRequest = onDismissRequest,
     sheetState = sheetState,
     containerColor = MaterialTheme.colorScheme.surface,
+    scrimColor = if (dimBackground) BottomSheetDefaults.ScrimColor else Color.Transparent,
     sheetMaxWidth = 640.dp,
     dragHandle = { PlayerSheetDragHandle() },
     modifier = modifier,

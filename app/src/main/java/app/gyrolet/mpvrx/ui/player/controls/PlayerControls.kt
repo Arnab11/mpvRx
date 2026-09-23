@@ -212,6 +212,7 @@ fun PlayerControls(
   val portraitPlaybackControlsPosition by
     appearancePreferences.portraitPlaybackControlsPosition.collectAsState()
   val playerPreferences = koinInject<PlayerPreferences>()
+  val reduceMotion by playerPreferences.reduceMotion.collectAsState()
   val audioPreferences = koinInject<AudioPreferences>()
   val showSystemStatusBar by playerPreferences.showSystemStatusBar.collectAsState()
   val showSystemNavigationBar by playerPreferences.showSystemNavigationBar.collectAsState()
@@ -667,7 +668,7 @@ fun PlayerControls(
               .fillMaxSize()
               .onSizeChanged { controlsLayoutHeightPx = it.height }
               .drawBehind {
-                if (transparentOverlay > 0f) {
+                if (reduceMotion && transparentOverlay > 0f) {
                   drawRect(FullScreenScrimBrush, alpha = transparentOverlay)
                 }
               }.then(safeAreaInsetModifier)
@@ -692,7 +693,6 @@ fun PlayerControls(
           // Overlay visibility — Group 1
           val showVolumeGestureOverlay by playerPreferences.showVolumeGestureOverlay.collectAsState()
           val showBrightnessGestureOverlay by playerPreferences.showBrightnessGestureOverlay.collectAsState()
-          val reduceMotion by playerPreferences.reduceMotion.collectAsState()
           val controlsAnimStyle by playerPreferences.controlsAnimStyle.collectAsState()
           val enterMs = (100 * animSpeed).toInt().coerceAtLeast(30)
           val exitMs = (300 * animSpeed).toInt().coerceAtLeast(50)

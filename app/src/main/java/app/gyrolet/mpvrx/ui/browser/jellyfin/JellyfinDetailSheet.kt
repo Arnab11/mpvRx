@@ -23,7 +23,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -1230,110 +1229,49 @@ fun JellyfinDetailSheet(
 
         val technicalDetails =
           listOf(
-            Triple(R.string.media_info_tab_video, item.videoCodec, Icons.RoundedFilled.Movie),
-            Triple(R.string.ui_resolution, item.videoResolution, Icons.RoundedFilled.AspectRatio),
-            Triple(R.string.media_info_tab_audio, item.audioCodec, Icons.RoundedFilled.Audiotrack),
-            Triple(R.string.media_info_stat_channels, item.audioChannels, Icons.RoundedFilled.VolumeUp),
-            Triple(R.string.ytdlp_container, item.container?.uppercase(Locale.ROOT), Icons.RoundedFilled.InsertDriveFile),
-          ).mapNotNull { (label, value, icon) ->
-            value?.trim()?.takeIf(String::isNotEmpty)?.let { Triple(label, it, icon) }
+            R.string.media_info_tab_video to item.videoCodec,
+            R.string.ui_resolution to item.videoResolution,
+            R.string.media_info_tab_audio to item.audioCodec,
+            R.string.media_info_stat_channels to item.audioChannels,
+            R.string.ytdlp_container to item.container?.uppercase(Locale.ROOT),
+          ).mapNotNull { (label, value) ->
+            value?.trim()?.takeIf(String::isNotEmpty)?.let { label to it }
           }
         if (technicalDetails.isNotEmpty()) {
-          Column(
-            modifier = Modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
-          ) {
-            Row(
-              modifier = Modifier.fillMaxWidth(),
-              verticalAlignment = Alignment.CenterVertically,
-              horizontalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-              Box(
-                modifier = Modifier
-                  .size(40.dp)
-                  .clip(CircleShape)
-                  .background(MaterialTheme.colorScheme.primaryContainer),
-                contentAlignment = Alignment.Center,
-              ) {
-                Icon(
-                  imageVector = Icons.RoundedFilled.Tune,
-                  contentDescription = null,
-                  tint = MaterialTheme.colorScheme.onPrimaryContainer,
-                  modifier = Modifier.size(21.dp),
+          Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+              text = stringResource(R.string.jellyfin_technical_details),
+              modifier = Modifier.padding(bottom = 8.dp).semantics { heading() },
+              style = MaterialTheme.typography.titleMedium,
+              fontWeight = FontWeight.SemiBold,
+              color = MaterialTheme.colorScheme.onSurface,
+            )
+            technicalDetails.forEachIndexed { index, (label, value) ->
+              if (index > 0) {
+                HorizontalDivider(
+                  color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
                 )
               }
-              Text(
-                text = stringResource(R.string.jellyfin_technical_details),
-                modifier = Modifier.semantics { heading() },
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
-              )
-            }
-            BoxWithConstraints(Modifier.fillMaxWidth()) {
-              val columns = when {
-                maxWidth >= 600.dp -> 3
-                maxWidth >= 320.dp -> 2
-                else -> 1
-              }
-              Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                technicalDetails.chunked(columns).forEach { detailsRow ->
-                  Row(
+              Row(
+                modifier = Modifier.fillMaxWidth().padding(vertical = 10.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp),
+                verticalAlignment = Alignment.Top,
+              ) {
+                Text(
+                  text = stringResource(label),
+                  modifier = Modifier.weight(1f),
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                SelectionContainer(modifier = Modifier.weight(1.5f)) {
+                  Text(
+                    text = value,
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.Top,
-                  ) {
-                    detailsRow.forEach { (label, value, icon) ->
-                      Surface(
-                        modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(20.dp),
-                        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                        tonalElevation = 2.dp,
-                        border = BorderStroke(
-                          width = 1.dp,
-                          color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-                        ),
-                      ) {
-                        Column(
-                          modifier = Modifier.padding(14.dp),
-                          verticalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                          Box(
-                            modifier = Modifier
-                              .size(34.dp)
-                              .clip(RoundedCornerShape(12.dp))
-                              .background(MaterialTheme.colorScheme.secondaryContainer),
-                            contentAlignment = Alignment.Center,
-                          ) {
-                            Icon(
-                              imageVector = icon,
-                              contentDescription = null,
-                              tint = MaterialTheme.colorScheme.onSecondaryContainer,
-                              modifier = Modifier.size(19.dp),
-                            )
-                          }
-                          Text(
-                            text = stringResource(label),
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                          )
-                          SelectionContainer {
-                            Text(
-                              text = value,
-                              modifier = Modifier.fillMaxWidth(),
-                              style = MaterialTheme.typography.titleMedium,
-                              fontWeight = FontWeight.Bold,
-                              color = MaterialTheme.colorScheme.onSurface,
-                              maxLines = 2,
-                              overflow = TextOverflow.Ellipsis,
-                            )
-                          }
-                        }
-                      }
-                    }
-                    repeat(columns - detailsRow.size) {
-                      Spacer(Modifier.weight(1f))
-                    }
-                  }
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    textAlign = TextAlign.End,
+                  )
                 }
               }
             }

@@ -87,6 +87,8 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.Velocity
 import androidx.compose.ui.unit.dp
+import app.gyrolet.mpvrx.preferences.PlayerPreferences
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
@@ -96,6 +98,7 @@ import app.gyrolet.mpvrx.ui.theme.MotionPolicy
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.launch
+import org.koin.compose.koinInject
 import kotlin.math.roundToInt
 
 @SuppressLint("ConfigurationScreenWidthHeight")
@@ -114,6 +117,7 @@ fun PlayerSheet(
   content: @Composable () -> Unit,
 ) {
   val scope = rememberCoroutineScope()
+  val dimBackground by koinInject<PlayerPreferences>().reduceMotion.collectAsState()
   val reducedMotion = AppMotion.playerReducedMotion()
   val currentSheetSpec by rememberUpdatedState<FiniteAnimationSpec<Float>>(
     if (reducedMotion) snap() else AppMotion.Spatial.Expressive,
@@ -167,7 +171,9 @@ fun PlayerSheet(
     }
   val swipeProgress = if (height > 0) (-scaledSwipeOffset / height).coerceIn(0f, 1f) else 0f
   val targetAlpha =
-    if (isSwipeActive) {
+    if (!dimBackground) {
+      0f
+    } else if (isSwipeActive) {
       if (anchoredDraggableState.anchors.size > 0) 0.5f * swipeProgress else 0f
     } else if (anchoredDraggableState.targetValue == 0) {
       0.5f
