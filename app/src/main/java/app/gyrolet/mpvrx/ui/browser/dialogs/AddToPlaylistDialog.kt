@@ -50,6 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
@@ -61,20 +62,26 @@ import java.util.Locale
 @Composable
 fun AddToPlaylistDialog(
   isOpen: Boolean,
-  candidates: List<PlaylistAddCandidate>,
+  candidates: List<PlaylistAddCandidate> = emptyList(),
   onDismiss: () -> Unit,
   onSuccess: () -> Unit,
   isJellyfin: Boolean = false,
   modifier: Modifier = Modifier,
   onItemsAdded: () -> Unit = {},
+  videos: List<Video> = emptyList(),
 ) {
   val viewModel: AddToPlaylistViewModel = viewModel()
   val playlistOptions by viewModel.playlistOptions.collectAsState()
   val scope = rememberCoroutineScope()
   var showCreateDialog by remember { mutableStateOf(false) }
   val context = LocalContext.current
-  val isAudio = remember(candidates) { candidates.firstOrNull()?.isAudio == true }
-  val compatibleCandidates = remember(candidates, isAudio) { candidates.filter { it.isAudio == isAudio } }
+  val resolvedCandidates = remember(candidates, videos) {
+    if (candidates.isNotEmpty()) candidates else videos.toPlaylistCandidates()
+  }
+  val isAudio = remember(resolvedCandidates) { resolvedCandidates.firstOrNull()?.isAudio == true }
+  val compatibleCandidates = remember(resolvedCandidates, isAudio) {
+    resolvedCandidates.filter { it.isAudio == isAudio }
+  }
 
   androidx.compose.runtime.LaunchedEffect(isOpen, isAudio, isJellyfin) {
     if (isOpen) {
@@ -126,9 +133,9 @@ fun AddToPlaylistDialog(
         Text(
           text =
             if (isAudio) {
-              if (candidates.size == 1) "Adding 1 song to playlist" else "Adding ${candidates.size} songs to playlist"
+              if (resolvedCandidates.size == 1) "Adding 1 song to playlist" else "Adding ${resolvedCandidates.size} songs to playlist"
             } else {
-              if (candidates.size == 1) "Adding 1 video to playlist" else "Adding ${candidates.size} videos to playlist"
+              if (resolvedCandidates.size == 1) "Adding 1 video to playlist" else "Adding ${resolvedCandidates.size} videos to playlist"
             },
           style = MaterialTheme.typography.bodyMedium,
           color = MaterialTheme.colorScheme.onSurfaceVariant,

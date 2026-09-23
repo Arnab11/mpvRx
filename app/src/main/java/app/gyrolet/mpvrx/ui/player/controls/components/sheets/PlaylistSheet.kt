@@ -76,7 +76,6 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
-import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -274,7 +273,22 @@ fun PlaylistSheet(
   // Check portrait mode
   val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-  val isListMode by playerPreferences.playlistViewMode.collectAsState()
+  // Portrait mode => list mode
+  val isListModePreference by playerPreferences.playlistViewMode.collectAsState()
+  var isListMode by remember { mutableStateOf(if (isPortrait) true else isListModePreference) }
+
+  LaunchedEffect(isPortrait) {
+    if (isPortrait && !isListMode) {
+      isListMode = true
+    }
+  }
+
+  // Update preference when view mode changes (only in landscape)
+  LaunchedEffect(isListMode) {
+    if (!isPortrait && isListMode != isListModePreference) {
+      playerPreferences.playlistViewMode.set(isListMode)
+    }
+  }
 
   // Scroll state for the playlist
   val lazyListState = rememberLazyListState()
@@ -308,7 +322,13 @@ fun PlaylistSheet(
     }
   }
 
-  val sheetWidth = if (isPortrait) 420.dp else configuration.screenWidthDp.dp * 0.85f
+  val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+  val sheetWidth =
+    if (isListMode) {
+      640.dp
+    } else {
+      screenWidth * 0.85f
+    }
 
   var showAddToPlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
@@ -316,9 +336,10 @@ fun PlaylistSheet(
     onDismissRequest = onDismissRequest,
     modifier = Modifier.fillMaxWidth(),
     customMaxWidth = sheetWidth,
-    customMaxHeight = if (isPortrait) configuration.screenHeightDp.dp * 0.5f else null,
+    customMaxHeight = if (isPortrait) LocalConfiguration.current.screenHeightDp.dp * 0.75f else null,
     isSwipeActive = isSwipeActive,
     swipeOffset = swipeOffset,
+    title = stringResource(R.string.ui_playlist),
   ) {
     Surface(
       modifier = Modifier.fillMaxWidth(),
@@ -352,9 +373,8 @@ fun PlaylistSheet(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-          Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.smaller),
+          Column(
+            verticalArrangement = Arrangement.spacedBy(4.dp),
             modifier = Modifier.weight(1f),
           ) {
             if (currentItem != null) {
@@ -367,11 +387,6 @@ fun PlaylistSheet(
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
                   ),
-              )
-              Text(
-                text = "\u2022",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
             }
             Text(
@@ -395,14 +410,17 @@ fun PlaylistSheet(
               )
             }
 
-            IconButton(
-              onClick = { playerPreferences.playlistViewMode.set(!isListMode) },
-            ) {
-              Icon(
-                imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
-                contentDescription = if (isListMode) "Switch to Grid View" else "Switch to List View",
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
+            // Toggle button for list/grid view (only in landscape)
+            if (!isPortrait) {
+              IconButton(
+                onClick = { isListMode = !isListMode },
+              ) {
+                Icon(
+                  imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
+                  contentDescription = if (isListMode) "Switch to Grid View" else "Switch to List View",
+                  tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
             }
           }
         }
@@ -517,7 +535,7 @@ fun PlaylistSheet(
     val queueVideos = remember(playlist) { playlist.map { it.toVideo() } }
     AddToPlaylistDialog(
       isOpen = true,
-      candidates = queueVideos.toPlaylistCandidates(),
+      videos = queueVideos,
       onDismiss = { showAddToPlaylistDialog = false },
       onSuccess = { showAddToPlaylistDialog = false },
     )
