@@ -385,6 +385,13 @@ object YtdlpManager {
       }
     }
 
+  internal suspend fun preparePythonRuntime(context: Context): Boolean =
+    withContext(Dispatchers.IO) {
+      installMutex.withLock {
+        prepareRuntimeAssets(context) {}
+      }
+    }
+
   private fun copyRuntimeAssets(context: Context, onLog: (String) -> Unit = {}): Boolean {
     val ytdlDir = getYtdlDir(context)
 

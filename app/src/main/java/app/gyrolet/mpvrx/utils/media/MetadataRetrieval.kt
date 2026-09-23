@@ -162,7 +162,6 @@ object MetadataRetrieval {
 
     return metadataByVideoPath
   }
-    }
 
   /**
    * Enriches a folder with metadata only if needed

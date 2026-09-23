@@ -60,7 +60,7 @@ val domainModule =
     single { WyzieSearchRepository(androidContext(), get(), get(), get(), get()) }
     single { MpvRxSubtitleHubRepository(get(), get(), get(), get()) }
     single { OnlineSubtitleOrchestrator(get<WyzieSearchRepository>(), get<MpvRxSubtitleHubRepository>()) }
-    single { IntroDbRepository(get(), get()) }
+    single { IntroDbRepository(get(), get(), androidContext()) }
     single { GitHubContributorsRepository(get(), get()) }
     single { OpenCodeClient(get(), get()) }
     single { GroqClient(get(), get()) }

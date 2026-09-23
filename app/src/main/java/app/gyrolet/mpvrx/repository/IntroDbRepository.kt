@@ -9,6 +9,7 @@
 
 package app.gyrolet.mpvrx.repository
 
+import android.content.Context
 import android.util.Log
 import app.gyrolet.mpvrx.network.awaitResponse
 import app.gyrolet.mpvrx.preferences.IntroSegmentProvider
@@ -17,6 +18,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
@@ -35,6 +37,8 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.net.URLEncoder
+import java.text.Normalizer
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 import kotlin.math.abs
 import kotlin.math.roundToLong
@@ -258,6 +262,7 @@ private data class AnimeSkipTimestampType(
 class IntroDbRepository(
   client: OkHttpClient,
   private val json: Json,
+  private val context: Context,
 ) {
   private val client = client.newBuilder().callTimeout(PROVIDER_LOOKUP_TIMEOUT_MS, TimeUnit.MILLISECONDS).build()
 
@@ -265,8 +270,8 @@ class IntroDbRepository(
     withContext(Dispatchers.IO) {
       runCatching {
         val titleForLookup = request.canonicalTitle?.takeIf { it.isNotBlank() } ?: request.mediaTitle
-        val parsed = MediaInfoParser.parse(titleForLookup)
-        val normalizedTitle = parsed.title.ifBlank { titleForLookup.substringBeforeLast('.') }.trim()
+        val parsed = MediaInfoParser.parseForLookup(context, request.mediaTitle)
+        val normalizedTitle = (request.canonicalTitle?.takeIf { it.isNotBlank() } ?: parsed.title).trim()
         val effectiveMediaType =
           when ((request.mediaType ?: parsed.type).lowercase()) {
             "series", "tv" -> "tv"
@@ -274,7 +279,9 @@ class IntroDbRepository(
           }
         val effectiveSeason = request.season ?: parsed.season
         val effectiveEpisode = request.episode ?: parsed.episode
-        if (normalizedTitle.isBlank()) {
+        if (normalizedTitle.isBlank() || parsed.episodeEnd != null || parsed.isEpisodeAmbiguous ||
+          (effectiveMediaType == "tv" && (effectiveSeason == null || effectiveEpisode == null || effectiveEpisode <= 0))
+        ) {
           return@runCatching IntroDbLookupOutcome.Unresolved(
             title = titleForLookup,
             provider = request.provider,
@@ -1097,7 +1104,7 @@ class IntroDbRepository(
           ?: source.trim().takeIf { it.matches(malIdRegex) }?.toIntOrNull()
       }
 
-  private fun buildAniSkipQueryCandidates(
+  private suspend fun buildAniSkipQueryCandidates(
     request: IntroDbLookupRequest,
     normalizedTitle: String,
     season: Int?,
@@ -1105,8 +1112,8 @@ class IntroDbRepository(
     val baseTitles =
       buildList {
         add(request.canonicalTitle)
-        add(MediaInfoParser.parse(request.mediaTitle).title)
         add(normalizedTitle)
+        add(MediaInfoParser.parseForLookup(context, request.mediaTitle).title)
       }.mapNotNull { candidate ->
         candidate?.trim()?.takeIf { it.isNotBlank() }
       }.distinct()
@@ -1129,19 +1136,35 @@ class IntroDbRepository(
     if (queryCandidates.isEmpty()) return null
 
     val aggregatedResults = LinkedHashMap<Int, JikanAnimeSearchResult>()
-    queryCandidates
-      .take(MAX_ANISKIP_QUERY_CANDIDATES)
-      .forEach { query ->
-        searchJikanAnime(query).forEach { result ->
+    var searchFailure: Exception? = null
+    val searchStartedAt = System.nanoTime()
+    for (query in queryCandidates.take(MAX_ANISKIP_QUERY_CANDIDATES)) {
+      try {
+        val remainingMillis =
+          PROVIDER_LOOKUP_TIMEOUT_MS - TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - searchStartedAt)
+        val results = withTimeoutOrNull(remainingMillis.coerceAtLeast(0L)) { searchJikanAnime(query) }
+        if (results == null) {
+          searchFailure = IllegalStateException("AniSkip title search timed out")
+          break
+        }
+        results.forEach { result ->
           aggregatedResults.putIfAbsent(result.malId, result)
         }
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (error: Exception) {
+        searchFailure = error
+        Log.w(TAG, "AniSkip title search failed; checking remaining candidates", error)
       }
+    }
 
-    return pickBestAniSkipMatch(
+    val match = pickBestAniSkipMatch(
       results = aggregatedResults.values.toList(),
       queryCandidates = queryCandidates,
       expectedSeason = expectedSeason,
     )?.first
+    if (match == null) searchFailure?.let { throw it }
+    return match
   }
 
   private suspend fun searchJikanAnime(query: String): List<JikanAnimeSearchResult> {
@@ -1154,18 +1177,24 @@ class IntroDbRepository(
         .get()
         .build()
 
-    return client.newCall(request).awaitResponse().use { response ->
-      if (!response.isSuccessful) {
-        error("AniSkip MAL search failed with HTTP ${response.code}")
-      }
+    repeat(2) { attempt ->
+      val results = client.newCall(request).awaitResponse().use { response ->
+        if (attempt == 0 && response.code in setOf(502, 503, 504)) return@use null
+        if (!response.isSuccessful) {
+          error("AniSkip MAL search failed with HTTP ${response.code}")
+        }
 
-      val body = response.body.string()
-      if (body.isBlank()) {
-        emptyList()
-      } else {
-        json.decodeFromString<JikanAnimeSearchResponse>(body).data
+        val body = response.body.string()
+        if (body.isBlank()) {
+          emptyList()
+        } else {
+          json.decodeFromString<JikanAnimeSearchResponse>(body).data
+        }
       }
+      if (results != null) return results
+      delay(500L)
     }
+    error("AniSkip MAL search did not complete")
   }
 
   private fun pickBestAniSkipMatch(
@@ -1197,6 +1226,7 @@ class IntroDbRepository(
         val normalizedQuery = normalizeTitle(query)
         normalizedTitles.maxOfOrNull { candidate -> scoreNormalizedTitleMatch(normalizedQuery, candidate) } ?: 0
       } ?: 0
+    if (score < ANISKIP_MATCH_THRESHOLD) return Int.MIN_VALUE
 
     val combinedTitles = normalizedTitles.joinToString(" ")
 
@@ -1232,8 +1262,8 @@ class IntroDbRepository(
   ): Int {
     if (query.isBlank() || candidate.isBlank()) return 0
     if (query == candidate) return 120
-    if (candidate.startsWith(query) || query.startsWith(candidate)) return 92
-    if (candidate.contains(query) || query.contains(candidate)) return 70
+    if (candidate.startsWith("$query ") || query.startsWith("$candidate ")) return 92
+    if (" $candidate ".contains(" $query ") || " $query ".contains(" $candidate ")) return 70
 
     val queryTokens = query.split(' ').filter { it.isNotBlank() }
     val candidateTokens = candidate.split(' ').filter { it.isNotBlank() }.toSet()
@@ -1359,35 +1389,20 @@ class IntroDbRepository(
     expectedMediaType: String,
   ): Int {
     val candidateTitle = normalizeTitle(result.title)
-    var score = 0
-
-    if (result.mediaType.equals(expectedMediaType, ignoreCase = true)) {
-      score += 30
-    }
+    val titleScore = scoreNormalizedTitleMatch(normalizedTitle, candidateTitle)
+    if (titleScore < 60 || !result.mediaType.equals(expectedMediaType, ignoreCase = true)) return Int.MIN_VALUE
+    var score = titleScore + 30
     if (expectedYear != null && result.releaseYear == expectedYear) {
       score += 25
-    }
-    if (candidateTitle == normalizedTitle) {
-      score += 80
-    } else if (
-      candidateTitle.startsWith(normalizedTitle) ||
-      normalizedTitle.startsWith(candidateTitle)
-    ) {
-      score += 45
-    } else if (
-      candidateTitle.contains(normalizedTitle) ||
-      normalizedTitle.contains(candidateTitle)
-    ) {
-      score += 20
     }
 
     return score
   }
 
   private fun normalizeTitle(title: String): String =
-    title
-      .lowercase()
-      .replace(Regex("""[^a-z0-9]+"""), " ")
+    Normalizer.normalize(title, Normalizer.Form.NFKC)
+      .lowercase(Locale.ROOT)
+      .replace(Regex("""[^\p{L}\p{N}]+"""), " ")
       .trim()
 
   companion object {

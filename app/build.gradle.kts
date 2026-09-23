@@ -291,6 +291,7 @@ dependencies {
   coreLibraryDesugaring(libs.desugar.jdk.libs)
 
   implementation(libs.truetype.parser)
+  implementation(libs.anitomy)
   implementation(libs.fsaf)
   implementation(libs.mediainfo.lib)
   implementation(libs.androidx.profileinstaller)

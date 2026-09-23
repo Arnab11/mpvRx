@@ -18,6 +18,7 @@ kotlinx-collections-immutable = "0.5.2"
 profileinstaller = "1.4.1"
 
 truetype-parser = "2.1.4"
+anitomy = "v1.0"
 accompanist = "0.37.3"
 okhttp = "5.5.0"
 jsoup = "1.23.2"
@@ -117,6 +118,7 @@ kotlinx-immutable-collections = { module = "org.jetbrains.kotlinx:kotlinx-collec
 kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 
 truetype-parser = { module = "io.github.yubyf:truetypeparser-light", version.ref = "truetype-parser" }
+anitomy = { module = "com.github.TraceLTRC:kotlin-anitomy", version.ref = "anitomy" }
 fsaf = { module = "com.github.K1rakishou:Fuck-Storage-Access-Framework", version.ref = "fsaf" }
 accompanist-permissions = { module = "com.google.accompanist:accompanist-permissions", version.ref = "accompanist" }
 desugar-jdk-libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugarJdkLibs" }
