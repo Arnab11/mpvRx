@@ -273,22 +273,7 @@ fun PlaylistSheet(
   // Check portrait mode
   val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-  // Portrait mode => list mode
-  val isListModePreference by playerPreferences.playlistViewMode.collectAsState()
-  var isListMode by remember { mutableStateOf(if (isPortrait) true else isListModePreference) }
-
-  LaunchedEffect(isPortrait) {
-    if (isPortrait && !isListMode) {
-      isListMode = true
-    }
-  }
-
-  // Update preference when view mode changes (only in landscape)
-  LaunchedEffect(isListMode) {
-    if (!isPortrait && isListMode != isListModePreference) {
-      playerPreferences.playlistViewMode.set(isListMode)
-    }
-  }
+  val isListMode by playerPreferences.playlistViewMode.collectAsState()
 
   // Scroll state for the playlist
   val lazyListState = rememberLazyListState()
@@ -410,17 +395,15 @@ fun PlaylistSheet(
               )
             }
 
-            // Toggle button for list/grid view (only in landscape)
-            if (!isPortrait) {
-              IconButton(
-                onClick = { isListMode = !isListMode },
-              ) {
-                Icon(
-                  imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
-                  contentDescription = if (isListMode) "Switch to Grid View" else "Switch to List View",
-                  tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-              }
+            IconButton(
+              onClick = { playerPreferences.playlistViewMode.set(!isListMode) },
+            ) {
+              Icon(
+                imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
+                contentDescription =
+                  stringResource(if (isListMode) R.string.playlist_view_grid else R.string.playlist_view_list),
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
             }
           }
         }

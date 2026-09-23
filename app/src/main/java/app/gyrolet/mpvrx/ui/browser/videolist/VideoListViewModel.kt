@@ -198,10 +198,10 @@ class VideoListViewModel(
           videoList = videoList.filter { it.isAudio }
         }
 
-        // Enrich with metadata only if chips are enabled
+        // ZIP entries need basic metadata even when optional metadata chips are disabled.
         val archiveFolder = ZipArchiveMedia.isBrowserPath(bucketId)
-        if (!archiveFolder && MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
-          Log.d(tag, "Metadata chips enabled, enriching ${videoList.size} videos")
+        if (archiveFolder || MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
+          Log.d(tag, "Enriching ${videoList.size} videos with metadata")
           videoList =
             MetadataRetrieval.enrichVideosIfNeeded(
               context = getApplication(),
@@ -210,7 +210,7 @@ class VideoListViewModel(
               metadataCache = metadataCache,
             )
         } else {
-          Log.d(tag, "Metadata chips disabled, skipping metadata extraction")
+          Log.d(tag, "Metadata extraction not required")
         }
 
         // Check if folder became empty after having videos

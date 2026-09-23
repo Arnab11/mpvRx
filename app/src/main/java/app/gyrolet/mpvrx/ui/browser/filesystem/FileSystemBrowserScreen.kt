@@ -378,17 +378,19 @@ fun FileSystemBrowserScreen(path: String? = null) {
             Intent.FLAG_GRANT_READ_URI_PERMISSION,
           )
         }
-        val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
-        if (resolvedPath != null && File(resolvedPath).canRead()) {
-          val archiveFile = File(resolvedPath)
-          val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
-          backstack.navigateTo(FileSystemDirectoryScreen(bucketId))
-        } else {
-          android.widget.Toast.makeText(
-            context,
-            context.getString(app.gyrolet.mpvrx.R.string.ui_cannot_open_zip),
-            android.widget.Toast.LENGTH_SHORT,
-          ).show()
+        coroutineScope.launch {
+          val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
+          if (resolvedPath != null && File(resolvedPath).canRead()) {
+            val archiveFile = File(resolvedPath)
+            val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
+            backstack.navigateTo(FileSystemDirectoryScreen(bucketId))
+          } else {
+            android.widget.Toast.makeText(
+              context,
+              context.getString(app.gyrolet.mpvrx.R.string.ui_cannot_open_zip),
+              android.widget.Toast.LENGTH_SHORT,
+            ).show()
+          }
         }
       }
     }

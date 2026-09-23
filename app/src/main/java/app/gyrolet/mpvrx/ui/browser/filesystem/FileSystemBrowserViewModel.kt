@@ -491,12 +491,15 @@ class FileSystemBrowserViewModel(
               val videoCount = items.filterIsInstance<FileSystemItem.VideoFile>().size
               Log.d(TAG, "Loaded directory: $path with $folderCount folders, $videoCount videos")
 
-              // Enrich videos with metadata if chips are enabled
+              // ZIP entries need basic metadata even when optional metadata chips are disabled.
               val enrichedItems =
-                if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
-                  Log.d(TAG, "Metadata chips enabled, enriching $videoCount videos")
+                if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences) ||
+                  items.any { item ->
+                    item is FileSystemItem.VideoFile && ZipArchiveMedia.isPlaybackUri(item.video.uri.toString())
+                  }
+                ) {
+                  Log.d(TAG, "Enriching $videoCount videos with metadata")
                   val videoFiles = items.filterIsInstance<FileSystemItem.VideoFile>()
-                    .filterNot { ZipArchiveMedia.isPlaybackUri(it.video.uri.toString()) }
                   val videos = videoFiles.map { it.video }
                   val enrichedVideos =
                     withContext(Dispatchers.IO) {

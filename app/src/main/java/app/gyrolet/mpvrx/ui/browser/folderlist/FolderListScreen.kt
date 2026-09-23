@@ -350,21 +350,23 @@ object FolderListScreen : Screen {
               Intent.FLAG_GRANT_READ_URI_PERMISSION,
             )
           }
-          val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
-          if (resolvedPath != null && File(resolvedPath).canRead()) {
-            val archiveFile = File(resolvedPath)
-            val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
-            if (isDualPaneActive) {
-              selectedFolderBucketId = bucketId
-              selectedFolderName = archiveFile.name
+          coroutineScope.launch {
+            val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
+            if (resolvedPath != null && File(resolvedPath).canRead()) {
+              val archiveFile = File(resolvedPath)
+              val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
+              if (isDualPaneActive) {
+                selectedFolderBucketId = bucketId
+                selectedFolderName = archiveFile.name
+              } else {
+                backstack.navigateTo(
+                  app.gyrolet.mpvrx.ui.browser.videolist
+                    .VideoListScreen(bucketId, archiveFile.name, isAudio = audioOnly),
+                )
+              }
             } else {
-              backstack.navigateTo(
-                app.gyrolet.mpvrx.ui.browser.videolist
-                  .VideoListScreen(bucketId, archiveFile.name, isAudio = audioOnly),
-              )
+              Toast.makeText(context, context.getString(R.string.ui_cannot_open_zip), Toast.LENGTH_SHORT).show()
             }
-          } else {
-            Toast.makeText(context, context.getString(R.string.ui_cannot_open_zip), Toast.LENGTH_SHORT).show()
           }
         }
       }
