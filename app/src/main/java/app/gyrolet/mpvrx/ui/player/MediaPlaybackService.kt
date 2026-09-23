@@ -1352,7 +1352,10 @@ class MediaPlaybackService :
           putExtra(AudiobookPlayback.EXTRA_BOOK_ID, book.bookId)
           putExtra(AudiobookPlayback.EXTRA_TRACK_ID, book.trackId)
         }
-        flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        flags =
+          Intent.FLAG_ACTIVITY_SINGLE_TOP or
+            Intent.FLAG_ACTIVITY_CLEAR_TOP or
+            Intent.FLAG_ACTIVITY_NEW_TASK
       }
 
     return PendingIntent.getActivity(

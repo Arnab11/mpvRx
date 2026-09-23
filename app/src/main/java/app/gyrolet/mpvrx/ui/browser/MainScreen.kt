@@ -173,7 +173,7 @@ object MainScreen : Screen {
     val mediaServerPreferences = koinInject<MediaServerPreferences>()
     val musicSourceProvider by mediaServerPreferences.musicSourceProvider.collectAsState()
     val musicLibraryViewModel: MusicLibraryViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
-    val localMusicTabs by musicLibraryViewModel.visibleTabs.collectAsState()
+    val localMusicTabs by musicLibraryViewModel.visibleTabs.collectAsStateWithLifecycle()
     val showMusicTab by appearancePreferences.showMusicTab.collectAsState()
     val showRecentsTab by appearancePreferences.showRecentsTab.collectAsState()
     val showPlaylistsTab by appearancePreferences.showPlaylistsTab.collectAsState()
