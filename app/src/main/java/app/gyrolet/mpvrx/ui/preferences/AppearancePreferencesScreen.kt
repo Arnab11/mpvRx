@@ -829,6 +829,7 @@ object AppearancePreferencesScreen : Screen {
               val showPlaylistsTab by preferences.showPlaylistsTab.collectAsState()
               val showNetworkTab by preferences.showNetworkTab.collectAsState()
               val showJellyfinTab by preferences.showJellyfinTab.collectAsState()
+              val showSnapshotTab by preferences.showSnapshotTab.collectAsState()
 
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_nav_music_title),
@@ -898,6 +899,21 @@ object AppearancePreferencesScreen : Screen {
                 summary = {
                   Text(
                     text = stringResource(id = R.string.pref_nav_jellyfin_summary),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+
+              SwitchPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_nav_snapshots_title),
+                value = showSnapshotTab,
+                onValueChange = preferences.showSnapshotTab::set,
+                title = { Text(text = stringResource(id = R.string.pref_nav_snapshots_title)) },
+                summary = {
+                  Text(
+                    text = stringResource(id = R.string.pref_nav_snapshots_summary),
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },

@@ -5861,7 +5861,16 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         paused = intent.getBooleanExtra(EXTRA_SCRIPT_RESTORE_PAUSED, false),
       )
     } else null
-    val effectivePositionOverride = positionRestoreOverride ?: scriptRestore ?: AudiobookPlayback.positionForLoad(item, intent)
+    // A snapshot jump names an exact second to land on. Consumed once, so a later track change in
+    // the same Activity does not drag every subsequent load back to the snapshot's timestamp.
+    val snapshotJump =
+      intent
+        .getDoubleExtra(EXTRA_START_POSITION_SECONDS, Double.NaN)
+        .takeIf { it.isFinite() && it >= 0 }
+        ?.also { intent.removeExtra(EXTRA_START_POSITION_SECONDS) }
+        ?.let { PlaybackPositionRestoreOverride(positionSeconds = it, paused = false) }
+    val effectivePositionOverride =
+      positionRestoreOverride ?: scriptRestore ?: snapshotJump ?: AudiobookPlayback.positionForLoad(item, intent)
     val restoreSavedPosition = playerPreferences.savePositionOnQuit.get()
     val resumeMode = playerPreferences.resumePlaybackMode.get()
     // Only Always Resume may use the fast load-local start option. Never starts at zero.
@@ -8405,6 +8414,9 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     private const val EXTRA_SCRIPT_RESTORE_PAUSED = "script_restore_paused"
     const val EXTRA_VIDEO_WIDTH = "video_width"
     const val EXTRA_VIDEO_HEIGHT = "video_height"
+
+    /** Start playback at this many seconds in, overriding resume-from-history. Set by snapshot jumps. */
+    const val EXTRA_START_POSITION_SECONDS = "start_position_seconds"
     private const val STATE_PLAYLIST_INDEX = "player_state_playlist_index"
     private const val STATE_PLAYLIST_STABLE_ID = "player_state_playlist_stable_id"
     private const val STATE_PLAYLIST_ORIGINAL_URI = "player_state_playlist_original_uri"

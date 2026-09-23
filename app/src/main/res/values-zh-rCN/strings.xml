@@ -2487,4 +2487,32 @@
   <string name="pref_background_playback_per_video">为每个视频记住选择</string>
   <string name="pref_background_playback_per_video_summary">分别保存每个视频的后台播放选择。其他视频的后台播放在单独启用前保持关闭。</string>
   <string name="jellyfin_technical_details">技术详情</string>
+
+  <!-- 快照（帧捕获） -->
+  <string name="ui_snapshots">快照</string>
+  <string name="pref_nav_snapshots_title">显示快照标签页</string>
+  <string name="pref_nav_snapshots_summary">在底部导航栏中显示或隐藏快照</string>
+  <string name="snapshot_save_button">保存到快照</string>
+  <string name="snapshot_saved">已保存到快照</string>
+  <string name="snapshot_database_write_failed">已保存到相册，但应用内记录失败。</string>
+  <string name="snapshot_no_frame">当前无法捕获画面，请等待视频加载</string>
+  <string name="snapshot_empty_title">还没有快照</string>
+  <string name="snapshot_empty_message">在逐帧面板中点击快照按钮，收藏精彩瞬间</string>
+  <string name="snapshot_search_placeholder">搜索快照</string>
+  <string name="snapshot_no_results">没有匹配的快照</string>
+  <string name="snapshot_sort_captured_at">捕获时间</string>
+  <string name="snapshot_sort_video_title">视频标题</string>
+  <string name="snapshot_sort_position">视频内位置</string>
+  <string name="snapshot_jump_to_video">跳转到视频</string>
+  <string name="snapshot_source_unavailable">原视频已无法访问</string>
+  <string name="snapshot_source_not_connected">请先在“网络”标签页连接此共享</string>
+  <string name="snapshot_source_check_connection">请检查该连接</string>
+  <string name="snapshot_source_local">本地</string>
+  <string name="snapshot_rotate">旋转</string>
+  <string name="snapshot_file_missing">快照文件已被删除，是否移除这条记录？</string>
+  <string name="snapshot_delete_title">删除快照？</string>
+  <string name="snapshot_delete_selected_title">删除 %1$d 个快照？</string>
+  <string name="snapshot_delete_message">仅从应用中移除记录，图片仍保留在相册中。</string>
+  <string name="snapshot_delete">删除</string>
+  <string name="snapshot_remove">移除</string>
 </resources>

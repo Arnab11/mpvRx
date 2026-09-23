@@ -66,6 +66,9 @@ class BrowserPreferences(
   val playlistItemSortOrder = preferenceStore.getEnum("playlist_item_sort_order", SortOrder.Ascending)
   val recentSortType = preferenceStore.getEnum("recent_sort_type", RecentSortType.LastPlayed)
   val recentSortOrder = preferenceStore.getEnum("recent_sort_order", SortOrder.Descending)
+  // FR-09: the grid defaults to newest capture first.
+  val snapshotSortType = preferenceStore.getEnum("snapshot_sort_type", SnapshotSortType.CapturedAt)
+  val snapshotSortOrder = preferenceStore.getEnum("snapshot_sort_order", SortOrder.Descending)
   val recentView = BrowserPageViewPreferences(preferenceStore, "recent")
   val playlistView = BrowserPageViewPreferences(preferenceStore, "playlist_library", folderDefaults = true)
   val playlistItemView = BrowserPageViewPreferences(preferenceStore, "playlist_item")
@@ -224,6 +227,13 @@ class BrowserPageViewPreferences internal constructor(
 enum class RecentSortType {
   LastPlayed,
   Name,
+}
+
+/** Sort fields offered on the Snapshots tab. */
+enum class SnapshotSortType {
+  CapturedAt,
+  VideoTitle,
+  Position,
 }
 
 /**

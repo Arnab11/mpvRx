@@ -2531,4 +2531,36 @@
   <string name="pref_background_playback_per_video">Remember for each video</string>
   <string name="pref_background_playback_per_video_summary">Save a separate background playback choice for each video. Other videos stay off until enabled.</string>
   <string name="jellyfin_technical_details">Technical details</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Snapshots</string>
+  <string name="pref_nav_snapshots_title">Show Snapshots tab</string>
+  <string name="pref_nav_snapshots_summary">Show or hide Snapshots in the bottom navigation bar</string>
+
+  <string name="snapshot_save_button">Save to Snapshots</string>
+  <string name="snapshot_saved">Saved to Snapshots</string>
+  <string name="snapshot_database_write_failed">Saved to gallery, but the in-app record failed.</string>
+  <string name="snapshot_no_frame">Cannot capture a frame right now, wait for the video to load</string>
+
+  <string name="snapshot_empty_title">No snapshots yet</string>
+  <string name="snapshot_empty_message">Tap the snapshot button in the frame-by-frame panel to keep a moment</string>
+  <string name="snapshot_search_placeholder">Search snapshots</string>
+  <string name="snapshot_no_results">No snapshots match your search</string>
+
+  <string name="snapshot_sort_captured_at">Capture time</string>
+  <string name="snapshot_sort_video_title">Video title</string>
+  <string name="snapshot_sort_position">Position in video</string>
+
+  <string name="snapshot_jump_to_video">Jump to video</string>
+  <string name="snapshot_source_unavailable">The original video is no longer accessible</string>
+  <string name="snapshot_source_not_connected">Connect this share on the Network tab first</string>
+  <string name="snapshot_source_check_connection">Check this connection</string>
+  <string name="snapshot_source_local">local</string>
+  <string name="snapshot_rotate">Rotate</string>
+  <string name="snapshot_file_missing">Snapshot file was deleted. Remove this record?</string>
+  <string name="snapshot_delete_title">Delete snapshot?</string>
+  <string name="snapshot_delete_selected_title">Delete %1$d snapshots?</string>
+  <string name="snapshot_delete_message">This removes the record from the app. The image stays in your gallery.</string>
+  <string name="snapshot_delete">Delete</string>
+  <string name="snapshot_remove">Remove</string>
 </resources>

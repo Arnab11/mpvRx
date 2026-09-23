@@ -216,6 +216,7 @@ object MediaUtils {
     playlistArtworkUrls: List<String> = emptyList(),
     isAudio: Boolean = false,
     playlistDurationsSeconds: List<Int> = emptyList(),
+    startPositionSeconds: Double? = null,
   ) {
     val videoSource = source as? Video
     val localPath =
@@ -322,6 +323,9 @@ object MediaUtils {
       intent.putExtra("is_audio", videoSource.isAudio)
       intent.putExtra(PlayerActivity.EXTRA_VIDEO_WIDTH, videoSource.width)
       intent.putExtra(PlayerActivity.EXTRA_VIDEO_HEIGHT, videoSource.height)
+    }
+    startPositionSeconds?.takeIf { it.isFinite() && it >= 0 }?.let {
+      intent.putExtra(PlayerActivity.EXTRA_START_POSITION_SECONDS, it)
     }
     applyPlaybackExtras(
       intent = intent,

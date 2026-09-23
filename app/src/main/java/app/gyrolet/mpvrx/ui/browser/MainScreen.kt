@@ -57,6 +57,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -124,6 +125,7 @@ object MainScreen : Screen {
     PLAYLISTS,
     NETWORK,
     JELLYFIN,
+    SNAPSHOTS,
   }
 
   /**
@@ -179,6 +181,7 @@ object MainScreen : Screen {
     val showPlaylistsTab by appearancePreferences.showPlaylistsTab.collectAsState()
     val showNetworkTab by appearancePreferences.showNetworkTab.collectAsState()
     val showJellyfinTab by appearancePreferences.showJellyfinTab.collectAsState()
+    val showSnapshotTab by appearancePreferences.showSnapshotTab.collectAsState()
     val hideNavigationBar = NavigationBarState.shouldHideNavigationBar
     val isPermissionDenied = NavigationBarState.isPermissionDenied
     val isDualPaneFolderSelected = NavigationBarState.isDualPaneFolderSelected
@@ -191,6 +194,7 @@ object MainScreen : Screen {
         showPlaylistsTab,
         showNetworkTab,
         showJellyfinTab,
+        showSnapshotTab,
       ) {
         buildList {
           // Home is the permanent root so Back never exits directly from another tab.
@@ -200,6 +204,7 @@ object MainScreen : Screen {
           if (showPlaylistsTab) add(MainTab.PLAYLISTS)
           if (showNetworkTab) add(MainTab.NETWORK)
           if (showJellyfinTab) add(MainTab.JELLYFIN)
+          if (showSnapshotTab) add(MainTab.SNAPSHOTS)
         }
       }
     val navigationTabs = visibleTabs.takeIf { it.size > 1 }.orEmpty()
@@ -555,6 +560,7 @@ object MainScreen : Screen {
                 MainTab.PLAYLISTS -> PlaylistScreen.Content()
                 MainTab.NETWORK -> NetworkStreamingScreen.Content()
                 MainTab.JELLYFIN -> app.gyrolet.mpvrx.ui.browser.jellyfin.JellyfinContent(viewModel = jellyfinViewModel)
+                MainTab.SNAPSHOTS -> app.gyrolet.mpvrx.ui.framecapture.SnapshotScreen.Content()
               }
             }
           }
@@ -654,6 +660,7 @@ internal fun ExpressivePillNavigationBar(
       MainScreen.MainTab.PLAYLISTS -> 108.dp
       MainScreen.MainTab.NETWORK -> 106.dp
       MainScreen.MainTab.JELLYFIN -> 100.dp
+      MainScreen.MainTab.SNAPSHOTS -> 100.dp
     }
 
   val inactiveTabWidth = 44.dp
@@ -722,6 +729,7 @@ internal fun ExpressivePillNavigationBar(
                 MainScreen.MainTab.PLAYLISTS -> stringResource(R.string.ui_playlists)
                 MainScreen.MainTab.NETWORK -> stringResource(R.string.ui_network)
                 MainScreen.MainTab.JELLYFIN -> stringResource(R.string.ui_jellyfin)
+                MainScreen.MainTab.SNAPSHOTS -> stringResource(R.string.ui_snapshots)
               }
             val contentColor =
               androidx.compose.ui.graphics.lerp(
@@ -792,6 +800,7 @@ private fun MainTabIcon(
     MainScreen.MainTab.PLAYLISTS -> Icons.RoundedFilled.Subscriptions
     MainScreen.MainTab.NETWORK -> Icons.RoundedFilled.BringYourOwnIp
     MainScreen.MainTab.JELLYFIN -> null
+    MainScreen.MainTab.SNAPSHOTS -> Icons.RoundedFilled.Image
   }
   if (icon == null) {
     androidx.compose.material3.Icon(

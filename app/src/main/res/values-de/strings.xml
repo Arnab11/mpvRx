@@ -2488,4 +2488,32 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_background_playback_per_video">Auswahl für jedes Video merken</string>
   <string name="pref_background_playback_per_video_summary">Hintergrundwiedergabe für jedes Video separat speichern. Für andere Videos bleibt sie ausgeschaltet, bis sie aktiviert wird.</string>
   <string name="jellyfin_technical_details">Technische Details</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Schnappschüsse</string>
+  <string name="pref_nav_snapshots_title">Schnappschüsse-Tab anzeigen</string>
+  <string name="pref_nav_snapshots_summary">Schnappschüsse in der unteren Navigationsleiste ein- oder ausblenden</string>
+  <string name="snapshot_save_button">In Schnappschüssen speichern</string>
+  <string name="snapshot_saved">In Schnappschüssen gespeichert</string>
+  <string name="snapshot_database_write_failed">In der Galerie gespeichert, aber der Eintrag in der App ist fehlgeschlagen.</string>
+  <string name="snapshot_no_frame">Derzeit kann kein Bild erfasst werden, warte bis das Video geladen ist</string>
+  <string name="snapshot_empty_title">Noch keine Schnappschüsse</string>
+  <string name="snapshot_empty_message">Tippe im Einzelbild-Panel auf die Schnappschuss-Schaltfläche, um einen Moment festzuhalten</string>
+  <string name="snapshot_search_placeholder">Schnappschüsse suchen</string>
+  <string name="snapshot_no_results">Keine Schnappschüsse passen zu deiner Suche</string>
+  <string name="snapshot_sort_captured_at">Aufnahmezeit</string>
+  <string name="snapshot_sort_video_title">Videotitel</string>
+  <string name="snapshot_sort_position">Position im Video</string>
+  <string name="snapshot_jump_to_video">Zum Video springen</string>
+  <string name="snapshot_source_unavailable">Das Originalvideo ist nicht mehr verfügbar</string>
+  <string name="snapshot_source_not_connected">Verbinde diese Freigabe zuerst im Tab „Netzwerk“</string>
+  <string name="snapshot_source_check_connection">Diese Verbindung prüfen</string>
+  <string name="snapshot_source_local">lokal</string>
+  <string name="snapshot_rotate">Drehen</string>
+  <string name="snapshot_file_missing">Die Schnappschuss-Datei wurde gelöscht. Diesen Eintrag entfernen?</string>
+  <string name="snapshot_delete_title">Schnappschuss löschen?</string>
+  <string name="snapshot_delete_selected_title">%1$d Schnappschüsse löschen?</string>
+  <string name="snapshot_delete_message">Dadurch wird der Eintrag aus der App entfernt. Das Bild bleibt in deiner Galerie.</string>
+  <string name="snapshot_delete">Löschen</string>
+  <string name="snapshot_remove">Entfernen</string>
 </resources>

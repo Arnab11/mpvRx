@@ -1319,6 +1319,27 @@ object PlaybackSession : MPVLib.EventObserver {
 
   fun getPropertyString(property: String): String? = withReadyCore(null) { MPVLib.getPropertyString(property) }
 
+  /**
+   * The current item's source in a form that still resolves after this session ends.
+   *
+   * For SMB/FTP/WebDAV media mpv reports the *loopback proxy URL* through `path` — a random port plus
+   * a one-shot capability token — so anything persisted from it is dead by the next launch. The queue
+   * item keeps the durable reference the proxy was built from, and is preferred whenever the live path
+   * points back at our own proxy. Local and `content://` media are passed through untouched.
+   */
+  fun persistableSourceUri(): String {
+    val livePath = getPropertyString("path").orEmpty()
+    if (!isLoopbackProxyUrl(livePath)) return livePath
+    return state.value.currentItem?.originalUri?.takeIf { it.isNotBlank() } ?: livePath
+  }
+
+  private fun isLoopbackProxyUrl(raw: String): Boolean {
+    if (!raw.startsWith("http://", ignoreCase = true)) return false
+    val authority = raw.substringAfter("://").substringBefore('/')
+    val host = authority.substringBeforeLast(':', authority).removeSurrounding("[", "]").lowercase()
+    return host == "127.0.0.1" || host == "localhost" || host == "0.0.0.0" || host == "::1"
+  }
+
   fun getPropertyNode(property: String): MPVNode? = withReadyCore(null) { MPVLib.getPropertyNode(property) }
 
   fun setPropertyString(

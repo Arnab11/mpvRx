@@ -2488,4 +2488,32 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="pref_background_playback_per_video">Lembrar a escolha para cada vídeo</string>
   <string name="pref_background_playback_per_video_summary">Salvar a reprodução em segundo plano separadamente para cada vídeo. Nos outros vídeos, ela permanece desativada até ser ativada.</string>
   <string name="jellyfin_technical_details">Detalhes técnicos</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Capturas</string>
+  <string name="pref_nav_snapshots_title">Mostrar aba de capturas</string>
+  <string name="pref_nav_snapshots_summary">Mostrar ou ocultar Capturas na barra de navegação inferior</string>
+  <string name="snapshot_save_button">Salvar em Capturas</string>
+  <string name="snapshot_saved">Salvo em Capturas</string>
+  <string name="snapshot_database_write_failed">Salvo na galeria, mas o registro no aplicativo falhou.</string>
+  <string name="snapshot_no_frame">Não é possível capturar um quadro agora, aguarde o vídeo carregar</string>
+  <string name="snapshot_empty_title">Ainda não há capturas</string>
+  <string name="snapshot_empty_message">Toque no botão de captura no painel quadro a quadro para guardar um momento</string>
+  <string name="snapshot_search_placeholder">Pesquisar capturas</string>
+  <string name="snapshot_no_results">Nenhuma captura corresponde à sua pesquisa</string>
+  <string name="snapshot_sort_captured_at">Data da captura</string>
+  <string name="snapshot_sort_video_title">Título do vídeo</string>
+  <string name="snapshot_sort_position">Posição no vídeo</string>
+  <string name="snapshot_jump_to_video">Ir para o vídeo</string>
+  <string name="snapshot_source_unavailable">O vídeo original não está mais acessível</string>
+  <string name="snapshot_source_not_connected">Conecte este compartilhamento primeiro na aba Rede</string>
+  <string name="snapshot_source_check_connection">Verifique esta conexão</string>
+  <string name="snapshot_source_local">local</string>
+  <string name="snapshot_rotate">Girar</string>
+  <string name="snapshot_file_missing">O arquivo da captura foi excluído. Remover este registro?</string>
+  <string name="snapshot_delete_title">Excluir a captura?</string>
+  <string name="snapshot_delete_selected_title">Excluir %1$d capturas?</string>
+  <string name="snapshot_delete_message">Isso remove o registro do aplicativo. A imagem permanece na sua galeria.</string>
+  <string name="snapshot_delete">Excluir</string>
+  <string name="snapshot_remove">Remover</string>
 </resources>

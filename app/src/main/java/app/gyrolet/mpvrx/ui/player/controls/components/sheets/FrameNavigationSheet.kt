@@ -70,10 +70,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.framecapture.FrameCapture
+import app.gyrolet.mpvrx.domain.framecapture.FrameCaptureRepository
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.player.screenshot.FrameCaptureUnavailableException
 import app.gyrolet.mpvrx.ui.player.screenshot.ScreenshotSaver
 import app.gyrolet.mpvrx.ui.player.screenshot.ScreenshotSettings
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
@@ -106,10 +109,12 @@ fun FrameNavigationSheet(
   val context = LocalContext.current
   val coroutineScope = rememberCoroutineScope()
   var isSnapshotLoading by remember { mutableStateOf(false) }
+  var isSaveSnapshotLoading by remember { mutableStateOf(false) }
   var isFrameStepping by remember { mutableStateOf(false) }
   var pendingFrameSteps by remember { mutableIntStateOf(0) }
   var frameStepJob by remember { mutableStateOf<Job?>(null) }
   val playerPreferences: PlayerPreferences = koinInject()
+  val frameCaptureRepository: FrameCaptureRepository = koinInject()
   val includeSubtitlesPrefState by playerPreferences.includeSubtitlesInSnapshot.collectAsState()
   var includeSubtitlesInSnapshot by remember { mutableStateOf(includeSubtitlesPrefState) }
   LaunchedEffect(includeSubtitlesPrefState) {
@@ -256,6 +261,67 @@ fun FrameNavigationSheet(
         }
       }
     },
+    onSaveSnapshot = {
+      coroutineScope.launch {
+        isSaveSnapshotLoading = true
+        try {
+          val result =
+            withContext(Dispatchers.IO) {
+              ScreenshotSaver.saveLosslessToGallery(
+                context = context,
+                includeSubtitles = includeSubtitlesInSnapshot,
+              )
+            }
+          result
+            .onSuccess { saved ->
+              val positionSeconds = PlaybackSession.getPropertyDouble("time-pos") ?: 0.0
+              val videoUri = PlaybackSession.persistableSourceUri()
+              val written =
+                runCatching {
+                  withContext(Dispatchers.IO) {
+                    frameCaptureRepository.record(
+                      FrameCapture(
+                        id = 0L,
+                        imageUri = saved.uri?.toString(),
+                        imagePath = saved.file?.absolutePath,
+                        videoUri = videoUri,
+                        videoPath = videoUri.takeIf { it.startsWith("/") },
+                        videoTitle =
+                          PlaybackSession.getPropertyString("media-title")
+                            ?: PlaybackSession.getPropertyString("filename")
+                            ?: videoUri.substringAfterLast('/'),
+                        positionMs = (positionSeconds * 1000.0).toLong().coerceAtLeast(0L),
+                        capturedAt = System.currentTimeMillis(),
+                      ),
+                    )
+                  }
+                }.isSuccess
+
+              val message =
+                if (written) {
+                  context.getString(R.string.snapshot_saved)
+                } else {
+                  context.getString(R.string.snapshot_database_write_failed)
+                }
+              Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            }.onFailure { error ->
+              val failureMessage =
+                if (error is FrameCaptureUnavailableException) {
+                  context.getString(R.string.snapshot_no_frame)
+                } else {
+                  context.getString(
+                    R.string.toast_failed_to_save_snapshot,
+                    error.message ?: context.getString(R.string.generic_unknown_error),
+                  )
+                }
+              Toast.makeText(context, failureMessage, Toast.LENGTH_LONG).show()
+            }
+        } finally {
+          isSaveSnapshotLoading = false
+        }
+      }
+    },
+    isSaveSnapshotLoading = isSaveSnapshotLoading,
     onSeekToFrame = { targetFrame, finished ->
       frameStepJob?.cancel()
       pendingFrameSteps = 0
@@ -282,11 +348,13 @@ private fun FrameReviewOverlay(
   position: Float,
   isPaused: Boolean,
   isSnapshotLoading: Boolean,
+  isSaveSnapshotLoading: Boolean,
   isFrameStepping: Boolean,
   includeSubtitles: Boolean,
   onFrameSteps: (Int) -> Unit,
   onPlayPause: () -> Unit,
   onSnapshot: () -> Unit,
+  onSaveSnapshot: () -> Unit,
   onSeekToFrame: (Int, Boolean) -> Unit,
   onIncludeSubtitlesChanged: (Boolean) -> Unit,
   onDismissRequest: () -> Unit,
@@ -486,7 +554,9 @@ private fun FrameReviewOverlay(
                   onFrameSteps(1)
                 },
                 onSnapshot = onSnapshot,
+                onSaveSnapshot = onSaveSnapshot,
                 isSnapshotLoading = isSnapshotLoading,
+                isSaveSnapshotLoading = isSaveSnapshotLoading,
                 buttonColors = frameReviewButtonColors(),
               )
               IncludeSubsToggle(
@@ -534,7 +604,9 @@ private fun FrameReviewOverlay(
                     onFrameSteps(1)
                   },
                   onSnapshot = onSnapshot,
+                  onSaveSnapshot = onSaveSnapshot,
                   isSnapshotLoading = isSnapshotLoading,
+                  isSaveSnapshotLoading = isSaveSnapshotLoading,
                   buttonColors = frameReviewButtonColors(),
                 )
               }
@@ -565,13 +637,13 @@ private fun FrameReviewOverlay(
             onSeekToFrame(userSliderFrame, true)
           },
           valueRange = 0f..lastFrame.coerceAtLeast(1).toFloat(),
-          enabled = totalFrames > 1 && duration > 0.0 && !isSnapshotLoading,
+          enabled = totalFrames > 1 && duration > 0.0 && !isSnapshotLoading && !isSaveSnapshotLoading,
           modifier =
             Modifier
               .fillMaxWidth()
               .tvFocusHighlight(
                 MaterialTheme.shapes.small,
-                enabled = totalFrames > 1 && duration > 0.0 && !isSnapshotLoading,
+                enabled = totalFrames > 1 && duration > 0.0 && !isSnapshotLoading && !isSaveSnapshotLoading,
               ),
         )
       }
@@ -689,7 +761,9 @@ private fun ControlButtons(
   isPaused: Boolean,
   onNextFrame: () -> Unit,
   onSnapshot: () -> Unit,
+  onSaveSnapshot: () -> Unit,
   isSnapshotLoading: Boolean,
+  isSaveSnapshotLoading: Boolean,
   buttonColors: androidx.compose.material3.ButtonColors,
 ) {
   Row(
@@ -741,7 +815,7 @@ private fun ControlButtons(
     Button(
       onClick = onSnapshot,
       modifier = Modifier.size(56.dp),
-      enabled = !isSnapshotLoading,
+      enabled = !isSnapshotLoading && !isSaveSnapshotLoading,
       colors = buttonColors,
       contentPadding = PaddingValues(0.dp),
     ) {
@@ -755,6 +829,28 @@ private fun ControlButtons(
         Icon(
           Icons.RoundedFilled.Aperture,
           contentDescription = stringResource(R.string.ui_take_screenshot),
+          modifier = Modifier.size(32.dp),
+        )
+      }
+    }
+
+    Button(
+      onClick = onSaveSnapshot,
+      modifier = Modifier.size(56.dp),
+      enabled = !isSnapshotLoading && !isSaveSnapshotLoading,
+      colors = buttonColors,
+      contentPadding = PaddingValues(0.dp),
+    ) {
+      if (isSaveSnapshotLoading) {
+        CircularProgressIndicator(
+          modifier = Modifier.size(32.dp),
+          strokeWidth = 2.dp,
+          color = MaterialTheme.colorScheme.onPrimary,
+        )
+      } else {
+        Icon(
+          Icons.RoundedFilled.Bookmarks,
+          contentDescription = stringResource(R.string.snapshot_save_button),
           modifier = Modifier.size(32.dp),
         )
       }

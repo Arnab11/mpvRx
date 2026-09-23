@@ -2481,4 +2481,32 @@
   <string name="pref_background_playback_per_video">動画ごとに選択を記憶する</string>
   <string name="pref_background_playback_per_video_summary">バックグラウンド再生の選択を動画ごとに保存します。他の動画では有効にするまでオフのままです。</string>
   <string name="jellyfin_technical_details">技術情報</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">スナップショット</string>
+  <string name="pref_nav_snapshots_title">スナップショットタブを表示</string>
+  <string name="pref_nav_snapshots_summary">下部ナビゲーションバーにスナップショットを表示または非表示</string>
+  <string name="snapshot_save_button">スナップショットに保存</string>
+  <string name="snapshot_saved">スナップショットに保存しました</string>
+  <string name="snapshot_database_write_failed">ギャラリーには保存しましたが、アプリ内の記録に失敗しました。</string>
+  <string name="snapshot_no_frame">現在フレームをキャプチャできません。動画の読み込みをお待ちください</string>
+  <string name="snapshot_empty_title">スナップショットはまだありません</string>
+  <string name="snapshot_empty_message">フレーム単位のパネルでスナップショットボタンを押すと、その瞬間を残せます</string>
+  <string name="snapshot_search_placeholder">スナップショットを検索</string>
+  <string name="snapshot_no_results">検索に一致するスナップショットはありません</string>
+  <string name="snapshot_sort_captured_at">キャプチャ日時</string>
+  <string name="snapshot_sort_video_title">動画タイトル</string>
+  <string name="snapshot_sort_position">動画内の位置</string>
+  <string name="snapshot_jump_to_video">動画へ移動</string>
+  <string name="snapshot_source_unavailable">元の動画にアクセスできなくなりました</string>
+  <string name="snapshot_source_not_connected">先に「ネットワーク」タブでこの共有に接続してください</string>
+  <string name="snapshot_source_check_connection">この接続を確認してください</string>
+  <string name="snapshot_source_local">ローカル</string>
+  <string name="snapshot_rotate">回転</string>
+  <string name="snapshot_file_missing">スナップショットのファイルが削除されました。この記録を削除しますか？</string>
+  <string name="snapshot_delete_title">スナップショットを削除しますか？</string>
+  <string name="snapshot_delete_selected_title">%1$d 件のスナップショットを削除しますか？</string>
+  <string name="snapshot_delete_message">アプリから記録を削除します。画像はギャラリーに残ります。</string>
+  <string name="snapshot_delete">削除</string>
+  <string name="snapshot_remove">記録を削除</string>
 </resources>
