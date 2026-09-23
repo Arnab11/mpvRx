@@ -1,15 +1,21 @@
 package app.gyrolet.mpvrx.ui.preferences
 
 import androidx.annotation.StringRes
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -53,6 +59,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.presentation.Screen
@@ -119,6 +127,10 @@ object HallOfFameScreen : Screen {
 
     val loading = contributors.loading || active.loading || community.loading
     val colors = MaterialTheme.colorScheme
+    val remainingActive = active.copy(
+      entries = active.entries.filterNot { it.displayName.lowercase(Locale.ROOT) in featuredLogins },
+    )
+    val topReporters = community.entries.filter { it.issuesReported > 0 }.take(3)
     Scaffold(
       topBar = {
         TopAppBar(
@@ -156,7 +168,7 @@ object HallOfFameScreen : Screen {
         contentAlignment = Alignment.TopCenter,
       ) {
         LazyVerticalGrid(
-          columns = GridCells.Adaptive(260.dp),
+          columns = GridCells.Adaptive(136.dp),
           modifier = Modifier.widthIn(max = 960.dp).fillMaxSize(),
           contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 32.dp),
           horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -186,12 +198,41 @@ object HallOfFameScreen : Screen {
               )
             }
           }
+          item(key = "featured:header", span = { GridItemSpan(maxLineSpan) }) {
+            Row(
+              modifier = Modifier.padding(top = 16.dp, bottom = 4.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+              Icon(Icons.RoundedFilled.Star, null, modifier = Modifier.size(22.dp), tint = colors.primary)
+              Text(
+                text = stringResource(R.string.hall_of_fame_featured_contributors),
+                modifier = Modifier.weight(1f).semantics { heading() },
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+              )
+            }
+          }
+          item(key = "featured:profiles", span = { GridItemSpan(maxLineSpan) }) {
+            HallOfFameTopThree(featuredContributors) { contributor, tileModifier ->
+              HallOfFamePerson(
+                name = contributor.name,
+                details = "@${contributor.login}",
+                avatarUrl = "https://avatars.githubusercontent.com/u/${contributor.avatarId}?s=256",
+                profileUrl = "https://github.com/${contributor.login}",
+                accent = colors.onSecondaryContainer,
+                containerColor = colors.secondaryContainer,
+                prominent = true,
+                modifier = tileModifier,
+              )
+            }
+          }
           creditsSection(
             sectionKey = "active",
             titleRes = R.string.hall_of_fame_active_title,
             subtitleRes = R.string.hall_of_fame_active_period,
             icon = Icons.RoundedFilled.Star,
-            state = active,
+            state = remainingActive,
             itemKey = { it.profileUrl ?: it.displayName },
             onRetry = { refreshRequest++ },
             activityUrl = "$githubRepoUrl/commits",
@@ -215,22 +256,27 @@ object HallOfFameScreen : Screen {
             itemKey = { it.login },
             onRetry = { refreshRequest++ },
             activityUrl = "$githubRepoUrl/issues",
+            highlightedKeys = topReporters.mapTo(mutableSetOf()) { it.login },
+            highlightedContent = if (topReporters.isEmpty()) null else {
+              {
+                HallOfFameTopThree(topReporters) { member, tileModifier ->
+                  HallOfFamePerson(
+                    name = member.login,
+                    details = communityDetails(member),
+                    avatarUrl = member.avatarUrl,
+                    profileUrl = member.profileUrl,
+                    accent = colors.onTertiaryContainer,
+                    containerColor = colors.tertiaryContainer,
+                    prominent = true,
+                    modifier = tileModifier,
+                  )
+                }
+              }
+            },
           ) { member ->
-            val details = buildList {
-              if (member.issuesReported > 0) {
-                add(pluralStringResource(
-                  R.plurals.hall_of_fame_issue_count, member.issuesReported, member.issuesReported,
-                ))
-              }
-              if (member.feedbackComments > 0) {
-                add(pluralStringResource(
-                  R.plurals.hall_of_fame_feedback_count, member.feedbackComments, member.feedbackComments,
-                ))
-              }
-            }.joinToString("\n")
             HallOfFamePerson(
               name = member.login,
-              details = details,
+              details = communityDetails(member),
               avatarUrl = member.avatarUrl,
               profileUrl = member.profileUrl,
               accent = colors.tertiary,
@@ -279,6 +325,16 @@ private data class CreditsState<T>(
 
 private val leadLogins = setOf("marlboro-advance", "riteshp2001")
 
+private data class FeaturedContributor(val name: String, val login: String, val avatarId: Long)
+
+private val featuredContributors = listOf(
+  FeaturedContributor("Arnab Sadhukhan", "Arnab11", 25551878L),
+  FeaturedContributor("Utsav", "Utsavrajputt", 296386188L),
+  FeaturedContributor("SunnyVishnu3", "SunnyVishnu3", 196376335L),
+)
+
+private val featuredLogins = featuredContributors.mapTo(mutableSetOf()) { it.login.lowercase(Locale.ROOT) }
+
 private fun <T> LazyGridScope.creditsSection(
   sectionKey: String,
   @StringRes titleRes: Int,
@@ -288,6 +344,8 @@ private fun <T> LazyGridScope.creditsSection(
   itemKey: (T) -> String,
   onRetry: () -> Unit,
   activityUrl: String,
+  highlightedKeys: Set<String> = emptySet(),
+  highlightedContent: (@Composable () -> Unit)? = null,
   content: @Composable (T) -> Unit,
 ) {
   item(key = "$sectionKey:header", span = { GridItemSpan(maxLineSpan) }) {
@@ -317,6 +375,11 @@ private fun <T> LazyGridScope.creditsSection(
         style = MaterialTheme.typography.bodySmall,
         color = MaterialTheme.colorScheme.onSurfaceVariant,
       )
+    }
+  }
+  if (highlightedContent != null) {
+    item(key = "$sectionKey:highlights", span = { GridItemSpan(maxLineSpan) }) {
+      highlightedContent()
     }
   }
   if (state.loading || state.failed || state.entries.isEmpty()) {
@@ -351,10 +414,42 @@ private fun <T> LazyGridScope.creditsSection(
       }
     }
   }
-  items(state.entries, key = { "$sectionKey:${itemKey(it)}" }, contentType = { "person" }) { entry ->
+  items(
+    state.entries.filterNot { itemKey(it) in highlightedKeys },
+    key = { "$sectionKey:${itemKey(it)}" },
+    contentType = { "person" },
+  ) { entry ->
     content(entry)
   }
 }
+
+@Composable
+private fun <T> HallOfFameTopThree(
+  entries: List<T>,
+  content: @Composable (T, Modifier) -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),
+    horizontalArrangement = Arrangement.spacedBy(8.dp),
+  ) {
+    entries.take(3).forEach { entry ->
+      content(entry, Modifier.weight(1f).fillMaxHeight())
+    }
+    repeat((3 - entries.size).coerceAtLeast(0)) {
+      Spacer(Modifier.weight(1f))
+    }
+  }
+}
+
+@Composable
+private fun communityDetails(member: GitHubCommunityMember): String = buildList {
+  if (member.issuesReported > 0) {
+    add(pluralStringResource(R.plurals.hall_of_fame_issue_count, member.issuesReported, member.issuesReported))
+  }
+  if (member.feedbackComments > 0) {
+    add(pluralStringResource(R.plurals.hall_of_fame_feedback_count, member.feedbackComments, member.feedbackComments))
+  }
+}.joinToString("\n")
 
 @Composable
 private fun HallOfFamePerson(
@@ -365,13 +460,15 @@ private fun HallOfFamePerson(
   accent: Color,
   handle: String? = null,
   featured: Boolean = false,
+  prominent: Boolean = false,
   containerColor: Color = MaterialTheme.colorScheme.surfaceContainerLow,
+  modifier: Modifier = Modifier,
 ) {
   val uriHandler = LocalUriHandler.current
   val shape = RoundedCornerShape(8.dp)
   val profileLabel = stringResource(R.string.hall_of_fame_view_profile, name)
   Surface(
-    modifier = Modifier.fillMaxWidth().clip(shape).clickable(
+    modifier = modifier.fillMaxWidth().clip(shape).clickable(
       enabled = profileUrl != null,
       role = Role.Button,
       onClickLabel = profileLabel,
@@ -379,41 +476,72 @@ private fun HallOfFamePerson(
     ),
     shape = shape,
     color = containerColor,
+    border = if (prominent) BorderStroke(1.dp, accent.copy(alpha = 0.2f)) else null,
   ) {
-    Row(
-      modifier = Modifier.padding(if (featured) 20.dp else 14.dp),
-      horizontalArrangement = Arrangement.spacedBy(14.dp),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      Box(
-        modifier = Modifier.size(if (featured) 64.dp else 44.dp)
-          .clip(CircleShape).background(accent.copy(alpha = 0.12f)),
-        contentAlignment = Alignment.Center,
+    if (featured) {
+      Row(
+        modifier = Modifier.padding(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(14.dp),
+        verticalAlignment = Alignment.CenterVertically,
       ) {
-        Icon(Icons.RoundedFilled.Person, null, modifier = Modifier.size(24.dp), tint = accent)
-        avatarUrl?.let { url ->
-          RemoteImage(url, null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
+        HallOfFameAvatar(avatarUrl = avatarUrl, accent = accent, size = 64.dp)
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+          Text(text = details, style = MaterialTheme.typography.labelMedium, color = accent)
+          Text(
+            text = name,
+            style = MaterialTheme.typography.titleLarge,
+            fontWeight = FontWeight.Bold,
+            color = accent,
+          )
+          Text(
+            text = "@${handle.orEmpty()}",
+            style = MaterialTheme.typography.bodySmall,
+            color = accent,
+          )
+        }
+        if (profileUrl != null) {
+          Icon(Icons.RoundedFilled.ChevronRight, null, modifier = Modifier.size(18.dp), tint = accent)
         }
       }
-      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        if (featured) {
-          Text(text = details, style = MaterialTheme.typography.labelMedium, color = accent)
-        }
+    } else {
+      Column(
+        modifier = Modifier
+          .heightIn(min = if (prominent) 208.dp else 160.dp)
+          .padding(horizontal = if (prominent) 8.dp else 10.dp, vertical = if (prominent) 20.dp else 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+      ) {
+        HallOfFameAvatar(avatarUrl = avatarUrl, accent = accent, size = if (prominent) 64.dp else 48.dp)
         Text(
           text = name,
-          style = if (featured) MaterialTheme.typography.titleLarge else MaterialTheme.typography.titleSmall,
+          modifier = Modifier.fillMaxWidth(),
+          style = if (prominent) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleSmall,
           fontWeight = FontWeight.Bold,
-          color = if (featured) accent else MaterialTheme.colorScheme.onSurface,
+          color = if (prominent) accent else MaterialTheme.colorScheme.onSurface,
+          textAlign = TextAlign.Center,
+          minLines = 2,
         )
         Text(
-          text = if (featured) "@${handle.orEmpty()}" else details,
+          text = details,
+          modifier = Modifier.fillMaxWidth(),
           style = MaterialTheme.typography.bodySmall,
-          color = if (featured) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+          color = if (prominent) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+          textAlign = TextAlign.Center,
         )
       }
-      if (profileUrl != null) {
-        Icon(Icons.RoundedFilled.ChevronRight, null, modifier = Modifier.size(18.dp), tint = accent)
-      }
+    }
+  }
+}
+
+@Composable
+private fun HallOfFameAvatar(avatarUrl: String?, accent: Color, size: Dp) {
+  Box(
+    modifier = Modifier.size(size).clip(CircleShape).background(accent.copy(alpha = 0.12f)),
+    contentAlignment = Alignment.Center,
+  ) {
+    Icon(Icons.RoundedFilled.Person, null, modifier = Modifier.size(24.dp), tint = accent)
+    avatarUrl?.let { url ->
+      RemoteImage(url, null, modifier = Modifier.fillMaxSize(), contentScale = ContentScale.Crop)
     }
   }
 }
