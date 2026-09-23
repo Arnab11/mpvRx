@@ -279,8 +279,7 @@ object MainScreen : Screen {
         if (!isAlreadySettled) {
           tabNavigationJob =
             coroutineScope.launch {
-              val isAdjacent = kotlin.math.abs(pagerState.settledPage - targetIndex) <= 1
-              if (navStyle == NavigationAnimStyle.None || !isAdjacent) {
+              if (navStyle == NavigationAnimStyle.None) {
                 pagerState.scrollToPage(targetIndex)
               } else {
                 pagerState.animateScrollToPage(
