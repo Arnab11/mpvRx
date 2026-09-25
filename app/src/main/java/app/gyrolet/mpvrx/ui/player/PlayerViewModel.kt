@@ -4776,7 +4776,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun leftSeek() {
     val seconds = doubleTapToSeekDuration
     if ((pos ?: 0) > 0) {
-      _doubleTapSeekAmount.value -= seconds
       _seekState.update { state ->
         state.copy(amount = state.amount - seconds, isForwards = false)
       }
@@ -4785,14 +4784,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         state.copy(isForwards = false)
       }
     }
-    _isSeekingForwards.value = false
     seekBy(-seconds)
   }
 
   fun rightSeek() {
     val seconds = doubleTapToSeekDuration
     if ((pos ?: 0) < (duration ?: 0)) {
-      _doubleTapSeekAmount.value += seconds
       _seekState.update { state ->
         state.copy(amount = state.amount + seconds, isForwards = true)
       }
@@ -4801,7 +4798,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         state.copy(isForwards = true)
       }
     }
-    _isSeekingForwards.value = true
     seekBy(seconds)
   }
 
