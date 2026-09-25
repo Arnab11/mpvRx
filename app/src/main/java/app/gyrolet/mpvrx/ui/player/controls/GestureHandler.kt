@@ -1215,6 +1215,7 @@ fun GestureHandler(
             var hasStartedSeeking = false
             var initialVideoPosition = 0f
             var pendingSeekPosition: Float? = null
+            var wasPlayerAlreadyPaused = false
             // Use the sensitivity preference instead of hardcoded value
             val seekSensitivity = horizontalSwipeSensitivity
 
@@ -1280,6 +1281,15 @@ fun GestureHandler(
                         hasStartedSeeking = true
                         initialVideoPosition = position?.toFloat() ?: 0f
                         pendingSeekPosition = initialVideoPosition
+
+                        // Pause before seeking to prevent decoder stalls
+                        wasPlayerAlreadyPaused = paused ?: false
+                        if (!wasPlayerAlreadyPaused) {
+                          viewModel.pause()
+                        }
+
+                        // Show seekbar and start seeking mode (same as seekbar scrubbing)
+                        viewModel.showSeekBar()
                         change.consume()
                       }
                     }
@@ -1291,7 +1301,10 @@ fun GestureHandler(
                       val maxDuration = duration?.toFloat() ?: 0f
                       val clampedPosition = targetPosition.coerceAtMost(maxDuration)
                       pendingSeekPosition = clampedPosition
-                      viewModel.seekPreviewTo(clampedPosition)
+
+                      // Use the same seeking mechanism as seekbar scrubbing
+                      // This will update the seekbar position and provide live preview
+                      viewModel.seekTo(clampedPosition.toInt())
 
                       // Format and display time position updates
                       val currentPos = clampedPosition.toInt()
@@ -1321,7 +1334,11 @@ fun GestureHandler(
                 if (hasStartedSeeking) {
                   hasStartedSeeking = false
                   // Clean up seeking state without showing controls
+                  if (!wasPlayerAlreadyPaused) {
+                    viewModel.unpause()
+                  }
                   viewModel.playerUpdate.update { PlayerUpdates.None }
+                  viewModel.hideSeekBar()
                 }
                 releaseGesture(GestureOwner.HORIZONTAL_SEEK)
                 releaseGesture(GestureOwner.SUBTITLE_SEEK)
@@ -1331,12 +1348,16 @@ fun GestureHandler(
 
             // Apply the final seek when gesture ends
             if (hasStartedSeeking) {
-              pendingSeekPosition?.let { target ->
-                viewModel.seekTo(target.toInt())
+              // Unpause if it wasn't paused before seeking
+              if (!wasPlayerAlreadyPaused) {
+                viewModel.unpause()
               }
+
+              // Clear the horizontal seek update and hide seekbar after a short delay
               coroutineScope.launch {
                 delay(300)
                 viewModel.playerUpdate.update { PlayerUpdates.None }
+                viewModel.hideSeekBar()
               }
             }
             releaseGesture(GestureOwner.HORIZONTAL_SEEK)
@@ -1373,11 +1394,7 @@ fun DoubleTapToSeekOvals(
   var scaleTarget by remember { mutableStateOf(1f) }
   val scale by animateFloatAsState(
     targetValue = scaleTarget,
-    animationSpec =
-      spring(
-        dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
-        stiffness = AppMotion.Spatial.Expressive.stiffness,
-      ),
+    animationSpec = tween(durationMillis = 150),
     label = "text_scale",
   )
 
@@ -1425,16 +1442,18 @@ fun DoubleTapToSeekOvals(
                 CombiningChevronsAnimation(isRight = false, trigger = amount)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                  text = String.format("%+3d", amount),
-                  style = seekOverlayTextStyle,
+                  text = "- ${abs(amount)}",
+                  fontSize = 22.sp,
+                  fontWeight = FontWeight.Bold,
                   textAlign = TextAlign.Center,
                   color = Color.White,
                   modifier = Modifier.scale(scale),
                 )
               } else {
                 Text(
-                  text = String.format("%+3d", amount),
-                  style = seekOverlayTextStyle,
+                  text = "+ ${abs(amount)}",
+                  fontSize = 22.sp,
+                  fontWeight = FontWeight.Bold,
                   textAlign = TextAlign.Center,
                   color = Color.White,
                   modifier = Modifier.scale(scale),

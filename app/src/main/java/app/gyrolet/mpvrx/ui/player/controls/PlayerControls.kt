@@ -277,6 +277,7 @@ fun PlayerControls(
       Modifier
     }
   var isSeeking by remember { mutableStateOf(false) }
+  var wasPlayerAlreadyPaused by remember { mutableStateOf(false) }
   val mpvSeeking by PlaybackSession.propBoolean["seeking"].collectAsState()
   val isPlayerSeeking = isSeeking || (mpvSeeking ?: false)
   val showBufferingIndicator =
@@ -1756,14 +1757,24 @@ is PlayerUpdates.FrameInfo -> {
               duration = seekbarDuration,
               remaining = effectiveRemaining,
               onValueChange = {
+                if (!isSeeking) {
+                  // First drag frame - pause playback
+                  wasPlayerAlreadyPaused = paused ?: false
+                  if (!wasPlayerAlreadyPaused) {
+                    viewModel.pause()
+                  }
+                }
                 isSeeking = true
                 resetControlsTimestamp = System.currentTimeMillis()
-                viewModel.seekPreviewTo(it)
+                viewModel.seekTo(it.toInt())
               },
               onValueChangeFinished = { targetPosition ->
                 isSeeking = false
                 resetControlsTimestamp = System.currentTimeMillis()
-                viewModel.seekTo(targetPosition.toInt(), fast = false)
+                // Unpause if it wasn't paused before seeking
+                if (!wasPlayerAlreadyPaused) {
+                  viewModel.unpause()
+                }
                 viewModel.showControls()
               },
               timersInverted = Pair(false, invertDuration),

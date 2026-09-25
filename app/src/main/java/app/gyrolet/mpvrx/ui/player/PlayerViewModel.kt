@@ -2239,10 +2239,26 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       }.collect { (duration, abLoop) ->
         if (!_isMpvCoreReady.value) return@collect
         val videoDuration = duration ?: 0
-        val isLoopActive = abLoop.a != null || abLoop.b != null
-        val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || videoDuration < 120 || isLoopActive
-        PlaybackSession.setPropertyString("hr-seek", if (shouldUsePreciseSeeking) "yes" else "no")
-        PlaybackSession.setPropertyString("hr-seek-framedrop", if (shouldUsePreciseSeeking) "no" else "yes")
+        if (videoDuration > 0) {
+          val isLoopActive = abLoop.a != null || abLoop.b != null
+          val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || videoDuration < 120 || isLoopActive
+          PlaybackSession.setPropertyString("hr-seek", if (shouldUsePreciseSeeking) "yes" else "no")
+          PlaybackSession.setPropertyString("hr-seek-framedrop", if (shouldUsePreciseSeeking) "no" else "yes")
+        }
+      }
+    }
+
+    // Monitor precise seeking preference toggle dynamically
+    viewModelScope.launch {
+      playerPreferences.usePreciseSeeking.changes().collect { usePrecise ->
+        if (!_isMpvCoreReady.value) return@collect
+        val videoDuration = _duration.value ?: 0
+        if (videoDuration > 0) {
+          val isLoopActive = _abLoopState.value.a != null || _abLoopState.value.b != null
+          val shouldUsePreciseSeeking = usePrecise || videoDuration < 120 || isLoopActive
+          PlaybackSession.setPropertyString("hr-seek", if (shouldUsePreciseSeeking) "yes" else "no")
+          PlaybackSession.setPropertyString("hr-seek-framedrop", if (shouldUsePreciseSeeking) "no" else "yes")
+        }
       }
     }
 
@@ -4688,14 +4704,16 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         clampedPosition = clampedPosition.coerceIn(min, max)
       }
 
+      if (maxDuration > 0 && clampedPosition !in 0..maxDuration) return@launch
+
       // Cancel pending relative seek before absolute seek
       seekCoalesceJob?.cancel()
       pendingSeekOffset = 0
 
-      // Exact seeking is intentionally opt-in. Forcing it on every short clip is expensive and can
-      // leave sparse-keyframe MP4/MKV files on a black frame. Drag previews always use keyframes.
+      // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
+      val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || maxDuration < 120
       val seekMode =
-        if (!fast && playerPreferences.usePreciseSeeking.get()) "absolute+exact" else "absolute+keyframes"
+        if (!fast && shouldUsePreciseSeeking) "absolute+exact" else "absolute+keyframes"
       if (!PlaybackSession.commandForGeneration(generation, "seek", clampedPosition.toString(), seekMode)) return@launch
       syncplayManager.updatePlayerState(
         clampedPosition.toDouble(),
@@ -4721,72 +4739,31 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             AudiobookPlayback.seekBy(toApply)
             return@launch
           }
-          val durationSeconds =
-            PlaybackSession
-              .getPropertyDouble("duration")
-              ?.takeIf { it.isFinite() && it > 0.0 }
-              ?: currentDurationSeconds().takeIf { it.isFinite() && it > 0.0 }
-          val currentPosition =
-            PlaybackSession
-              .getPropertyDouble("time-pos")
-              ?.takeIf { it.isFinite() && it >= 0.0 }
-              ?: (pos ?: 0).toDouble().coerceAtLeast(0.0)
-          val preciseSeeking = playerPreferences.usePreciseSeeking.get()
-          val requestedTarget = (currentPosition + toApply).coerceAtLeast(0.0)
-          val targetPosition =
-            durationSeconds?.let { duration ->
-              val guardedEndPosition = (duration - RELATIVE_SEEK_EOF_GUARD_SECONDS).coerceAtLeast(0.0)
-              val forwardOvershoot =
-                toApply > 0 &&
-                  requestedTarget >= duration - SEEK_TARGET_TOLERANCE_SECONDS
-              val endPosition =
-                if (preciseSeeking && forwardOvershoot) {
-                  duration
-                } else if (forwardOvershoot) {
-                  val seekInterval =
-                    minOf(kotlin.math.abs(toApply), doubleTapToSeekDuration)
-                      .toDouble()
-                      .coerceAtLeast(RELATIVE_SEEK_EOF_GUARD_SECONDS)
-                  val lastFullSeekIntervalPosition = (duration - seekInterval).coerceAtLeast(0.0)
-                  if (lastFullSeekIntervalPosition > currentPosition) {
-                    lastFullSeekIntervalPosition
-                  } else {
-                    guardedEndPosition
-                  }
-                } else {
-                  guardedEndPosition
-                }
-              // Precise overshoots finish at EOF. Non-precise seeking stops at the last complete
-              // interval when possible, then advances to the guard instead of entering EOF.
-              requestedTarget.coerceAtMost(endPosition)
-            }
+          val duration =
+            PlaybackSession.getPropertyInt("duration")
+              ?: duration
+              ?: _preciseDuration.value.toInt()
+          val currentPos =
+            PlaybackSession.getPropertyInt("time-pos")
+              ?: (pos ?: 0)
 
-          if (toApply > 0 && targetPosition != null && targetPosition <= currentPosition) {
-            return@launch
+          if (duration > 0 && currentPos + toApply >= duration) {
+            // If seeking past the end, force seek to 100% absolute to ensure EOF is triggered
+            PlaybackSession.commandForGeneration(generation, "seek", "100", "absolute-percent+exact")
+          } else {
+            // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
+            val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || duration < 120
+            val seekMode = if (shouldUsePreciseSeeking) "relative+exact" else "relative+keyframes"
+            PlaybackSession.commandForGeneration(generation, "seek", toApply.toString(), seekMode)
           }
-
-          // Keep non-precise double-taps on MPV's fast keyframe path in both directions. Only a
-          // boundary-clamped seek needs an absolute target; it can still remain keyframe-based.
-          val targetWasClamped = targetPosition != null && targetPosition < requestedTarget
-          val useRelativeKeyframeSeek = !preciseSeeking && !targetWasClamped
-          val useExactSeeking = preciseSeeking
-          val seekMode =
-            if (useRelativeKeyframeSeek) {
-              "relative+keyframes"
-            } else if (targetPosition != null) {
-              if (useExactSeeking) "absolute+exact" else "absolute+keyframes"
+          val currentPositionDouble =
+            PlaybackSession.getPropertyDouble("time-pos") ?: currentPos.toDouble()
+          val synchronizedPosition =
+            if (duration > 0 && currentPos + toApply >= duration) {
+              duration.toDouble()
             } else {
-              if (useExactSeeking) "relative+exact" else "relative+keyframes"
+              (currentPositionDouble + toApply).coerceAtLeast(0.0)
             }
-          val seekValue =
-            if (useRelativeKeyframeSeek) {
-              toApply.toString()
-            } else {
-              targetPosition?.toString() ?: toApply.toString()
-            }
-          val synchronizedPosition = targetPosition ?: requestedTarget
-
-          if (!PlaybackSession.commandForGeneration(generation, "seek", seekValue, seekMode)) return@launch
           syncplayManager.updatePlayerState(
             synchronizedPosition,
             PlaybackSession.getPropertyBoolean("pause") ?: false,
@@ -4798,27 +4775,33 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   fun leftSeek() {
     val seconds = doubleTapToSeekDuration
-    _seekState.update { state ->
-      state.copy(amount = if ((pos ?: 0) > 0) state.amount - seconds else state.amount, isForwards = false)
+    if ((pos ?: 0) > 0) {
+      _doubleTapSeekAmount.value -= seconds
+      _seekState.update { state ->
+        state.copy(amount = state.amount - seconds, isForwards = false)
+      }
+    } else {
+      _seekState.update { state ->
+        state.copy(isForwards = false)
+      }
     }
+    _isSeekingForwards.value = false
     seekBy(-seconds)
   }
 
   fun rightSeek() {
     val seconds = doubleTapToSeekDuration
-    _seekState.update { state ->
-      state.copy(
-        amount =
-          if ((pos ?: 0) <
-            (duration ?: 0)
-          ) {
-            state.amount + seconds
-          } else {
-            state.amount
-          },
-        isForwards = true,
-      )
+    if ((pos ?: 0) < (duration ?: 0)) {
+      _doubleTapSeekAmount.value += seconds
+      _seekState.update { state ->
+        state.copy(amount = state.amount + seconds, isForwards = true)
+      }
+    } else {
+      _seekState.update { state ->
+        state.copy(isForwards = true)
+      }
     }
+    _isSeekingForwards.value = true
     seekBy(seconds)
   }
 

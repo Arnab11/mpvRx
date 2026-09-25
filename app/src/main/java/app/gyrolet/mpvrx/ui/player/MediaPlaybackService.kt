@@ -785,13 +785,10 @@ class MediaPlaybackService :
   }
 
   private fun seekByConfiguredInterval(direction: Int) {
+    val duration = PlaybackSession.getPropertyInt("duration") ?: 0
     val seconds = gesturePreferences.doubleTapToSeekDuration.get() * direction
-    val seekMode =
-      if (playerPreferences.usePreciseSeeking.get()) {
-        "relative+exact"
-      } else {
-        "relative+keyframes"
-      }
+    val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || duration < 120
+    val seekMode = if (shouldUsePreciseSeeking) "relative+exact" else "relative+keyframes"
     PlaybackSession.command("seek", seconds.toString(), seekMode)
     refreshTransportControls()
   }
