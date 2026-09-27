@@ -2514,4 +2514,63 @@
   <string name="pref_background_playback_per_video">تذكر الاختيار لكل فيديو</string>
   <string name="pref_background_playback_per_video_summary">احفظ اختيار التشغيل في الخلفية لكل فيديو على حدة. يظل معطلًا للفيديوهات الأخرى حتى تفعيله لها.</string>
   <string name="jellyfin_technical_details">التفاصيل التقنية</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">اللقطات</string>
+  <string name="pref_nav_snapshots_title">إظهار علامة تبويب اللقطات</string>
+  <string name="pref_nav_snapshots_summary">إظهار أو إخفاء اللقطات في شريط التنقل السفلي</string>
+  <string name="snapshot_save_button">حفظ في اللقطات</string>
+  <string name="snapshot_saved">تم الحفظ في اللقطات</string>
+  <string name="snapshot_database_write_failed">تم الحفظ في المعرض، لكن تعذّر تسجيله في التطبيق.</string>
+  <string name="snapshot_no_frame">لا يمكن التقاط إطار الآن، انتظر تحميل الفيديو</string>
+  <string name="snapshot_empty_title">لا توجد لقطات بعد</string>
+  <string name="snapshot_empty_message">اضغط زر اللقطة في لوحة التنقل إطارًا بإطار لحفظ لحظة مميزة</string>
+  <string name="snapshot_search_placeholder">البحث في اللقطات</string>
+  <string name="snapshot_no_results">لا توجد لقطات تطابق بحثك</string>
+  <string name="snapshot_sort_captured_at">وقت الالتقاط</string>
+  <string name="snapshot_sort_video_title">عنوان الفيديو</string>
+  <string name="snapshot_sort_position">الموضع في الفيديو</string>
+  <string name="snapshot_jump_to_video">الانتقال إلى الفيديو</string>
+  <string name="snapshot_source_unavailable">لم يعد الفيديو الأصلي متاحًا</string>
+  <string name="snapshot_source_not_connected">اتصل بهذه المشاركة أولاً من علامة تبويب الشبكة</string>
+  <string name="snapshot_source_check_connection">تحقق من هذا الاتصال</string>
+  <string name="snapshot_source_local">محلي</string>
+  <string name="snapshot_rotate">تدوير</string>
+  <string name="snapshot_file_missing">تم حذف ملف اللقطة. هل تريد إزالة هذا السجل؟</string>
+  <string name="snapshot_delete_title">حذف اللقطة؟</string>
+  <string name="snapshot_delete_selected_title">حذف %1$d لقطات؟</string>
+  <string name="snapshot_delete_message">يؤدي هذا إلى إزالة السجل من التطبيق. تبقى الصورة في المعرض.</string>
+  <string name="snapshot_delete">حذف</string>
+  <string name="snapshot_remove">إزالة</string>
+
+  <string name="snapshot_root">الجذر</string>
+  <string name="snapshot_section_folders">المجلدات</string>
+  <string name="snapshot_section_snapshots">اللقطات</string>
+
+  <string name="snapshot_new_folder">مجلد جديد</string>
+  <string name="snapshot_create_folder_title">مجلد جديد</string>
+  <string name="snapshot_rename_folder_title">إعادة تسمية المجلد</string>
+  <string name="snapshot_folder_name_hint">اسم المجلد</string>
+  <string name="snapshot_folder_name_blank">أدخل اسم المجلد</string>
+  <string name="snapshot_folder_name_taken">يوجد مجلد بهذا الاسم بالفعل</string>
+  <string name="snapshot_folder_create">إنشاء</string>
+
+  <string name="snapshot_move_to_folder">نقل إلى مجلد</string>
+  <string name="snapshot_move">نقل</string>
+
+  <string name="snapshot_delete_folder_title">حذف المجلد؟</string>
+  <string name="snapshot_delete_folders_title">حذف %1$d مجلدات؟</string>
+  <string name="snapshot_delete_folder_selected_title">حذف هذا المجلد؟</string>
+  <string name="snapshot_delete_folder_message">يؤدي هذا إلى إزالة المجلد وسجلات اللقطات الخاصة به (%1$d) من التطبيق. تبقى الصور في المعرض.</string>
+  <string name="snapshot_delete_folder_empty_message">يؤدي هذا إلى إزالة المجلد من التطبيق.</string>
+
+  <string name="snapshot_folder_empty_title">هذا المجلد فارغ</string>
+  <string name="snapshot_folder_empty_message">اضغط مطولًا على لقطة في القائمة واختر «نقل إلى مجلد» لحفظها هنا.</string>
+
+  <string name="snapshot_sort_folder_name">اسم المجلد</string>
+  <string name="snapshot_sort_created_at">تاريخ الإنشاء</string>
+  <string name="snapshot_sort_item_count">عدد اللقطات</string>
+
+  <string name="snapshot_search_folder_placeholder">البحث في المجلدات واللقطات</string>
+  <string name="snapshot_folder_count">%1$d لقطات</string>
 </resources>

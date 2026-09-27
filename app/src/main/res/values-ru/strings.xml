@@ -2502,4 +2502,63 @@
   <string name="pref_background_playback_per_video">Запоминать выбор для каждого видео</string>
   <string name="pref_background_playback_per_video_summary">Сохранять выбор фонового воспроизведения отдельно для каждого видео. Для остальных видео оно выключено, пока вы его не включите.</string>
   <string name="jellyfin_technical_details">Технические сведения</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Кадры</string>
+  <string name="pref_nav_snapshots_title">Показывать вкладку «Кадры»</string>
+  <string name="pref_nav_snapshots_summary">Показывать или скрывать «Кадры» на нижней панели навигации</string>
+  <string name="snapshot_save_button">Сохранить в «Кадры»</string>
+  <string name="snapshot_saved">Сохранено в «Кадры»</string>
+  <string name="snapshot_database_write_failed">Сохранено в галерее, но запись в приложении не удалась.</string>
+  <string name="snapshot_no_frame">Сейчас нельзя захватить кадр, дождитесь загрузки видео</string>
+  <string name="snapshot_empty_title">Кадров пока нет</string>
+  <string name="snapshot_empty_message">Нажмите кнопку кадра на панели покадрового просмотра, чтобы сохранить момент</string>
+  <string name="snapshot_search_placeholder">Поиск по кадрам</string>
+  <string name="snapshot_no_results">Нет кадров, соответствующих запросу</string>
+  <string name="snapshot_sort_captured_at">Время захвата</string>
+  <string name="snapshot_sort_video_title">Название видео</string>
+  <string name="snapshot_sort_position">Позиция в видео</string>
+  <string name="snapshot_jump_to_video">Перейти к видео</string>
+  <string name="snapshot_source_unavailable">Исходное видео больше недоступно</string>
+  <string name="snapshot_source_not_connected">Сначала подключите эту папку на вкладке «Сеть»</string>
+  <string name="snapshot_source_check_connection">Проверьте это подключение</string>
+  <string name="snapshot_source_local">локальный</string>
+  <string name="snapshot_rotate">Повернуть</string>
+  <string name="snapshot_file_missing">Файл кадра удалён. Удалить эту запись?</string>
+  <string name="snapshot_delete_title">Удалить кадр?</string>
+  <string name="snapshot_delete_selected_title">Удалить кадры (%1$d шт.)?</string>
+  <string name="snapshot_delete_message">Запись будет удалена из приложения. Изображение останется в галерее.</string>
+  <string name="snapshot_delete">Удалить</string>
+  <string name="snapshot_remove">Убрать</string>
+
+  <string name="snapshot_root">Корень</string>
+  <string name="snapshot_section_folders">Папки</string>
+  <string name="snapshot_section_snapshots">Кадры</string>
+
+  <string name="snapshot_new_folder">Новая папка</string>
+  <string name="snapshot_create_folder_title">Новая папка</string>
+  <string name="snapshot_rename_folder_title">Переименовать папку</string>
+  <string name="snapshot_folder_name_hint">Название папки</string>
+  <string name="snapshot_folder_name_blank">Введите название папки</string>
+  <string name="snapshot_folder_name_taken">Папка с таким названием уже есть</string>
+  <string name="snapshot_folder_create">Создать</string>
+
+  <string name="snapshot_move_to_folder">Переместить в папку</string>
+  <string name="snapshot_move">Переместить</string>
+
+  <string name="snapshot_delete_folder_title">Удалить папку?</string>
+  <string name="snapshot_delete_folders_title">Удалить папки (%1$d шт.)?</string>
+  <string name="snapshot_delete_folder_selected_title">Удалить эту папку?</string>
+  <string name="snapshot_delete_folder_message">Папка и её записи кадров (%1$d шт.) будут удалены из приложения. Изображения останутся в галерее.</string>
+  <string name="snapshot_delete_folder_empty_message">Папка будет удалена из приложения.</string>
+
+  <string name="snapshot_folder_empty_title">Эта папка пуста</string>
+  <string name="snapshot_folder_empty_message">Нажмите и удерживайте кадр в списке и выберите «Переместить в папку», чтобы убрать его сюда.</string>
+
+  <string name="snapshot_sort_folder_name">Название папки</string>
+  <string name="snapshot_sort_created_at">Дата создания</string>
+  <string name="snapshot_sort_item_count">Количество кадров</string>
+
+  <string name="snapshot_search_folder_placeholder">Поиск папок и кадров</string>
+  <string name="snapshot_folder_count">Кадры: %1$d</string>
 </resources>

@@ -98,6 +98,12 @@ class PlayerPreferences(
   val panAndZoomEnabled = preferenceStore.getBoolean("pan_and_zoom_enabled", false)
 
   val includeSubtitlesInSnapshot = preferenceStore.getBoolean("include_subtitles_in_snapshot", false)
+
+  /**
+   * The folder the snapshot save dialog pre-selects. [NO_SNAPSHOT_FOLDER] means "none chosen yet",
+   * which the dialog shows as the snapshot root.
+   */
+  val lastSnapshotFolderId = preferenceStore.getLong("last_snapshot_folder_id", NO_SNAPSHOT_FOLDER)
   val screenshotFormat = preferenceStore.getEnum("screenshot_format", ScreenshotFormat.PNG)
   val screenshotTemplate = preferenceStore.getString("screenshot_template", "mpv_snapshot_%Y%m%d_%H%M%S")
   val screenshotQuality = preferenceStore.getInt("screenshot_quality", 90)
@@ -302,4 +308,9 @@ class PlayerPreferences(
 
   /** Animation duration multiplier (0.5 = twice as fast, 2.0 = twice as slow). */
   val animationSpeed = preferenceStore.getFloat("animation_speed", 1.0f)
+
+  companion object {
+    /** Sentinel for `lastSnapshotFolderId`; folder ids start at 1, so it cannot be a real folder. */
+    const val NO_SNAPSHOT_FOLDER = -1L
+  }
 }

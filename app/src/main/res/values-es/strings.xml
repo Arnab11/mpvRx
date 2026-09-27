@@ -2488,4 +2488,63 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="pref_background_playback_per_video">Recordar la elección para cada vídeo</string>
   <string name="pref_background_playback_per_video_summary">Guardar la reproducción en segundo plano por separado para cada vídeo. En los demás vídeos seguirá desactivada hasta que la actives.</string>
   <string name="jellyfin_technical_details">Detalles técnicos</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Capturas</string>
+  <string name="pref_nav_snapshots_title">Mostrar pestaña de capturas</string>
+  <string name="pref_nav_snapshots_summary">Mostrar u ocultar Capturas en la barra de navegación inferior</string>
+  <string name="snapshot_save_button">Guardar en Capturas</string>
+  <string name="snapshot_saved">Guardado en Capturas</string>
+  <string name="snapshot_database_write_failed">Guardado en la galería, pero el registro en la aplicación ha fallado.</string>
+  <string name="snapshot_no_frame">Ahora mismo no se puede capturar un fotograma, espera a que cargue el vídeo</string>
+  <string name="snapshot_empty_title">Aún no hay capturas</string>
+  <string name="snapshot_empty_message">Pulsa el botón de captura en el panel fotograma a fotograma para guardar un momento</string>
+  <string name="snapshot_search_placeholder">Buscar capturas</string>
+  <string name="snapshot_no_results">Ninguna captura coincide con tu búsqueda</string>
+  <string name="snapshot_sort_captured_at">Fecha de captura</string>
+  <string name="snapshot_sort_video_title">Título del vídeo</string>
+  <string name="snapshot_sort_position">Posición en el vídeo</string>
+  <string name="snapshot_jump_to_video">Ir al vídeo</string>
+  <string name="snapshot_source_unavailable">El vídeo original ya no está disponible</string>
+  <string name="snapshot_source_not_connected">Conecta este recurso compartido primero en la pestaña Red</string>
+  <string name="snapshot_source_check_connection">Comprueba esta conexión</string>
+  <string name="snapshot_source_local">local</string>
+  <string name="snapshot_rotate">Girar</string>
+  <string name="snapshot_file_missing">El archivo de la captura se ha eliminado. ¿Quitar este registro?</string>
+  <string name="snapshot_delete_title">¿Eliminar la captura?</string>
+  <string name="snapshot_delete_selected_title">¿Eliminar %1$d capturas?</string>
+  <string name="snapshot_delete_message">Esto quita el registro de la aplicación. La imagen permanece en tu galería.</string>
+  <string name="snapshot_delete">Eliminar</string>
+  <string name="snapshot_remove">Quitar</string>
+
+  <string name="snapshot_root">Raíz</string>
+  <string name="snapshot_section_folders">Carpetas</string>
+  <string name="snapshot_section_snapshots">Capturas</string>
+
+  <string name="snapshot_new_folder">Nueva carpeta</string>
+  <string name="snapshot_create_folder_title">Nueva carpeta</string>
+  <string name="snapshot_rename_folder_title">Cambiar nombre de la carpeta</string>
+  <string name="snapshot_folder_name_hint">Nombre de la carpeta</string>
+  <string name="snapshot_folder_name_blank">Introduce un nombre de carpeta</string>
+  <string name="snapshot_folder_name_taken">Ya existe una carpeta con este nombre</string>
+  <string name="snapshot_folder_create">Crear</string>
+
+  <string name="snapshot_move_to_folder">Mover a carpeta</string>
+  <string name="snapshot_move">Mover</string>
+
+  <string name="snapshot_delete_folder_title">¿Eliminar la carpeta?</string>
+  <string name="snapshot_delete_folders_title">¿Eliminar %1$d carpetas?</string>
+  <string name="snapshot_delete_folder_selected_title">¿Eliminar esta carpeta?</string>
+  <string name="snapshot_delete_folder_message">Esto quita la carpeta y sus %1$d registros de capturas de la aplicación. Las imágenes permanecen en tu galería.</string>
+  <string name="snapshot_delete_folder_empty_message">Esto quita la carpeta de la aplicación.</string>
+
+  <string name="snapshot_folder_empty_title">Esta carpeta está vacía</string>
+  <string name="snapshot_folder_empty_message">Mantén pulsada una captura en la lista y elige «Mover a carpeta» para guardarla aquí.</string>
+
+  <string name="snapshot_sort_folder_name">Nombre de la carpeta</string>
+  <string name="snapshot_sort_created_at">Fecha de creación</string>
+  <string name="snapshot_sort_item_count">Número de capturas</string>
+
+  <string name="snapshot_search_folder_placeholder">Buscar carpetas y capturas</string>
+  <string name="snapshot_folder_count">%1$d capturas</string>
 </resources>

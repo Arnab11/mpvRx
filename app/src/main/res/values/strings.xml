@@ -2531,4 +2531,67 @@
   <string name="pref_background_playback_per_video">Remember for each video</string>
   <string name="pref_background_playback_per_video_summary">Save a separate background playback choice for each video. Other videos stay off until enabled.</string>
   <string name="jellyfin_technical_details">Technical details</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Snapshots</string>
+  <string name="pref_nav_snapshots_title">Show Snapshots tab</string>
+  <string name="pref_nav_snapshots_summary">Show or hide Snapshots in the bottom navigation bar</string>
+
+  <string name="snapshot_save_button">Save to Snapshots</string>
+  <string name="snapshot_saved">Saved to Snapshots</string>
+  <string name="snapshot_database_write_failed">Saved to gallery, but the in-app record failed.</string>
+  <string name="snapshot_no_frame">Cannot capture a frame right now, wait for the video to load</string>
+
+  <string name="snapshot_empty_title">No snapshots yet</string>
+  <string name="snapshot_empty_message">Tap the snapshot button in the frame-by-frame panel to keep a moment</string>
+  <string name="snapshot_search_placeholder">Search snapshots</string>
+  <string name="snapshot_no_results">No snapshots match your search</string>
+
+  <string name="snapshot_sort_captured_at">Capture time</string>
+  <string name="snapshot_sort_video_title">Video title</string>
+  <string name="snapshot_sort_position">Position in video</string>
+
+  <string name="snapshot_jump_to_video">Jump to video</string>
+  <string name="snapshot_source_unavailable">The original video is no longer accessible</string>
+  <string name="snapshot_source_not_connected">Connect this share on the Network tab first</string>
+  <string name="snapshot_source_check_connection">Check this connection</string>
+  <string name="snapshot_source_local">local</string>
+  <string name="snapshot_rotate">Rotate</string>
+  <string name="snapshot_file_missing">Snapshot file was deleted. Remove this record?</string>
+  <string name="snapshot_delete_title">Delete snapshot?</string>
+  <string name="snapshot_delete_selected_title">Delete %1$d snapshots?</string>
+  <string name="snapshot_delete_message">This removes the record from the app. The image stays in your gallery.</string>
+  <string name="snapshot_delete">Delete</string>
+  <string name="snapshot_remove">Remove</string>
+
+  <string name="snapshot_root">Root</string>
+  <string name="snapshot_section_folders">Folders</string>
+  <string name="snapshot_section_snapshots">Snapshots</string>
+
+  <string name="snapshot_new_folder">New folder</string>
+  <string name="snapshot_create_folder_title">New folder</string>
+  <string name="snapshot_rename_folder_title">Rename folder</string>
+  <string name="snapshot_folder_name_hint">Folder name</string>
+  <string name="snapshot_folder_name_blank">Enter a folder name</string>
+  <string name="snapshot_folder_name_taken">A folder with this name already exists</string>
+  <string name="snapshot_folder_create">Create</string>
+
+  <string name="snapshot_move_to_folder">Move to folder</string>
+  <string name="snapshot_move">Move</string>
+
+  <string name="snapshot_delete_folder_title">Delete folder?</string>
+  <string name="snapshot_delete_folders_title">Delete %1$d folders?</string>
+  <string name="snapshot_delete_folder_selected_title">Delete this folder?</string>
+  <string name="snapshot_delete_folder_message">This removes the folder and its %1$d snapshot records from the app. The images stay in your gallery.</string>
+  <string name="snapshot_delete_folder_empty_message">This removes the folder from the app.</string>
+
+  <string name="snapshot_folder_empty_title">This folder is empty</string>
+  <string name="snapshot_folder_empty_message">Long-press a snapshot in the Snapshots list and choose "Move to folder" to file it here.</string>
+
+  <string name="snapshot_sort_folder_name">Folder name</string>
+  <string name="snapshot_sort_created_at">Date created</string>
+  <string name="snapshot_sort_item_count">Snapshot count</string>
+
+  <string name="snapshot_search_folder_placeholder">Search folders and snapshots</string>
+  <string name="snapshot_folder_count">%1$d snapshots</string>
 </resources>

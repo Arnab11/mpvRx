@@ -2392,4 +2392,63 @@
   <string name="pref_background_playback_per_video">हर वीडियो के लिए पसंद याद रखें</string>
   <string name="pref_background_playback_per_video_summary">हर वीडियो के लिए बैकग्राउंड प्लेबैक की पसंद अलग सहेजें। दूसरे वीडियो के लिए यह चालू किए जाने तक बंद रहेगा।</string>
   <string name="jellyfin_technical_details">तकनीकी विवरण</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">स्नैपशॉट</string>
+  <string name="pref_nav_snapshots_title">स्नैपशॉट टैब दिखाएं</string>
+  <string name="pref_nav_snapshots_summary">निचले नेविगेशन बार में स्नैपशॉट दिखाएं या छुपाएं</string>
+  <string name="snapshot_save_button">स्नैपशॉट में सहेजें</string>
+  <string name="snapshot_saved">स्नैपशॉट में सहेजा गया</string>
+  <string name="snapshot_database_write_failed">गैलरी में सहेजा गया, लेकिन ऐप में रिकॉर्ड विफल रहा।</string>
+  <string name="snapshot_no_frame">अभी कोई फ़्रेम कैप्चर नहीं हो सकता, वीडियो लोड होने तक प्रतीक्षा करें</string>
+  <string name="snapshot_empty_title">अभी कोई स्नैपशॉट नहीं</string>
+  <string name="snapshot_empty_message">एक पल सहेजने के लिए फ़्रेम-दर-फ़्रेम पैनल में स्नैपशॉट बटन दबाएं</string>
+  <string name="snapshot_search_placeholder">स्नैपशॉट खोजें</string>
+  <string name="snapshot_no_results">आपकी खोज से कोई स्नैपशॉट मेल नहीं खाता</string>
+  <string name="snapshot_sort_captured_at">कैप्चर समय</string>
+  <string name="snapshot_sort_video_title">वीडियो शीर्षक</string>
+  <string name="snapshot_sort_position">वीडियो में स्थान</string>
+  <string name="snapshot_jump_to_video">वीडियो पर जाएं</string>
+  <string name="snapshot_source_unavailable">मूल वीडियो अब उपलब्ध नहीं है</string>
+  <string name="snapshot_source_not_connected">पहले नेटवर्क टैब में यह शेयर कनेक्ट करें</string>
+  <string name="snapshot_source_check_connection">यह कनेक्शन जांचें</string>
+  <string name="snapshot_source_local">स्थानीय</string>
+  <string name="snapshot_rotate">घुमाएं</string>
+  <string name="snapshot_file_missing">स्नैपशॉट फ़ाइल हटा दी गई। यह रिकॉर्ड हटाएं?</string>
+  <string name="snapshot_delete_title">स्नैपशॉट हटाएं?</string>
+  <string name="snapshot_delete_selected_title">%1$d स्नैपशॉट हटाएं?</string>
+  <string name="snapshot_delete_message">यह ऐप से रिकॉर्ड हटा देता है। छवि आपकी गैलरी में रहती है।</string>
+  <string name="snapshot_delete">हटाएं</string>
+  <string name="snapshot_remove">निकालें</string>
+
+  <string name="snapshot_root">रूट</string>
+  <string name="snapshot_section_folders">फ़ोल्डर</string>
+  <string name="snapshot_section_snapshots">स्नैपशॉट</string>
+
+  <string name="snapshot_new_folder">नया फ़ोल्डर</string>
+  <string name="snapshot_create_folder_title">नया फ़ोल्डर</string>
+  <string name="snapshot_rename_folder_title">फ़ोल्डर का नाम बदलें</string>
+  <string name="snapshot_folder_name_hint">फ़ोल्डर का नाम</string>
+  <string name="snapshot_folder_name_blank">फ़ोल्डर का नाम दर्ज करें</string>
+  <string name="snapshot_folder_name_taken">इस नाम का फ़ोल्डर पहले से मौजूद है</string>
+  <string name="snapshot_folder_create">बनाएं</string>
+
+  <string name="snapshot_move_to_folder">फ़ोल्डर में ले जाएं</string>
+  <string name="snapshot_move">ले जाएं</string>
+
+  <string name="snapshot_delete_folder_title">फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folders_title">%1$d फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folder_selected_title">यह फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folder_message">यह ऐप से फ़ोल्डर और उसके %1$d स्नैपशॉट रिकॉर्ड हटा देता है। छवियां आपकी गैलरी में रहती हैं।</string>
+  <string name="snapshot_delete_folder_empty_message">यह ऐप से फ़ोल्डर हटा देता है।</string>
+
+  <string name="snapshot_folder_empty_title">यह फ़ोल्डर खाली है</string>
+  <string name="snapshot_folder_empty_message">स्नैपशॉट सूची में किसी स्नैपशॉट को देर तक दबाएं और यहां रखने के लिए &quot;फ़ोल्डर में ले जाएं&quot; चुनें।</string>
+
+  <string name="snapshot_sort_folder_name">फ़ोल्डर का नाम</string>
+  <string name="snapshot_sort_created_at">बनाने की तिथि</string>
+  <string name="snapshot_sort_item_count">स्नैपशॉट संख्या</string>
+
+  <string name="snapshot_search_folder_placeholder">फ़ोल्डर और स्नैपशॉट खोजें</string>
+  <string name="snapshot_folder_count">%1$d स्नैपशॉट</string>
 </resources>

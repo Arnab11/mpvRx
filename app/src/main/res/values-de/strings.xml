@@ -2488,4 +2488,63 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_background_playback_per_video">Auswahl für jedes Video merken</string>
   <string name="pref_background_playback_per_video_summary">Hintergrundwiedergabe für jedes Video separat speichern. Für andere Videos bleibt sie ausgeschaltet, bis sie aktiviert wird.</string>
   <string name="jellyfin_technical_details">Technische Details</string>
+
+  <!-- Snapshots (frame capture) -->
+  <string name="ui_snapshots">Schnappschüsse</string>
+  <string name="pref_nav_snapshots_title">Schnappschüsse-Tab anzeigen</string>
+  <string name="pref_nav_snapshots_summary">Schnappschüsse in der unteren Navigationsleiste ein- oder ausblenden</string>
+  <string name="snapshot_save_button">In Schnappschüssen speichern</string>
+  <string name="snapshot_saved">In Schnappschüssen gespeichert</string>
+  <string name="snapshot_database_write_failed">In der Galerie gespeichert, aber der Eintrag in der App ist fehlgeschlagen.</string>
+  <string name="snapshot_no_frame">Derzeit kann kein Bild erfasst werden, warte bis das Video geladen ist</string>
+  <string name="snapshot_empty_title">Noch keine Schnappschüsse</string>
+  <string name="snapshot_empty_message">Tippe im Einzelbild-Panel auf die Schnappschuss-Schaltfläche, um einen Moment festzuhalten</string>
+  <string name="snapshot_search_placeholder">Schnappschüsse suchen</string>
+  <string name="snapshot_no_results">Keine Schnappschüsse passen zu deiner Suche</string>
+  <string name="snapshot_sort_captured_at">Aufnahmezeit</string>
+  <string name="snapshot_sort_video_title">Videotitel</string>
+  <string name="snapshot_sort_position">Position im Video</string>
+  <string name="snapshot_jump_to_video">Zum Video springen</string>
+  <string name="snapshot_source_unavailable">Das Originalvideo ist nicht mehr verfügbar</string>
+  <string name="snapshot_source_not_connected">Verbinde diese Freigabe zuerst im Tab „Netzwerk“</string>
+  <string name="snapshot_source_check_connection">Diese Verbindung prüfen</string>
+  <string name="snapshot_source_local">lokal</string>
+  <string name="snapshot_rotate">Drehen</string>
+  <string name="snapshot_file_missing">Die Schnappschuss-Datei wurde gelöscht. Diesen Eintrag entfernen?</string>
+  <string name="snapshot_delete_title">Schnappschuss löschen?</string>
+  <string name="snapshot_delete_selected_title">%1$d Schnappschüsse löschen?</string>
+  <string name="snapshot_delete_message">Dadurch wird der Eintrag aus der App entfernt. Das Bild bleibt in deiner Galerie.</string>
+  <string name="snapshot_delete">Löschen</string>
+  <string name="snapshot_remove">Entfernen</string>
+
+  <string name="snapshot_root">Stammordner</string>
+  <string name="snapshot_section_folders">Ordner</string>
+  <string name="snapshot_section_snapshots">Schnappschüsse</string>
+
+  <string name="snapshot_new_folder">Neuer Ordner</string>
+  <string name="snapshot_create_folder_title">Neuer Ordner</string>
+  <string name="snapshot_rename_folder_title">Ordner umbenennen</string>
+  <string name="snapshot_folder_name_hint">Ordnername</string>
+  <string name="snapshot_folder_name_blank">Bitte einen Ordnernamen eingeben</string>
+  <string name="snapshot_folder_name_taken">Ein Ordner mit diesem Namen existiert bereits</string>
+  <string name="snapshot_folder_create">Erstellen</string>
+
+  <string name="snapshot_move_to_folder">In Ordner verschieben</string>
+  <string name="snapshot_move">Verschieben</string>
+
+  <string name="snapshot_delete_folder_title">Ordner löschen?</string>
+  <string name="snapshot_delete_folders_title">%1$d Ordner löschen?</string>
+  <string name="snapshot_delete_folder_selected_title">Diesen Ordner löschen?</string>
+  <string name="snapshot_delete_folder_message">Dadurch werden der Ordner und seine %1$d Schnappschuss-Einträge aus der App entfernt. Die Bilder bleiben in deiner Galerie.</string>
+  <string name="snapshot_delete_folder_empty_message">Dadurch wird der Ordner aus der App entfernt.</string>
+
+  <string name="snapshot_folder_empty_title">Dieser Ordner ist leer</string>
+  <string name="snapshot_folder_empty_message">Halte in der Schnappschuss-Liste einen Schnappschuss gedrückt und wähle „In Ordner verschieben“, um ihn hier abzulegen.</string>
+
+  <string name="snapshot_sort_folder_name">Ordnername</string>
+  <string name="snapshot_sort_created_at">Erstellungsdatum</string>
+  <string name="snapshot_sort_item_count">Anzahl Schnappschüsse</string>
+
+  <string name="snapshot_search_folder_placeholder">Ordner und Schnappschüsse suchen</string>
+  <string name="snapshot_folder_count">%1$d Schnappschüsse</string>
 </resources>

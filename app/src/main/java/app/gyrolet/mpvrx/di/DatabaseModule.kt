@@ -21,6 +21,8 @@ import app.gyrolet.mpvrx.database.repository.NetworkStreamEntryRepository
 import app.gyrolet.mpvrx.database.repository.PlaybackStateRepositoryImpl
 import app.gyrolet.mpvrx.database.repository.PlaylistRepository
 import app.gyrolet.mpvrx.database.repository.RecentlyPlayedRepositoryImpl
+import app.gyrolet.mpvrx.domain.framecapture.FrameCaptureRepository
+import app.gyrolet.mpvrx.domain.framecapture.FrameCaptureRepositoryImpl
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.recentlyplayed.repository.RecentlyPlayedRepository
 import app.gyrolet.mpvrx.domain.network.NetworkImageRepository
@@ -908,6 +910,50 @@ val MIGRATION_27_28 =
     }
   }
 
+/**
+ * Frame captures are metadata-only rows: the image is written to the system gallery, and this table
+ * records where it went and which moment of which video it came from.
+ */
+val MIGRATION_28_29 =
+  object : Migration(28, 29) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL(
+        """CREATE TABLE IF NOT EXISTS `frame_captures` (
+        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        `imageUri` TEXT,
+        `imagePath` TEXT,
+        `videoUri` TEXT NOT NULL,
+        `videoPath` TEXT,
+        `videoTitle` TEXT NOT NULL,
+        `positionMs` INTEGER NOT NULL,
+        `capturedAt` INTEGER NOT NULL
+      )""",
+      )
+      db.execSQL("CREATE INDEX IF NOT EXISTS `index_frame_captures_capturedAt` ON `frame_captures` (`capturedAt`)")
+    }
+  }
+
+/**
+ * Snapshot folders are an in-app grouping only: the images stay in the gallery's `mpvSnaps` album,
+ * and `frame_captures.folderId` records which folder a row belongs to (null = the root). No foreign
+ * key — see the note on `FrameCaptureEntity` — so the column is nullable with the root as its meaning.
+ */
+val MIGRATION_29_30 =
+  object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL(
+        """CREATE TABLE IF NOT EXISTS `snapshot_folders` (
+        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        `name` TEXT NOT NULL,
+        `createdAt` INTEGER NOT NULL
+      )""",
+      )
+      db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_snapshot_folders_name` ON `snapshot_folders` (`name`)")
+      db.execSQL("ALTER TABLE `frame_captures` ADD COLUMN `folderId` INTEGER")
+      db.execSQL("CREATE INDEX IF NOT EXISTS `index_frame_captures_folderId` ON `frame_captures` (`folderId`)")
+    }
+  }
+
 val MIGRATION_24_25 =
   object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -974,6 +1020,8 @@ val DatabaseModule =
           MIGRATION_25_26,
           MIGRATION_26_27,
           MIGRATION_27_28,
+          MIGRATION_28_29,
+          MIGRATION_29_30,
         ).build()
     }
 
@@ -988,6 +1036,10 @@ val DatabaseModule =
 
     single { get<MpvRxDatabase>().audiobookDao() }
     single { get<MpvRxDatabase>().playbackBookmarkDao() }
+    single { get<MpvRxDatabase>().frameCaptureDao() }
+    single { get<MpvRxDatabase>().snapshotFolderDao() }
+
+    singleOf(::FrameCaptureRepositoryImpl).bind(FrameCaptureRepository::class)
 
     single {
       app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository(
