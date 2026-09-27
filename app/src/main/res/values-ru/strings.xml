@@ -2530,4 +2530,35 @@
   <string name="snapshot_delete_message">Запись будет удалена из приложения. Изображение останется в галерее.</string>
   <string name="snapshot_delete">Удалить</string>
   <string name="snapshot_remove">Убрать</string>
+
+  <string name="snapshot_root">Корень</string>
+  <string name="snapshot_section_folders">Папки</string>
+  <string name="snapshot_section_snapshots">Кадры</string>
+
+  <string name="snapshot_new_folder">Новая папка</string>
+  <string name="snapshot_create_folder_title">Новая папка</string>
+  <string name="snapshot_rename_folder_title">Переименовать папку</string>
+  <string name="snapshot_folder_name_hint">Название папки</string>
+  <string name="snapshot_folder_name_blank">Введите название папки</string>
+  <string name="snapshot_folder_name_taken">Папка с таким названием уже есть</string>
+  <string name="snapshot_folder_create">Создать</string>
+
+  <string name="snapshot_move_to_folder">Переместить в папку</string>
+  <string name="snapshot_move">Переместить</string>
+
+  <string name="snapshot_delete_folder_title">Удалить папку?</string>
+  <string name="snapshot_delete_folders_title">Удалить папки (%1$d шт.)?</string>
+  <string name="snapshot_delete_folder_selected_title">Удалить эту папку?</string>
+  <string name="snapshot_delete_folder_message">Папка и её записи кадров (%1$d шт.) будут удалены из приложения. Изображения останутся в галерее.</string>
+  <string name="snapshot_delete_folder_empty_message">Папка будет удалена из приложения.</string>
+
+  <string name="snapshot_folder_empty_title">Эта папка пуста</string>
+  <string name="snapshot_folder_empty_message">Нажмите и удерживайте кадр в списке и выберите «Переместить в папку», чтобы убрать его сюда.</string>
+
+  <string name="snapshot_sort_folder_name">Название папки</string>
+  <string name="snapshot_sort_created_at">Дата создания</string>
+  <string name="snapshot_sort_item_count">Количество кадров</string>
+
+  <string name="snapshot_search_folder_placeholder">Поиск папок и кадров</string>
+  <string name="snapshot_folder_count">Кадры: %1$d</string>
 </resources>

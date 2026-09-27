@@ -32,4 +32,14 @@ interface FrameCaptureDao {
 
   @Query("DELETE FROM frame_captures WHERE id IN (:ids)")
   suspend fun deleteByIds(ids: List<Long>)
+
+  /** A null [folderId] moves the rows back to the root of the snapshot library. */
+  @Query("UPDATE frame_captures SET folderId = :folderId WHERE id IN (:ids)")
+  suspend fun updateFolder(
+    ids: List<Long>,
+    folderId: Long?,
+  )
+
+  @Query("DELETE FROM frame_captures WHERE folderId = :folderId")
+  suspend fun deleteByFolder(folderId: Long)
 }

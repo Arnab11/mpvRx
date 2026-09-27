@@ -2509,4 +2509,35 @@
   <string name="snapshot_delete_message">アプリから記録を削除します。画像はギャラリーに残ります。</string>
   <string name="snapshot_delete">削除</string>
   <string name="snapshot_remove">記録を削除</string>
+
+  <string name="snapshot_root">ルート</string>
+  <string name="snapshot_section_folders">フォルダ</string>
+  <string name="snapshot_section_snapshots">スナップショット</string>
+
+  <string name="snapshot_new_folder">新しいフォルダ</string>
+  <string name="snapshot_create_folder_title">新しいフォルダ</string>
+  <string name="snapshot_rename_folder_title">フォルダ名を変更</string>
+  <string name="snapshot_folder_name_hint">フォルダ名</string>
+  <string name="snapshot_folder_name_blank">フォルダ名を入力してください</string>
+  <string name="snapshot_folder_name_taken">同じ名前のフォルダがすでにあります</string>
+  <string name="snapshot_folder_create">作成</string>
+
+  <string name="snapshot_move_to_folder">フォルダへ移動</string>
+  <string name="snapshot_move">移動</string>
+
+  <string name="snapshot_delete_folder_title">フォルダを削除しますか？</string>
+  <string name="snapshot_delete_folders_title">%1$d 個のフォルダを削除しますか？</string>
+  <string name="snapshot_delete_folder_selected_title">このフォルダを削除しますか？</string>
+  <string name="snapshot_delete_folder_message">アプリからフォルダと %1$d 件のスナップショット記録を削除します。画像はギャラリーに残ります。</string>
+  <string name="snapshot_delete_folder_empty_message">アプリからフォルダを削除します。</string>
+
+  <string name="snapshot_folder_empty_title">このフォルダは空です</string>
+  <string name="snapshot_folder_empty_message">スナップショット一覧で長押しし、「フォルダへ移動」を選ぶとここに整理できます。</string>
+
+  <string name="snapshot_sort_folder_name">フォルダ名</string>
+  <string name="snapshot_sort_created_at">作成日</string>
+  <string name="snapshot_sort_item_count">スナップショット数</string>
+
+  <string name="snapshot_search_folder_placeholder">フォルダとスナップショットを検索</string>
+  <string name="snapshot_folder_count">%1$d 件のスナップショット</string>
 </resources>

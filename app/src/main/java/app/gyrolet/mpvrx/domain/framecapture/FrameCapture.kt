@@ -26,6 +26,8 @@ data class FrameCapture(
   val videoTitle: String,
   val positionMs: Long,
   val capturedAt: Long,
+  /** The folder this snapshot was filed into, or null for the root of the snapshot library. */
+  val folderId: Long? = null,
 ) {
   /** Position formatted as `H:MM:SS` (or `M:SS` under an hour) for the grid caption. */
   val formattedPosition: String

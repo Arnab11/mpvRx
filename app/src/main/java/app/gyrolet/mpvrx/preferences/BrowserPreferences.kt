@@ -69,6 +69,23 @@ class BrowserPreferences(
   // FR-09: the grid defaults to newest capture first.
   val snapshotSortType = preferenceStore.getEnum("snapshot_sort_type", SnapshotSortType.CapturedAt)
   val snapshotSortOrder = preferenceStore.getEnum("snapshot_sort_order", SortOrder.Descending)
+  val snapshotFolderSortType = preferenceStore.getEnum("snapshot_folder_sort_type", SnapshotFolderSortType.Name)
+  val snapshotFolderSortOrder = preferenceStore.getEnum("snapshot_folder_sort_order", SortOrder.Ascending)
+  val snapshotLibraryView =
+    BrowserPageViewPreferences(
+      preferenceStore,
+      "snapshot_library",
+      folderDefaults = true,
+      defaultLayoutMode = MediaLayoutMode.GRID,
+      inheritGlobalLayout = false,
+    )
+  val snapshotItemView =
+    BrowserPageViewPreferences(
+      preferenceStore,
+      "snapshot_item",
+      defaultLayoutMode = MediaLayoutMode.GRID,
+      inheritGlobalLayout = false,
+    )
   val recentView = BrowserPageViewPreferences(preferenceStore, "recent")
   val playlistView = BrowserPageViewPreferences(preferenceStore, "playlist_library", folderDefaults = true)
   val playlistItemView = BrowserPageViewPreferences(preferenceStore, "playlist_item")
@@ -174,9 +191,25 @@ class BrowserPageViewPreferences internal constructor(
   private val preferenceStore: PreferenceStore,
   private val prefix: String,
   folderDefaults: Boolean = false,
+  /**
+   * The layout a page starts in. Snapshots pass GRID: a photo album that opens as a list gets the
+   * first impression wrong, and the browser's own LIST default is about file names, not pictures.
+   */
+  defaultLayoutMode: MediaLayoutMode = MediaLayoutMode.LIST,
+  /**
+   * Whether an unset page layout is seeded from the browser's global `media_layout_mode`. Snapshots
+   * opt out so their grid default is not dragged to the list by an unrelated setting.
+   */
+  inheritGlobalLayout: Boolean = true,
 ) {
-  val layoutMode = preferenceStore.getEnum("${prefix}_layout_mode", MediaLayoutMode.LIST)
-    .initializeFrom(preferenceStore.getEnum("media_layout_mode", MediaLayoutMode.LIST))
+  val layoutMode =
+    if (inheritGlobalLayout) {
+      preferenceStore
+        .getEnum("${prefix}_layout_mode", defaultLayoutMode)
+        .initializeFrom(preferenceStore.getEnum("media_layout_mode", defaultLayoutMode))
+    } else {
+      preferenceStore.getEnum("${prefix}_layout_mode", defaultLayoutMode)
+    }
   val manualGridColumnsEnabled = boolean("manual_grid_columns_enabled", false)
   val gridColumnsPortrait = integer(
     "grid_columns_portrait",
@@ -234,6 +267,13 @@ enum class SnapshotSortType {
   CapturedAt,
   VideoTitle,
   Position,
+}
+
+/** Sort fields offered on the snapshot library's folder list. */
+enum class SnapshotFolderSortType {
+  Name,
+  CreatedAt,
+  ItemCount,
 }
 
 /**

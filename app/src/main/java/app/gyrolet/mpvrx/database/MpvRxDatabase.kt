@@ -26,6 +26,7 @@ import app.gyrolet.mpvrx.database.dao.PlaybackBookmarkDao
 import app.gyrolet.mpvrx.database.dao.PlaylistDao
 import app.gyrolet.mpvrx.database.dao.RecentlyPlayedDao
 import app.gyrolet.mpvrx.database.dao.SecureMediaDao
+import app.gyrolet.mpvrx.database.dao.SnapshotFolderDao
 import app.gyrolet.mpvrx.database.dao.VideoMetadataDao
 import app.gyrolet.mpvrx.database.dao.JellyfinServerDao
 import app.gyrolet.mpvrx.database.dao.NavidromeServerDao
@@ -45,6 +46,7 @@ import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.database.entities.PlaylistItemEntity
 import app.gyrolet.mpvrx.database.entities.RecentlyPlayedEntity
 import app.gyrolet.mpvrx.database.entities.SecureMediaEntity
+import app.gyrolet.mpvrx.database.entities.SnapshotFolderEntity
 import app.gyrolet.mpvrx.database.entities.VideoMetadataEntity
 import app.gyrolet.mpvrx.domain.network.NetworkConnection
 
@@ -68,8 +70,9 @@ import app.gyrolet.mpvrx.domain.network.NetworkConnection
     PlaybackBookmarkEntity::class,
     AudiobookshelfServerEntity::class,
     FrameCaptureEntity::class,
+    SnapshotFolderEntity::class,
   ],
-  version = 29,
+  version = 30,
   exportSchema = true,
 )
 @TypeConverters(NetworkProtocolConverter::class, NetworkStreamEntryTypeConverter::class)
@@ -103,4 +106,6 @@ abstract class MpvRxDatabase : RoomDatabase() {
   abstract fun audiobookshelfServerDao(): AudiobookshelfServerDao
 
   abstract fun frameCaptureDao(): FrameCaptureDao
+
+  abstract fun snapshotFolderDao(): SnapshotFolderDao
 }

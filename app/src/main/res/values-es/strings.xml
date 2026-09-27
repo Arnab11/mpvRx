@@ -2516,4 +2516,35 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="snapshot_delete_message">Esto quita el registro de la aplicación. La imagen permanece en tu galería.</string>
   <string name="snapshot_delete">Eliminar</string>
   <string name="snapshot_remove">Quitar</string>
+
+  <string name="snapshot_root">Raíz</string>
+  <string name="snapshot_section_folders">Carpetas</string>
+  <string name="snapshot_section_snapshots">Capturas</string>
+
+  <string name="snapshot_new_folder">Nueva carpeta</string>
+  <string name="snapshot_create_folder_title">Nueva carpeta</string>
+  <string name="snapshot_rename_folder_title">Cambiar nombre de la carpeta</string>
+  <string name="snapshot_folder_name_hint">Nombre de la carpeta</string>
+  <string name="snapshot_folder_name_blank">Introduce un nombre de carpeta</string>
+  <string name="snapshot_folder_name_taken">Ya existe una carpeta con este nombre</string>
+  <string name="snapshot_folder_create">Crear</string>
+
+  <string name="snapshot_move_to_folder">Mover a carpeta</string>
+  <string name="snapshot_move">Mover</string>
+
+  <string name="snapshot_delete_folder_title">¿Eliminar la carpeta?</string>
+  <string name="snapshot_delete_folders_title">¿Eliminar %1$d carpetas?</string>
+  <string name="snapshot_delete_folder_selected_title">¿Eliminar esta carpeta?</string>
+  <string name="snapshot_delete_folder_message">Esto quita la carpeta y sus %1$d registros de capturas de la aplicación. Las imágenes permanecen en tu galería.</string>
+  <string name="snapshot_delete_folder_empty_message">Esto quita la carpeta de la aplicación.</string>
+
+  <string name="snapshot_folder_empty_title">Esta carpeta está vacía</string>
+  <string name="snapshot_folder_empty_message">Mantén pulsada una captura en la lista y elige «Mover a carpeta» para guardarla aquí.</string>
+
+  <string name="snapshot_sort_folder_name">Nombre de la carpeta</string>
+  <string name="snapshot_sort_created_at">Fecha de creación</string>
+  <string name="snapshot_sort_item_count">Número de capturas</string>
+
+  <string name="snapshot_search_folder_placeholder">Buscar carpetas y capturas</string>
+  <string name="snapshot_folder_count">%1$d capturas</string>
 </resources>

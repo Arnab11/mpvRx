@@ -45,6 +45,26 @@ interface FrameCaptureRepository {
   /** Newest first. */
   fun observeAll(): Flow<List<FrameCapture>>
 
+  /** Every folder, ordered by name. Counts are derived by the caller, not stored. */
+  fun observeFolders(): Flow<List<SnapshotFolder>>
+
+  /** Returns [FolderWriteResult.BlankName] or [FolderWriteResult.DuplicateName] instead of throwing. */
+  suspend fun createFolder(name: String): FolderWriteResult
+
+  suspend fun renameFolder(
+    id: Long,
+    name: String,
+  ): FolderWriteResult
+
+  /** One transaction: the folder's records go first, then the folder. The gallery files stay. */
+  suspend fun deleteFolderWithCaptures(id: Long)
+
+  /** `folderId` null moves the snapshots back to the root, so "move out" needs no separate call. */
+  suspend fun moveCaptures(
+    ids: Collection<Long>,
+    folderId: Long?,
+  )
+
   suspend fun record(capture: FrameCapture): Long
 
   suspend fun delete(id: Long)

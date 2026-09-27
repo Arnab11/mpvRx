@@ -2516,4 +2516,35 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="snapshot_delete_message">Dadurch wird der Eintrag aus der App entfernt. Das Bild bleibt in deiner Galerie.</string>
   <string name="snapshot_delete">Löschen</string>
   <string name="snapshot_remove">Entfernen</string>
+
+  <string name="snapshot_root">Stammordner</string>
+  <string name="snapshot_section_folders">Ordner</string>
+  <string name="snapshot_section_snapshots">Schnappschüsse</string>
+
+  <string name="snapshot_new_folder">Neuer Ordner</string>
+  <string name="snapshot_create_folder_title">Neuer Ordner</string>
+  <string name="snapshot_rename_folder_title">Ordner umbenennen</string>
+  <string name="snapshot_folder_name_hint">Ordnername</string>
+  <string name="snapshot_folder_name_blank">Bitte einen Ordnernamen eingeben</string>
+  <string name="snapshot_folder_name_taken">Ein Ordner mit diesem Namen existiert bereits</string>
+  <string name="snapshot_folder_create">Erstellen</string>
+
+  <string name="snapshot_move_to_folder">In Ordner verschieben</string>
+  <string name="snapshot_move">Verschieben</string>
+
+  <string name="snapshot_delete_folder_title">Ordner löschen?</string>
+  <string name="snapshot_delete_folders_title">%1$d Ordner löschen?</string>
+  <string name="snapshot_delete_folder_selected_title">Diesen Ordner löschen?</string>
+  <string name="snapshot_delete_folder_message">Dadurch werden der Ordner und seine %1$d Schnappschuss-Einträge aus der App entfernt. Die Bilder bleiben in deiner Galerie.</string>
+  <string name="snapshot_delete_folder_empty_message">Dadurch wird der Ordner aus der App entfernt.</string>
+
+  <string name="snapshot_folder_empty_title">Dieser Ordner ist leer</string>
+  <string name="snapshot_folder_empty_message">Halte in der Schnappschuss-Liste einen Schnappschuss gedrückt und wähle „In Ordner verschieben“, um ihn hier abzulegen.</string>
+
+  <string name="snapshot_sort_folder_name">Ordnername</string>
+  <string name="snapshot_sort_created_at">Erstellungsdatum</string>
+  <string name="snapshot_sort_item_count">Anzahl Schnappschüsse</string>
+
+  <string name="snapshot_search_folder_placeholder">Ordner und Schnappschüsse suchen</string>
+  <string name="snapshot_folder_count">%1$d Schnappschüsse</string>
 </resources>

@@ -11,8 +11,12 @@ package app.gyrolet.mpvrx.domain.framecapture
 
 import android.content.Context
 import android.net.Uri
+import androidx.room.withTransaction
+import app.gyrolet.mpvrx.database.MpvRxDatabase
 import app.gyrolet.mpvrx.database.dao.FrameCaptureDao
+import app.gyrolet.mpvrx.database.dao.SnapshotFolderDao
 import app.gyrolet.mpvrx.database.entities.FrameCaptureEntity
+import app.gyrolet.mpvrx.database.entities.SnapshotFolderEntity
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.repository.NetworkProbeResult
 import app.gyrolet.mpvrx.repository.NetworkRepository
@@ -33,11 +37,55 @@ private const val NETWORK_PROBE_TIMEOUT_MS = 3_000L
 class FrameCaptureRepositoryImpl(
   private val context: Context,
   private val dao: FrameCaptureDao,
+  private val folderDao: SnapshotFolderDao,
+  private val database: MpvRxDatabase,
   private val networkRepository: NetworkRepository,
 ) : FrameCaptureRepository {
 
   override fun observeAll(): Flow<List<FrameCapture>> =
     dao.observeAll().map { rows -> rows.map(FrameCaptureEntity::toDomain) }
+
+  override fun observeFolders(): Flow<List<SnapshotFolder>> =
+    folderDao.observeAll().map { rows -> rows.map(SnapshotFolderEntity::toDomain) }
+
+  override suspend fun createFolder(name: String): FolderWriteResult =
+    withContext(Dispatchers.IO) {
+      val trimmed = name.trim()
+      if (trimmed.isEmpty()) return@withContext FolderWriteResult.BlankName
+      // The check is case-insensitive while the unique index is not, so it is the stricter of the
+      // two; the index only ever catches an exact duplicate that slipped past a race.
+      if (folderDao.findByName(trimmed) != null) return@withContext FolderWriteResult.DuplicateName
+      FolderWriteResult.Ok(folderDao.insert(SnapshotFolderEntity(name = trimmed)))
+    }
+
+  override suspend fun renameFolder(
+    id: Long,
+    name: String,
+  ): FolderWriteResult =
+    withContext(Dispatchers.IO) {
+      val trimmed = name.trim()
+      if (trimmed.isEmpty()) return@withContext FolderWriteResult.BlankName
+      val clash = folderDao.findByName(trimmed)
+      if (clash != null && clash.id != id) return@withContext FolderWriteResult.DuplicateName
+      folderDao.updateName(id, trimmed)
+      FolderWriteResult.Ok(id)
+    }
+
+  override suspend fun deleteFolderWithCaptures(id: Long) =
+    withContext(Dispatchers.IO) {
+      database.withTransaction {
+        dao.deleteByFolder(id)
+        folderDao.delete(id)
+      }
+    }
+
+  override suspend fun moveCaptures(
+    ids: Collection<Long>,
+    folderId: Long?,
+  ) = withContext(Dispatchers.IO) {
+    if (ids.isEmpty()) return@withContext
+    dao.updateFolder(ids.toList(), folderId)
+  }
 
   override suspend fun record(capture: FrameCapture): Long =
     withContext(Dispatchers.IO) { dao.insert(capture.toEntity()) }
@@ -145,6 +193,7 @@ private fun FrameCaptureEntity.toDomain(): FrameCapture =
     videoTitle = videoTitle,
     positionMs = positionMs,
     capturedAt = capturedAt,
+    folderId = folderId,
   )
 
 private fun FrameCapture.toEntity(): FrameCaptureEntity =
@@ -157,4 +206,8 @@ private fun FrameCapture.toEntity(): FrameCaptureEntity =
     videoTitle = videoTitle,
     positionMs = positionMs,
     capturedAt = if (capturedAt > 0L) capturedAt else System.currentTimeMillis(),
+    folderId = folderId,
   )
+
+private fun SnapshotFolderEntity.toDomain(): SnapshotFolder =
+  SnapshotFolder(id = id, name = name, createdAt = createdAt)

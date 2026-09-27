@@ -2563,4 +2563,35 @@
   <string name="snapshot_delete_message">This removes the record from the app. The image stays in your gallery.</string>
   <string name="snapshot_delete">Delete</string>
   <string name="snapshot_remove">Remove</string>
+
+  <string name="snapshot_root">Root</string>
+  <string name="snapshot_section_folders">Folders</string>
+  <string name="snapshot_section_snapshots">Snapshots</string>
+
+  <string name="snapshot_new_folder">New folder</string>
+  <string name="snapshot_create_folder_title">New folder</string>
+  <string name="snapshot_rename_folder_title">Rename folder</string>
+  <string name="snapshot_folder_name_hint">Folder name</string>
+  <string name="snapshot_folder_name_blank">Enter a folder name</string>
+  <string name="snapshot_folder_name_taken">A folder with this name already exists</string>
+  <string name="snapshot_folder_create">Create</string>
+
+  <string name="snapshot_move_to_folder">Move to folder</string>
+  <string name="snapshot_move">Move</string>
+
+  <string name="snapshot_delete_folder_title">Delete folder?</string>
+  <string name="snapshot_delete_folders_title">Delete %1$d folders?</string>
+  <string name="snapshot_delete_folder_selected_title">Delete this folder?</string>
+  <string name="snapshot_delete_folder_message">This removes the folder and its %1$d snapshot records from the app. The images stay in your gallery.</string>
+  <string name="snapshot_delete_folder_empty_message">This removes the folder from the app.</string>
+
+  <string name="snapshot_folder_empty_title">This folder is empty</string>
+  <string name="snapshot_folder_empty_message">Long-press a snapshot in the Snapshots list and choose "Move to folder" to file it here.</string>
+
+  <string name="snapshot_sort_folder_name">Folder name</string>
+  <string name="snapshot_sort_created_at">Date created</string>
+  <string name="snapshot_sort_item_count">Snapshot count</string>
+
+  <string name="snapshot_search_folder_placeholder">Search folders and snapshots</string>
+  <string name="snapshot_folder_count">%1$d snapshots</string>
 </resources>

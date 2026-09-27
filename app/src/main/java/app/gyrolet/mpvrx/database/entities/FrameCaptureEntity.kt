@@ -20,10 +20,15 @@ import androidx.room.PrimaryKey
  * [imageUri] is the MediaStore URI on API 29+; [imagePath] is an absolute file path used below that,
  * where screenshots go to the public Pictures directory instead. Both are written when available and
  * readers prefer the URI.
+ *
+ * [folderId] is null for a snapshot that sits at the root of the snapshot library. It deliberately
+ * carries no foreign key: adding one to an existing table would force a full table rebuild in the
+ * migration, and the only writer is the frame capture repository, which deletes a folder and its rows
+ * in one transaction. A dangling id is tolerated — readers treat an unknown folder as the root.
  */
 @Entity(
   tableName = "frame_captures",
-  indices = [Index(value = ["capturedAt"])],
+  indices = [Index(value = ["capturedAt"]), Index(value = ["folderId"])],
 )
 data class FrameCaptureEntity(
   @PrimaryKey(autoGenerate = true) val id: Long = 0,
@@ -34,4 +39,5 @@ data class FrameCaptureEntity(
   val videoTitle: String,
   val positionMs: Long,
   val capturedAt: Long = System.currentTimeMillis(),
+  val folderId: Long? = null,
 )

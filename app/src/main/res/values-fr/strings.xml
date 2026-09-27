@@ -2516,4 +2516,35 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="snapshot_delete_message">Cela retire l\'enregistrement de l\'application. L\'image reste dans votre galerie.</string>
   <string name="snapshot_delete">Supprimer</string>
   <string name="snapshot_remove">Retirer</string>
+
+  <string name="snapshot_root">Racine</string>
+  <string name="snapshot_section_folders">Dossiers</string>
+  <string name="snapshot_section_snapshots">Captures</string>
+
+  <string name="snapshot_new_folder">Nouveau dossier</string>
+  <string name="snapshot_create_folder_title">Nouveau dossier</string>
+  <string name="snapshot_rename_folder_title">Renommer le dossier</string>
+  <string name="snapshot_folder_name_hint">Nom du dossier</string>
+  <string name="snapshot_folder_name_blank">Saisissez un nom de dossier</string>
+  <string name="snapshot_folder_name_taken">Un dossier portant ce nom existe déjà</string>
+  <string name="snapshot_folder_create">Créer</string>
+
+  <string name="snapshot_move_to_folder">Déplacer vers un dossier</string>
+  <string name="snapshot_move">Déplacer</string>
+
+  <string name="snapshot_delete_folder_title">Supprimer le dossier ?</string>
+  <string name="snapshot_delete_folders_title">Supprimer %1$d dossiers ?</string>
+  <string name="snapshot_delete_folder_selected_title">Supprimer ce dossier ?</string>
+  <string name="snapshot_delete_folder_message">Cela retire le dossier et ses %1$d enregistrements de captures de l\'application. Les images restent dans votre galerie.</string>
+  <string name="snapshot_delete_folder_empty_message">Cela retire le dossier de l\'application.</string>
+
+  <string name="snapshot_folder_empty_title">Ce dossier est vide</string>
+  <string name="snapshot_folder_empty_message">Appuyez longuement sur une capture dans la liste et choisissez « Déplacer vers un dossier » pour la ranger ici.</string>
+
+  <string name="snapshot_sort_folder_name">Nom du dossier</string>
+  <string name="snapshot_sort_created_at">Date de création</string>
+  <string name="snapshot_sort_item_count">Nombre de captures</string>
+
+  <string name="snapshot_search_folder_placeholder">Rechercher dossiers et captures</string>
+  <string name="snapshot_folder_count">%1$d captures</string>
 </resources>

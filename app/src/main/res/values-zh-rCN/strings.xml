@@ -2515,4 +2515,35 @@
   <string name="snapshot_delete_message">仅从应用中移除记录，图片仍保留在相册中。</string>
   <string name="snapshot_delete">删除</string>
   <string name="snapshot_remove">移除</string>
+
+  <string name="snapshot_root">根目录</string>
+  <string name="snapshot_section_folders">文件夹</string>
+  <string name="snapshot_section_snapshots">快照</string>
+
+  <string name="snapshot_new_folder">新建文件夹</string>
+  <string name="snapshot_create_folder_title">新建文件夹</string>
+  <string name="snapshot_rename_folder_title">重命名文件夹</string>
+  <string name="snapshot_folder_name_hint">文件夹名称</string>
+  <string name="snapshot_folder_name_blank">请输入文件夹名称</string>
+  <string name="snapshot_folder_name_taken">已存在同名文件夹</string>
+  <string name="snapshot_folder_create">创建</string>
+
+  <string name="snapshot_move_to_folder">移动到文件夹</string>
+  <string name="snapshot_move">移动</string>
+
+  <string name="snapshot_delete_folder_title">删除文件夹？</string>
+  <string name="snapshot_delete_folders_title">删除 %1$d 个文件夹？</string>
+  <string name="snapshot_delete_folder_selected_title">删除该文件夹？</string>
+  <string name="snapshot_delete_folder_message">将从应用中移除此文件夹及其 %1$d 条快照记录，图片仍保留在相册中。</string>
+  <string name="snapshot_delete_folder_empty_message">将从应用中移除此文件夹。</string>
+
+  <string name="snapshot_folder_empty_title">此文件夹为空</string>
+  <string name="snapshot_folder_empty_message">在快照列表中长按快照，选择「移动到文件夹」即可归入这里。</string>
+
+  <string name="snapshot_sort_folder_name">文件夹名称</string>
+  <string name="snapshot_sort_created_at">创建时间</string>
+  <string name="snapshot_sort_item_count">快照数量</string>
+
+  <string name="snapshot_search_folder_placeholder">搜索文件夹和快照</string>
+  <string name="snapshot_folder_count">%1$d 张快照</string>
 </resources>

@@ -2420,4 +2420,35 @@
   <string name="snapshot_delete_message">यह ऐप से रिकॉर्ड हटा देता है। छवि आपकी गैलरी में रहती है।</string>
   <string name="snapshot_delete">हटाएं</string>
   <string name="snapshot_remove">निकालें</string>
+
+  <string name="snapshot_root">रूट</string>
+  <string name="snapshot_section_folders">फ़ोल्डर</string>
+  <string name="snapshot_section_snapshots">स्नैपशॉट</string>
+
+  <string name="snapshot_new_folder">नया फ़ोल्डर</string>
+  <string name="snapshot_create_folder_title">नया फ़ोल्डर</string>
+  <string name="snapshot_rename_folder_title">फ़ोल्डर का नाम बदलें</string>
+  <string name="snapshot_folder_name_hint">फ़ोल्डर का नाम</string>
+  <string name="snapshot_folder_name_blank">फ़ोल्डर का नाम दर्ज करें</string>
+  <string name="snapshot_folder_name_taken">इस नाम का फ़ोल्डर पहले से मौजूद है</string>
+  <string name="snapshot_folder_create">बनाएं</string>
+
+  <string name="snapshot_move_to_folder">फ़ोल्डर में ले जाएं</string>
+  <string name="snapshot_move">ले जाएं</string>
+
+  <string name="snapshot_delete_folder_title">फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folders_title">%1$d फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folder_selected_title">यह फ़ोल्डर हटाएं?</string>
+  <string name="snapshot_delete_folder_message">यह ऐप से फ़ोल्डर और उसके %1$d स्नैपशॉट रिकॉर्ड हटा देता है। छवियां आपकी गैलरी में रहती हैं।</string>
+  <string name="snapshot_delete_folder_empty_message">यह ऐप से फ़ोल्डर हटा देता है।</string>
+
+  <string name="snapshot_folder_empty_title">यह फ़ोल्डर खाली है</string>
+  <string name="snapshot_folder_empty_message">स्नैपशॉट सूची में किसी स्नैपशॉट को देर तक दबाएं और यहां रखने के लिए &quot;फ़ोल्डर में ले जाएं&quot; चुनें।</string>
+
+  <string name="snapshot_sort_folder_name">फ़ोल्डर का नाम</string>
+  <string name="snapshot_sort_created_at">बनाने की तिथि</string>
+  <string name="snapshot_sort_item_count">स्नैपशॉट संख्या</string>
+
+  <string name="snapshot_search_folder_placeholder">फ़ोल्डर और स्नैपशॉट खोजें</string>
+  <string name="snapshot_folder_count">%1$d स्नैपशॉट</string>
 </resources>

@@ -2542,4 +2542,35 @@
   <string name="snapshot_delete_message">يؤدي هذا إلى إزالة السجل من التطبيق. تبقى الصورة في المعرض.</string>
   <string name="snapshot_delete">حذف</string>
   <string name="snapshot_remove">إزالة</string>
+
+  <string name="snapshot_root">الجذر</string>
+  <string name="snapshot_section_folders">المجلدات</string>
+  <string name="snapshot_section_snapshots">اللقطات</string>
+
+  <string name="snapshot_new_folder">مجلد جديد</string>
+  <string name="snapshot_create_folder_title">مجلد جديد</string>
+  <string name="snapshot_rename_folder_title">إعادة تسمية المجلد</string>
+  <string name="snapshot_folder_name_hint">اسم المجلد</string>
+  <string name="snapshot_folder_name_blank">أدخل اسم المجلد</string>
+  <string name="snapshot_folder_name_taken">يوجد مجلد بهذا الاسم بالفعل</string>
+  <string name="snapshot_folder_create">إنشاء</string>
+
+  <string name="snapshot_move_to_folder">نقل إلى مجلد</string>
+  <string name="snapshot_move">نقل</string>
+
+  <string name="snapshot_delete_folder_title">حذف المجلد؟</string>
+  <string name="snapshot_delete_folders_title">حذف %1$d مجلدات؟</string>
+  <string name="snapshot_delete_folder_selected_title">حذف هذا المجلد؟</string>
+  <string name="snapshot_delete_folder_message">يؤدي هذا إلى إزالة المجلد وسجلات اللقطات الخاصة به (%1$d) من التطبيق. تبقى الصور في المعرض.</string>
+  <string name="snapshot_delete_folder_empty_message">يؤدي هذا إلى إزالة المجلد من التطبيق.</string>
+
+  <string name="snapshot_folder_empty_title">هذا المجلد فارغ</string>
+  <string name="snapshot_folder_empty_message">اضغط مطولًا على لقطة في القائمة واختر «نقل إلى مجلد» لحفظها هنا.</string>
+
+  <string name="snapshot_sort_folder_name">اسم المجلد</string>
+  <string name="snapshot_sort_created_at">تاريخ الإنشاء</string>
+  <string name="snapshot_sort_item_count">عدد اللقطات</string>
+
+  <string name="snapshot_search_folder_placeholder">البحث في المجلدات واللقطات</string>
+  <string name="snapshot_folder_count">%1$d لقطات</string>
 </resources>

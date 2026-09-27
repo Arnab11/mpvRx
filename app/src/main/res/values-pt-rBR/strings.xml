@@ -2516,4 +2516,35 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="snapshot_delete_message">Isso remove o registro do aplicativo. A imagem permanece na sua galeria.</string>
   <string name="snapshot_delete">Excluir</string>
   <string name="snapshot_remove">Remover</string>
+
+  <string name="snapshot_root">Raiz</string>
+  <string name="snapshot_section_folders">Pastas</string>
+  <string name="snapshot_section_snapshots">Capturas</string>
+
+  <string name="snapshot_new_folder">Nova pasta</string>
+  <string name="snapshot_create_folder_title">Nova pasta</string>
+  <string name="snapshot_rename_folder_title">Renomear pasta</string>
+  <string name="snapshot_folder_name_hint">Nome da pasta</string>
+  <string name="snapshot_folder_name_blank">Digite um nome de pasta</string>
+  <string name="snapshot_folder_name_taken">Já existe uma pasta com este nome</string>
+  <string name="snapshot_folder_create">Criar</string>
+
+  <string name="snapshot_move_to_folder">Mover para pasta</string>
+  <string name="snapshot_move">Mover</string>
+
+  <string name="snapshot_delete_folder_title">Excluir a pasta?</string>
+  <string name="snapshot_delete_folders_title">Excluir %1$d pastas?</string>
+  <string name="snapshot_delete_folder_selected_title">Excluir esta pasta?</string>
+  <string name="snapshot_delete_folder_message">Isso remove a pasta e seus %1$d registros de capturas do aplicativo. As imagens permanecem na sua galeria.</string>
+  <string name="snapshot_delete_folder_empty_message">Isso remove a pasta do aplicativo.</string>
+
+  <string name="snapshot_folder_empty_title">Esta pasta está vazia</string>
+  <string name="snapshot_folder_empty_message">Mantenha uma captura pressionada na lista e escolha “Mover para pasta” para guardá-la aqui.</string>
+
+  <string name="snapshot_sort_folder_name">Nome da pasta</string>
+  <string name="snapshot_sort_created_at">Data de criação</string>
+  <string name="snapshot_sort_item_count">Número de capturas</string>
+
+  <string name="snapshot_search_folder_placeholder">Pesquisar pastas e capturas</string>
+  <string name="snapshot_folder_count">%1$d capturas</string>
 </resources>

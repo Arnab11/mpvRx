@@ -933,6 +933,27 @@ val MIGRATION_28_29 =
     }
   }
 
+/**
+ * Snapshot folders are an in-app grouping only: the images stay in the gallery's `mpvSnaps` album,
+ * and `frame_captures.folderId` records which folder a row belongs to (null = the root). No foreign
+ * key — see the note on `FrameCaptureEntity` — so the column is nullable with the root as its meaning.
+ */
+val MIGRATION_29_30 =
+  object : Migration(29, 30) {
+    override fun migrate(db: SupportSQLiteDatabase) {
+      db.execSQL(
+        """CREATE TABLE IF NOT EXISTS `snapshot_folders` (
+        `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+        `name` TEXT NOT NULL,
+        `createdAt` INTEGER NOT NULL
+      )""",
+      )
+      db.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS `index_snapshot_folders_name` ON `snapshot_folders` (`name`)")
+      db.execSQL("ALTER TABLE `frame_captures` ADD COLUMN `folderId` INTEGER")
+      db.execSQL("CREATE INDEX IF NOT EXISTS `index_frame_captures_folderId` ON `frame_captures` (`folderId`)")
+    }
+  }
+
 val MIGRATION_24_25 =
   object : Migration(24, 25) {
     override fun migrate(db: SupportSQLiteDatabase) {
@@ -1000,6 +1021,7 @@ val DatabaseModule =
           MIGRATION_26_27,
           MIGRATION_27_28,
           MIGRATION_28_29,
+          MIGRATION_29_30,
         ).build()
     }
 
@@ -1015,6 +1037,7 @@ val DatabaseModule =
     single { get<MpvRxDatabase>().audiobookDao() }
     single { get<MpvRxDatabase>().playbackBookmarkDao() }
     single { get<MpvRxDatabase>().frameCaptureDao() }
+    single { get<MpvRxDatabase>().snapshotFolderDao() }
 
     singleOf(::FrameCaptureRepositoryImpl).bind(FrameCaptureRepository::class)
 
