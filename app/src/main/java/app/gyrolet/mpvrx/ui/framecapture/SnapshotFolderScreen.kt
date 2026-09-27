@@ -11,7 +11,6 @@ package app.gyrolet.mpvrx.ui.framecapture
 
 import android.app.Application
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -26,7 +25,6 @@ import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -278,13 +276,9 @@ data class SnapshotFolderScreen(val folderId: Long) : Screen {
         }
       },
     ) { paddingValues ->
-      Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-            .background(MaterialTheme.colorScheme.background),
-      ) {
+      // No background of its own: the Scaffold's container is wallpaper-aware, and painting the theme
+      // background here would cover the wallpaper over the whole content area.
+      Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
         when {
           content.snapshots.isEmpty() ->
             EmptyState(

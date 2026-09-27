@@ -12,7 +12,6 @@ package app.gyrolet.mpvrx.ui.framecapture
 import android.app.Application
 import android.graphics.Bitmap
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -58,6 +57,7 @@ import app.gyrolet.mpvrx.domain.framecapture.FrameCapture
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.MediaLayoutMode
 import app.gyrolet.mpvrx.preferences.SnapshotFolderSortType
+import app.gyrolet.mpvrx.preferences.SnapshotSortType
 import app.gyrolet.mpvrx.preferences.SortOrder
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
@@ -146,14 +146,19 @@ object SnapshotScreen : Screen {
         matched.sortedWith(folderComparator(folderSortType, folderSortOrder))
       }
     val visibleCaptures =
-      remember(library.rootCaptures, library.allCaptures, query, searching) {
-        // Searching reaches across every folder: a match inside a folder is exactly what the user is
-        // looking for, and the results are labelled as snapshots rather than as this page's own rows.
-        if (searching) {
-          library.allCaptures.filter { it.videoTitle.contains(query, ignoreCase = true) }
-        } else {
-          library.rootCaptures
-        }
+      remember(library.rootCaptures, library.allCaptures, query, searching, folderSortOrder) {
+        val matched =
+          // Searching reaches across every folder: a match inside a folder is exactly what the user is
+          // looking for, and the results are labelled as snapshots rather than as this page's own rows.
+          if (searching) {
+            library.allCaptures.filter { it.videoTitle.contains(query, ignoreCase = true) }
+          } else {
+            library.rootCaptures
+          }
+        // The panel's fields describe folders, but its direction is the page's direction: leaving the
+        // pictures pinned to newest-first made half the page ignore the control. Capture time is the
+        // only ordering a loose snapshot has, so that is what the chosen direction drives.
+        matched.sortedWith(snapshotComparator(SnapshotSortType.CapturedAt, folderSortOrder))
       }
 
     val folderIds = remember(visibleFolders) { visibleFolders.map { it.id } }
@@ -374,13 +379,9 @@ object SnapshotScreen : Screen {
         }
       },
     ) { paddingValues ->
-      Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .padding(paddingValues)
-            .background(MaterialTheme.colorScheme.background),
-      ) {
+      // No background of its own: the Scaffold's container is wallpaper-aware, and painting the theme
+      // background here would cover the wallpaper over the whole content area.
+      Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
         when {
           library.folders.isEmpty() && library.allCaptures.isEmpty() ->
             EmptyState(
