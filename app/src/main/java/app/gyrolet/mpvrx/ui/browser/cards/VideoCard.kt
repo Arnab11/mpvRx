@@ -287,12 +287,17 @@ fun VideoCard(
               Any()
             }
 
+          // Seeded during composition: reading the cache asynchronously shows the placeholder icon
+          // for a frame first, which flickers every visible card when the list recomposes.
           var thumbnail by remember(thumbnailRequestKey) {
-            mutableStateOf<Bitmap?>(null)
+            mutableStateOf<Bitmap?>(
+              thumbnailRepository.peekThumbnailFromMemory(video, resolvedThumbWidthPx, resolvedThumbHeightPx),
+            )
           }
 
-          LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, allowThumbnailLoading, showThumbnails) {
-            if (!allowThumbnailGeneration && allowThumbnailLoading && thumbnail == null && showThumbnails) {
+          // Cached reads stay enabled while scrolling; only generation is gated.
+          LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, showThumbnails) {
+            if (!allowThumbnailGeneration && thumbnail == null && showThumbnails) {
               thumbnail =
                 withContext(Dispatchers.IO) {
                   thumbnailRepository.getThumbnailFromMemory(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
@@ -301,16 +306,15 @@ fun VideoCard(
           }
 
           // Update thumbnail when the repository emits that this key became ready (folder prefetch or any other source).
-          LaunchedEffect(thumbnailRequestKey, allowThumbnailLoading) {
-            if (!allowThumbnailLoading) return@LaunchedEffect
+          LaunchedEffect(thumbnailRequestKey) {
             thumbnailRepository.thumbnailReadyKeys
               .filter { key -> thumbnailRepository.isThumbnailKeyForVideo(key, video) }
               .flowOn(Dispatchers.IO)
               .collect {
-                thumbnail =
-                  withContext(Dispatchers.IO) {
-                    thumbnailRepository.getCachedThumbnail(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
-                  }
+                // Ready keys omit the size variant, so a miss must not clear an already-shown bitmap.
+                withContext(Dispatchers.IO) {
+                  thumbnailRepository.getCachedThumbnail(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
+                }?.let { thumbnail = it }
               }
           }
 
@@ -652,13 +656,17 @@ fun VideoCard(
               Any()
             }
 
-          // Try to get from memory cache immediately (synchronous, no flicker)
+          // Seeded during composition: reading the cache asynchronously shows the placeholder icon
+          // for a frame first, which flickers every visible card when the list recomposes.
           var thumbnail by remember(thumbnailRequestKey) {
-            mutableStateOf<Bitmap?>(null)
+            mutableStateOf<Bitmap?>(
+              thumbnailRepository.peekThumbnailFromMemory(video, thumbWidthPx, thumbHeightPx),
+            )
           }
 
-          LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, allowThumbnailLoading, showThumbnails) {
-            if (!allowThumbnailGeneration && allowThumbnailLoading && thumbnail == null && showThumbnails) {
+          // Cached reads stay enabled while scrolling; only generation is gated.
+          LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, showThumbnails) {
+            if (!allowThumbnailGeneration && thumbnail == null && showThumbnails) {
               thumbnail =
                 withContext(Dispatchers.IO) {
                   thumbnailRepository.getThumbnailFromMemory(video, thumbWidthPx, thumbHeightPx)
@@ -667,16 +675,15 @@ fun VideoCard(
           }
 
           // Update thumbnail when the repository emits that this key became ready (folder prefetch or any other source).
-          LaunchedEffect(thumbnailRequestKey, allowThumbnailLoading) {
-            if (!allowThumbnailLoading) return@LaunchedEffect
+          LaunchedEffect(thumbnailRequestKey) {
             thumbnailRepository.thumbnailReadyKeys
               .filter { key -> thumbnailRepository.isThumbnailKeyForVideo(key, video) }
               .flowOn(Dispatchers.IO)
               .collect {
-                thumbnail =
-                  withContext(Dispatchers.IO) {
-                    thumbnailRepository.getCachedThumbnail(video, thumbWidthPx, thumbHeightPx)
-                  }
+                // Ready keys omit the size variant, so a miss must not clear an already-shown bitmap.
+                withContext(Dispatchers.IO) {
+                  thumbnailRepository.getCachedThumbnail(video, thumbWidthPx, thumbHeightPx)
+                }?.let { thumbnail = it }
               }
           }
 

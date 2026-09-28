@@ -86,6 +86,8 @@ class ThumbnailRepository(
   private val diskCacheLock = ReentrantReadWriteLock()
   private val ongoingOperations = ConcurrentHashMap<String, Deferred<Bitmap?>>()
   private val diskVideoBaseKeyCache = ConcurrentHashMap<String, String>()
+  // Lets composition reuse keys already computed on worker threads.
+  private val resolvedThumbnailKeys = LruCache<String, String>(4096)
   private data class ResolvedMetadata(
     val size: Long,
     val dateModified: Long,
@@ -352,7 +354,33 @@ class ThumbnailRepository(
     video: Video,
     width: Int,
     height: Int,
-  ): String = "${videoBaseKey(video)}|$width|$height|${thumbnailModeKey()}|${thumbnailQualityKey()}"
+  ): String =
+    "${videoBaseKey(video)}|$width|$height|${thumbnailModeKey()}|${thumbnailQualityKey()}".also { key ->
+      resolvedThumbnailKeys.put(peekIdentity(video, width, height), key)
+    }
+
+  /**
+   * Non-blocking peek for composition. Building a key can hit the filesystem or MediaStore, so this
+   * only answers once [thumbnailKey] has run on a worker thread and returns null otherwise.
+   */
+  fun peekThumbnailFromMemory(
+    video: Video,
+    widthPx: Int,
+    heightPx: Int,
+  ): Bitmap? {
+    val key = resolvedThumbnailKeys.get(peekIdentity(video, widthPx, heightPx)) ?: return null
+    return synchronized(memoryCache) {
+      memoryCache.get(key)
+    }
+  }
+
+  private fun peekIdentity(
+    video: Video,
+    widthPx: Int,
+    heightPx: Int,
+  ): String =
+    "${video.path}|${video.uri}|${video.size}|${video.dateModified}|${video.duration}" +
+      "|$widthPx|$heightPx|${thumbnailModeKey()}|${thumbnailQualityKey()}"
 
   /**
    * Folder prefetch and a visible card may request different sizes for the same source.
