@@ -54,6 +54,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
@@ -83,9 +84,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -422,28 +425,34 @@ fun LyricsView(
                   horizontalAlignment = Alignment.CenterHorizontally,
                 ) {
                   if (isActiveLine && !isBlankLine && !line.words.isNullOrEmpty()) {
-                    FlowRow(
-                      modifier = Modifier.fillMaxWidth(),
-                      horizontalArrangement = Arrangement.Center,
-                      verticalArrangement = Arrangement.Center,
+                    val isRtl = displayText.hasRtlDirection()
+                    CompositionLocalProvider(
+                      LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                     ) {
-                      line.words.forEachIndexed { wordIndex, word ->
-                        val wordStartMs = word.time.toLong()
-                        val wordEndMs =
-                          line.words.getOrNull(wordIndex + 1)?.time?.toLong()
-                            ?.takeIf { it > wordStartMs }
-                            ?: activeLyrics.synced.getOrNull(index + 1)?.time?.toLong()
-                              ?.coerceAtMost(line.time.toLong() + 8_000L)
+                      FlowRow(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalArrangement = Arrangement.Center,
+                      ) {
+                        line.words.forEachIndexed { wordIndex, word ->
+                          val wordStartMs = word.time.toLong()
+                          val wordEndMs =
+                            line.words.getOrNull(wordIndex + 1)?.time?.toLong()
                               ?.takeIf { it > wordStartMs }
-                            ?: (wordStartMs + 600L)
-                        AnimatedLyricWord(
-                          word = word,
-                          endTimeMs = wordEndMs,
-                          positionMs = smoothPositionMs,
-                          activeColor = activeColor,
-                          inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
-                          fontSize = if (isLyricsFullscreen) 30.sp else 26.sp,
-                        )
+                              ?: activeLyrics.synced.getOrNull(index + 1)?.time?.toLong()
+                                ?.coerceAtMost(line.time.toLong() + 8_000L)
+                                ?.takeIf { it > wordStartMs }
+                              ?: (wordStartMs + 600L)
+                          AnimatedLyricWord(
+                            word = word,
+                            endTimeMs = wordEndMs,
+                            positionMs = smoothPositionMs,
+                            activeColor = activeColor,
+                            inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
+                            fontSize = if (isLyricsFullscreen) 30.sp else 26.sp,
+                            isRtl = isRtl,
+                          )
+                        }
                       }
                     }
                   } else {
@@ -815,7 +824,7 @@ internal fun rememberSmoothedPositionMs(
   return smoothed
 }
 
-/** Smooth karaoke fill: a glowing active layer is revealed continuously from left to right. */
+/** Smooth karaoke fill: a glowing active layer is revealed in the lyric line's direction. */
 @Composable
 internal fun AnimatedLyricWord(
   word: SyncedWord,
@@ -824,6 +833,7 @@ internal fun AnimatedLyricWord(
   activeColor: Color,
   inactiveColor: Color,
   fontSize: TextUnit = 26.sp,
+  isRtl: Boolean = false,
 ) {
   val text = "${word.word} "
   val textStyle =
@@ -860,10 +870,23 @@ internal fun AnimatedLyricWord(
           val fillProgress =
             ((positionMs.value - startTimeMs).toFloat() / durationMs)
               .coerceIn(0f, 1f)
-          clipRect(right = size.width * fillProgress) {
+          val left = if (isRtl) size.width * (1f - fillProgress) else 0f
+          val right = if (isRtl) size.width else size.width * fillProgress
+          clipRect(left = left, right = right) {
             this@drawWithContent.drawContent()
           }
         },
     )
   }
 }
+
+internal fun String.hasRtlDirection(): Boolean =
+  firstNotNullOfOrNull { character ->
+    when (Character.getDirectionality(character)) {
+      Character.DIRECTIONALITY_LEFT_TO_RIGHT -> false
+      Character.DIRECTIONALITY_RIGHT_TO_LEFT,
+      Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC,
+      -> true
+      else -> null
+    }
+  } ?: false

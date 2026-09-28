@@ -103,7 +103,7 @@ fun PlayerSheetSearchField(
           ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = submit),
+        keyboardActions = KeyboardActions(onSearch = { submit() }),
         modifier = Modifier.fillMaxWidth(),
       )
     }

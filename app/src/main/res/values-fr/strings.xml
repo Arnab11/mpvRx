@@ -403,6 +403,7 @@ Suivant : NEXT</string>
   <string name="player_sheets_sub_color_alpha">Alpha</string>
   <string name="player_sheets_sub_override_ass">Remplacer les sous-titres ASS/SSA</string>
   <string name="player_sheets_sub_override_ass_subtitle">Forcer le remplacement de la mise en forme ASS/SSA</string>
+  <string name="player_sheets_sub_force_ltr">Forcer la direction de gauche à droite</string>
   <string name="player_sheets_sub_scale_by_window">Mise à l’échelle selon la fenêtre</string>
   <string name="player_sheets_sub_scale_by_window_summary">Redimensionne la taille des sous-titres avec la fenêtre et les place dans les marges de sécurité de la vidéo</string>
   <string name="player_sheets_sub_blend_with_video">Fusionner les sous-titres avec la vidéo</string>

@@ -148,6 +148,7 @@ enum class MpvConfigOverride(
         "sub-use-margins",
         "sub-ass-override",
         "sub-ass-justify",
+        "sub-vsfilter-bidi-compat",
         "secondary-sub-delay",
         "secondary-sub-speed",
         "secondary-sub-font",

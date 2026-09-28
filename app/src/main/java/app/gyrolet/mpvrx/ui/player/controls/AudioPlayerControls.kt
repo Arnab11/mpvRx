@@ -98,6 +98,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.material3.ripple
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -127,6 +128,7 @@ import app.gyrolet.mpvrx.ui.player.resolveUri
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberSmoothedPositionMs
 import app.gyrolet.mpvrx.ui.player.controls.components.AnimatedLyricWord
+import app.gyrolet.mpvrx.ui.player.controls.components.hasRtlDirection
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.PlaylistItem
 import sh.calvin.reorderable.ReorderableCollectionItemScope
 import sh.calvin.reorderable.ReorderableItem
@@ -153,6 +155,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -163,6 +166,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.layout.offset
@@ -2020,23 +2024,29 @@ fun AudioPlayerControls(
                 if (!words.isNullOrEmpty()) {
                   val activeColor = MaterialTheme.colorScheme.onSurface
                   val inactiveColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
-                  Row(
-                    modifier = Modifier
-                      .fillMaxWidth()
-                      .horizontalScroll(scrollState, enabled = false),
-                    horizontalArrangement = Arrangement.Start,
-                    verticalAlignment = Alignment.CenterVertically,
+                  val isRtl = text.hasRtlDirection()
+                  CompositionLocalProvider(
+                    LocalLayoutDirection provides if (isRtl) LayoutDirection.Rtl else LayoutDirection.Ltr,
                   ) {
-                    words.forEachIndexed { wordIndex, word ->
-                      Box(Modifier.onSizeChanged { wordWidths[wordIndex] = it.width }) {
-                        AnimatedLyricWord(
-                          word = word,
-                          endTimeMs = wordEndTimes[wordIndex],
-                          positionMs = smoothPositionMs,
-                          activeColor = activeColor,
-                          inactiveColor = inactiveColor,
-                          fontSize = 19.sp,
-                        )
+                    Row(
+                      modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState, enabled = false),
+                      horizontalArrangement = Arrangement.Start,
+                      verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                      words.forEachIndexed { wordIndex, word ->
+                        Box(Modifier.onSizeChanged { wordWidths[wordIndex] = it.width }) {
+                          AnimatedLyricWord(
+                            word = word,
+                            endTimeMs = wordEndTimes[wordIndex],
+                            positionMs = smoothPositionMs,
+                            activeColor = activeColor,
+                            inactiveColor = inactiveColor,
+                            fontSize = 19.sp,
+                            isRtl = isRtl,
+                          )
+                        }
                       }
                     }
                   }

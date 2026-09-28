@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -791,7 +792,7 @@ object SubtitlesPreferencesScreen : Screen {
                                 modifier =
                                   Modifier
                                     .fillMaxWidth()
-                                    .clickable(enabled = isAvailable) {
+                                    .clickable {
                                       val newSet = wyzieSources.toMutableSet()
                                       newSet.remove("all")
                                       if (checked) {
@@ -807,7 +808,6 @@ object SubtitlesPreferencesScreen : Screen {
                                 Checkbox(
                                   checked = checked,
                                   onCheckedChange = null,
-                                  enabled = isAvailable,
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
@@ -856,7 +856,7 @@ object SubtitlesPreferencesScreen : Screen {
                                 modifier =
                                   Modifier
                                     .fillMaxWidth()
-                                    .clickable {
+                                    .clickable(enabled = isAvailable) {
                                       val newSet = wyzieSources.toMutableSet()
                                       newSet.remove("all")
                                       if (checked) {
@@ -872,6 +872,7 @@ object SubtitlesPreferencesScreen : Screen {
                                 Checkbox(
                                   checked = checked,
                                   onCheckedChange = null,
+                                  enabled = isAvailable,
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {

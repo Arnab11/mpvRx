@@ -403,6 +403,7 @@
   <string name="player_sheets_sub_color_alpha">Альфа</string>
   <string name="player_sheets_sub_override_ass">Переопределять субтитры ASS/SSA</string>
   <string name="player_sheets_sub_override_ass_subtitle">Принудительно переопределять форматирование субтитров ASS/SSA</string>
+  <string name="player_sheets_sub_force_ltr">Принудительное направление слева направо</string>
   <string name="player_sheets_sub_scale_by_window">Масштабировать по окну</string>
   <string name="player_sheets_sub_scale_by_window_summary">Масштабировать размер субтитров по размеру окна и размещать их в защитных полях видео</string>
   <string name="player_sheets_sub_blend_with_video">Смешивать субтитры с видео</string>

@@ -510,6 +510,10 @@ class MPVView(
     PlaybackSession.setOptionString("embeddedfonts", "yes")
     // Auto-detect font provider (system fonts, embedded fonts, etc.)
     PlaybackSession.setOptionString("sub-font-provider", "auto")
+    PlaybackSession.setOptionString(
+      "sub-vsfilter-bidi-compat",
+      if (subtitlesPreferences.forceLtrSubtitles.get()) "yes" else "no",
+    )
 
     // Delay and speed for both primary and secondary
     val subDelay = (subtitlesPreferences.defaultSubDelay.get() / 1000.0).toString()

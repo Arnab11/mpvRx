@@ -58,7 +58,8 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
   val scaleByWindowOptions =
     setOf("sub-scale-by-window", "sub-use-margins", "secondary-sub-scale-by-window", "secondary-sub-use-margins")
   val blendOptions = setOf("blend-subtitles")
-  val miscellaneousOptions = layoutOptions + scaleOptions + scaleByWindowOptions + blendOptions
+  val bidiOptions = setOf("sub-vsfilter-bidi-compat")
+  val miscellaneousOptions = layoutOptions + scaleOptions + scaleByWindowOptions + blendOptions + bidiOptions
   var isExpanded by remember { mutableStateOf(true) }
   ExpandableCard(
     isExpanded,
@@ -157,6 +158,19 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
             )
           },
         )
+        var forceLtrSubtitles by remember {
+          mutableStateOf(preferences.forceLtrSubtitles.get())
+        }
+        SwitchPreference(
+          forceLtrSubtitles,
+          enabled = bidiOptions.none(configOwnedOptions::contains),
+          onValueChange = {
+            forceLtrSubtitles = it
+            preferences.forceLtrSubtitles.set(it)
+            PlaybackSession.setPropertyString("sub-vsfilter-bidi-compat", if (it) "yes" else "no")
+          },
+          title = { Text(stringResource(R.string.player_sheets_sub_force_ltr)) },
+        )
         Row(
           modifier =
             Modifier
@@ -183,6 +197,9 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
               blendSubtitlesWithVideo = defaultBlendSubtitles
               val blendMode = if (defaultBlendSubtitles && playerPreferences.isAmbientEnabled.get()) "video" else "no"
               PlaybackSession.setPropertyString("blend-subtitles", blendMode)
+              val defaultForceLtr = preferences.forceLtrSubtitles.deleteAndGet()
+              forceLtrSubtitles = defaultForceLtr
+              PlaybackSession.setPropertyString("sub-vsfilter-bidi-compat", if (defaultForceLtr) "yes" else "no")
             },
           ) {
             Row {
