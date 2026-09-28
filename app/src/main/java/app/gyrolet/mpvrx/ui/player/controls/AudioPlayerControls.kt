@@ -1109,7 +1109,9 @@ fun AudioPlayerControls(
 
   val configuration = LocalConfiguration.current
   val isPortrait = configuration.orientation == Configuration.ORIENTATION_PORTRAIT
-  val isTablet = configuration.smallestScreenWidthDp >= 600 || configuration.screenWidthDp >= 600
+  // Orientation-independent, as sw600dp and every other tablet check in the app are: screenWidthDp
+  // is the width of the current rotation, so it makes any phone held sideways a tablet.
+  val isTablet = configuration.smallestScreenWidthDp >= 600
   val isTabletLandscape = !isPortrait && isTablet
   val isTabletPortrait = isPortrait && isTablet
 
@@ -2518,7 +2520,10 @@ fun AudioPlayerControls(
               }
             }
           } else {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+              modifier = Modifier.fillMaxWidth().padding(horizontal = controlsSidePadding),
+              horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
               headerBar()
               Spacer(modifier = Modifier.height(6.dp))
             }
