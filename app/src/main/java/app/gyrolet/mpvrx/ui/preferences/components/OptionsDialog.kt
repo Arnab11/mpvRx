@@ -13,11 +13,11 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
@@ -26,9 +26,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
@@ -48,22 +47,27 @@ fun <T> OptionsDialog(
       enabled = options.isNotEmpty(),
       requestKey = selectedOption,
     )
-  AlertDialog(
+  AppPickerSheet(
     onDismissRequest = onDismiss,
-    title = {
-      Text(
-        text = title,
-        style = MaterialTheme.typography.headlineSmall,
-      )
+    title = title,
+    scrollContent = false,
+    actions = {
+      TextButton(onClick = onDismiss) {
+        Text(
+          text =
+            androidx.compose.ui.res
+              .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
+        )
+      }
     },
-    text = {
+  ) {
       Column {
         HorizontalDivider()
         LazyColumn(
           contentPadding =
             androidx.compose.foundation.layout
               .PaddingValues(vertical = 8.dp),
-          modifier = Modifier.selectableGroup().tvFocusGroup(),
+          modifier = Modifier.fillMaxWidth().heightIn(max = 420.dp).selectableGroup().tvFocusGroup(),
         ) {
           items(options, key = { option -> option?.hashCode() ?: System.identityHashCode(option) }) { option ->
             Row(
@@ -95,25 +99,5 @@ fun <T> OptionsDialog(
         }
         HorizontalDivider()
       }
-    },
-    confirmButton = {},
-    dismissButton = {
-      TextButton(onClick = onDismiss) {
-        Text(
-          text =
-            androidx.compose.ui.res
-              .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
-        )
-      }
-    },
-    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    tonalElevation = 6.dp,
-    shape = MaterialTheme.shapes.extraLarge,
-    properties =
-      DialogProperties(
-        usePlatformDefaultWidth = false,
-        dismissOnBackPress = true,
-        dismissOnClickOutside = true,
-      ),
-  )
+  }
 }

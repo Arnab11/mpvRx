@@ -47,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -64,6 +65,8 @@ import app.gyrolet.mpvrx.preferences.BlacklistScope
 import app.gyrolet.mpvrx.preferences.FoldersPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
+import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.selection.SelectionState
 import app.gyrolet.mpvrx.ui.browser.states.EmptyState
@@ -576,54 +579,64 @@ private fun AddFolderDialog(
   var selectionState by remember { mutableStateOf(SelectionState<String>()) }
   var showDropdown by remember { mutableStateOf(false) }
   var selectedScope by remember { mutableStateOf(BlacklistScope.BOTH) }
+  var query by rememberSaveable { mutableStateOf("") }
 
   val availableFolders =
     remember(folders, blacklistedFolders) {
       folders.filter { it.path !in blacklistedFolders }
     }
   val availableFolderPaths = remember(availableFolders) { availableFolders.map { it.path } }
+  val filteredFolders = remember(availableFolders, query) {
+    val normalized = query.trim()
+    if (normalized.isEmpty()) availableFolders else availableFolders.filter { folder ->
+      folder.name.contains(normalized, ignoreCase = true) || folder.path.contains(normalized, ignoreCase = true)
+    }
+  }
 
-  AlertDialog(
+  AppPickerSheet(
     onDismissRequest = onDismiss,
-    title = {
-      Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.clickable(enabled = !isLoading && availableFolders.isNotEmpty()) { showDropdown = true },
-      ) {
-        Text(
-          text =
-            if (selectionState.isInSelectionMode) {
-              stringResource(R.string.selected_items, selectionState.selectedCount, availableFolders.size)
-            } else {
-              stringResource(R.string.pref_folders_select_folders)
-            },
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-        )
-        if (!isLoading && availableFolders.isNotEmpty()) {
-          Icon(
-            Icons.RoundedFilled.ArrowDropDown,
-            contentDescription = stringResource(R.string.selection_options),
-            modifier = Modifier.size(24.dp),
-          )
-        }
-        DropdownMenu(expanded = showDropdown, onDismissRequest = { showDropdown = false }) {
-          DropdownMenuItem(text = { Text(stringResource(R.string.select_all)) }, onClick = {
-            selectionState = selectionState.selectAll(availableFolderPaths)
-            showDropdown = false
-          })
-          DropdownMenuItem(text = { Text(stringResource(R.string.invert_selection)) }, onClick = {
-            selectionState = selectionState.invertSelection(availableFolderPaths)
-            showDropdown = false
-          })
-          DropdownMenuItem(text = { Text(stringResource(R.string.deselect_all)) }, onClick = {
-            selectionState = selectionState.clear()
-            showDropdown = false
-          })
+    title =
+      if (selectionState.isInSelectionMode) {
+        stringResource(R.string.selected_items, selectionState.selectedCount, availableFolders.size)
+      } else {
+        stringResource(R.string.pref_folders_select_folders)
+      },
+    scrollContent = false,
+    actions = {
+      if (!isLoading && availableFolders.isNotEmpty()) {
+        Box {
+          IconButton(onClick = { showDropdown = true }) {
+            Icon(
+              Icons.RoundedFilled.MoreVert,
+              contentDescription = stringResource(R.string.selection_options),
+            )
+          }
+          DropdownMenu(expanded = showDropdown, onDismissRequest = { showDropdown = false }) {
+            DropdownMenuItem(text = { Text(stringResource(R.string.select_all)) }, onClick = {
+              selectionState = selectionState.selectAll(availableFolderPaths)
+              showDropdown = false
+            })
+            DropdownMenuItem(text = { Text(stringResource(R.string.invert_selection)) }, onClick = {
+              selectionState = selectionState.invertSelection(availableFolderPaths)
+              showDropdown = false
+            })
+            DropdownMenuItem(text = { Text(stringResource(R.string.deselect_all)) }, onClick = {
+              selectionState = selectionState.clear()
+              showDropdown = false
+            })
+          }
         }
       }
+      TextButton(onClick = onDismiss) { Text(stringResource(R.string.generic_cancel)) }
+      TextButton(
+        onClick = {
+          onAddFolders(selectionState.selectedIds, selectedScope)
+          onDismiss()
+        },
+        enabled = selectionState.isInSelectionMode && !isLoading,
+      ) { Text(stringResource(R.string.generic_ok)) }
     },
-    text = {
+  ) {
       if (isLoading) {
         Box(modifier = Modifier.fillMaxWidth().padding(32.dp), contentAlignment = Alignment.Center) {
           Text(stringResource(R.string.pref_folders_loading))
@@ -632,8 +645,13 @@ private fun AddFolderDialog(
         Text(stringResource(R.string.pref_folders_no_folders))
       } else {
         Column {
+          PlayerSheetSearchField(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = stringResource(R.string.folder_search_hint),
+          )
           LazyColumn(modifier = Modifier.fillMaxWidth().height(280.dp)) {
-            items(availableFolders, key = { it.path }) { folder ->
+            items(filteredFolders, key = { it.path }) { folder ->
               Row(
                 modifier =
                   Modifier
@@ -656,12 +674,21 @@ private fun AddFolderDialog(
                 }
               }
             }
+            if (filteredFolders.isEmpty()) {
+              item {
+                Text(
+                  text = stringResource(R.string.generic_no_matching_options),
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                )
+              }
+            }
           }
 
           HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
           Text(
-            text = "Blacklist for",
+            text = stringResource(R.string.folder_blacklist_scope),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.primary,
           )
@@ -671,53 +698,31 @@ private fun AddFolderDialog(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
           ) {
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.clickable { selectedScope = BlacklistScope.BOTH },
-            ) {
-              RadioButton(
-                selected = selectedScope == BlacklistScope.BOTH,
-                onClick = { selectedScope = BlacklistScope.BOTH },
-              )
-              Text("Both", style = MaterialTheme.typography.bodyMedium)
-            }
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.clickable { selectedScope = BlacklistScope.VIDEO_ONLY },
-            ) {
-              RadioButton(
-                selected = selectedScope == BlacklistScope.VIDEO_ONLY,
-                onClick = { selectedScope = BlacklistScope.VIDEO_ONLY },
-              )
-              Text("Video", style = MaterialTheme.typography.bodyMedium)
-            }
-            Row(
-              verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.clickable { selectedScope = BlacklistScope.AUDIO_ONLY },
-            ) {
-              RadioButton(
-                selected = selectedScope == BlacklistScope.AUDIO_ONLY,
-                onClick = { selectedScope = BlacklistScope.AUDIO_ONLY },
-              )
-              Text("Audio", style = MaterialTheme.typography.bodyMedium)
+            BlacklistScope.entries.forEach { scope ->
+              Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.clickable { selectedScope = scope },
+              ) {
+                RadioButton(
+                  selected = selectedScope == scope,
+                  onClick = { selectedScope = scope },
+                )
+                Text(
+                  text = stringResource(
+                    when (scope) {
+                      BlacklistScope.BOTH -> R.string.folder_blacklist_both
+                      BlacklistScope.VIDEO_ONLY -> R.string.folder_blacklist_video
+                      BlacklistScope.AUDIO_ONLY -> R.string.folder_blacklist_audio
+                    },
+                  ),
+                  style = MaterialTheme.typography.bodyMedium,
+                )
+              }
             }
           }
         }
       }
-    },
-    confirmButton = {
-      TextButton(
-        onClick = {
-          onAddFolders(selectionState.selectedIds, selectedScope)
-          onDismiss()
-        },
-        enabled = selectionState.isInSelectionMode && !isLoading,
-      ) { Text(stringResource(R.string.generic_ok)) }
-    },
-    dismissButton = {
-      TextButton(onClick = onDismiss) { Text(stringResource(R.string.generic_cancel)) }
-    },
-  )
+  }
 }
 
 @Composable

@@ -32,14 +32,11 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -66,7 +63,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.DialogProperties
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.ui.components.themedSegmentedButtonColors
 import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -112,25 +109,29 @@ fun SortDialog(
 
   val (ascLabel, descLabel) = getLabelForType(sortType, sortOrderAsc)
 
-  AlertDialog(
+  AppPickerSheet(
     onDismissRequest = onDismiss,
-    title = {
-      Text(
-        text = title,
-        style = MaterialTheme.typography.titleLarge,
-      )
+    title = title,
+    actions = {
+      TextButton(onClick = onDismiss) {
+        Text(
+          text =
+            androidx.compose.ui.res
+              .stringResource(app.gyrolet.mpvrx.R.string.ui_done),
+        )
+      }
     },
-    text = {
+    modifier = modifier,
+  ) {
       Column {
         HorizontalDivider()
         Column(
-          modifier =
-            Modifier
-              .fillMaxWidth()
-              .verticalScroll(rememberScrollState()),
+          modifier = Modifier.fillMaxWidth(),
         ) {
           if (showSortOptions) {
-            DialogSectionTitle(text = "Sort by")
+            DialogSectionTitle(
+              text = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_sort_by),
+            )
             SortTypeSelector(
               sortType = sortType,
               onSortTypeChange = onSortTypeChange,
@@ -292,7 +293,9 @@ fun SortDialog(
 
           if (mediaTypeToggles.isNotEmpty()) {
             HorizontalDivider(modifier = Modifier.padding(top = 10.dp, bottom = 4.dp))
-            DialogSectionTitle(text = "Media Types")
+            DialogSectionTitle(
+              text = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_media_types),
+            )
             ToggleChipRow(mediaTypeToggles)
           }
 
@@ -302,7 +305,9 @@ fun SortDialog(
               modifier =
                 Modifier
                   .fillMaxWidth()
-                  .animateContentSize(animationSpec = tween(durationMillis = 250)),
+                  .animateContentSize(
+                    animationSpec = AppMotion.spatial(tween(durationMillis = 250), snap()),
+                  ),
             ) {
               Row(
                 modifier =
@@ -322,7 +327,14 @@ fun SortDialog(
                 )
                 Icon(
                   imageVector = if (isFieldsExpanded) Icons.RoundedFilled.KeyboardArrowUp else Icons.RoundedFilled.KeyboardArrowDown,
-                  contentDescription = if (isFieldsExpanded) "Collapse" else "Expand",
+                  contentDescription =
+                    androidx.compose.ui.res.stringResource(
+                      if (isFieldsExpanded) {
+                        app.gyrolet.mpvrx.R.string.generic_collapse
+                      } else {
+                        app.gyrolet.mpvrx.R.string.generic_expand
+                      },
+                    ),
                   tint = MaterialTheme.colorScheme.onSurfaceVariant,
                   modifier = Modifier.size(20.dp),
                 )
@@ -334,30 +346,8 @@ fun SortDialog(
           }
         }
       }
-    },
-    confirmButton = {
-      TextButton(onClick = onDismiss) {
-        Text(
-          text =
-            androidx.compose.ui.res
-              .stringResource(app.gyrolet.mpvrx.R.string.ui_done),
-        )
-      }
-    },
-    containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
-    tonalElevation = 6.dp,
-    shape = MaterialTheme.shapes.extraLarge,
-    modifier =
-      modifier
-        .widthIn(max = 500.dp)
-        .fillMaxWidth(0.88f),
-    properties =
-      DialogProperties(
-        usePlatformDefaultWidth = false,
-        dismissOnBackPress = true,
-        dismissOnClickOutside = true,
-      ),
-  )
+    }
+  }
 }
 
 @Composable

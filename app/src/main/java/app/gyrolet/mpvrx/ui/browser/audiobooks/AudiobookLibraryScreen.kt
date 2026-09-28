@@ -19,7 +19,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -61,8 +60,6 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
-import app.gyrolet.mpvrx.domain.audiobook.AudiobookOnlineMetadata
-import kotlinx.coroutines.launch
 import androidx.compose.material3.PlainTooltip
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -77,6 +74,7 @@ import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -99,8 +97,10 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.database.entities.Audiobook
 import app.gyrolet.mpvrx.database.entities.AudiobookEntity
+import app.gyrolet.mpvrx.domain.audiobook.AudiobookOnlineMetadata
 import app.gyrolet.mpvrx.domain.audiobookshelf.AudiobookshelfBook
 import app.gyrolet.mpvrx.domain.audiobookshelf.AudiobookshelfLibrary
+import app.gyrolet.mpvrx.domain.thumbnail.EmbeddedArtworkResolver
 import app.gyrolet.mpvrx.preferences.AudiobookSortType
 import app.gyrolet.mpvrx.preferences.AudiobookSourceProvider
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
@@ -108,6 +108,8 @@ import app.gyrolet.mpvrx.preferences.MediaLayoutMode
 import app.gyrolet.mpvrx.preferences.MediaServerPreferences
 import app.gyrolet.mpvrx.preferences.SortOrder
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
+import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
@@ -1110,15 +1112,27 @@ private fun AudiobookOnlineSearchDialog(
   var isSearching by remember { mutableStateOf(false) }
   var searchResults by remember { mutableStateOf<List<AudiobookOnlineMetadata>>(emptyList()) }
   var hasSearched by remember { mutableStateOf(false) }
+  var searchGeneration by remember { mutableIntStateOf(0) }
   val scope = rememberCoroutineScope()
 
   fun performSearch(query: String) {
-    if (query.isBlank()) return
+    val normalized = query.trim()
+    if (normalized.isEmpty()) return
+    val generation = ++searchGeneration
     scope.launch {
       isSearching = true
       hasSearched = true
-      searchResults = runCatching { onSearch(query, null) }.getOrDefault(emptyList())
-      isSearching = false
+      val results = try {
+        onSearch(normalized, null)
+      } catch (cancelled: kotlinx.coroutines.CancellationException) {
+        throw cancelled
+      } catch (_: Exception) {
+        emptyList()
+      }
+      if (generation == searchGeneration) {
+        searchResults = results
+        isSearching = false
+      }
     }
   }
 
@@ -1128,30 +1142,25 @@ private fun AudiobookOnlineSearchDialog(
     }
   }
 
-  AlertDialog(
+  AppPickerSheet(
     onDismissRequest = onDismiss,
-    title = {
-      Text(stringResource(R.string.audiobook_search_online_title))
+    title = stringResource(R.string.audiobook_search_online_title),
+    scrollContent = false,
+    actions = {
+      TextButton(onClick = onDismiss) {
+        Text(stringResource(R.string.generic_cancel))
+      }
     },
-    text = {
+  ) {
       Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
       ) {
-        OutlinedTextField(
-          value = searchQuery,
-          onValueChange = { searchQuery = it },
-          label = { Text(stringResource(R.string.audiobook_search_online_query)) },
-          singleLine = true,
-          trailingIcon = {
-            IconButton(
-              onClick = { performSearch(searchQuery) },
-              enabled = searchQuery.isNotBlank() && !isSearching,
-            ) {
-              Icon(Icons.RoundedFilled.Search, contentDescription = "Search")
-            }
-          },
-          modifier = Modifier.fillMaxWidth(),
+        PlayerSheetSearchField(
+          query = searchQuery,
+          onQueryChange = { searchQuery = it },
+          placeholder = stringResource(R.string.audiobook_search_online_query),
+          onSubmit = { performSearch(searchQuery) },
         )
 
         if (isSearching) {
@@ -1226,7 +1235,7 @@ private fun AudiobookOnlineSearchDialog(
                     }
                     if (!result.narrator.isNullOrBlank()) {
                       Text(
-                        text = "Narrated by ${result.narrator}",
+                        text = stringResource(R.string.audiobook_narrated_by, result.narrator),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.outline,
                         maxLines = 1,
@@ -1245,14 +1254,7 @@ private fun AudiobookOnlineSearchDialog(
           }
         }
       }
-    },
-    confirmButton = {},
-    dismissButton = {
-      TextButton(onClick = onDismiss) {
-        Text(stringResource(R.string.generic_cancel))
-      }
-    },
-  )
+  }
 }
 
 @Composable

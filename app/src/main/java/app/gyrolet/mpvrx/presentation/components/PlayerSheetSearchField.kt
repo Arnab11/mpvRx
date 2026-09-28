@@ -56,8 +56,13 @@ fun PlayerSheetSearchField(
   onQueryChange: (String) -> Unit,
   modifier: Modifier = Modifier,
   placeholder: String = stringResource(R.string.generic_search),
+  onSubmit: (() -> Unit)? = null,
 ) {
   val focusManager = LocalFocusManager.current
+  val submit = {
+    onSubmit?.invoke()
+    focusManager.clearFocus()
+  }
   Row(
     modifier =
       modifier
@@ -70,9 +75,14 @@ fun PlayerSheetSearchField(
   ) {
     Icon(
       imageVector = Icons.RoundedFilled.Search,
-      contentDescription = null,
+      contentDescription = onSubmit?.let { stringResource(R.string.generic_search) },
       tint = MaterialTheme.colorScheme.onSurfaceVariant,
-      modifier = Modifier.size(32.dp).padding(6.dp),
+      modifier =
+        Modifier
+          .size(32.dp)
+          .clip(CircleShape)
+          .clickable(enabled = onSubmit != null && query.isNotBlank(), onClick = submit)
+          .padding(6.dp),
     )
     Spacer(Modifier.width(4.dp))
     Box(Modifier.weight(1f)) {
@@ -93,7 +103,7 @@ fun PlayerSheetSearchField(
           ),
         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-        keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
+        keyboardActions = KeyboardActions(onSearch = submit),
         modifier = Modifier.fillMaxWidth(),
       )
     }

@@ -32,7 +32,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +50,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
+import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetAction
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSectionHeader
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -269,32 +270,34 @@ fun SubtitlesSheet(
           source.filter { it.contains(langSearch, ignoreCase = true) }
         }
       }
-    androidx.compose.material3.AlertDialog(
+    AppPickerSheet(
       onDismissRequest = {
         showLanguagePicker = null
         showRealtimeLanguagePicker = false
         langSearch = ""
       },
-      title = {
-        Text(
-          androidx.compose.ui.res
-            .stringResource(app.gyrolet.mpvrx.R.string.ui_translate_to),
-        )
+      title = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_translate_to),
+      scrollContent = false,
+      actions = {
+        androidx.compose.material3.TextButton(onClick = {
+          showLanguagePicker = null
+          showRealtimeLanguagePicker = false
+          langSearch = ""
+        }) {
+          Text(
+            androidx.compose.ui.res
+              .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
+          )
+        }
       },
-      text = {
+    ) {
         Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
-          OutlinedTextField(
-            value = langSearch,
-            onValueChange = { langSearch = it },
-            placeholder = {
-              Text(
-                androidx.compose.ui.res
-                  .stringResource(app.gyrolet.mpvrx.R.string.ui_search_language),
-              )
-            },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            shape = MaterialTheme.shapes.medium,
+          PlayerSheetSearchField(
+            query = langSearch,
+            onQueryChange = { langSearch = it },
+            placeholder =
+              androidx.compose.ui.res
+                .stringResource(app.gyrolet.mpvrx.R.string.ui_search_language),
           )
           LazyColumn(modifier = Modifier.height(280.dp)) {
             items(languagesToShow, key = { it }) { lang ->
@@ -327,20 +330,7 @@ fun SubtitlesSheet(
             }
           }
         }
-      },
-      confirmButton = {
-        androidx.compose.material3.TextButton(onClick = {
-          showLanguagePicker = null
-          showRealtimeLanguagePicker = false
-          langSearch = ""
-        }) {
-          Text(
-            androidx.compose.ui.res
-              .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
-          )
-        }
-      },
-    )
+    }
   }
 
   PlayerSheet(

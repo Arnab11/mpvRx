@@ -420,14 +420,7 @@ class LyricsRepository(
     return "${ref.title}|${ref.artist}|${query.durationMs / 1000}"
   }
 
-  /**
-   * Every provider asked at once, answers taken in priority order.
-   *
-   * A word-timed hit from a provider near the top wins the moment it arrives;
-   * a plain-text answer is held back as the fallback and only used if nothing
-   * timed comes in. The scraping provider at the bottom of the order is not
-   * started at all unless everything above it has already missed.
-   */
+  /** Every provider is asked together; actual timing quality wins, then provider priority. */
   private suspend fun raceProviders(query: LyricsFetchQuery): OnlineLyricsResult =
     coroutineScope {
       val jobs =
@@ -437,26 +430,28 @@ class LyricsRepository(
         }
 
       try {
-        var timed: Pair<LyricsProvider, Lyrics>? = null
+        var wordTimed: Pair<LyricsProvider, Lyrics>? = null
+        var lineTimed: Pair<LyricsProvider, Lyrics>? = null
         var plainFallback: Pair<LyricsProvider, Lyrics>? = null
         val seen = mutableMapOf<LyricsProvider, Lyrics>()
 
         for ((provider, job) in jobs) {
-          if (timed != null && provider in LyricsProvider.LAZY_PROVIDERS) continue
+          if ((wordTimed != null || lineTimed != null) && provider in LyricsProvider.LAZY_PROVIDERS) continue
           val found =
             runCatching { job.await() }
               .getOrElse { error -> if (error is CancellationException) throw error else null } ?: continue
           if (!found.isValid()) continue
           seen[provider] = found
 
-          if (!found.synced.isNullOrEmpty()) {
-            timed = provider to found
+          if (found.synced.orEmpty().any { !it.words.isNullOrEmpty() }) {
+            wordTimed = provider to found
             break
           }
+          if (lineTimed == null && !found.synced.isNullOrEmpty()) lineTimed = provider to found
           if (plainFallback == null) plainFallback = provider to found
         }
 
-        val winner = timed ?: plainFallback
+        val winner = wordTimed ?: lineTimed ?: plainFallback
         if (winner != null) {
           seen[winner.first] = winner.second
           OnlineLyricsResult(

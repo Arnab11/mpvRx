@@ -11,12 +11,13 @@ package app.gyrolet.mpvrx.ui.browser.dialogs
 
 import android.content.Context
 import android.os.Environment
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -35,9 +36,11 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
+import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.utils.storage.StorageVolumeUtils
@@ -73,16 +77,17 @@ fun FolderPickerDialog(
 
   // If there's only one storage volume, start there directly
   // Otherwise, start at storage root view to show all volumes
-  var selectedPath by remember(isOpen, storageVolumes) {
-    val initialPath =
-      if (storageVolumes.size == 1) {
-        StorageVolumeUtils.getVolumePath(storageVolumes.first())
-      } else {
-        null // Show storage root with all volumes
-      }
+  var selectedPath by rememberSaveable(isOpen, currentPath, storageVolumes.size) {
+    val requested = File(currentPath)
+    val initialPath = when {
+      requested.isDirectory -> requested.absolutePath
+      storageVolumes.size == 1 -> StorageVolumeUtils.getVolumePath(storageVolumes.first())
+      else -> null
+    }
     mutableStateOf(initialPath)
   }
-  var showCreateFolderDialog by remember { mutableStateOf(false) }
+  var showCreateFolderDialog by rememberSaveable { mutableStateOf(false) }
+  var query by rememberSaveable(isOpen) { mutableStateOf("") }
 
   // Determine what to show based on selectedPath
   val showStorageRoot = selectedPath == null
@@ -92,14 +97,22 @@ fun FolderPickerDialog(
       selectedPath?.let { File(it) }
     }
 
+  LaunchedEffect(selectedPath) {
+    query = ""
+  }
+
   val folders =
-    remember(selectedPath) {
+    remember(selectedPath, query) {
       if (showStorageRoot) {
         // Show storage volumes as "folders"
         emptyList<File>()
       } else {
-        currentDir
-          ?.listFiles { file -> file.isDirectory && !file.name.startsWith(".") }
+        runCatching {
+          currentDir?.listFiles { file ->
+            file.isDirectory && !file.name.startsWith(".") &&
+              (query.isBlank() || file.name.contains(query, ignoreCase = true))
+          }
+        }.getOrNull()
           ?.sortedBy { it.name.lowercase() }
           ?: emptyList()
       }
@@ -138,6 +151,7 @@ fun FolderPickerDialog(
       } else {
         null
       },
+    scrollContent = false,
     actions = {
       TextButton(
         onClick = onDismiss,
@@ -167,6 +181,9 @@ fun FolderPickerDialog(
     },
     modifier = modifier,
   ) {
+    BackHandler(enabled = selectedPath != null && !showCreateFolderDialog) {
+      selectedPath = currentDir?.parent
+    }
     Column(
       modifier = Modifier.fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(16.dp),
@@ -240,12 +257,20 @@ fun FolderPickerDialog(
           }
         }
 
+        if (!showStorageRoot) {
+          PlayerSheetSearchField(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.folder_search_hint),
+          )
+        }
+
         // Folder/Volume list
         LazyColumn(
           modifier =
             Modifier
               .fillMaxWidth()
-              .height(300.dp),
+              .heightIn(min = 120.dp, max = 360.dp),
           verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
           if (showStorageRoot) {
@@ -294,6 +319,15 @@ fun FolderPickerDialog(
                   fontWeight = FontWeight.Medium,
                   color = MaterialTheme.colorScheme.onSurfaceVariant,
                   modifier = Modifier.padding(16.dp),
+                )
+              }
+            }
+            if (folders.isEmpty() && query.isNotBlank()) {
+              item {
+                Text(
+                  text = androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.generic_no_matching_options),
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                  modifier = Modifier.fillMaxWidth().padding(16.dp),
                 )
               }
             }

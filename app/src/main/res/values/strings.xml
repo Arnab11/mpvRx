@@ -1,8 +1,15 @@
 <resources>
   <string name="app_name" translatable="false">mpvRx</string>
   <string name="generic_reset">Reset</string>
+  <string name="generic_back">Back</string>
+  <string name="generic_home">Home</string>
+  <string name="generic_expand">Expand</string>
+  <string name="generic_collapse">Collapse</string>
+  <string name="cast_playback_speed">Playback speed</string>
   <string name="generic_search">Search</string>
   <string name="generic_clear">Clear</string>
+  <string name="generic_no_matching_options">No matching options</string>
+  <string name="generic_unknown">Unknown</string>
   <string name="generic_share">Share</string>
   <string name="generic_confirm">Confirm</string>
   <string name="generic_cancel">Cancel</string>
@@ -129,6 +136,13 @@
   <string name="settings_search_hint">Search settings…</string>
   <string name="settings_search_no_results">No settings found</string>
   <string name="settings_search_title">Search</string>
+  <string name="ui_select_model">Select model</string>
+  <string name="ai_model_search_empty">No matching models</string>
+  <string name="ai_model_none_available">No models available</string>
+  <plurals name="ai_model_result_count">
+    <item quantity="one">%1$d model</item>
+    <item quantity="other">%1$d models</item>
+  </plurals>
   <!-- Player Preferences Hardcoded -->
   <string name="pref_autoplay_title">Enable next/previous navigation</string>
   <string name="pref_autoplay_summary">Show next/previous buttons for all videos in folder</string>
@@ -486,6 +500,7 @@
   <string name="player_sheets_sub_color_alpha">Alpha</string>
   <string name="player_sheets_sub_override_ass">Override ASS/SSA subtitles</string>
   <string name="player_sheets_sub_override_ass_subtitle">Force override ASS/SSA subtitle formatting</string>
+  <string name="player_sheets_sub_force_ltr">Force LTR direction</string>
   <string name="player_sheets_sub_scale_by_window">Scale by window</string>
   <string name="player_sheets_sub_scale_by_window_summary">Scale subtitle size with the window; keep subtitles inside the video\'s safe-area margins</string>
   <string name="player_sheets_sub_blend_with_video">Blend subtitles with video</string>
@@ -662,6 +677,11 @@
   <string name="pref_folders_empty_message">Tap the button below to add folders you want to hide from the folder list</string>
   <string name="pref_folders_add_folder">Add Folder to Blacklist</string>
   <string name="pref_folders_select_folders">Select folder/s</string>
+  <string name="folder_search_hint">Search folders</string>
+  <string name="folder_blacklist_scope">Blacklist for</string>
+  <string name="folder_blacklist_both">Both</string>
+  <string name="folder_blacklist_video">Video</string>
+  <string name="folder_blacklist_audio">Audio</string>
   <string name="pref_folders_loading">Loading folders…</string>
   <string name="pref_folders_no_folders">No folders found</string>
   <string name="pref_folders_clear_all">Clear all blacklisted folders</string>
@@ -850,6 +870,8 @@
   <string name="pref_subtitle_api_key_dialog_text">Paste the API key from your %1$s account.</string>
   <string name="pref_subtitle_api_key_placeholder">Paste API key</string>
   <string name="pref_subtitle_sources_title">Subtitle Sources</string>
+  <string name="subtitle_source_search_hint">Search subtitle sources</string>
+  <string name="subtitle_sources_load_error">Could not load subtitle sources</string>
   <string name="pref_all_sources">All</string>
   <string name="pref_section_advanced_search_filters">Advanced Search Filters</string>
   <string name="pref_hearing_impaired_title">Hearing-impaired friendly</string>
@@ -1445,6 +1467,23 @@
   <string name="ui_done">Done</string>
   <string name="ui_no_playlists_yet">No playlists yet</string>
   <string name="ui_create_your_first_playlist_above">Create your first playlist above</string>
+  <string name="playlist_search_hint">Search playlists</string>
+  <string name="playlist_search_empty">No matching playlists</string>
+  <string name="playlist_search_empty_hint">Try another name or create a new playlist</string>
+  <string name="playlist_no_compatible_items">There are no compatible items to add</string>
+  <string name="playlist_add_failed">Could not add items to the playlist</string>
+  <plurals name="playlist_picker_song_count">
+    <item quantity="one">Adding %1$d song</item>
+    <item quantity="other">Adding %1$d songs</item>
+  </plurals>
+  <plurals name="playlist_picker_video_count">
+    <item quantity="one">Adding %1$d video</item>
+    <item quantity="other">Adding %1$d videos</item>
+  </plurals>
+  <plurals name="playlist_item_count_value">
+    <item quantity="one">%1$d item</item>
+    <item quantity="other">%1$d items</item>
+  </plurals>
   <string name="ui_playlist_name">Playlist Name</string>
   <string name="ui_create">Create</string>
   <string name="ui_ai_rename_is_disabled_enable_it_in_settings_ai_integration">AI Rename is disabled. Enable it in Settings → AI Integration.</string>
@@ -1456,6 +1495,9 @@
   <string name="ui_no_folders_or_supported_files">No folders or supported files</string>
   <string name="ui_select_folder">Select Folder</string>
   <string name="ui_select_storage_location">Select a storage location</string>
+  <string name="ui_search_files">Search files and folders</string>
+  <string name="ui_no_matching_files">No matching files or folders</string>
+  <string name="ui_system_picker">System file picker</string>
   <string name="ui_cannot_select_the_same_folder">Cannot select the same folder</string>
   <string name="ui_no_subfolders">No subfolders</string>
   <string name="ui_select">Select</string>
@@ -1467,6 +1509,8 @@
   <string name="ui_ai_is_thinking">AI is thinking...</string>
   <string name="ui_ai_rename">AI Rename</string>
   <string name="ui_fields">Fields</string>
+  <string name="ui_sort_by">Sort by</string>
+  <string name="ui_media_types">Media types</string>
   <string name="ui_folder_grid">Folder Grid</string>
   <string name="ui_video_grid">Video Grid</string>
   <string name="ui_loading_video_info">Loading video info</string>
@@ -2152,6 +2196,11 @@
   <string name="lyrics_translate_title">Translate Lyrics</string>
   <string name="lyrics_translating">Translating lyrics…</string>
   <string name="lyrics_translation_off">Original Lyrics</string>
+  <string name="lyrics_translation_off_summary">Show the original language without translation</string>
+  <string name="lyrics_translation_dual_line">Dual-line</string>
+  <string name="lyrics_translation_replace">Replace original</string>
+  <string name="lyrics_translation_romanized">Pronunciation / Romanized</string>
+  <string name="lyrics_translation_no_languages">No matching languages</string>
   <string name="lyrics_translation_failed">Lyrics could not be translated. Try again.</string>
   <string name="lyrics_translation_partial">Some lyric lines could not be translated.</string>
   <string name="lyrics_select_language">Select Target Language</string>
@@ -2476,6 +2525,7 @@
   <string name="audiobook_search_online_title">Search Online Artwork</string>
   <string name="audiobook_search_online_query">Search by title, author, or keywords</string>
   <string name="audiobook_search_online_searching">Searching Apple Books &amp; Open Library…</string>
+  <string name="audiobook_narrated_by">Narrated by %1$s</string>
   <string name="audiobook_search_online_empty">No online covers found for this query.</string>
   <string name="audiobook_save">Save</string>
   <string name="audiobook_remove">Remove from library</string>

@@ -18,11 +18,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -61,6 +59,7 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.VideoSwipeAction
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.ui.browser.cards.containerColor
 import app.gyrolet.mpvrx.ui.browser.cards.contentColor
@@ -137,39 +136,38 @@ object VideoSwipePreferencesScreen : Screen {
 
     editingRight?.let { isRight ->
       val selectedAction = if (isRight) right else left
-      AlertDialog(
+      AppPickerSheet(
         onDismissRequest = { editingRight = null },
-        title = {
-          val titleRes = if (isRight) R.string.pref_video_swipe_choose_right else R.string.pref_video_swipe_choose_left
-          Text(stringResource(titleRes))
-        },
-        text = {
-          Column(Modifier.verticalScroll(rememberScrollState()).selectableGroup()) {
-            VideoSwipeAction.entries.forEach { action ->
-              Row(
-                modifier = Modifier.fillMaxWidth()
-                  .selectable(selected = action == selectedAction, role = Role.RadioButton) {
-                    if (action != selectedAction) {
-                      if (isRight) preferences.videoSwipeRight.set(action) else preferences.videoSwipeLeft.set(action)
-                      haptics.selection(true)
-                    }
-                    editingRight = null
-                  }.heightIn(min = 56.dp).padding(vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-              ) {
-                RadioButton(selected = action == selectedAction, onClick = null)
-                Icon(action.icon(), null, modifier = Modifier.size(24.dp))
-                Text(stringResource(action.labelRes(null)), modifier = Modifier.weight(1f))
-              }
-            }
+        title = stringResource(
+          if (isRight) R.string.pref_video_swipe_choose_right else R.string.pref_video_swipe_choose_left,
+        ),
+        actions = {
+          TextButton(onClick = { editingRight = null }) {
+            Text(stringResource(R.string.generic_cancel))
           }
         },
-        confirmButton = {},
-        dismissButton = {
-          TextButton(onClick = { editingRight = null }) { Text(stringResource(R.string.generic_cancel)) }
-        },
-      )
+      ) {
+        Column(Modifier.selectableGroup()) {
+          VideoSwipeAction.entries.forEach { action ->
+            Row(
+              modifier = Modifier.fillMaxWidth()
+                .selectable(selected = action == selectedAction, role = Role.RadioButton) {
+                  if (action != selectedAction) {
+                    if (isRight) preferences.videoSwipeRight.set(action) else preferences.videoSwipeLeft.set(action)
+                    haptics.selection(true)
+                  }
+                  editingRight = null
+                }.heightIn(min = 56.dp).padding(vertical = 8.dp),
+              verticalAlignment = Alignment.CenterVertically,
+              horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+              RadioButton(selected = action == selectedAction, onClick = null)
+              Icon(action.icon(), null, modifier = Modifier.size(24.dp))
+              Text(stringResource(action.labelRes(null)), modifier = Modifier.weight(1f))
+            }
+          }
+        }
+      }
     }
   }
 }

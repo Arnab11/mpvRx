@@ -57,6 +57,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -1114,6 +1115,7 @@ fun AudioPlayerControls(
   val isTablet = configuration.smallestScreenWidthDp >= 600
   val isTabletLandscape = !isPortrait && isTablet
   val isTabletPortrait = isPortrait && isTablet
+  val isCompactLandscape = !isPortrait && configuration.screenHeightDp < 480
 
   LaunchedEffect(isTabletLandscape) {
     if (isTabletLandscape) {
@@ -2581,24 +2583,35 @@ fun AudioPlayerControls(
     } else {
       Row(
         modifier = Modifier.fillMaxSize(),
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalArrangement = Arrangement.spacedBy(if (isCompactLandscape) 12.dp else 24.dp),
         verticalAlignment = Alignment.CenterVertically,
       ) {
-        centerVisualizerView(Modifier.weight(1f).fillMaxHeight())
+        centerVisualizerView(
+          Modifier
+            .weight(if (isCompactLandscape) 0.9f else 1f)
+            .fillMaxHeight(),
+        )
         Column(
           modifier =
-            Modifier.weight(1.2f).fillMaxHeight().padding(end = controlsSidePadding).then(
+            Modifier
+              .weight(if (isCompactLandscape) 1.35f else 1.2f)
+              .fillMaxHeight()
+              .padding(end = controlsSidePadding)
+              .verticalScroll(rememberScrollState())
+              .then(
               if (edgeToEdgeVisualizer) {
                 Modifier.windowInsetsPadding(WindowInsets.safeDrawing.only(WindowInsetsSides.Top)).padding(top = 6.dp)
               } else {
                 Modifier
               },
-            ),
-          verticalArrangement = Arrangement.SpaceBetween,
+            ).padding(vertical = 4.dp),
+          verticalArrangement =
+            if (isCompactLandscape) Arrangement.spacedBy(4.dp) else Arrangement.SpaceEvenly,
           horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           headerBar()
           trackMetadataView()
+          if (!showInPlaceLyrics) currentLyricStripView()
           seekbarView()
           playbackControlsRow()
           bottomActionRow()

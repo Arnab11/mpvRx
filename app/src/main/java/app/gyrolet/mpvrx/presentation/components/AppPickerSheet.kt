@@ -12,7 +12,6 @@ package app.gyrolet.mpvrx.presentation.components
 import android.content.res.Configuration
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -61,21 +60,26 @@ import app.gyrolet.mpvrx.ui.theme.MotionPolicy
 @Composable
 fun AppPickerSheet(
   onDismissRequest: () -> Unit,
-  title: String,
+  title: String = "",
+  titleContent: (@Composable () -> Unit)? = null,
   modifier: Modifier = Modifier,
   subtitle: String? = null,
   warning: String? = null,
+  scrollContent: Boolean = true,
   actions: @Composable RowScope.() -> Unit = {},
-  content: @Composable ColumnScope.() -> Unit,
+  content: @Composable () -> Unit,
 ) {
   val configuration = LocalConfiguration.current
   val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
   val reducedMotion = AppMotion.playerReducedMotion()
-  val bodyMaxHeight = configuration.screenHeightDp.dp * if (isLandscape) 0.42f else 0.52f
+  val bodyMaxHeight =
+    (configuration.screenHeightDp.dp - if (isLandscape) 132.dp else 180.dp)
+      .coerceAtLeast(160.dp)
+      .coerceAtMost(if (isLandscape) 460.dp else 600.dp)
 
   val sheetState =
     rememberBottomSheetState(
-      initialValue = SheetValue.Hidden,
+      initialValue = if (reducedMotion) SheetValue.Expanded else SheetValue.Hidden,
       enabledValues = setOf(SheetValue.Hidden, SheetValue.Expanded),
     )
 
@@ -99,12 +103,16 @@ fun AppPickerSheet(
             .padding(horizontal = 20.dp)
             .padding(bottom = 12.dp),
       ) {
-        Text(
-          text = title,
-          style = MaterialTheme.typography.headlineSmall,
-          fontWeight = FontWeight.Bold,
-          color = MaterialTheme.colorScheme.onSurface,
-        )
+        if (titleContent != null) {
+          titleContent()
+        } else if (title.isNotBlank()) {
+          Text(
+            text = title,
+            style = MaterialTheme.typography.headlineSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+          )
+        }
 
         if (subtitle != null) {
           Text(
@@ -135,9 +143,10 @@ fun AppPickerSheet(
             Modifier
               .fillMaxWidth()
               .heightIn(max = bodyMaxHeight)
-              .verticalScroll(rememberScrollState()),
-          content = content,
-        )
+              .then(if (scrollContent) Modifier.verticalScroll(rememberScrollState()) else Modifier),
+        ) {
+          content()
+        }
 
         Spacer(Modifier.height(12.dp))
 

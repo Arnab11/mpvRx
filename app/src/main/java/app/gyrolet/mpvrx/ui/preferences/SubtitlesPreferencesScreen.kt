@@ -66,6 +66,8 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
+import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
 import app.gyrolet.mpvrx.repository.subtitle.OnlineSubtitleSearchMode
 import app.gyrolet.mpvrx.repository.subtitlehub.MpvRxSubtitleHubSources
 import app.gyrolet.mpvrx.repository.wyzie.WyzieEncodings
@@ -623,6 +625,7 @@ object SubtitlesPreferencesScreen : Screen {
 
               // Wyzie Sources
               var showSourcesDialog by remember { mutableStateOf(false) }
+              var sourceSearch by rememberSaveable { mutableStateOf("") }
               val displayNamesMap =
                 remember(sourcesResponse) {
                   val map = mutableMapOf<String, String>()
@@ -654,44 +657,46 @@ object SubtitlesPreferencesScreen : Screen {
               )
 
               if (showSourcesDialog) {
-                AlertDialog(
-                  onDismissRequest = { showSourcesDialog = false },
-                  title = {
-                    Row(
-                      verticalAlignment = Alignment.CenterVertically,
-                      horizontalArrangement = Arrangement.SpaceBetween,
-                      modifier = Modifier.fillMaxWidth(),
-                    ) {
-                      Text(stringResource(R.string.pref_subtitle_sources_title))
-
-                      if (isLoadingSources) {
-                        CircularProgressIndicator(
-                          modifier = Modifier.size(18.dp),
-                          strokeWidth = 2.dp,
-                          color = MaterialTheme.colorScheme.primary,
+                val allSourcesLabel = stringResource(R.string.pref_all_sources)
+                AppPickerSheet(
+                  onDismissRequest = {
+                    showSourcesDialog = false
+                    sourceSearch = ""
+                  },
+                  title = stringResource(R.string.pref_subtitle_sources_title),
+                  scrollContent = false,
+                  actions = {
+                    if (isLoadingSources) {
+                      CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp,
+                      )
+                    } else {
+                      IconButton(onClick = { refreshTrigger++ }) {
+                        Icon(
+                          imageVector = Icons.RoundedFilled.Refresh,
+                          contentDescription = stringResource(R.string.ui_refresh),
                         )
-                      } else {
-                        IconButton(
-                          onClick = { refreshTrigger++ },
-                          modifier = Modifier.size(24.dp),
-                        ) {
-                          Icon(
-                            imageVector = Icons.RoundedFilled.Refresh,
-                            contentDescription =
-                              androidx.compose.ui.res.stringResource(
-                                app.gyrolet.mpvrx.R.string.ui_refresh,
-                              ),
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.primary,
-                          )
-                        }
                       }
                     }
+                    TextButton(onClick = {
+                      showSourcesDialog = false
+                      sourceSearch = ""
+                    }) {
+                      Text(stringResource(android.R.string.ok))
+                    }
                   },
-                  text = {
+                ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
+                      PlayerSheetSearchField(
+                        query = sourceSearch,
+                        onQueryChange = { sourceSearch = it },
+                        placeholder = stringResource(R.string.subtitle_source_search_hint),
+                        modifier = Modifier.padding(bottom = 8.dp),
+                      )
                       sourcesResponse?.key?.let { keyInfo ->
-                        val keyType = keyInfo.type?.replaceFirstChar { it.uppercase() } ?: "Unknown"
+                        val keyType = keyInfo.type?.replaceFirstChar { it.uppercase() }
+                          ?: stringResource(R.string.generic_unknown)
                         val badgeColor = if (keyInfo.valid) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer
                         val badgeTextColor = if (keyInfo.valid) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer
 
@@ -714,13 +719,13 @@ object SubtitlesPreferencesScreen : Screen {
 
                       if (sourcesError != null && sourcesResponse == null) {
                         Text(
-                          text = sourcesError ?: "Error loading sources",
+                          text = sourcesError ?: stringResource(R.string.subtitle_sources_load_error),
                           color = MaterialTheme.colorScheme.error,
                           style = MaterialTheme.typography.bodyMedium,
                           modifier = Modifier.padding(vertical = 16.dp),
                         )
                       } else {
-                        val items =
+                        val allItems =
                           sourcesResponse?.tiered ?: WyzieSources.ALL.filterKeys { it != "all" }.map { (key, value) ->
                             WyzieSourceItem(
                               key = key,
@@ -730,13 +735,19 @@ object SubtitlesPreferencesScreen : Screen {
                               available = true,
                             )
                           }
+                        val items = if (sourceSearch.isBlank()) allItems else allItems.filter { item ->
+                          item.name.contains(sourceSearch, ignoreCase = true) ||
+                            item.key.contains(sourceSearch, ignoreCase = true) ||
+                            item.tags.any { it.contains(sourceSearch, ignoreCase = true) }
+                        }
 
                         val freeItems = items.filter { it.tier.lowercase() == "free" }
                         val paidItems = items.filter { it.tier.lowercase() == "paid" }
+                        val showAllSources = sourceSearch.isBlank() ||
+                          allSourcesLabel.contains(sourceSearch, ignoreCase = true)
 
-                        LazyColumn(modifier = Modifier.weight(1f, fill = false)) {
-                          // "All Sources" option
-                          item {
+                        LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+                          if (showAllSources) item {
                             val isAllChecked = wyzieSources.isEmpty() || wyzieSources.contains("all")
                             Row(
                               modifier =
@@ -753,7 +764,7 @@ object SubtitlesPreferencesScreen : Screen {
                               )
                               Spacer(modifier = Modifier.width(8.dp))
                               Text(
-                                text = stringResource(R.string.pref_all_sources),
+                                text = allSourcesLabel,
                                 fontWeight = FontWeight.Bold,
                               )
                             }
@@ -780,7 +791,7 @@ object SubtitlesPreferencesScreen : Screen {
                                 modifier =
                                   Modifier
                                     .fillMaxWidth()
-                                    .clickable {
+                                    .clickable(enabled = isAvailable) {
                                       val newSet = wyzieSources.toMutableSet()
                                       newSet.remove("all")
                                       if (checked) {
@@ -796,6 +807,7 @@ object SubtitlesPreferencesScreen : Screen {
                                 Checkbox(
                                   checked = checked,
                                   onCheckedChange = null,
+                                  enabled = isAvailable,
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Column(modifier = Modifier.weight(1f)) {
@@ -918,16 +930,19 @@ object SubtitlesPreferencesScreen : Screen {
                               }
                             }
                           }
+                          if (!showAllSources && freeItems.isEmpty() && paidItems.isEmpty()) {
+                            item {
+                              Text(
+                                text = stringResource(R.string.generic_no_matching_options),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+                              )
+                            }
+                          }
                         }
                       }
                     }
-                  },
-                  confirmButton = {
-                    TextButton(onClick = { showSourcesDialog = false }) {
-                      Text(stringResource(android.R.string.ok))
-                    }
-                  },
-                )
+                }
               }
 
               PreferenceDivider()
@@ -1183,6 +1198,7 @@ fun MultiChoicePreference(
   modifier: Modifier = Modifier,
 ) {
   var showDialog by remember { mutableStateOf(false) }
+  var query by rememberSaveable { mutableStateOf("") }
 
   Preference(
     modifier = modifier,
@@ -1192,14 +1208,49 @@ fun MultiChoicePreference(
   )
 
   if (showDialog) {
-    AlertDialog(
-      onDismissRequest = { showDialog = false },
-      title = title,
-      text = {
-        val valuesList = values.toList()
-        LazyColumn {
-          items(count = valuesList.size, key = { index -> valuesList[index].first }) { index ->
-            val entry = valuesList[index]
+    val valuesList = values.toList()
+    val filteredValues = remember(values, valueDescriptions, query) {
+      val normalized = query.trim()
+      if (normalized.isEmpty()) valuesList else valuesList.filter { (key, label) ->
+        key.contains(normalized, ignoreCase = true) ||
+          label.contains(normalized, ignoreCase = true) ||
+          valueDescriptions[key]?.contains(normalized, ignoreCase = true) == true
+      }
+    }
+    AppPickerSheet(
+      onDismissRequest = {
+        showDialog = false
+        query = ""
+      },
+      titleContent = title,
+      scrollContent = false,
+      actions = {
+        TextButton(onClick = {
+          showDialog = false
+          query = ""
+        }) {
+          Text(stringResource(android.R.string.ok))
+        }
+      },
+    ) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (values.size >= 8) {
+          PlayerSheetSearchField(
+            query = query,
+            onQueryChange = { query = it },
+            placeholder = stringResource(R.string.generic_search),
+          )
+        }
+        if (filteredValues.isEmpty()) {
+          Text(
+            text = stringResource(R.string.generic_no_matching_options),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.fillMaxWidth().padding(vertical = 24.dp),
+          )
+        } else {
+          LazyColumn(modifier = Modifier.fillMaxWidth().heightIn(max = 360.dp)) {
+            items(count = filteredValues.size, key = { index -> filteredValues[index].first }) { index ->
+            val entry = filteredValues[index]
             val key = entry.first
             val checked =
               if (hasAllOption && (selectedValues.isEmpty() || selectedValues.contains("all"))) {
@@ -1250,15 +1301,11 @@ fun MultiChoicePreference(
                 }
               }
             }
+            }
           }
         }
-      },
-      confirmButton = {
-        TextButton(onClick = { showDialog = false }) {
-          Text(stringResource(android.R.string.ok))
-        }
-      },
-    )
+      }
+    }
   }
 }
 

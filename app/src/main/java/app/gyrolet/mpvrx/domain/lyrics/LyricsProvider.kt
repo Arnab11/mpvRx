@@ -7,15 +7,14 @@ package app.gyrolet.mpvrx.domain.lyrics
 /**
  * Online lyrics databases the repository can ask, in default priority order.
  *
- * Declaration order is the race order: every enabled provider is contacted, and
- * answers are taken in this sequence, so a word-timed hit from [BINI_LYRICS]
- * beats one from [GENIUS] even if Genius answered first. The order is also what
- * the picker on the lyrics page lists, which keeps "first" meaning the same
- * thing in settings, in the menu and in the lookup.
+ * Declaration order is the priority inside one quality tier. Every provider is
+ * contacted together; actual word-timed lyrics beat line-timed lyrics, which
+ * beat plain text. When two providers return the same timing quality, the one
+ * declared first wins. The picker uses this order too.
  *
- * [wordSynced] says whether a provider can return per-word timings — that is the
- * difference between a line lighting up and a word lighting up, and it is what
- * the auto-race prefers when more than one provider has the track.
+ * [wordSynced] describes provider capability for UI and diagnostics. Automatic
+ * selection inspects the returned lyrics because a capable provider can still
+ * return a line-synced fallback for one particular track.
  */
 enum class LyricsProvider(
   val label: String,
