@@ -66,6 +66,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
@@ -294,7 +295,7 @@ private fun MiniPlayerContent(
     glassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.30f),
     fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
   ) {
-    val primaryContainerColor = MaterialTheme.colorScheme.primaryContainer
+    val progressColor = MaterialTheme.colorScheme.primary
 
     if (isVideoMode) {
       // Calculate aspect ratio for video surface container
@@ -438,10 +439,21 @@ private fun MiniPlayerContent(
           .fillMaxWidth()
           .drawBehind {
             if (progressFraction > 0f) {
+              val playedWidth = size.width * progressFraction
               drawRect(
-                color = primaryContainerColor.copy(alpha = 0.35f),
+                color = progressColor.copy(alpha = 0.22f),
                 size = Size(
-                  width = size.width * progressFraction,
+                  width = playedWidth,
+                  height = size.height,
+                ),
+              )
+              // Blur and vibrancy wash out a flat fill, so mark the played boundary explicitly.
+              val edgeWidth = 2.dp.toPx().coerceAtMost(playedWidth)
+              drawRect(
+                color = progressColor.copy(alpha = 0.85f),
+                topLeft = Offset(x = playedWidth - edgeWidth, y = 0f),
+                size = Size(
+                  width = edgeWidth,
                   height = size.height,
                 ),
               )
