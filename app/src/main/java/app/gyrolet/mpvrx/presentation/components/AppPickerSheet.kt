@@ -66,6 +66,7 @@ fun AppPickerSheet(
   subtitle: String? = null,
   warning: String? = null,
   scrollContent: Boolean = true,
+  headerActions: @Composable RowScope.() -> Unit = {},
   actions: @Composable RowScope.() -> Unit = {},
   content: @Composable () -> Unit,
 ) {
@@ -103,36 +104,49 @@ fun AppPickerSheet(
             .padding(horizontal = 20.dp)
             .padding(bottom = 12.dp),
       ) {
-        if (titleContent != null) {
-          titleContent()
-        } else if (title.isNotBlank()) {
-          Text(
-            text = title,
-            style = MaterialTheme.typography.headlineSmall,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-          )
-        }
+        Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalAlignment = Alignment.Top,
+        ) {
+          Column(modifier = Modifier.weight(1f)) {
+            if (titleContent != null) {
+              titleContent()
+            } else if (title.isNotBlank()) {
+              Text(
+                text = title,
+                style = MaterialTheme.typography.headlineSmall,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+              )
+            }
 
-        if (subtitle != null) {
-          Text(
-            text = subtitle,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Medium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 2,
-            overflow = TextOverflow.Ellipsis,
-            modifier = Modifier.padding(top = 4.dp),
-          )
-        }
+            if (subtitle != null) {
+              Text(
+                text = subtitle,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.padding(top = 4.dp),
+              )
+            }
 
-        if (warning != null) {
-          Text(
-            text = warning,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 4.dp),
+            if (warning != null) {
+              Text(
+                text = warning,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.error,
+                modifier = Modifier.padding(top = 4.dp),
+              )
+            }
+          }
+          Row(
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            content = headerActions,
           )
         }
 

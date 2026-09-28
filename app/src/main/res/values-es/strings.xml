@@ -403,7 +403,12 @@ Siguiente: NEXT</string>
   <string name="player_sheets_sub_color_alpha">Alfa</string>
   <string name="player_sheets_sub_override_ass">Modificar subtítulos ASS/SSA</string>
   <string name="player_sheets_sub_override_ass_subtitle">Forzar la modificación del formato de subtítulos ASS/SSA</string>
-  <string name="player_sheets_sub_force_ltr">Forzar dirección de izquierda a derecha</string>
+  <string name="player_sheets_sub_force_rtl">Forzar dirección de derecha a izquierda</string>
+  <string name="player_sheets_sub_force_rtl_summary">Usar diseño de derecha a izquierda para subtítulos árabes, hebreos y otros RTL</string>
+  <string name="player_sheets_sub_primary_scale">Escala de subtítulos principales</string>
+  <string name="player_sheets_sub_primary_position">Posición de subtítulos principales</string>
+  <string name="player_sheets_secondary_sub_scale">Escala de subtítulos secundarios</string>
+  <string name="player_sheets_secondary_sub_position">Posición de subtítulos secundarios</string>
   <string name="player_sheets_sub_scale_by_window">Escalar según la ventana</string>
   <string name="player_sheets_sub_scale_by_window_summary">Escala el tamaño de los subtítulos con la ventana y los coloca dentro de los márgenes seguros del vídeo</string>
   <string name="player_sheets_sub_blend_with_video">Mezclar subtítulos con el vídeo</string>

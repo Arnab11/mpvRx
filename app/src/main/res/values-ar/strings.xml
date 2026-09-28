@@ -403,7 +403,12 @@
   <string name="player_sheets_sub_color_alpha">ألفا</string>
   <string name="player_sheets_sub_override_ass">تجاوز ترجمة ASS/SSA</string>
   <string name="player_sheets_sub_override_ass_subtitle">فرض تجاوز تنسيق ترجمة ASS/SSA</string>
-  <string name="player_sheets_sub_force_ltr">فرض الاتجاه من اليسار إلى اليمين</string>
+  <string name="player_sheets_sub_force_rtl">فرض الاتجاه من اليمين إلى اليسار</string>
+  <string name="player_sheets_sub_force_rtl_summary">استخدام تخطيط من اليمين إلى اليسار للترجمات العربية والعبرية وغيرها</string>
+  <string name="player_sheets_sub_primary_scale">مقياس الترجمة الأساسية</string>
+  <string name="player_sheets_sub_primary_position">موضع الترجمة الأساسية</string>
+  <string name="player_sheets_secondary_sub_scale">مقياس الترجمة الثانوية</string>
+  <string name="player_sheets_secondary_sub_position">موضع الترجمة الثانوية</string>
   <string name="player_sheets_sub_scale_by_window">التحجيم حسب النافذة</string>
   <string name="player_sheets_sub_scale_by_window_summary">يحجّم حجم الترجمة مع حجم النافذة ويضعها داخل الهوامش الآمنة للفيديو</string>
   <string name="player_sheets_sub_blend_with_video">دمج الترجمة مع الفيديو</string>

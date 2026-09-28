@@ -204,6 +204,16 @@ fun FilePickerDialog(
     subtitle = selectedPath
       ?: androidx.compose.ui.res.stringResource(app.gyrolet.mpvrx.R.string.ui_select_storage_location),
     scrollContent = false,
+    headerActions = {
+      NavigationButtons(
+        selectedPath = selectedPath,
+        onBack = { selectedPath = currentDir?.parent },
+        onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
+        onSystemPicker = onSystemPickerRequest,
+        buttonSize = 40.dp,
+        iconSize = 24.dp,
+      )
+    },
     actions = {
       TextButton(onClick = onDismiss) {
         Text(
@@ -221,21 +231,6 @@ fun FilePickerDialog(
       modifier = Modifier.fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-      Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-      ) {
-        NavigationButtons(
-          selectedPath = selectedPath,
-          onBack = { selectedPath = currentDir?.parent },
-          onHome = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
-          onSystemPicker = onSystemPickerRequest,
-          buttonSize = 40.dp,
-          iconSize = 24.dp,
-        )
-      }
-
       if (!showStorageRoot) {
         PlayerSheetSearchField(
           query = query,

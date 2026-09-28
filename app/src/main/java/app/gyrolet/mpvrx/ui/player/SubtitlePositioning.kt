@@ -11,11 +11,9 @@ package app.gyrolet.mpvrx.ui.player
 
 import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import org.koin.core.context.GlobalContext
-import kotlin.math.roundToInt
 
 private const val MIN_SUBTITLE_POSITION = 0
 private const val MAX_SUBTITLE_POSITION = 150
-private const val SECONDARY_SUBTITLE_POSITION_OFFSET = 10
 
 private val subtitlesPreferences by lazy {
   GlobalContext.get().get<SubtitlesPreferences>()
@@ -81,46 +79,6 @@ fun getSubtitleHitboxBounds(
   return Pair(lowerBound, upperBound)
 }
 
-fun calculateSecondarySubtitlePosition(
-  primaryPosition: Int,
-  screenWidth: Float? = null,
-  screenHeight: Float? = null,
-): Int {
-  val primary = clampSubtitlePosition(primaryPosition)
-
-  val width =
-    screenWidth ?: PlaybackSession.getPropertyInt("osd-width")?.toFloat()
-      ?: GlobalContext
-        .get()
-        .get<android.content.Context>()
-        .resources.displayMetrics.widthPixels
-        .toFloat()
-  val height =
-    screenHeight ?: PlaybackSession.getPropertyInt("osd-height")?.toFloat()
-      ?: GlobalContext
-        .get()
-        .get<android.content.Context>()
-        .resources.displayMetrics.heightPixels
-        .toFloat()
-
-  // Calculate the hitbox of the primary subtitle
-  val (_, upperBound) = getSubtitleHitboxBounds(width, height)
-
-  // Convert the hitbox height (pixels) to a percentage of the screen/OSD height
-  val offsetPercent = (upperBound / height) * 100f
-
-  // Dynamic offset, clamped to a reasonable range
-  val offset = offsetPercent.roundToInt().coerceIn(8, 50)
-
-  val abovePrimary = primary - offset
-
-  return if (abovePrimary >= MIN_SUBTITLE_POSITION) {
-    abovePrimary
-  } else {
-    (primary + offset).coerceIn(MIN_SUBTITLE_POSITION, MAX_SUBTITLE_POSITION)
-  }
-}
-
 fun isSecondarySubtitleActive(): Boolean = getTrackSelectionId("secondary-sid") > 0
 
 fun subtitleAssOverrideValue(
@@ -136,37 +94,18 @@ fun applySubtitleOverrides(forceAssOverride: Boolean) {
 
 fun applySubtitlePositions(
   primaryPosition: Int,
-  screenWidth: Float? = null,
-  screenHeight: Float? = null,
+  secondaryPosition: Int = subtitlesPreferences.secondarySubPos.get(),
 ) {
   val primary = clampSubtitlePosition(primaryPosition)
   PlaybackSession.setPropertyInt("sub-pos", primary)
-
-  // Retrieve OSD or display dimensions as fallbacks if null
-  val width =
-    screenWidth ?: PlaybackSession.getPropertyInt("osd-width")?.toFloat()
-      ?: GlobalContext
-        .get()
-        .get<android.content.Context>()
-        .resources.displayMetrics.widthPixels
-        .toFloat()
-  val height =
-    screenHeight ?: PlaybackSession.getPropertyInt("osd-height")?.toFloat()
-      ?: GlobalContext
-        .get()
-        .get<android.content.Context>()
-        .resources.displayMetrics.heightPixels
-        .toFloat()
-
-  PlaybackSession.setPropertyInt("secondary-sub-pos", calculateSecondarySubtitlePosition(primary, width, height))
+  PlaybackSession.setPropertyInt("secondary-sub-pos", clampSubtitlePosition(secondaryPosition))
 }
 
 fun applySubtitleLayout(
   primaryPosition: Int,
   forceAssOverride: Boolean,
-  screenWidth: Float? = null,
-  screenHeight: Float? = null,
+  secondaryPosition: Int = subtitlesPreferences.secondarySubPos.get(),
 ) {
   applySubtitleOverrides(forceAssOverride)
-  applySubtitlePositions(primaryPosition, screenWidth, screenHeight)
+  applySubtitlePositions(primaryPosition, secondaryPosition)
 }

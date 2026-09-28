@@ -152,6 +152,63 @@ fun FolderPickerDialog(
         null
       },
     scrollContent = false,
+    headerActions = {
+      if (selectedPath != null) {
+        FilledTonalIconButton(
+          onClick = { selectedPath = currentDir?.parent },
+          modifier = Modifier.size(40.dp),
+          colors =
+            IconButtonDefaults.filledTonalIconButtonColors(
+              containerColor = MaterialTheme.colorScheme.secondaryContainer,
+              contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            ),
+          shape = MaterialTheme.shapes.extraLarge,
+        ) {
+          Icon(
+            imageVector = Icons.RoundedFilled.ArrowBack,
+            contentDescription =
+              androidx.compose.ui.res
+                .stringResource(app.gyrolet.mpvrx.R.string.ui_go_back),
+          )
+        }
+      }
+      FilledTonalIconButton(
+        onClick = { selectedPath = Environment.getExternalStorageDirectory().absolutePath },
+        modifier = Modifier.size(40.dp),
+        colors =
+          IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+          ),
+        shape = MaterialTheme.shapes.extraLarge,
+      ) {
+        Icon(
+          imageVector = Icons.RoundedFilled.Home,
+          contentDescription =
+            androidx.compose.ui.res.stringResource(
+              app.gyrolet.mpvrx.R.string.ui_go_to_internal_storage,
+            ),
+        )
+      }
+      FilledTonalIconButton(
+        onClick = { showCreateFolderDialog = true },
+        enabled = selectedPath != null,
+        modifier = Modifier.size(40.dp),
+        colors =
+          IconButtonDefaults.filledTonalIconButtonColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          ),
+        shape = MaterialTheme.shapes.extraLarge,
+      ) {
+        Icon(
+          imageVector = Icons.RoundedFilled.CreateNewFolder,
+          contentDescription =
+            androidx.compose.ui.res
+              .stringResource(app.gyrolet.mpvrx.R.string.ui_create_folder),
+        )
+      }
+    },
     actions = {
       TextButton(
         onClick = onDismiss,
@@ -188,75 +245,6 @@ fun FolderPickerDialog(
       modifier = Modifier.fillMaxWidth(),
       verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        // Navigation buttons
-        Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-          // Back button - go to parent or storage root
-          if (selectedPath != null) {
-            FilledTonalIconButton(
-              onClick = {
-                val parent = currentDir?.parent
-                selectedPath = parent // null will show storage root
-              },
-              colors =
-                IconButtonDefaults.filledTonalIconButtonColors(
-                  containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                  contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                ),
-              shape = MaterialTheme.shapes.extraLarge,
-            ) {
-              Icon(
-                imageVector = Icons.RoundedFilled.ArrowBack,
-                contentDescription =
-                  androidx.compose.ui.res
-                    .stringResource(app.gyrolet.mpvrx.R.string.ui_go_back),
-              )
-            }
-          }
-
-          // Home button - go to internal storage
-          FilledTonalIconButton(
-            onClick = {
-              selectedPath = Environment.getExternalStorageDirectory().absolutePath
-            },
-            colors =
-              IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-              ),
-            shape = MaterialTheme.shapes.extraLarge,
-          ) {
-            Icon(
-              imageVector = Icons.RoundedFilled.Home,
-              contentDescription =
-                androidx.compose.ui.res.stringResource(
-                  app.gyrolet.mpvrx.R.string.ui_go_to_internal_storage,
-                ),
-            )
-          }
-
-          // Create folder button - only enabled when not at storage root
-          FilledTonalIconButton(
-            onClick = { showCreateFolderDialog = true },
-            enabled = selectedPath != null,
-            colors =
-              IconButtonDefaults.filledTonalIconButtonColors(
-                containerColor = MaterialTheme.colorScheme.primaryContainer,
-                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-              ),
-            shape = MaterialTheme.shapes.extraLarge,
-          ) {
-            Icon(
-              imageVector = Icons.RoundedFilled.CreateNewFolder,
-              contentDescription =
-                androidx.compose.ui.res
-                  .stringResource(app.gyrolet.mpvrx.R.string.ui_create_folder),
-            )
-          }
-        }
-
         if (!showStorageRoot) {
           PlayerSheetSearchField(
             query = query,

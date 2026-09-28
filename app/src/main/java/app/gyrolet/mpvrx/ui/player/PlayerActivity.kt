@@ -1232,7 +1232,9 @@ class PlayerActivity :
           if (canIssueMpvCommands()) {
             val scaleByWindow = subtitlesPreferences.scaleByWindow.get()
             val baseSubScale = subtitlesPreferences.subScale.get()
+            val baseSecondarySubScale = subtitlesPreferences.secondarySubScale.get()
             val baseSubPos = subtitlesPreferences.subPos.get()
+            val baseSecondarySubPos = subtitlesPreferences.secondarySubPos.get()
             val w = player.width.takeIf { it > 0 }?.toFloat()
               ?: resources.displayMetrics.widthPixels.toFloat()
             val h = player.height.takeIf { it > 0 }?.toFloat()
@@ -1240,11 +1242,16 @@ class PlayerActivity :
 
             if (scaleByWindow && (scale != 1f || panX != 0f || panY != 0f)) {
               val compensatedSubScale = (baseSubScale / scale).coerceIn(0.05f, 10f)
+              val compensatedSecondarySubScale = (baseSecondarySubScale / scale).coerceIn(0.05f, 10f)
               PlaybackSession.setPropertyFloat("sub-scale", compensatedSubScale)
-              PlaybackSession.setPropertyFloat("secondary-sub-scale", compensatedSubScale)
+              PlaybackSession.setPropertyFloat("secondary-sub-scale", compensatedSecondarySubScale)
 
               val compensatedSubPos =
                 (50f + ((baseSubPos - 50f) - (panY / h) * 100f) / scale).roundToInt().coerceIn(0, 150)
+              val compensatedSecondarySubPos =
+                (50f + ((baseSecondarySubPos - 50f) - (panY / h) * 100f) / scale)
+                  .roundToInt()
+                  .coerceIn(0, 150)
 
               val baseMarginX = 25f
               val extraMarginX = if (scale > 1f) (w * (1f - 1f / scale) / 2f + abs(panX) / scale) else 0f
@@ -1254,15 +1261,21 @@ class PlayerActivity :
                 PlaybackSession.setPropertyInt("secondary-sub-margin-x", compensatedMarginX)
               }
 
-              applySubtitlePositions(compensatedSubPos, w, h)
+              applySubtitlePositions(
+                compensatedSubPos,
+                secondaryPosition = compensatedSecondarySubPos,
+              )
             } else {
               PlaybackSession.setPropertyFloat("sub-scale", baseSubScale)
-              PlaybackSession.setPropertyFloat("secondary-sub-scale", baseSubScale)
+              PlaybackSession.setPropertyFloat("secondary-sub-scale", baseSecondarySubScale)
               PlaybackSession.setPropertyInt("sub-margin-x", 25)
               if (supportsSecondarySubMarginX()) {
                 PlaybackSession.setPropertyInt("secondary-sub-margin-x", 25)
               }
-              applySubtitlePositions(baseSubPos, w, h)
+              applySubtitlePositions(
+                baseSubPos,
+                secondaryPosition = baseSecondarySubPos,
+              )
             }
           }
         }
@@ -4158,9 +4171,7 @@ class PlayerActivity :
       "sub-text" -> {
         if (isSecondarySubtitleActive()) {
           val primaryPosition = subtitlesPreferences.subPos.get()
-          val width = player.width.takeIf { it > 0 }?.toFloat()
-          val height = player.height.takeIf { it > 0 }?.toFloat()
-          applySubtitlePositions(primaryPosition, width, height)
+          applySubtitlePositions(primaryPosition)
         }
       }
       else -> {
@@ -4229,9 +4240,7 @@ class PlayerActivity :
       "sub-scale" -> {
         if (isSecondarySubtitleActive()) {
           val primaryPosition = subtitlesPreferences.subPos.get()
-          val width = player.width.takeIf { it > 0 }?.toFloat()
-          val height = player.height.takeIf { it > 0 }?.toFloat()
-          applySubtitlePositions(primaryPosition, width, height)
+          applySubtitlePositions(primaryPosition)
         }
       }
     }
@@ -4769,6 +4778,7 @@ class PlayerActivity :
     val scaleByWindow = subtitlesPreferences.scaleByWindow.get()
     val scaleValue = if (scaleByWindow) "yes" else "no"
     val subScale = subtitlesPreferences.subScale.get()
+    val secondarySubScale = subtitlesPreferences.secondarySubScale.get()
     val blendMode =
       if (subtitlesPreferences.blendSubtitlesWithVideo.get() &&
         playerPreferences.isAmbientEnabled.get()
@@ -4781,7 +4791,7 @@ class PlayerActivity :
     PlaybackSession.setPropertyString("blend-subtitles", blendMode)
 
     PlaybackSession.setPropertyInt("sub-font-size", fontSize)
-    for (prefix in listOf("sub-", "secondary-sub-")) {
+    for ((prefix, scale) in listOf("sub-" to subScale, "secondary-sub-" to secondarySubScale)) {
       PlaybackSession.setPropertyString("${prefix}font", font)
       PlaybackSession.setPropertyBoolean("${prefix}bold", bold)
       PlaybackSession.setPropertyBoolean("${prefix}italic", italic)
@@ -4796,14 +4806,12 @@ class PlayerActivity :
       PlaybackSession.setPropertyString("${prefix}shadow-color", shadowColor)
       PlaybackSession.setPropertyString("${prefix}scale-by-window", scaleValue)
       PlaybackSession.setPropertyString("${prefix}use-margins", scaleValue)
-      PlaybackSession.setPropertyFloat("${prefix}scale", subScale)
+      PlaybackSession.setPropertyFloat("${prefix}scale", scale)
     }
 
     applySubtitleLayout(
       primaryPosition = subtitlesPreferences.subPos.get(),
       forceAssOverride = subtitlesPreferences.overrideAssSubs.get(),
-      screenWidth = player.width.takeIf { it > 0 }?.toFloat(),
-      screenHeight = player.height.takeIf { it > 0 }?.toFloat(),
     )
 
     Log.d(TAG, "Applied subtitle preferences")
@@ -5074,8 +5082,6 @@ class PlayerActivity :
     applySubtitleLayout(
       primaryPosition = subtitlesPreferences.subPos.get(),
       forceAssOverride = subtitlesPreferences.overrideAssSubs.get(),
-      screenWidth = player.width.takeIf { it > 0 }?.toFloat(),
-      screenHeight = player.height.takeIf { it > 0 }?.toFloat(),
     )
 
     if (restoreAudioTrack && state.aid > 0 && player.aid != state.aid) {

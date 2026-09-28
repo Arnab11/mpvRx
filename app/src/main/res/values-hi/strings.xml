@@ -401,7 +401,12 @@
   <string name="player_sheets_sub_color_alpha">अल्फा</string>
   <string name="player_sheets_sub_override_ass">ASS/SSA सबटाइटल ओवरराइड करें</string>
   <string name="player_sheets_sub_override_ass_subtitle">ASS/SSA सबटाइटल फॉर्मेटिंग को जबरदस्ती ओवरराइड करें</string>
-  <string name="player_sheets_sub_force_ltr">बाएँ से दाएँ दिशा लागू करें</string>
+  <string name="player_sheets_sub_force_rtl">दाएँ से बाएँ दिशा लागू करें</string>
+  <string name="player_sheets_sub_force_rtl_summary">अरबी, हिब्रू और अन्य RTL सबटाइटल के लिए दाएँ से बाएँ लेआउट उपयोग करें</string>
+  <string name="player_sheets_sub_primary_scale">प्राथमिक सबटाइटल स्केल</string>
+  <string name="player_sheets_sub_primary_position">प्राथमिक सबटाइटल स्थिति</string>
+  <string name="player_sheets_secondary_sub_scale">द्वितीयक सबटाइटल स्केल</string>
+  <string name="player_sheets_secondary_sub_position">द्वितीयक सबटाइटल स्थिति</string>
   <string name="player_sheets_sub_scale_by_window">विंडो के हिसाब से स्केल करें</string>
   <string name="player_sheets_sub_scale_by_window_summary">विंडो के साइज़ के साथ सबटाइटल का साइज़ बदलें और उन्हें वीडियो के सुरक्षित मार्जिन (safe-area) में रखें</string>
   <string name="player_sheets_sub_blend_with_video">सबटाइटल को वीडियो के साथ ब्लेंड करें</string>
