@@ -1204,7 +1204,13 @@ fun AudioPlayerControls(
       )
     }
   val edgeToEdgeVisualizer = showVisualizer && (!showInPlaceLyrics || isTabletLandscape)
-  val controlsSidePadding = if (edgeToEdgeVisualizer) 16.dp else 0.dp
+  // In-place lyrics run flush against the screen edges, so the root padding moves onto
+  // the header and the footer instead of boxing the lyrics in.
+  val flushInPlaceLyrics = showInPlaceLyrics && isPortrait
+  val controlsSidePadding = if (edgeToEdgeVisualizer || flushInPlaceLyrics) 16.dp else 0.dp
+  // The header keeps the side and top padding the root gives up while the lyrics are flush.
+  val headerContentPadding =
+    if (flushInPlaceLyrics) Modifier.padding(start = 16.dp, top = 6.dp, end = 16.dp) else Modifier
   Box(
     modifier =
       modifier
@@ -1247,8 +1253,8 @@ fun AudioPlayerControls(
             WindowInsets.safeDrawing
           },
         )
-        .padding(horizontal = if (edgeToEdgeVisualizer) 0.dp else 16.dp)
-        .padding(top = if (edgeToEdgeVisualizer) 0.dp else 6.dp, bottom = 12.dp),
+        .padding(horizontal = if (edgeToEdgeVisualizer || flushInPlaceLyrics) 0.dp else 16.dp)
+        .padding(top = if (edgeToEdgeVisualizer || flushInPlaceLyrics) 0.dp else 6.dp, bottom = 12.dp),
   ) {
     val headerBar = @Composable {
       Box(modifier = Modifier.fillMaxWidth()) {
@@ -1831,6 +1837,19 @@ fun AudioPlayerControls(
           }
         }
       }
+    }
+
+    val lyricsSourceLineView = @Composable {
+      val lyricsState by viewModel.lyricsUiState.collectAsState()
+      app.gyrolet.mpvrx.ui.player.controls.components.LyricsSourceLine(
+        preferredProvider = lyricsState.preferredProvider,
+        onlineProvider = lyricsState.onlineProvider,
+        isLoading = lyricsState.isLoading,
+        onOpenSheet = {
+          onOpenSheet(Sheets.LyricsProvider)
+          resetInactivityTimer()
+        },
+      )
     }
 
     val currentLyricStripView = @Composable {
@@ -2430,9 +2449,12 @@ fun AudioPlayerControls(
             exit = fadeOut(animationSpec = tween(300)) +
               androidx.compose.animation.shrinkVertically(animationSpec = tween(300)),
           ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+              modifier = Modifier.fillMaxWidth().then(headerContentPadding),
+              horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
               headerBar()
-              Spacer(modifier = Modifier.height(16.dp))
+              if (!showInPlaceLyrics) Spacer(modifier = Modifier.height(16.dp))
             }
           }
 
@@ -2455,7 +2477,9 @@ fun AudioPlayerControls(
               currentLyricStripView()
               Spacer(modifier = Modifier.height(4.dp))
             } else {
-              Spacer(modifier = Modifier.height(10.dp))
+              Spacer(modifier = Modifier.height(6.dp))
+              lyricsSourceLineView()
+              Spacer(modifier = Modifier.height(4.dp))
             }
             seekbarView()
             Spacer(modifier = Modifier.height(28.dp))
@@ -2513,7 +2537,9 @@ fun AudioPlayerControls(
               currentLyricStripView()
               Spacer(modifier = Modifier.height(4.dp))
             } else {
-              Spacer(modifier = Modifier.height(8.dp))
+              Spacer(modifier = Modifier.height(4.dp))
+              lyricsSourceLineView()
+              Spacer(modifier = Modifier.height(4.dp))
             }
             seekbarView()
             Spacer(modifier = Modifier.height(14.dp))
