@@ -341,7 +341,7 @@ fun MpvrxTheme(
   }
 }
 
-private fun resolveAppColorScheme(
+internal fun resolveAppColorScheme(
   context: Context,
   appTheme: AppTheme,
   customTheme: CustomThemeDefinition?,

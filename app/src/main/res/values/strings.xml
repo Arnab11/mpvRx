@@ -1396,6 +1396,11 @@
   <string name="pref_player_web_stream_links_title">Open streaming site links</string>
   <string name="pref_player_web_stream_links_summary">Offer mpvRx for supported streaming-site links and shared text links. Media files and direct media URLs remain available when disabled.</string>
   <string name="player_unknown_video">Unknown Video</string>
+  <string name="media_widget_name">mpvRx playback</string>
+  <string name="media_widget_description">Control audio and video playback</string>
+  <string name="media_widget_empty">Nothing playing</string>
+  <string name="media_widget_audio">Audio</string>
+  <string name="media_widget_video">Video</string>
   <string name="ui_logcat">Logcat:</string>
   <string name="ui_home">Home</string>
   <string name="ui_music">Music</string>

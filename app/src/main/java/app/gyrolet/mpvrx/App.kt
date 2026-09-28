@@ -14,6 +14,7 @@ import android.app.ActivityManager
 import android.app.Application
 import android.content.ComponentName
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
@@ -26,16 +27,20 @@ import app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository
 import app.gyrolet.mpvrx.di.DatabaseModule
 import app.gyrolet.mpvrx.di.FileManagerModule
 import app.gyrolet.mpvrx.di.PreferencesModule
+import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.presentation.crash.CrashActivity
 import app.gyrolet.mpvrx.presentation.crash.CrashReportStore
 import app.gyrolet.mpvrx.domain.network.NetworkImageRepository
 import app.gyrolet.mpvrx.repository.NetworkRepository
-import app.gyrolet.mpvrx.ui.player.PlaybackPerformanceTrace
+import app.gyrolet.mpvrx.ui.player.MediaPlayerWidget
 import app.gyrolet.mpvrx.ui.player.PlaybackPhase
+import app.gyrolet.mpvrx.ui.player.PlaybackPerformanceTrace
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
+import app.gyrolet.mpvrx.ui.theme.AppTheme
+import app.gyrolet.mpvrx.ui.theme.DarkMode
 import com.developer.crashx.config.CrashConfig
 import `is`.xyz.mpv.FastThumbnails
 import kotlinx.coroutines.CancellationException
@@ -43,8 +48,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.annotation.KoinExperimentalAPI
@@ -62,6 +69,14 @@ class App :
   private val fastThumbnailsStarted = AtomicBoolean(false)
   private val imageCacheCleanupStarted = AtomicBoolean(false)
   private var startedActivityCount = 0
+
+  private data class WidgetAppearanceState(
+    val darkMode: DarkMode,
+    val appTheme: AppTheme,
+    val customTheme: String,
+    val selectedCustomThemeName: String,
+    val amoledMode: Boolean,
+  )
 
   companion object {
     private const val TAG = "App"
@@ -128,6 +143,7 @@ class App :
     PlaybackSession.addObserver(PlaybackPerformanceTrace)
     startPlaybackPerformanceTracing()
     startIdleMpvCoreReaper()
+    startWidgetUpdates()
 
     applicationScope.launch {
       runCatching {
@@ -176,6 +192,33 @@ class App :
     // scan of the entire external-storage root from process startup: on large libraries that can
     // wake storage for minutes and duplicate work the platform already performs when media changes.
     // Explicit library refreshes and normal MediaStore notifications still invalidate app caches.
+  }
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    MediaPlayerWidget.requestUpdate(this)
+  }
+
+  private fun startWidgetUpdates() {
+    val appearancePreferences: AppearancePreferences = getKoin().get()
+    applicationScope.launch {
+      combine(
+        appearancePreferences.darkMode.changes(),
+        appearancePreferences.appTheme.changes(),
+        appearancePreferences.customTheme.changes(),
+        appearancePreferences.selectedCustomThemeName.changes(),
+        appearancePreferences.amoledMode.changes(),
+      ) { darkMode, appTheme, customTheme, selectedCustomThemeName, amoledMode ->
+        WidgetAppearanceState(darkMode, appTheme, customTheme, selectedCustomThemeName, amoledMode)
+      }.distinctUntilChanged().collect {
+        MediaPlayerWidget.requestUpdate(this@App)
+      }
+    }
+    applicationScope.launch {
+      combine(PlaybackSession.state, PlaybackSession.queue) { state, queue -> state to queue }
+        .distinctUntilChanged()
+        .collect { MediaPlayerWidget.requestUpdate(this@App) }
+    }
   }
 
   override fun onActivityStarted(activity: Activity) {
