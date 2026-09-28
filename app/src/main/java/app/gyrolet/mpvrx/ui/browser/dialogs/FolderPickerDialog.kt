@@ -46,6 +46,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.utils.storage.StorageVolumeUtils
@@ -122,44 +123,54 @@ fun FolderPickerDialog(
     return
   }
 
-  AlertDialog(
+  AppPickerSheet(
     onDismissRequest = onDismiss,
-    title = {
-      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    title =
+      androidx.compose.ui.res
+        .stringResource(app.gyrolet.mpvrx.R.string.ui_select_folder),
+    subtitle = selectedPath
+      ?: androidx.compose.ui.res
+        .stringResource(app.gyrolet.mpvrx.R.string.ui_select_storage_location),
+    warning =
+      if (isSameAsSource) {
+        androidx.compose.ui.res
+          .stringResource(app.gyrolet.mpvrx.R.string.ui_cannot_select_the_same_folder)
+      } else {
+        null
+      },
+    actions = {
+      TextButton(
+        onClick = onDismiss,
+        shape = MaterialTheme.shapes.extraLarge,
+      ) {
         Text(
-          text =
-            androidx.compose.ui.res
-              .stringResource(app.gyrolet.mpvrx.R.string.ui_select_folder),
-          style = MaterialTheme.typography.headlineMedium,
+          androidx.compose.ui.res
+            .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
+          fontWeight = FontWeight.Medium,
+        )
+      }
+      Button(
+        onClick = { selectedPath?.let { onFolderSelected(it) } },
+        enabled = selectedPath != null && !isSameAsSource,
+        colors =
+          ButtonDefaults.buttonColors(
+            containerColor = MaterialTheme.colorScheme.primary,
+          ),
+        shape = MaterialTheme.shapes.extraLarge,
+      ) {
+        Text(
+          androidx.compose.ui.res
+            .stringResource(app.gyrolet.mpvrx.R.string.ui_select),
           fontWeight = FontWeight.Bold,
         )
-        Text(
-          text = selectedPath ?: "Select a storage location",
-          style = MaterialTheme.typography.bodyMedium,
-          fontWeight = FontWeight.Medium,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          maxLines = 2,
-          overflow = TextOverflow.Ellipsis,
-          modifier = Modifier.padding(top = 4.dp),
-        )
-        if (isSameAsSource) {
-          Text(
-            text =
-              androidx.compose.ui.res
-                .stringResource(app.gyrolet.mpvrx.R.string.ui_cannot_select_the_same_folder),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.error,
-            modifier = Modifier.padding(top = 4.dp),
-          )
-        }
       }
     },
-    text = {
-      Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-      ) {
+    modifier = modifier,
+  ) {
+    Column(
+      modifier = Modifier.fillMaxWidth(),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
         // Navigation buttons
         Row(
           modifier = Modifier.fillMaxWidth(),
@@ -289,41 +300,7 @@ fun FolderPickerDialog(
           }
         }
       }
-    },
-    confirmButton = {
-      Button(
-        onClick = { selectedPath?.let { onFolderSelected(it) } },
-        enabled = selectedPath != null && !isSameAsSource,
-        colors =
-          ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-          ),
-        shape = MaterialTheme.shapes.extraLarge,
-      ) {
-        Text(
-          androidx.compose.ui.res
-            .stringResource(app.gyrolet.mpvrx.R.string.ui_select),
-          fontWeight = FontWeight.Bold,
-        )
-      }
-    },
-    dismissButton = {
-      TextButton(
-        onClick = onDismiss,
-        shape = MaterialTheme.shapes.extraLarge,
-      ) {
-        Text(
-          androidx.compose.ui.res
-            .stringResource(app.gyrolet.mpvrx.R.string.generic_cancel),
-          fontWeight = FontWeight.Medium,
-        )
-      }
-    },
-    containerColor = MaterialTheme.colorScheme.surface,
-    tonalElevation = 6.dp,
-    shape = MaterialTheme.shapes.extraLarge,
-    modifier = modifier,
-  )
+  }
 }
 
 @Composable

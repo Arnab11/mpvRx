@@ -1455,6 +1455,7 @@
   <string name="ui_no_storage_devices_found">No storage devices found</string>
   <string name="ui_no_folders_or_supported_files">No folders or supported files</string>
   <string name="ui_select_folder">Select Folder</string>
+  <string name="ui_select_storage_location">Select a storage location</string>
   <string name="ui_cannot_select_the_same_folder">Cannot select the same folder</string>
   <string name="ui_no_subfolders">No subfolders</string>
   <string name="ui_select">Select</string>
