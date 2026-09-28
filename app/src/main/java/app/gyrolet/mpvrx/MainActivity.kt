@@ -86,6 +86,7 @@ import app.gyrolet.mpvrx.ui.utils.ScreenNavDisplay
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import app.gyrolet.mpvrx.utils.device.VulkanCapabilities
 import app.gyrolet.mpvrx.utils.device.DeviceFormFactor
+import app.gyrolet.mpvrx.utils.device.appUiScaleOverrideConfiguration
 import app.gyrolet.mpvrx.utils.media.fileExtension
 import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
@@ -290,11 +291,11 @@ class MainActivity : AppCompatActivity() {
       return
     }
 
-    val baseConfiguration = Configuration(newBase.resources.configuration)
-    val appUiScale = appearancePreferences.appUiScale.get().coerceIn(0.5f, 1.5f)
-    baseConfiguration.fontScale = 1f
-    baseConfiguration.densityDpi = (baseConfiguration.densityDpi * appUiScale).toInt()
-    super.attachBaseContext(newBase.createConfigurationContext(baseConfiguration))
+    // An override configuration is re-merged by the framework on every configuration change.
+    // createConfigurationContext() is not, so rotation would drop the scale on devices that
+    // handle the rotation themselves instead of recreating the activity.
+    applyOverrideConfiguration(appUiScaleOverrideConfiguration(newBase, appearancePreferences.appUiScale.get()))
+    super.attachBaseContext(newBase)
   }
 
   override fun onStart() {
