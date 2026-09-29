@@ -9,6 +9,9 @@
 
 package app.gyrolet.mpvrx.ui.player.controls
 
+import app.gyrolet.mpvrx.ui.player.PlayerArtworkDestination
+import app.gyrolet.mpvrx.ui.player.playerArtworkAnchor
+import app.gyrolet.mpvrx.ui.player.swipeDownToMiniPlayer
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 
 import android.Manifest
@@ -1222,6 +1225,10 @@ fun AudioPlayerControls(
   Box(
     modifier =
       modifier
+        .swipeDownToMiniPlayer(
+          enabled = !isSheetOpen && !showInPlaceLyrics && !isLyricsFullscreen,
+          onMinimize = viewModel::minimizeToMiniPlayer,
+        )
         .fillMaxSize()
         .background(MaterialTheme.colorScheme.surface)
         .drawWithCache {
@@ -1553,6 +1560,12 @@ fun AudioPlayerControls(
                 modifier = Modifier
                   .aspectRatio(1f)
                   .offset { IntOffset(currentOffset.roundToInt(), 0) }
+                  .playerArtworkAnchor(
+                    PlayerArtworkDestination.FULL,
+                    currentItem?.stableId,
+                    albumArtBitmap,
+                    32.dp,
+                  )
                   .clip(coverShape),
                 shape = coverShape,
                 color = Color.Transparent,
