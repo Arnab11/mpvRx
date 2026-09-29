@@ -133,8 +133,6 @@ android {
     create("preview") {
       initWith(getByName("release"))
       signingConfig = signingConfigs.getByName("debug")
-      applicationIdSuffix = ".preview"
-      resValue("string", "app_name", "mpvRx-Preview")
       buildConfigField("boolean", "IS_PREVIEW_BUILD", "true")
       versionNameSuffix = "-beta.r${getCommitCount()}"
     }
