@@ -7909,6 +7909,8 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
               ?: existingItem?.artworkUri
               ?: (if (index == playlistIndex) launchPosterUrl else null),
           durationSeconds = existingItem?.durationSeconds,
+          videoWidth = existingItem?.videoWidth ?: 0,
+          videoHeight = existingItem?.videoHeight ?: 0,
         )
       }
 

@@ -292,6 +292,8 @@ data class PlaylistDetailScreen(
               mimeType = if (isAudio) "audio/*" else playlistEntry.video.mimeType,
               headers = headersMap,
               durationSeconds = (playlistEntry.video.duration / 1000L).toInt().takeIf { it > 0 },
+              videoWidth = playlistEntry.video.width,
+              videoHeight = playlistEntry.video.height,
             )
           }
         MediaUtils.playInMiniPlayer(context, queueItems, startIndex)
