@@ -201,6 +201,8 @@ fun FileSystemBrowserScreen(path: String? = null) {
   val isLoading by viewModel.isLoading.collectAsState()
   val error by viewModel.error.collectAsState()
   val isAtRoot by viewModel.isAtRoot.collectAsState()
+  val isArchiveBrowser = path?.let(ZipArchiveMedia::isBrowserPath) == true
+  val isAppRoot = isAtRoot && !isArchiveBrowser
   val breadcrumbs by viewModel.breadcrumbs.collectAsState()
   val playlistMode by playerPreferences.playlistMode.collectAsState()
   val itemsWereDeletedOrMoved by viewModel.itemsWereDeletedOrMoved.collectAsState()
@@ -332,7 +334,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
   }
 
   app.gyrolet.mpvrx.ui.browser.NavigationBarSelectionEffect(isInSelectionMode)
-  val isActiveRoot = isAtRoot && app.gyrolet.mpvrx.ui.utils.LocalNavigationPageActive.current
+  val isActiveRoot = isAppRoot && app.gyrolet.mpvrx.ui.utils.LocalNavigationPageActive.current
   androidx.lifecycle.compose.LifecycleResumeEffect(isActiveRoot, showBottomNavigation, isPermissionSetupCompleted) {
     if (isActiveRoot) {
       try {
@@ -363,35 +365,6 @@ fun FileSystemBrowserScreen(path: String? = null) {
           )
         }
         MediaUtils.playFile(it.toString(), context, "open_file")
-      }
-    }
-
-  // ZIP picker
-  val zipPicker =
-    rememberLauncherForActivityResult(
-      contract = ActivityResultContracts.OpenDocument(),
-    ) { uri ->
-      uri?.let {
-        runCatching {
-          context.contentResolver.takePersistableUriPermission(
-            it,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION,
-          )
-        }
-        coroutineScope.launch {
-          val resolvedPath = ZipArchiveMedia.resolveZipPath(context, it)
-          if (resolvedPath != null && File(resolvedPath).canRead()) {
-            val archiveFile = File(resolvedPath)
-            val bucketId = ZipArchiveMedia.browserPath(archiveFile.absolutePath)
-            backstack.navigateTo(FileSystemDirectoryScreen(bucketId))
-          } else {
-            android.widget.Toast.makeText(
-              context,
-              context.getString(app.gyrolet.mpvrx.R.string.ui_cannot_open_zip),
-              android.widget.Toast.LENGTH_SHORT,
-            ).show()
-          }
-        }
       }
     }
 
@@ -430,13 +403,13 @@ fun FileSystemBrowserScreen(path: String? = null) {
     }
   }
 
-  LaunchedEffect(searchQuery, isSearching, isAtRoot, items) {
+  LaunchedEffect(searchQuery, isSearching, isAppRoot, items) {
     if (isSearching && searchQuery.isNotBlank()) {
       delay(250)
       isSearchLoading = true
       try {
         val results =
-          if (isAtRoot) {
+          if (isAppRoot) {
             items
               .filterIsInstance<FileSystemItem.Folder>()
               .flatMap { storageVolume ->
@@ -515,7 +488,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
             inputFieldModifier = Modifier.focusRequester(focusRequester),
             placeholder = {
               Text(
-                if (isAtRoot) {
+                if (isAppRoot) {
                   "Search in all storage volumes..."
                 } else {
                   "Search in ${breadcrumbs.lastOrNull()?.name ?: "folder"}..."
@@ -553,7 +526,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
         } else {
           BrowserTopBar(
             title =
-              if (isAtRoot) {
+              if (isAppRoot) {
                 stringResource(app.gyrolet.mpvrx.R.string.app_name)
               } else {
                 breadcrumbs.lastOrNull()?.name ?: "Tree View"
@@ -562,7 +535,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
             selectedCount = selectedCount,
             totalCount = totalCount,
             onBackClick =
-              if (isAtRoot) {
+              if (isAppRoot) {
                 null
               } else {
                 { backstack.popSafely() }
@@ -618,7 +591,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
       floatingActionButton = {
         val navigationBarHeight = app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight.current
         val miniPlayerClearance = app.gyrolet.mpvrx.ui.browser.NavigationBarState.miniPlayerClearance
-        if (isAtRoot) {
+        if (isAppRoot) {
           val isFabShouldBeVisible =
             showQuickPlayFab &&
               !isInSelectionMode &&
@@ -715,28 +688,6 @@ fun FileSystemBrowserScreen(path: String? = null) {
               FloatingActionButtonMenuItem(
                 onClick = {
                   isFabExpanded.value = false
-                  zipPicker.launch(
-                    arrayOf(
-                      "application/zip",
-                      "application/x-zip-compressed",
-                      "application/x-zip",
-                      "application/octet-stream",
-                    ),
-                  )
-                },
-                icon = { Icon(Icons.RoundedFilled.FolderZip, contentDescription = null) },
-                text = {
-                  Text(
-                    text =
-                      androidx.compose.ui.res
-                        .stringResource(app.gyrolet.mpvrx.R.string.ui_open_zip_folder),
-                  )
-                },
-              )
-
-              FloatingActionButtonMenuItem(
-                onClick = {
-                  isFabExpanded.value = false
                   coroutineScope.launch {
                     val recentlyPlayedVideos =
                       app.gyrolet.mpvrx.utils.history.RecentlyPlayedOps.getRecentlyPlayed(
@@ -779,7 +730,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
       }
   ) { padding ->
       Box(modifier = Modifier.padding(padding)) {
-        if (isPermissionSetupCompleted && permissionState.status == PermissionStatus.Granted) {
+        if (isArchiveBrowser || (isPermissionSetupCompleted && permissionState.status == PermissionStatus.Granted)) {
             if (isSearching) {
               // Show search results
               FileSystemSearchContent(
@@ -792,7 +743,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
                 videoFilesWithPlayback = videoFilesWithPlayback,
                 newVideoIds = newVideoIds,
                 showSubtitleIndicator = showSubtitleIndicator,
-                isAtRoot = isAtRoot,
+                isAtRoot = isAppRoot,
                 navigationBarHeight = navigationBarHeight,
                 isFabVisible = isFabVisible, // Pass FAB visibility state
                 onVideoClick = { video ->
@@ -957,7 +908,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
     FileSystemSortDialog(
       isOpen = sortDialogOpen.value,
       onDismiss = { sortDialogOpen.value = false },
-      isAtRoot = isAtRoot,
+      isAtRoot = isAppRoot,
     )
 
     if (deleteDialogOpen) {

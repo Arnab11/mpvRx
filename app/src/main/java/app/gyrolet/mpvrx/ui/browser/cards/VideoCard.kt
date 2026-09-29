@@ -199,6 +199,30 @@ fun VideoCard(
   val showDateChip = resolvedUiConfig.showDateChip
   val showUnplayedOldVideoLabel = resolvedUiConfig.showUnplayedOldVideoLabel
   val showDurationField = resolvedUiConfig.showDurationField
+  val showSizeChip = overrideShowSizeChip ?: resolvedUiConfig.showSizeChip
+  val showResolutionChip = overrideShowResolutionChip ?: resolvedUiConfig.showResolutionChip
+  val hasDuration = showDurationField && video.durationFormatted.isNotBlank() && video.durationFormatted != "--"
+  val hasSizeChip =
+    showSizeChip &&
+      video.sizeFormatted.isNotBlank() &&
+      video.sizeFormatted != "0 B" &&
+      video.sizeFormatted != "--"
+  val hasResolution = !video.isAudio && video.resolution.isNotBlank() && video.resolution != "--"
+  val fpsOnly = video.resolution.substringAfter("@", "")
+  val hasFps = hasResolution && fpsOnly.isNotEmpty()
+  val hasCodecChip = showCodecSupportIndicator && !video.isAudio && video.videoCodec.isNotBlank()
+  val hasSubtitleChips = showSubtitleIndicator && !video.isAudio && video.hasEmbeddedSubtitles && video.subtitleCodec.isNotBlank()
+  val hasDateMetadataChip = showDateChip && video.dateModified > 0
+  val hasResolutionMetadataChip = !isGridMode && showResolutionChip && hasResolution
+  val hasFramerateMetadataChip = showFramerateInResolution && hasFps && (isGridMode || !showResolutionChip)
+  val hasMetadataChips =
+    sourceLabel != null ||
+      hasCodecChip ||
+      hasSubtitleChips ||
+      hasSizeChip ||
+      hasResolutionMetadataChip ||
+      hasFramerateMetadataChip ||
+      hasDateMetadataChip
   val displayName =
     if (resolvedUiConfig.showExtensionField) {
       video.displayName
@@ -211,10 +235,6 @@ fun VideoCard(
   val selectionInset = 2.dp
   val selectionContainerColor = animatedSelectionColor(isSelected)
   val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f
-
-  // Use override parameters if provided, otherwise use preferences
-  val showSizeChip = overrideShowSizeChip ?: resolvedUiConfig.showSizeChip
-  val showResolutionChip = overrideShowResolutionChip ?: resolvedUiConfig.showResolutionChip
 
   val cardShape = AppShapeScale.large
 
@@ -425,7 +445,7 @@ fun VideoCard(
             }
 
             // Duration overlay
-            if (showDurationField) {
+            if (hasDuration) {
               Box(
                 modifier =
                   Modifier
@@ -442,7 +462,7 @@ fun VideoCard(
               }
             }
 
-            if (isGridMode && showResolutionChip && !video.isAudio && video.resolution != "--") {
+            if (isGridMode && showResolutionChip && hasResolution) {
               val displayResolution =
                 if (showFramerateInResolution) video.resolution else video.resolution.substringBefore("@")
               Box(
@@ -520,10 +540,7 @@ fun VideoCard(
               overflow = TextOverflow.Ellipsis,
             )
           }
-          if (
-            showSizeChip || showDateChip || sourceLabel != null ||
-            (!video.isAudio && (showResolutionChip || showFramerateInResolution || showSubtitleIndicator))
-          ) {
+          if (hasMetadataChips) {
             Spacer(modifier = Modifier.height(if (sourceLabel != null) 0.dp else 4.dp))
             FlowRow(
               modifier = Modifier.fillMaxWidth(),
@@ -554,7 +571,7 @@ fun VideoCard(
                   }
                 }
               }
-              if (showSizeChip && video.sizeFormatted != "0 B" && video.sizeFormatted != "--") {
+              if (hasSizeChip) {
                 Text(
                   video.sizeFormatted,
                   style = MaterialTheme.typography.labelSmall,
@@ -568,11 +585,8 @@ fun VideoCard(
                 )
               }
 
-              val fpsOnly = video.resolution.substringAfter("@", "")
-              val hasFps = fpsOnly.isNotEmpty()
-
               if (!isGridMode && showResolutionChip && !video.isAudio) {
-                if (video.resolution != "--") {
+                if (hasResolution) {
                   val displayResolution =
                     if (showFramerateInResolution) {
                       video.resolution
@@ -606,7 +620,7 @@ fun VideoCard(
                 )
               }
 
-              if (showDateChip && video.dateModified > 0) {
+              if (hasDateMetadataChip) {
                 Text(
                   formatDate(video.dateModified),
                   style = MaterialTheme.typography.labelSmall,
@@ -779,7 +793,7 @@ fun VideoCard(
             }
 
             // Duration timestamp overlay at bottom-right of the thumbnail
-            if (showDurationField) {
+            if (hasDuration) {
               Box(
                 modifier =
                   Modifier
@@ -855,75 +869,51 @@ fun VideoCard(
             )
               titleAction?.invoke()
             }
-          if (!sourceSubtitle.isNullOrBlank()) {
-            Text(
-              text = sourceSubtitle,
-              style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
-              maxLines = 1,
-              overflow = TextOverflow.Ellipsis,
-            )
-          }
-            Spacer(modifier = Modifier.height(if (sourceLabel != null) 0.dp else 4.dp))
-            FlowRow(
-              horizontalArrangement =
-                androidx.compose.foundation.layout.Arrangement
-                  .spacedBy(4.dp),
-              verticalArrangement =
-                androidx.compose.foundation.layout.Arrangement
-                  .spacedBy(4.dp),
-            ) {
-              if (sourceLabel != null) {
-                SourceChip(label = sourceLabel, color = sourceColor ?: MaterialTheme.colorScheme.surfaceContainerHigh)
-              }
-              if (showCodecSupportIndicator && !video.isAudio && video.videoCodec.isNotBlank()) {
-                CodecSupportIndicator(video = video)
-              }
-              if (showSubtitleIndicator && !video.isAudio) {
-                if (video.hasEmbeddedSubtitles && video.subtitleCodec.isNotBlank()) {
-                  video.subtitleCodec.split(" ").forEach { codec ->
-                    Text(
-                      text = codec,
-                      style = MaterialTheme.typography.labelSmall,
-                      modifier =
-                        Modifier
-                          .background(
-                            MaterialTheme.colorScheme.primary,
-                            AppShapeScale.small,
-                          ).padding(horizontal = 8.dp, vertical = 4.dp),
-                      color = MaterialTheme.colorScheme.onPrimary,
-                    )
+            if (!sourceSubtitle.isNullOrBlank()) {
+              Text(
+                text = sourceSubtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+              )
+            }
+            if (hasMetadataChips) {
+              Spacer(modifier = Modifier.height(if (sourceLabel != null) 0.dp else 4.dp))
+              FlowRow(
+                horizontalArrangement =
+                  androidx.compose.foundation.layout.Arrangement
+                    .spacedBy(4.dp),
+                verticalArrangement =
+                  androidx.compose.foundation.layout.Arrangement
+                    .spacedBy(4.dp),
+              ) {
+                if (sourceLabel != null) {
+                  SourceChip(label = sourceLabel, color = sourceColor ?: MaterialTheme.colorScheme.surfaceContainerHigh)
+                }
+                if (showCodecSupportIndicator && !video.isAudio && video.videoCodec.isNotBlank()) {
+                  CodecSupportIndicator(video = video)
+                }
+                if (showSubtitleIndicator && !video.isAudio) {
+                  if (video.hasEmbeddedSubtitles && video.subtitleCodec.isNotBlank()) {
+                    video.subtitleCodec.split(" ").forEach { codec ->
+                      Text(
+                        text = codec,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier =
+                          Modifier
+                            .background(
+                              MaterialTheme.colorScheme.primary,
+                              AppShapeScale.small,
+                            ).padding(horizontal = 8.dp, vertical = 4.dp),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                      )
+                    }
                   }
                 }
-              }
-              if (showSizeChip && video.sizeFormatted != "0 B" && video.sizeFormatted != "--") {
-                Text(
-                  video.sizeFormatted,
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier =
-                    Modifier
-                      .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        AppShapeScale.small,
-                      ).padding(horizontal = 8.dp, vertical = 4.dp),
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-              }
-              // Resolution and Framerate logic (List view)
-              val fpsOnly = video.resolution.substringAfter("@", "")
-              val hasFps = fpsOnly.isNotEmpty()
-
-              if (showResolutionChip && !video.isAudio) {
-                if (video.resolution != "--") {
-                  val displayResolution =
-                    if (showFramerateInResolution) {
-                      video.resolution
-                    } else {
-                      video.resolution.substringBefore("@")
-                    }
-
+                if (hasSizeChip) {
                   Text(
-                    displayResolution,
+                    video.sizeFormatted,
                     style = MaterialTheme.typography.labelSmall,
                     modifier =
                       Modifier
@@ -934,33 +924,56 @@ fun VideoCard(
                     color = MaterialTheme.colorScheme.onSurface,
                   )
                 }
-              } else if (showFramerateInResolution && hasFps) {
-                // Resolution is hidden, but framerate is enabled -> show only framerate
-                Text(
-                  "$fpsOnly FPS",
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier =
-                    Modifier
-                      .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        AppShapeScale.small,
-                      ).padding(horizontal = 8.dp, vertical = 4.dp),
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
-              }
+                // Resolution and Framerate logic (List view)
+                if (showResolutionChip && !video.isAudio) {
+                  if (hasResolution) {
+                    val displayResolution =
+                      if (showFramerateInResolution) {
+                        video.resolution
+                      } else {
+                        video.resolution.substringBefore("@")
+                      }
 
-              if (showDateChip && video.dateModified > 0) {
-                Text(
-                  formatDate(video.dateModified),
-                  style = MaterialTheme.typography.labelSmall,
-                  modifier =
-                    Modifier
-                      .background(
-                        MaterialTheme.colorScheme.surfaceContainerHigh,
-                        AppShapeScale.small,
-                      ).padding(horizontal = 8.dp, vertical = 4.dp),
-                  color = MaterialTheme.colorScheme.onSurface,
-                )
+                    Text(
+                      displayResolution,
+                      style = MaterialTheme.typography.labelSmall,
+                      modifier =
+                        Modifier
+                          .background(
+                            MaterialTheme.colorScheme.surfaceContainerHigh,
+                            AppShapeScale.small,
+                          ).padding(horizontal = 8.dp, vertical = 4.dp),
+                      color = MaterialTheme.colorScheme.onSurface,
+                    )
+                  }
+                } else if (showFramerateInResolution && hasFps) {
+                  // Resolution is hidden, but framerate is enabled -> show only framerate
+                  Text(
+                    "$fpsOnly FPS",
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier =
+                      Modifier
+                        .background(
+                          MaterialTheme.colorScheme.surfaceContainerHigh,
+                          AppShapeScale.small,
+                        ).padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                  )
+                }
+
+                if (hasDateMetadataChip) {
+                  Text(
+                    formatDate(video.dateModified),
+                    style = MaterialTheme.typography.labelSmall,
+                    modifier =
+                      Modifier
+                        .background(
+                          MaterialTheme.colorScheme.surfaceContainerHigh,
+                          AppShapeScale.small,
+                        ).padding(horizontal = 8.dp, vertical = 4.dp),
+                    color = MaterialTheme.colorScheme.onSurface,
+                  )
+                }
               }
             }
           }

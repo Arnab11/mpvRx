@@ -12,8 +12,11 @@ package app.gyrolet.mpvrx.ui.browser.cards
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -101,6 +104,7 @@ fun PlaylistCard(
     if (!showThumbnails) return@produceState
     if (thumbnail != null) return@produceState
     val item = firstItem ?: return@produceState
+    if (app.gyrolet.mpvrx.domain.archive.ZipArchiveMedia.isPlaybackUri(item.filePath)) return@produceState
     value = withContext(Dispatchers.IO) {
       try {
         EmbeddedArtworkResolver.decodeArtworkUri(context, item.tvgLogo) ?: if (item.licenseType.isNullOrBlank()) {
@@ -175,9 +179,24 @@ fun PlaylistCard(
         else -> null
       }
 
-    if (typeBadge != null) {
-      // Use Material Design theme colors
-      val materialTheme = androidx.compose.material3.MaterialTheme.colorScheme
+    val materialTheme = androidx.compose.material3.MaterialTheme.colorScheme
+    if (playlist.isZipPlaylist) {
+      Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+      ) {
+        SourceChip(
+          label = stringResource(R.string.playlist_zip_read_only),
+          color = materialTheme.primaryContainer,
+          modifier = Modifier.weight(1f, fill = false),
+        )
+        SourceChip(
+          label = stringResource(R.string.playlist_source_local),
+          color = sourceChipColor(null),
+          modifier = Modifier.weight(1f, fill = false),
+        )
+      }
+    } else if (typeBadge != null) {
       val (chipColor, chipBgColor) =
         if (playlist.isM3uPlaylist) {
           Pair(materialTheme.tertiary, materialTheme.tertiaryContainer)
@@ -204,7 +223,7 @@ fun PlaylistCard(
         )
       }
     }
-    if (showLocation && sourceLocation.isNotBlank()) {
+    if (!playlist.isZipPlaylist && showLocation && sourceLocation.isNotBlank()) {
       androidx.compose.material3.Text(
         text = sourceLocation,
         modifier = Modifier.fillMaxWidth(),
@@ -230,6 +249,7 @@ fun PlaylistCard(
     customIcon =
       when {
         isFavorites -> Icons.RoundedFilled.Bookmarks
+        playlist.isZipPlaylist -> Icons.RoundedFilled.FolderZip
         playlist.isXtreamPlaylist -> Icons.RoundedFilled.Tv
         else -> Icons.RoundedFilled.PlaylistPlay
       },
