@@ -273,7 +273,23 @@ fun PlaylistSheet(
   // Check portrait mode
   val isPortrait = configuration.orientation == android.content.res.Configuration.ORIENTATION_PORTRAIT
 
-  val isListMode by playerPreferences.playlistViewMode.collectAsState()
+  // Portrait mode => list mode (v2.5.0 behavior: grid toggle is landscape-only,
+  // portrait is always forced to list so phones/tablet portrait stay readable)
+  val isListModePreference by playerPreferences.playlistViewMode.collectAsState()
+  var isListMode by remember { mutableStateOf(if (isPortrait) true else isListModePreference) }
+
+  LaunchedEffect(isPortrait) {
+    if (isPortrait && !isListMode) {
+      isListMode = true
+    }
+  }
+
+  // Update preference when view mode changes (only in landscape)
+  LaunchedEffect(isListMode) {
+    if (!isPortrait && isListMode != isListModePreference) {
+      playerPreferences.playlistViewMode.set(isListMode)
+    }
+  }
 
   // Scroll state for the playlist
   val lazyListState = rememberLazyListState()
@@ -309,14 +325,27 @@ fun PlaylistSheet(
 
   var showAddToPlaylistDialog by rememberSaveable { mutableStateOf(false) }
 
+  // v2.5.0 layout: portrait list = 420.dp, landscape list = 640.dp,
+  // grid = 85% of screen width for tablet landscape covers.
+  val screenWidth = LocalConfiguration.current.screenWidthDp.dp
+  val sheetWidth =
+    if (isListMode) {
+      if (LocalConfiguration.current.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE) {
+        640.dp
+      } else {
+        420.dp
+      }
+    } else {
+      screenWidth * 0.85f
+    }
+
   PlayerSheet(
     onDismissRequest = onDismissRequest,
     modifier = Modifier.fillMaxWidth(),
-    customMaxWidth = 640.dp,
-    customMaxHeight = if (isPortrait) LocalConfiguration.current.screenHeightDp.dp * 0.75f else null,
+    customMaxWidth = sheetWidth,
+    customMaxHeight = if (isPortrait) LocalConfiguration.current.screenHeightDp.dp * 0.5f else null,
     isSwipeActive = isSwipeActive,
     swipeOffset = swipeOffset,
-    title = stringResource(R.string.ui_playlist),
   ) {
     Surface(
       modifier = Modifier.fillMaxWidth(),
@@ -350,8 +379,9 @@ fun PlaylistSheet(
           verticalAlignment = Alignment.CenterVertically,
           horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-          Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
+          Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.smaller),
             modifier = Modifier.weight(1f),
           ) {
             if (currentItem != null) {
@@ -364,6 +394,11 @@ fun PlaylistSheet(
                     fontWeight = FontWeight.Bold,
                     color = accentColor,
                   ),
+              )
+              Text(
+                text = "•",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
             }
             Text(
@@ -387,15 +422,17 @@ fun PlaylistSheet(
               )
             }
 
-            IconButton(
-              onClick = { playerPreferences.playlistViewMode.set(!isListMode) },
-            ) {
-              Icon(
-                imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
-                contentDescription =
-                  stringResource(if (isListMode) R.string.playlist_view_grid else R.string.playlist_view_list),
-                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
+            // Toggle button for list/grid view (only in landscape) — v2.5.0 behavior
+            if (!isPortrait) {
+              IconButton(
+                onClick = { isListMode = !isListMode },
+              ) {
+                Icon(
+                  imageVector = if (isListMode) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
+                  contentDescription = if (isListMode) "Switch to Grid View" else "Switch to List View",
+                  tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
             }
           }
         }
