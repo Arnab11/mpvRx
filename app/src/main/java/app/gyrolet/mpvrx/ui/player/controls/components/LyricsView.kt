@@ -544,19 +544,21 @@ fun LyricsView(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
-              Spacer(modifier = Modifier.height(8.dp))
-              TextButton(
-                onClick = {
-                  if (isAudiobook) {
-                    viewModel.loadLyricsForCurrentTrack(forceRefresh = true)
-                  } else {
-                    viewModel.searchLyricsOnline()
-                  }
-                },
-              ) {
-                val searchLabel =
-                  if (isAudiobook) R.string.audiobook_retry else R.string.lyrics_search_online
-                Text(text = stringResource(searchLabel), fontWeight = FontWeight.Bold)
+              if (isAudiobook || state.onlineEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(
+                  onClick = {
+                    if (isAudiobook) {
+                      viewModel.loadLyricsForCurrentTrack(forceRefresh = true)
+                    } else {
+                      viewModel.searchLyricsOnline()
+                    }
+                  },
+                ) {
+                  val searchLabel =
+                    if (isAudiobook) R.string.audiobook_retry else R.string.lyrics_search_online
+                  Text(text = stringResource(searchLabel), fontWeight = FontWeight.Bold)
+                }
               }
             }
           }

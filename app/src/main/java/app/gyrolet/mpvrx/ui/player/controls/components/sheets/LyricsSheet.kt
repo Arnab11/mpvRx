@@ -341,9 +341,11 @@ fun LyricsSheet(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
               )
-              Spacer(modifier = Modifier.height(8.dp))
-              TextButton(onClick = { viewModel.searchLyricsOnline() }) {
-                Text(stringResource(R.string.lyrics_search_online))
+              if (state.onlineEnabled) {
+                Spacer(modifier = Modifier.height(8.dp))
+                TextButton(onClick = { viewModel.searchLyricsOnline() }) {
+                  Text(stringResource(R.string.lyrics_search_online))
+                }
               }
             }
           }

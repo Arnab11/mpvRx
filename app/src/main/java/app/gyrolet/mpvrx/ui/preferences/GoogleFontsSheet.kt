@@ -7,9 +7,11 @@ package app.gyrolet.mpvrx.ui.preferences
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -18,6 +20,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -96,42 +99,42 @@ internal fun GoogleFontsSheet(
       }
     },
   ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
+    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+      AppFontRow(
+        title = stringResource(R.string.app_font_google_sans_flex),
+        subtitle = stringResource(R.string.app_font_built_in),
+        selected = !useSystemFont && selectedFamily.isBlank(),
+        onClick = {
+          repository.clearActiveFont()
+          preferences.googleFontFamily.set("")
+          preferences.useSystemFont.set(false)
+          onDismiss()
+        },
+      )
+      Spacer(Modifier.height(4.dp))
+      AppFontRow(
+        title = stringResource(R.string.pref_appearance_system_font_title),
+        subtitle = stringResource(R.string.pref_appearance_system_font_summary),
+        selected = useSystemFont,
+        onClick = {
+          preferences.useSystemFont.set(true)
+          onDismiss()
+        },
+      )
+      HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
       PlayerSheetSearchField(
         query = searchQuery,
         onQueryChange = { searchQuery = it },
         placeholder = stringResource(R.string.generic_search),
+        modifier = Modifier.padding(bottom = 10.dp),
       )
 
       LazyColumn(
         modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp),
-        verticalArrangement = Arrangement.spacedBy(2.dp),
+        contentPadding = PaddingValues(bottom = 8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
       ) {
-        item(key = "built-in") {
-          AppFontRow(
-            title = stringResource(R.string.app_font_google_sans_flex),
-            subtitle = stringResource(R.string.app_font_built_in),
-            selected = !useSystemFont && selectedFamily.isBlank(),
-            onClick = {
-              repository.clearActiveFont()
-              preferences.googleFontFamily.set("")
-              preferences.useSystemFont.set(false)
-              onDismiss()
-            },
-          )
-        }
-        item(key = "system") {
-          AppFontRow(
-            title = stringResource(R.string.pref_appearance_system_font_title),
-            subtitle = stringResource(R.string.pref_appearance_system_font_summary),
-            selected = useSystemFont,
-            onClick = {
-              preferences.useSystemFont.set(true)
-              onDismiss()
-            },
-          )
-        }
-
         when {
           isLoading -> {
             item(key = "loading") {
@@ -153,6 +156,7 @@ internal fun GoogleFontsSheet(
                   text = stringResource(R.string.app_font_catalog_error),
                   color = MaterialTheme.colorScheme.error,
                   style = MaterialTheme.typography.bodyMedium,
+                  modifier = Modifier.padding(horizontal = 12.dp),
                 )
                 TextButton(onClick = { refreshKey++ }) {
                   Text(stringResource(R.string.ui_retry))
@@ -165,7 +169,7 @@ internal fun GoogleFontsSheet(
               Text(
                 text = stringResource(R.string.ui_no_results_found),
                 color = MaterialTheme.colorScheme.outline,
-                modifier = Modifier.fillMaxWidth().padding(vertical = 28.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 28.dp),
               )
             }
           }
@@ -204,7 +208,7 @@ internal fun GoogleFontsSheet(
           text = stringResource(R.string.app_font_download_error, family),
           color = MaterialTheme.colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
+          modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, top = 8.dp),
         )
       }
     }
@@ -224,12 +228,17 @@ private fun AppFontRow(
   Surface(
     onClick = onClick,
     enabled = enabled,
-    shape = RoundedCornerShape(10.dp),
-    color = if (selected) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f) else MaterialTheme.colorScheme.surface,
-    modifier = modifier.fillMaxWidth(),
+    shape = RoundedCornerShape(8.dp),
+    color =
+      if (selected) {
+        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f)
+      } else {
+        MaterialTheme.colorScheme.surfaceContainerLow
+      },
+    modifier = modifier.fillMaxWidth().heightIn(min = 64.dp),
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 8.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
       if (downloading) {
@@ -253,7 +262,7 @@ private fun AppFontRow(
             text = subtitle,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.outline,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
           )
         }
