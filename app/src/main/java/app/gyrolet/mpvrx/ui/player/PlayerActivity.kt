@@ -3561,26 +3561,13 @@ class PlayerActivity :
             if (!canIssueMpvCommands()) return@withContext
 
             Log.v(TAG, "Adding subtitles from intent extras: $subfile")
-            val trackCountBefore = PlaybackSession.getPropertyInt("track-list/count") ?: 0
+            // track-list is read-only in mpv, so title/lang travel inside sub-add itself.
             runCatching {
               when {
+                displayTitle != null && language != null ->
+                  PlaybackSession.command("sub-add", subfile, flag, displayTitle, language)
                 displayTitle != null -> PlaybackSession.command("sub-add", subfile, flag, displayTitle)
                 else -> PlaybackSession.command("sub-add", subfile, flag)
-              }
-            }.onSuccess {
-              val trackCountAfter = PlaybackSession.getPropertyInt("track-list/count") ?: 0
-              if (trackCountAfter > trackCountBefore) {
-                val newTrackIndex = trackCountAfter - 1
-                if (displayTitle != null) {
-                  runCatching {
-                    PlaybackSession.setPropertyString("track-list/$newTrackIndex/title", displayTitle)
-                  }
-                }
-                if (language != null) {
-                  runCatching {
-                    PlaybackSession.setPropertyString("track-list/$newTrackIndex/lang", language)
-                  }
-                }
               }
             }.onFailure { error ->
               Log.w(TAG, "Failed to add subtitle from intent extras: $subfile", error)

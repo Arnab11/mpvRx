@@ -2262,8 +2262,8 @@ private fun CustomStatsPageSixOverlay(
             ?: PlaybackSession.getPropertyString("vo")
             ?: "--"
         }.getOrDefault("--")
-      val videoCodec = runCatching { PlaybackSession.getPropertyString("video-codec") ?: "--" }.getOrDefault("--")
-      val audioCodec = runCatching { PlaybackSession.getPropertyString("audio-codec-name") ?: "--" }.getOrDefault("--")
+      val videoCodec = runCatching { PlaybackSession.getPropertyString("current-tracks/video/codec") ?: "--" }.getOrDefault("--")
+      val audioCodec = runCatching { PlaybackSession.getPropertyString("current-tracks/audio/codec") ?: "--" }.getOrDefault("--")
 
       val currentCpuMs = runCatching { android.os.Process.getElapsedCpuTime() }.getOrDefault(lastCpuMs)
       val currentTimeMs = android.os.SystemClock.elapsedRealtime()

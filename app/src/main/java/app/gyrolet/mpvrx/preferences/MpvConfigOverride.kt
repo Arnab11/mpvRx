@@ -37,7 +37,6 @@ enum class MpvConfigOverride(
         "hwdec",
         "hwdec-codecs",
         "vd-lavc-dr",
-        "vd-lavc-queue",
         "vd-lavc-film-grain",
       ),
   ),
@@ -173,7 +172,6 @@ enum class MpvConfigOverride(
     optionNames =
       setOf(
         "hls-bitrate",
-        "http-allow-redirect",
         "cache",
         "cache-pause",
         "cache-pause-wait",
@@ -186,7 +184,6 @@ enum class MpvConfigOverride(
     optionNames =
       setOf(
         "ytdl",
-        "ytdl-path",
         "ytdl-format",
         "ytdl-raw-options",
         "script-opts-append",

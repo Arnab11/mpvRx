@@ -1777,7 +1777,7 @@ class PlayerViewModel : ViewModel(),
         ?: PlaybackSession.getPropertyString("metadata/by-key/ALBUM")
         ?: "Unknown Album"
 
-    val codec = PlaybackSession.getPropertyString("audio-codec-name")?.uppercase() ?: "Unknown"
+    val codec = PlaybackSession.getPropertyString("current-tracks/audio/codec")?.uppercase() ?: "Unknown"
     val samplerateInt = PlaybackSession.getPropertyInt("audio-params/samplerate") ?: 0
     val sampleRateStr =
       if (samplerateInt >

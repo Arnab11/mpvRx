@@ -252,9 +252,8 @@ class MPVView(
 
     // These were forced on between the last known-good build (e3b1de8) and the first build
     // reproducing the HEVC/Main10 frame-drop regression (84f21fc). Keep mpv's normal direct-
-    // rendering heuristic and disable the extra decoder-frame queue, matching mpv's defaults.
+    // rendering heuristic, matching mpv's defaults.
     PlaybackSession.setOptionString("vd-lavc-dr", "auto")
-    PlaybackSession.setOptionString("vd-lavc-queue", "no")
 
     if (decoderPreferences.useYUV420P.get()) {
       PlaybackSession.setOptionString("vf", "format=yuv420p")
@@ -286,7 +285,6 @@ class MPVView(
     // Use adaptive HLS bitrate selection to avoid forcing the heaviest stream profile.
     // This reduces thermal load and helps prevent jitter/rebuffering on long sessions.
     PlaybackSession.setOptionString("hls-bitrate", "no")
-    PlaybackSession.setOptionString("http-allow-redirect", "yes")
     PlaybackSession.setOptionString("cookies", "yes")
     PlaybackSession.setOptionString("cookies-file", AndroidCookieJar.playbackCookieFile(context).absolutePath)
     PlaybackSession.setOptionString("cache", "auto")
