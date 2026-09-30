@@ -282,7 +282,7 @@ private fun NormalTopBar(
         Modifier
           .onGloballyPositioned { coordinates ->
             titleBounds.value = coordinates.boundsInWindow()
-          }.pointerInput(onTitleLongPress, onTitleDoubleTap) {
+          }.pointerInput(onTitleLongPress, onTitleDoubleTap, darkMode, darkTheme, themeTransition) {
             detectTapGestures(
               onTap = { localOffset ->
                 // Don't allow theme change if animation is in progress
