@@ -2018,7 +2018,7 @@
   <string name="pref_mpv_conf_override_ytdlp">Интеграция yt-dlp</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">Переопределяет параметры yt-dlp, управляемые приложением.</string>
   <string name="pref_mpv_conf_override_osd">Безопасная область OSD</string>
-  <string name="pref_mpv_conf_override_osd_summary">Переопределяет поля OSD и безопасные области.</string>
+  <string name="pref_mpv_conf_override_osd_summary">Переопределяет шрифт, поля и безопасные области OSD.</string>
   <string name="mpv_config_owned_title">Управляется mpv.conf</string>
   <string name="mpv_config_owned_message">Этот элемент управления приложения отключён, поскольку один или несколько необходимых параметров назначены mpv.conf в расширенных настройках.</string>
   <string name="pref_lyrics_translation_category">Перевод и романизация текста песен</string>

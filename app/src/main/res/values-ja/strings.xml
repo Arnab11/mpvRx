@@ -1997,7 +1997,7 @@
   <string name="pref_mpv_conf_override_ytdlp">yt-dlp 連携</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">アプリ管理の yt-dlp 再生オプションを上書きします。</string>
   <string name="pref_mpv_conf_override_osd">OSD セーフエリア</string>
-  <string name="pref_mpv_conf_override_osd_summary">OSD マージンとセーフエリア設定を上書きします。</string>
+  <string name="pref_mpv_conf_override_osd_summary">OSD のフォント、マージン、セーフエリア設定を上書きします。</string>
   <string name="mpv_config_owned_title">mpv.conf が制御中</string>
   <string name="mpv_config_owned_message">このアプリ操作は、必要なオプションの一部または全部が詳細設定で mpv.conf に割り当てられているため無効です。</string>
   <string name="pref_lyrics_translation_category">歌詞の翻訳・ローマ字変換</string>

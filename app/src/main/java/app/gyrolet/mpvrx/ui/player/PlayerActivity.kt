@@ -2593,6 +2593,7 @@ class PlayerActivity :
       val preparationStartedAt = android.os.SystemClock.elapsedRealtime()
       syncBundledAssetsIfNeeded()
       prepareUserMpvAssetsForStartup()
+      MpvOsdFont.ensureInstalled(this)
       sanitizeInternalFontsDirectory()
       Log.d(TAG, "MPV startup assets ready in ${android.os.SystemClock.elapsedRealtime() - preparationStartedAt} ms")
     }.onFailure { e ->

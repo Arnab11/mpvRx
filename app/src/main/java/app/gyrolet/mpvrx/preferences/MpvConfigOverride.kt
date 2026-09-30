@@ -212,6 +212,7 @@ enum class MpvConfigOverride(
     preferenceKey = "osd",
     optionNames =
       setOf(
+        "osd-font",
         "osd-margin-x",
         "osd-margin-y",
       ),

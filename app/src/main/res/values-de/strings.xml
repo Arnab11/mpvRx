@@ -2004,7 +2004,7 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="pref_mpv_conf_override_ytdlp">yt-dlp-Integration</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">Überschreibt App-gesteuerte yt-dlp-Optionen.</string>
   <string name="pref_mpv_conf_override_osd">Sicherheitsbereich des OSD</string>
-  <string name="pref_mpv_conf_override_osd_summary">Überschreibt OSD-Ränder und Sicherheitsbereiche.</string>
+  <string name="pref_mpv_conf_override_osd_summary">Überschreibt OSD-Schrift, Ränder und Sicherheitsbereiche.</string>
   <string name="mpv_config_owned_title">Von mpv.conf gesteuert</string>
   <string name="mpv_config_owned_message">Dieses App-Steuerelement ist deaktiviert, weil mindestens eine benötigte Option in den erweiterten Einstellungen mpv.conf zugewiesen ist.</string>
   <string name="pref_lyrics_translation_category">Songtext-Übersetzung &amp; Romanisierung</string>

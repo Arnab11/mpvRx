@@ -2004,7 +2004,7 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="pref_mpv_conf_override_ytdlp">Intégration yt-dlp</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">Remplace les options de lecture yt-dlp de l’application.</string>
   <string name="pref_mpv_conf_override_osd">Zone sûre de l’OSD</string>
-  <string name="pref_mpv_conf_override_osd_summary">Remplace les marges OSD et les zones sûres.</string>
+  <string name="pref_mpv_conf_override_osd_summary">Remplace la police, les marges et les zones sûres de l’OSD.</string>
   <string name="mpv_config_owned_title">Contrôlé par mpv.conf</string>
   <string name="mpv_config_owned_message">Cette commande de l’application est désactivée, car une ou plusieurs options requises sont attribuées à mpv.conf dans les paramètres avancés.</string>
   <string name="pref_lyrics_translation_category">Traduction et romanisation des paroles</string>

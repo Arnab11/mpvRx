@@ -1908,7 +1908,7 @@
   <string name="pref_mpv_conf_override_ytdlp">yt-dlp एकीकरण</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">ऐप द्वारा प्रबंधित yt-dlp प्लेबैक विकल्प ओवरराइड करता है।</string>
   <string name="pref_mpv_conf_override_osd">OSD सुरक्षित क्षेत्र</string>
-  <string name="pref_mpv_conf_override_osd_summary">OSD मार्जिन और सुरक्षित क्षेत्र ओवरराइड करता है।</string>
+  <string name="pref_mpv_conf_override_osd_summary">OSD फ़ॉन्ट, मार्जिन और सुरक्षित क्षेत्र ओवरराइड करता है।</string>
   <string name="mpv_config_owned_title">mpv.conf द्वारा नियंत्रित</string>
   <string name="mpv_config_owned_message">यह ऐप नियंत्रण अक्षम है क्योंकि इसके लिए आवश्यक एक या अधिक विकल्प उन्नत सेटिंग में mpv.conf को सौंपे गए हैं।</string>
   <string name="pref_lyrics_translation_category">गीत अनुवाद एवं लिप्यंतरण</string>

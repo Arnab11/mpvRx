@@ -417,7 +417,7 @@
   <string name="pref_mpv_conf_override_ytdlp">yt-dlp integration</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">Overrides app-managed yt-dlp playback options.</string>
   <string name="pref_mpv_conf_override_osd">OSD safe area</string>
-  <string name="pref_mpv_conf_override_osd_summary">Overrides OSD margins and safe areas.</string>
+  <string name="pref_mpv_conf_override_osd_summary">Overrides the OSD font, margins, and safe areas.</string>
   <string name="mpv_config_owned_title">Controlled by mpv.conf</string>
   <string name="mpv_config_owned_message">This app control is disabled because one or more options it requires are assigned to mpv.conf in Advanced settings.</string>
   <string name="pref_advanced_dump_logs_title">Dump logs</string>

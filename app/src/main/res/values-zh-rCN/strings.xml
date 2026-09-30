@@ -2022,7 +2022,7 @@
   <string name="pref_mpv_conf_override_ytdlp">yt-dlp 集成</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">覆盖由应用管理的 yt-dlp 播放选项。</string>
   <string name="pref_mpv_conf_override_osd">OSD 安全区域</string>
-  <string name="pref_mpv_conf_override_osd_summary">覆盖 OSD 边距和安全区域设置。</string>
+  <string name="pref_mpv_conf_override_osd_summary">覆盖 OSD 字体、边距和安全区域设置。</string>
   <string name="mpv_config_owned_title">由 mpv.conf 控制</string>
   <string name="mpv_config_owned_message">此应用控件已禁用，因为它所需的一个或多个选项已在高级设置中分配给 mpv.conf。</string>
   <string name="pref_lyrics_translation_category">歌词翻译与注音</string>

@@ -261,6 +261,7 @@ class MPVView(
 
     PlaybackSession.setOptionString("keep-open", "yes")
     PlaybackSession.setOptionString("input-default-bindings", "yes")
+    PlaybackSession.setOptionString("osd-font", MpvOsdFont.FAMILY)
 
     PlaybackSession.setOptionString("tls-verify", "yes")
     PlaybackSession.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")

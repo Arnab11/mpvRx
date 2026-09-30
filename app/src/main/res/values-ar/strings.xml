@@ -2030,7 +2030,7 @@
   <string name="pref_mpv_conf_override_ytdlp">تكامل yt-dlp</string>
   <string name="pref_mpv_conf_override_ytdlp_summary">يتجاوز خيارات تشغيل yt-dlp التي يديرها التطبيق.</string>
   <string name="pref_mpv_conf_override_osd">المنطقة الآمنة لـ OSD</string>
-  <string name="pref_mpv_conf_override_osd_summary">يتجاوز هوامش OSD والمناطق الآمنة.</string>
+  <string name="pref_mpv_conf_override_osd_summary">يتجاوز خط OSD وهوامشه ومناطقه الآمنة.</string>
   <string name="mpv_config_owned_title">يتحكم به mpv.conf</string>
   <string name="mpv_config_owned_message">عنصر تحكم التطبيق هذا معطل لأن خيارًا واحدًا أو أكثر من الخيارات التي يحتاجها مسند إلى mpv.conf في الإعدادات المتقدمة.</string>
   <string name="pref_lyrics_translation_category">ترجمة كلمات الأغاني ونقلها حرفياً</string>
