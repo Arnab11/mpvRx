@@ -5160,7 +5160,8 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         ?.takeIf { it.isFinite() && it > 0.0 }
         ?.let { it >= playerPreferences.minimumResumeDurationSeconds.get().coerceAtLeast(0) } == true
   if (!playerPreferences.savePositionOnQuit.get() || !hasValidSavedPosition || !meetsMinimumDuration) {
-    PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")
+    // A load without start=<seconds> already begins at zero. Seeking to zero after FILE_LOADED
+    // flushes the decoder and briefly blacks out playback on affected files.
     return
   }
 
@@ -5177,7 +5178,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
 
     ResumePlaybackMode.Ask -> {
-      if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")) return
       withContext(Dispatchers.Main) {
         if (PlaybackSession.isCurrentGeneration(loadGeneration)) {
           viewModel.playerUpdate.value = PlayerUpdates.ResumeAvailable(state.lastPosition)
@@ -5186,7 +5186,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
 
     ResumePlaybackMode.Never -> {
-      if (!PlaybackSession.commandForGeneration(loadGeneration, "set", "time-pos", "0")) return
       if (playerPreferences.showResumeIndicatorOverlay.get()) {
         withContext(Dispatchers.Main) {
           if (PlaybackSession.isCurrentGeneration(loadGeneration)) {
