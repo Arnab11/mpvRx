@@ -11,7 +11,9 @@ package app.gyrolet.mpvrx.ui.theme
 
 import android.content.Context
 import android.graphics.Bitmap
+import android.graphics.Typeface
 import android.os.Build
+import android.util.Log
 import android.view.View
 import androidx.annotation.StringRes
 import androidx.compose.animation.core.Animatable
@@ -56,11 +58,14 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.core.view.drawToBitmap
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import java.io.File
 import org.koin.compose.koinInject
 import kotlin.math.hypot
 
@@ -280,6 +285,9 @@ fun MpvrxTheme(
   val customTheme by preferences.customTheme.collectAsState()
   val selectedCustomThemeName by preferences.selectedCustomThemeName.collectAsState()
   val useSystemFont by preferences.useSystemFont.collectAsState()
+  val googleFontFamily by preferences.googleFontFamily.collectAsState()
+  val googleFontRevision by preferences.googleFontRevision.collectAsState()
+  val googleFontsRepository = koinInject<GoogleFontsRepository>()
   val darkTheme = isSystemInDarkTheme()
   val configuration = LocalConfiguration.current
   val context = LocalContext.current
@@ -287,6 +295,32 @@ fun MpvrxTheme(
     remember(configuration) {
       localeRequiresSystemFont(configuration.locales[0])
     }
+  val downloadedFontFamily =
+    remember(googleFontFamily, googleFontRevision, googleFontsRepository) {
+      googleFontFamily
+        .takeIf { it.isNotBlank() }
+        ?.let {
+          googleFontsRepository
+            .activeFontFile()
+            .takeIf(File::isFile)
+            ?.let { file ->
+              runCatching { FontFamily(Typeface.createFromFile(file)) }
+                .onFailure { Log.w("MpvrxTheme", "Could not load downloaded app font", it) }
+                .getOrNull()
+            }
+        }
+    }
+  val resolvedFontFamily =
+    when {
+      useSystemFont || localeNeedsSystemFont -> FontFamily.SansSerif
+      downloadedFontFamily != null -> downloadedFontFamily
+      else -> GoogleSansRounded
+    }
+  val typography =
+    remember(resolvedFontFamily, useSystemFont, localeNeedsSystemFont) {
+      if (useSystemFont || localeNeedsSystemFont) SystemTypography else typographyWithFontFamily(resolvedFontFamily)
+    }
+  val emphasizedTypography = remember(typography) { emphasizedTypography(typography) }
 
   val useDarkTheme =
     when (darkMode) {
@@ -326,13 +360,14 @@ fun MpvrxTheme(
     LocalSpacing provides Spacing(),
     LocalThemeTransitionState provides transitionState,
     LocalMotionPolicy provides rememberMotionPolicy(),
-    LocalEmphasizedTypography provides AppEmphasizedTypography,
+    LocalAppFontFamily provides resolvedFontFamily,
+    LocalEmphasizedTypography provides emphasizedTypography,
     LocalDarkAppColorScheme provides darkColorScheme,
   ) {
     ThemeTransitionContent {
       MaterialExpressiveTheme(
         colorScheme = colorScheme,
-        typography = if (useSystemFont || localeNeedsSystemFont) SystemTypography else AppTypography,
+        typography = typography,
         shapes = AppShapes,
         motionScheme = MotionScheme.expressive(),
         content = { app.gyrolet.mpvrx.ui.utils.ProvideAppHaptics(content) },

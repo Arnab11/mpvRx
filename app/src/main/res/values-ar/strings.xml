@@ -21,6 +21,15 @@
   <string name="pref_appearance_liquid_glass_summary_unavailable">متاح على Android 12 والإصدارات الأحدث</string>
   <string name="pref_appearance_system_font_title">استخدام خط النظام</string>
   <string name="pref_appearance_system_font_summary">استخدام محرف نظام Android في mpvRx بدلًا من Google Sans Flex</string>
+  <string name="pref_appearance_app_font_title">خط التطبيق</string>
+  <string name="pref_appearance_app_font_summary">الحالي: %1$s</string>
+  <string name="pref_appearance_app_font_summary_search">اختر الخط المدمج أو خط نظام Android أو خطًا قابلًا للتنزيل من Google Fonts</string>
+  <string name="app_font_google_fonts_title">Google Fonts</string>
+  <string name="app_font_attribution">تصفح الخطوط ونزّلها من Google Fonts</string>
+  <string name="app_font_google_sans_flex">Google Sans Flex</string>
+  <string name="app_font_built_in">مدمج</string>
+  <string name="app_font_catalog_error">تعذر تحميل Google Fonts</string>
+  <string name="app_font_download_error">تعذر تنزيل %1$s</string>
   <string name="pref_appearance_ui_scale_title">مقياس واجهة التطبيق</string>
   <string name="pref_appearance_ui_scale_summary">تغيير مقياس واجهة التطبيق إلى %1$d٪. أعد تشغيل التطبيق لتطبيق التغييرات.</string>
   <string name="pref_appearance_ui_scale_restart_title">إعادة التشغيل مطلوبة</string>

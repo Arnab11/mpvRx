@@ -21,6 +21,15 @@
   <string name="pref_appearance_liquid_glass_summary_unavailable">Доступно на Android 12 и новее</string>
   <string name="pref_appearance_system_font_title">Использовать системный шрифт</string>
   <string name="pref_appearance_system_font_summary">Использовать системный шрифт Android во всём mpvRx вместо Google Sans Flex</string>
+  <string name="pref_appearance_app_font_title">Шрифт приложения</string>
+  <string name="pref_appearance_app_font_summary">Текущий: %1$s</string>
+  <string name="pref_appearance_app_font_summary_search">Выберите встроенный шрифт, системный шрифт Android или загружаемый шрифт Google Fonts</string>
+  <string name="app_font_google_fonts_title">Google Fonts</string>
+  <string name="app_font_attribution">Просматривайте и загружайте шрифты из Google Fonts</string>
+  <string name="app_font_google_sans_flex">Google Sans Flex</string>
+  <string name="app_font_built_in">Встроенный</string>
+  <string name="app_font_catalog_error">Не удалось загрузить Google Fonts</string>
+  <string name="app_font_download_error">Не удалось загрузить %1$s</string>
   <string name="pref_appearance_ui_scale_title">Масштаб интерфейса приложения</string>
   <string name="pref_appearance_ui_scale_summary">Масштабировать интерфейс приложения до %1$d%%. Перезапустите приложение для применения изменений.</string>
   <string name="pref_appearance_ui_scale_restart_title">Требуется перезапуск</string>

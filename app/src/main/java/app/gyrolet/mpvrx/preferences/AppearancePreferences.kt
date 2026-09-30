@@ -66,6 +66,8 @@ class AppearancePreferences(
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val liquidGlassEnabled = preferenceStore.getBoolean("liquid_glass_enabled", true)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
+  val googleFontFamily = preferenceStore.getString("google_font_family", "")
+  val googleFontRevision = preferenceStore.getInt("google_font_revision", 0)
   val appUiScale = preferenceStore.getFloat("app_ui_scale", 1f)
   val unlimitedNameLines = preferenceStore.getBoolean("unlimited_name_lines", false)
   val hidePlayerButtonsBackground = preferenceStore.getBoolean("hide_player_buttons_background", false)

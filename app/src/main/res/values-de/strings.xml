@@ -21,6 +21,15 @@
   <string name="pref_appearance_liquid_glass_summary_unavailable">Verfügbar ab Android 12</string>
   <string name="pref_appearance_system_font_title">Systemschrift verwenden</string>
   <string name="pref_appearance_system_font_summary">In mpvRx die Android-Systemschrift anstelle von Google Sans Flex verwenden</string>
+  <string name="pref_appearance_app_font_title">App-Schrift</string>
+  <string name="pref_appearance_app_font_summary">Aktuell: %1$s</string>
+  <string name="pref_appearance_app_font_summary_search">Integrierte Schrift, Android-Systemschrift oder eine herunterladbare Google Font auswählen</string>
+  <string name="app_font_google_fonts_title">Google Fonts</string>
+  <string name="app_font_attribution">Schriften aus Google Fonts durchsuchen und herunterladen</string>
+  <string name="app_font_google_sans_flex">Google Sans Flex</string>
+  <string name="app_font_built_in">Integriert</string>
+  <string name="app_font_catalog_error">Google Fonts konnten nicht geladen werden</string>
+  <string name="app_font_download_error">%1$s konnte nicht heruntergeladen werden</string>
   <string name="pref_appearance_ui_scale_title">App-Oberflächenskalierung</string>
   <string name="pref_appearance_ui_scale_summary">App-Oberfläche auf %1$d%% skalieren. App neu starten, um die Änderungen anzuwenden.</string>
   <string name="pref_appearance_ui_scale_restart_title">Neustart erforderlich</string>

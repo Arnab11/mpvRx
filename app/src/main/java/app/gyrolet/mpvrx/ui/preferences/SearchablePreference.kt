@@ -100,9 +100,9 @@ object SearchablePreferences {
       )
       add(
         SearchablePreference(
-          titleRes = R.string.pref_appearance_system_font_title,
-          summaryRes = R.string.pref_appearance_system_font_summary,
-          keywords = listOf("font", "system", "typeface", "google sans", "ui", "appearance"),
+          titleRes = R.string.pref_appearance_app_font_title,
+          summaryRes = R.string.pref_appearance_app_font_summary_search,
+          keywords = listOf("font", "system", "typeface", "google sans", "google fonts", "download", "ui", "appearance"),
           category = "Appearance",
           screen = AppearancePreferencesScreen,
         ),

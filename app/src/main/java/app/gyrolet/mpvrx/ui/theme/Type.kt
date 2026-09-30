@@ -10,6 +10,7 @@
 package app.gyrolet.mpvrx.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
@@ -161,30 +162,35 @@ val GoogleSansRounded =
     ),
   )
 
-// Use PixelPlayer's rounded Google Sans Flex typography app-wide by default.
-val AppTypography =
+fun typographyWithFontFamily(fontFamily: FontFamily): Typography =
   SystemTypography.run {
     copy(
-      displayLarge = displayLarge.copy(fontFamily = GoogleSansRounded),
-      displayMedium = displayMedium.copy(fontFamily = GoogleSansRounded),
-      displaySmall = displaySmall.copy(fontFamily = GoogleSansRounded),
-      headlineLarge = headlineLarge.copy(fontFamily = GoogleSansRounded),
-      headlineMedium = headlineMedium.copy(fontFamily = GoogleSansRounded),
-      headlineSmall = headlineSmall.copy(fontFamily = GoogleSansRounded),
-      titleLarge = titleLarge.copy(fontFamily = GoogleSansRounded),
-      titleMedium = titleMedium.copy(fontFamily = GoogleSansRounded),
-      titleSmall = titleSmall.copy(fontFamily = GoogleSansRounded),
-      bodyLarge = bodyLarge.copy(fontFamily = GoogleSansRounded),
-      bodyMedium = bodyMedium.copy(fontFamily = GoogleSansRounded),
-      bodySmall = bodySmall.copy(fontFamily = GoogleSansRounded),
-      labelLarge = labelLarge.copy(fontFamily = GoogleSansRounded),
-      labelMedium = labelMedium.copy(fontFamily = GoogleSansRounded),
-      labelSmall = labelSmall.copy(fontFamily = GoogleSansRounded),
+      displayLarge = displayLarge.copy(fontFamily = fontFamily),
+      displayMedium = displayMedium.copy(fontFamily = fontFamily),
+      displaySmall = displaySmall.copy(fontFamily = fontFamily),
+      headlineLarge = headlineLarge.copy(fontFamily = fontFamily),
+      headlineMedium = headlineMedium.copy(fontFamily = fontFamily),
+      headlineSmall = headlineSmall.copy(fontFamily = fontFamily),
+      titleLarge = titleLarge.copy(fontFamily = fontFamily),
+      titleMedium = titleMedium.copy(fontFamily = fontFamily),
+      titleSmall = titleSmall.copy(fontFamily = fontFamily),
+      bodyLarge = bodyLarge.copy(fontFamily = fontFamily),
+      bodyMedium = bodyMedium.copy(fontFamily = fontFamily),
+      bodySmall = bodySmall.copy(fontFamily = fontFamily),
+      labelLarge = labelLarge.copy(fontFamily = fontFamily),
+      labelMedium = labelMedium.copy(fontFamily = fontFamily),
+      labelSmall = labelSmall.copy(fontFamily = fontFamily),
     )
   }
 
+// Use PixelPlayer's rounded Google Sans Flex typography app-wide by default.
+val AppTypography = typographyWithFontFamily(GoogleSansRounded)
+
+val LocalAppFontFamily = staticCompositionLocalOf { GoogleSansRounded }
+
+@Composable
 fun fontFamilyForText(text: String): FontFamily =
-  if (text.requiresSystemFontFallback()) FontFamily.SansSerif else GoogleSansRounded
+  if (text.requiresSystemFontFallback()) FontFamily.SansSerif else LocalAppFontFamily.current
 
 fun localeRequiresSystemFont(locale: Locale): Boolean =
   locale.getDisplayName(locale).requiresSystemFontFallback()
@@ -228,23 +234,25 @@ data class EmphasizedTypography(
   val labelSmall: TextStyle,
 )
 
-val AppEmphasizedTypography =
+fun emphasizedTypography(typography: Typography): EmphasizedTypography =
   EmphasizedTypography(
-    displayLarge = AppTypography.displayLarge.copy(fontWeight = FontWeight.Black),
-    displayMedium = AppTypography.displayMedium.copy(fontWeight = FontWeight.Black),
-    displaySmall = AppTypography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
-    headlineLarge = AppTypography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
-    headlineMedium = AppTypography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
-    headlineSmall = AppTypography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-    titleLarge = AppTypography.titleLarge.copy(fontWeight = FontWeight.Bold),
-    titleMedium = AppTypography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-    titleSmall = AppTypography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-    bodyLarge = AppTypography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-    bodyMedium = AppTypography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-    bodySmall = AppTypography.bodySmall.copy(fontWeight = FontWeight.Medium),
-    labelLarge = AppTypography.labelLarge.copy(fontWeight = FontWeight.Bold),
-    labelMedium = AppTypography.labelMedium.copy(fontWeight = FontWeight.Bold),
-    labelSmall = AppTypography.labelSmall.copy(fontWeight = FontWeight.Bold),
+    displayLarge = typography.displayLarge.copy(fontWeight = FontWeight.Black),
+    displayMedium = typography.displayMedium.copy(fontWeight = FontWeight.Black),
+    displaySmall = typography.displaySmall.copy(fontWeight = FontWeight.ExtraBold),
+    headlineLarge = typography.headlineLarge.copy(fontWeight = FontWeight.ExtraBold),
+    headlineMedium = typography.headlineMedium.copy(fontWeight = FontWeight.ExtraBold),
+    headlineSmall = typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+    titleLarge = typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+    titleMedium = typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+    titleSmall = typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
+    bodyLarge = typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+    bodyMedium = typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+    bodySmall = typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+    labelLarge = typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+    labelMedium = typography.labelMedium.copy(fontWeight = FontWeight.Bold),
+    labelSmall = typography.labelSmall.copy(fontWeight = FontWeight.Bold),
   )
+
+val AppEmphasizedTypography = emphasizedTypography(AppTypography)
 
 val LocalEmphasizedTypography = staticCompositionLocalOf { AppEmphasizedTypography }

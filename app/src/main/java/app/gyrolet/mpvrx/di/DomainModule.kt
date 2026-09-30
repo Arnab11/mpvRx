@@ -10,6 +10,7 @@
 package app.gyrolet.mpvrx.di
 
 import app.gyrolet.mpvrx.domain.anime4k.Anime4KManager
+import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.domain.hdr.HdrToysManager
 import app.gyrolet.mpvrx.domain.hdr.MpvShaderRuntime
 import app.gyrolet.mpvrx.domain.torrent.TorrentStreamingEngine
@@ -56,6 +57,7 @@ val domainModule =
     single<MpvShaderRuntime> { PlaybackSessionShaderRuntime }
     single { MpvConfigCache(androidContext(), get()) }
     single { HdrToysManager(androidContext(), get()) }
+    single { GoogleFontsRepository(androidContext(), get()) }
     single { OnlineSubtitleFileStore(androidContext(), get()) }
     single { WyzieSearchRepository(androidContext(), get(), get(), get(), get()) }
     single { MpvRxSubtitleHubRepository(get(), get(), get(), get()) }

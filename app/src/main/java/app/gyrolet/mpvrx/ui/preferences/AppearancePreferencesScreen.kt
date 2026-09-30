@@ -80,6 +80,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ListPreference
+import me.zhanghai.compose.preference.Preference
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.SliderPreference
 import org.koin.compose.koinInject
@@ -110,6 +111,7 @@ object AppearancePreferencesScreen : Screen {
     var pendingThumbnailMode by remember { mutableStateOf<ThumbnailMode?>(null) }
     var pendingAppUiScale by remember { mutableStateOf<Float?>(null) }
     var isThemeSectionExpanded by rememberSaveable { mutableStateOf(true) }
+    var isAppFontSheetOpen by rememberSaveable { mutableStateOf(false) }
     val storedThumbnailMode by browserPreferences.thumbnailMode.collectAsState()
     val thumbnailQuality by browserPreferences.thumbnailQuality.collectAsState()
     val thumbnailFramePosition by browserPreferences.thumbnailFramePosition.collectAsState()
@@ -192,6 +194,13 @@ object AppearancePreferencesScreen : Screen {
           preferences.appUiScale.set(scale)
           (context as? Activity)?.recreate()
         },
+      )
+    }
+
+    if (isAppFontSheetOpen) {
+      GoogleFontsSheet(
+        preferences = preferences,
+        onDismiss = { isAppFontSheetOpen = false },
       )
     }
 
@@ -404,24 +413,23 @@ object AppearancePreferencesScreen : Screen {
                   PreferenceDivider()
 
                   val useSystemFont by preferences.useSystemFont.collectAsState()
-                  SwitchPreference(
-                    modifier = Modifier.settingsSearchTarget(R.string.pref_appearance_system_font_title),
-                    value = useSystemFont,
-                    onValueChange = preferences.useSystemFont::set,
-                    title = {
-                      Text(
-                        text = stringResource(id = R.string.pref_appearance_system_font_title),
-                      )
-                    },
+                  val googleFontFamily by preferences.googleFontFamily.collectAsState()
+                  val activeFontName =
+                    when {
+                      useSystemFont -> stringResource(R.string.pref_appearance_system_font_title)
+                      googleFontFamily.isNotBlank() -> googleFontFamily
+                      else -> stringResource(R.string.app_font_google_sans_flex)
+                    }
+                  Preference(
+                    modifier = Modifier.settingsSearchTarget(R.string.pref_appearance_app_font_title),
+                    title = { Text(stringResource(R.string.pref_appearance_app_font_title)) },
                     summary = {
                       Text(
-                        text =
-                          stringResource(
-                            id = R.string.pref_appearance_system_font_summary,
-                          ),
+                        text = stringResource(R.string.pref_appearance_app_font_summary, activeFontName),
                         color = MaterialTheme.colorScheme.outline,
                       )
                     },
+                    onClick = { isAppFontSheetOpen = true },
                   )
 
                   PreferenceDivider()
