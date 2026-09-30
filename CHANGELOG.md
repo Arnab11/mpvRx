@@ -2,7 +2,14 @@
 
 These notes are written in plain English and focus on what changed for real use.
 
-## 2.7.0 - Snapshots, Rich Lyrics, Smarter Browsing, and Playback Polish
+## 2.7.0 & 2.7.1 - Font Hotfix - Snapshots, Rich Lyrics, Smarter Browsing, and Playback Polish
+
+### App and Player Fonts
+
+- mpv now uses the app's bundled Google Sans Flex face for on-screen display text by default.
+- `osd-font` is part of mpv.conf ownership, so an explicitly delegated config value remains authoritative over the app default.
+- Appearance now offers one searchable App font picker with built-in Google Sans Flex, the Android system font, and downloadable families from Google Fonts.
+- Google Fonts metadata is cached, downloaded TTF files are validated before activation, and non-Latin text retains the Android system fallback.
 
 ### Highlights
 
