@@ -2612,4 +2612,12 @@
   <string name="watch_stats_empty">メディアを再生すると統計が記録されます。</string>
   <string name="pref_debug_log_size_title">ログサイズ上限</string>
   <string name="pref_debug_log_size_summary">ログ表示と共有診断に最大 %1$d MB を保持します。</string>
+  <string name="onboarding_configuration_title">mpvRx ストレージの設定</string>
+  <string name="onboarding_configuration_desc">設定、バックアップ、スクリプト、字幕、ダウンロードに使用する設定フォルダーを選択します。</string>
+  <string name="onboarding_configuration_card_title">設定フォルダー</string>
+  <string name="onboarding_configuration_card_desc">mpvRx の設定フォルダーを選択します。ルートまたは Backup にある設定は自動的に復元されます。</string>
+  <string name="onboarding_configuration_restoring">設定バックアップを確認しています…</string>
+  <string name="onboarding_configuration_no_backup">フォルダーを設定しました。ダウンロードは Configuration/Downloads を使用します。</string>
+  <string name="onboarding_configuration_restored">%1$s から設定を復元しました。ダウンロードは Configuration/Downloads を使用します。</string>
+  <string name="onboarding_configuration_restore_failed">フォルダーの設定を完了できませんでした: %1$s</string>
 </resources>

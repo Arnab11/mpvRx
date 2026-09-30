@@ -2523,4 +2523,12 @@
   <string name="watch_stats_empty">आँकड़े बनाने के लिए कुछ मीडिया चलाएँ।</string>
   <string name="pref_debug_log_size_title">लॉग आकार सीमा</string>
   <string name="pref_debug_log_size_summary">लॉग दर्शक और साझा निदान में अधिकतम %1$d MB रखें।</string>
+  <string name="onboarding_configuration_title">mpvRx स्टोरेज सेट करें</string>
+  <string name="onboarding_configuration_desc">सेटिंग्स, बैकअप, स्क्रिप्ट, सबटाइटल और डाउनलोड के लिए कॉन्फ़िगरेशन फ़ोल्डर चुनें।</string>
+  <string name="onboarding_configuration_card_title">कॉन्फ़िगरेशन फ़ोल्डर</string>
+  <string name="onboarding_configuration_card_desc">अपना mpvRx कॉन्फ़िगरेशन फ़ोल्डर चुनें। रूट या Backup में मौजूद सेटिंग्स अपने आप बहाल होंगी।</string>
+  <string name="onboarding_configuration_restoring">सेटिंग्स बैकअप जाँचे जा रहे हैं…</string>
+  <string name="onboarding_configuration_no_backup">फ़ोल्डर सेट हो गया। डाउनलोड Configuration/Downloads का उपयोग करेंगे।</string>
+  <string name="onboarding_configuration_restored">%1$s से सेटिंग्स बहाल हुईं। डाउनलोड Configuration/Downloads का उपयोग करेंगे।</string>
+  <string name="onboarding_configuration_restore_failed">फ़ोल्डर सेटअप पूरा नहीं हुआ: %1$s</string>
 </resources>

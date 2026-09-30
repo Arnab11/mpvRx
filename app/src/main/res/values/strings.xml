@@ -2739,4 +2739,12 @@
   <string name="watch_stats_empty">Play some media to start building your statistics.</string>
   <string name="pref_debug_log_size_title">Log size limit</string>
   <string name="pref_debug_log_size_summary">Keep up to %1$d MB in the log viewer and shared diagnostics.</string>
+  <string name="onboarding_configuration_title">Set up mpvRx storage</string>
+  <string name="onboarding_configuration_desc">Choose the Configuration folder used for settings, backups, scripts, subtitles, and downloads.</string>
+  <string name="onboarding_configuration_card_title">Configuration folder</string>
+  <string name="onboarding_configuration_card_desc">Select your mpvRx Configuration folder. Existing settings at its root or in Backup are restored automatically.</string>
+  <string name="onboarding_configuration_restoring">Checking for settings backups…</string>
+  <string name="onboarding_configuration_no_backup">Folder configured. Downloads will use Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Restored settings from %1$s. Downloads will use Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">Folder setup could not be completed: %1$s</string>
 </resources>

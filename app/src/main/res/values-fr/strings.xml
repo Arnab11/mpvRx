@@ -2619,4 +2619,12 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="watch_stats_empty">Lisez des médias pour commencer à créer vos statistiques.</string>
   <string name="pref_debug_log_size_title">Limite de taille des journaux</string>
   <string name="pref_debug_log_size_summary">Conserve jusqu’à %1$d Mo dans le visualiseur et les diagnostics partagés.</string>
+  <string name="onboarding_configuration_title">Configurer le stockage mpvRx</string>
+  <string name="onboarding_configuration_desc">Choisissez le dossier de configuration utilisé pour les réglages, sauvegardes, scripts, sous-titres et téléchargements.</string>
+  <string name="onboarding_configuration_card_title">Dossier de configuration</string>
+  <string name="onboarding_configuration_card_desc">Sélectionnez le dossier Configuration de mpvRx. Les réglages présents à la racine ou dans Backup sont restaurés automatiquement.</string>
+  <string name="onboarding_configuration_restoring">Recherche de sauvegardes des réglages…</string>
+  <string name="onboarding_configuration_no_backup">Dossier configuré. Les téléchargements utiliseront Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Réglages restaurés depuis %1$s. Les téléchargements utiliseront Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">La configuration du dossier a échoué : %1$s</string>
 </resources>

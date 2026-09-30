@@ -2619,4 +2619,12 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="watch_stats_empty">Spiele Medien ab, um Statistiken zu erstellen.</string>
   <string name="pref_debug_log_size_title">Protokollgrößenlimit</string>
   <string name="pref_debug_log_size_summary">Bis zu %1$d MB im Protokollbetrachter und in geteilten Diagnosen behalten.</string>
+  <string name="onboarding_configuration_title">mpvRx-Speicher einrichten</string>
+  <string name="onboarding_configuration_desc">Wähle den Konfigurationsordner für Einstellungen, Sicherungen, Skripte, Untertitel und Downloads.</string>
+  <string name="onboarding_configuration_card_title">Konfigurationsordner</string>
+  <string name="onboarding_configuration_card_desc">Wähle deinen mpvRx-Konfigurationsordner. Vorhandene Einstellungen im Stamm oder in Backup werden automatisch wiederhergestellt.</string>
+  <string name="onboarding_configuration_restoring">Einstellungssicherungen werden geprüft…</string>
+  <string name="onboarding_configuration_no_backup">Ordner eingerichtet. Downloads verwenden Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Einstellungen aus %1$s wiederhergestellt. Downloads verwenden Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">Ordnereinrichtung konnte nicht abgeschlossen werden: %1$s</string>
 </resources>

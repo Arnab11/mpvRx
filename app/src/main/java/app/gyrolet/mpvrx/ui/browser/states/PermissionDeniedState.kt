@@ -83,11 +83,17 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.documentfile.provider.DocumentFile
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.download.DownloadLocations
+import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
+import app.gyrolet.mpvrx.preferences.FoldersPreferences
+import app.gyrolet.mpvrx.preferences.SettingsManager
+import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
@@ -96,6 +102,10 @@ import app.gyrolet.mpvrx.ui.player.controls.components.tvInitialFocus
 import app.gyrolet.mpvrx.ui.theme.AppShapeScale
 import app.gyrolet.mpvrx.utils.device.DeviceFormFactor
 import app.gyrolet.mpvrx.utils.permission.PermissionUtils
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 private fun checkFilePermission(context: Context): Boolean {
@@ -141,7 +151,7 @@ private fun openStoragePermissionSettings(context: Context): Boolean {
   return intents.any { intent -> runCatching { context.startActivity(intent) }.isSuccess }
 }
 
-private enum class OnboardingStep { STORAGE, NOTIFICATIONS, AUDIO, FINISH }
+private enum class OnboardingStep { STORAGE, CONFIGURATION, NOTIFICATIONS, AUDIO, FINISH }
 
 @SuppressLint("UseKtx")
 @Composable
@@ -153,6 +163,7 @@ fun PermissionDeniedState(
   val context = LocalContext.current
   val lifecycleOwner = LocalLifecycleOwner.current
   val isTelevision = DeviceFormFactor.isTelevision(context)
+  val scope = androidx.compose.runtime.rememberCoroutineScope()
   var showExplanationDialog by remember { mutableStateOf(false) }
 
   val isPlayStoreBuild = remember { BuildConfig.SCOPED_STORAGE_ONLY }
@@ -216,10 +227,84 @@ fun PermissionDeniedState(
   }
 
   val browserPreferences = koinInject<BrowserPreferences>()
+  val advancedPreferences = koinInject<AdvancedPreferences>()
+  val foldersPreferences = koinInject<FoldersPreferences>()
+  val subtitlesPreferences = koinInject<SubtitlesPreferences>()
+  val settingsManager = koinInject<SettingsManager>()
+  val downloadLocations = koinInject<DownloadLocations>()
+  var configurationFolderUri by rememberSaveable { mutableStateOf(advancedPreferences.mpvConfStorageUri.get()) }
+  var configurationMessage by rememberSaveable { mutableStateOf<String?>(null) }
+  var restoredSettings by rememberSaveable { mutableStateOf(false) }
+  var configuringFolder by remember { mutableStateOf(false) }
+  val configurationFolderLauncher =
+    rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+      if (uri == null) return@rememberLauncherForActivityResult
+      runCatching {
+        context.contentResolver.takePersistableUriPermission(
+          uri,
+          Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+        )
+      }
+      configuringFolder = true
+      configurationMessage = context.getString(R.string.onboarding_configuration_restoring)
+      scope.launch {
+        val uriString = uri.toString()
+        try {
+          withContext(Dispatchers.IO) {
+            val root = DocumentFile.fromTreeUri(context, uri) ?: error("Configuration folder is unavailable")
+            listOf("Backup", "Downloads", "fonts", "Subtitles", "scripts", "script-opts", "shaders").forEach { name ->
+              val existing = root.findFile(name)
+              if (existing == null) root.createDirectory(name) else require(existing.isDirectory) { "$name is not a folder" }
+            }
+            check(downloadLocations.prepareLocationUnderTree(uri, "Downloads") != null) {
+              "Downloads folder is not accessible"
+            }
+          }
+          val restored = settingsManager.restoreNewestFromConfiguration(uriString)
+          val previousBaseStorageFolder = foldersPreferences.baseStorageFolder.get()
+          if (subtitlesPreferences.fontsFolder.get() == previousBaseStorageFolder) {
+            subtitlesPreferences.fontsFolder.set("")
+          }
+          foldersPreferences.baseStorageFolder.set(uriString)
+          advancedPreferences.mpvConfStorageUri.set(uriString)
+          subtitlesPreferences.subtitleSaveFolder.set(uriString)
+          check(downloadLocations.setLocationUnderTree(uri, "Downloads") != null) {
+            "Downloads folder is not accessible"
+          }
+          configurationFolderUri = uriString
+          configurationMessage = restored.fold(
+            onSuccess = { result ->
+              if (result == null) {
+                context.getString(R.string.onboarding_configuration_no_backup)
+              } else {
+                restoredSettings = true
+                context.getString(R.string.onboarding_configuration_restored, result.fileName)
+              }
+            },
+            onFailure = { error ->
+              context.getString(
+                R.string.onboarding_configuration_restore_failed,
+                error.message ?: context.getString(R.string.generic_unknown_error),
+              )
+            },
+          )
+        } catch (cancelled: CancellationException) {
+          throw cancelled
+        } catch (error: Exception) {
+          configurationMessage = context.getString(
+            R.string.onboarding_configuration_restore_failed,
+            error.message ?: context.getString(R.string.generic_unknown_error),
+          )
+        } finally {
+          configuringFolder = false
+        }
+      }
+    }
   val steps =
     remember {
       buildList {
         add(OnboardingStep.STORAGE)
+        add(OnboardingStep.CONFIGURATION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) add(OnboardingStep.NOTIFICATIONS)
         add(OnboardingStep.AUDIO)
         add(OnboardingStep.FINISH)
@@ -230,6 +315,7 @@ fun PermissionDeniedState(
   val currentStepGranted =
     when (currentStep) {
       OnboardingStep.STORAGE -> isFileGranted
+      OnboardingStep.CONFIGURATION -> configurationFolderUri.isNotBlank() && !configuringFolder
       OnboardingStep.NOTIFICATIONS -> isNotificationGranted
       OnboardingStep.AUDIO -> isAudioGranted
       OnboardingStep.FINISH -> true
@@ -244,7 +330,13 @@ fun PermissionDeniedState(
   val goNext: () -> Unit = { if (stepIndex < steps.lastIndex) stepIndex++ }
   val finishSetup: () -> Unit = {
     browserPreferences.onboardingCompleted.set(true)
-    if (onNext != null) onNext() else onRequestPermission()
+    if (restoredSettings) {
+      (context as? Activity)?.recreate()
+    } else if (onNext != null) {
+      onNext()
+    } else {
+      onRequestPermission()
+    }
   }
 
   BackHandler(enabled = isTelevision && stepIndex > 0 && !showExplanationDialog) {
@@ -316,6 +408,7 @@ fun PermissionDeniedState(
               ) {
                 val stepIcon = when (step) {
                   OnboardingStep.STORAGE -> Icons.RoundedFilled.Folder
+                  OnboardingStep.CONFIGURATION -> Icons.RoundedFilled.Settings
                   OnboardingStep.NOTIFICATIONS -> Icons.RoundedFilled.Notifications
                   OnboardingStep.AUDIO -> Icons.RoundedFilled.Mic
                   OnboardingStep.FINISH -> Icons.RoundedFilled.CheckCircle
@@ -343,10 +436,10 @@ fun PermissionDeniedState(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                  text = if (step == OnboardingStep.FINISH) {
-                    stringResource(R.string.onboarding_all_set_title)
-                  } else {
-                    stringResource(R.string.ui_app_permissions)
+                  text = when (step) {
+                    OnboardingStep.FINISH -> stringResource(R.string.onboarding_all_set_title)
+                    OnboardingStep.CONFIGURATION -> stringResource(R.string.onboarding_configuration_title)
+                    else -> stringResource(R.string.ui_app_permissions)
                   },
                   style = MaterialTheme.typography.headlineMedium,
                   fontWeight = FontWeight.Bold,
@@ -357,10 +450,10 @@ fun PermissionDeniedState(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 Text(
-                  text = if (step == OnboardingStep.FINISH) {
-                    stringResource(R.string.onboarding_all_set_desc)
-                  } else {
-                    stringResource(R.string.ui_permissions_setup_subtitle)
+                  text = when (step) {
+                    OnboardingStep.FINISH -> stringResource(R.string.onboarding_all_set_desc)
+                    OnboardingStep.CONFIGURATION -> stringResource(R.string.onboarding_configuration_desc)
+                    else -> stringResource(R.string.ui_permissions_setup_subtitle)
                   },
                   style = MaterialTheme.typography.bodyMedium,
                   textAlign = TextAlign.Center,
@@ -403,6 +496,22 @@ fun PermissionDeniedState(
                           }
                         }
                       },
+                    )
+
+                  OnboardingStep.CONFIGURATION ->
+                    PermissionSectionCard(
+                      title = stringResource(R.string.onboarding_configuration_card_title),
+                      description = configurationMessage
+                        ?: stringResource(R.string.onboarding_configuration_card_desc),
+                      isGranted = configurationFolderUri.isNotBlank() && !configuringFolder,
+                      icon = Icons.RoundedFilled.Folder,
+                      modifier =
+                        if (configurationFolderUri.isBlank() && !configuringFolder) {
+                          Modifier.tvInitialFocus(stepFocusRequester)
+                        } else {
+                          Modifier
+                        },
+                      onClick = { if (!configuringFolder) configurationFolderLauncher.launch(null) },
                     )
 
                   OnboardingStep.NOTIFICATIONS ->

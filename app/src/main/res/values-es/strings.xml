@@ -2619,4 +2619,12 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="watch_stats_empty">Reproduce contenido para empezar a crear estadísticas.</string>
   <string name="pref_debug_log_size_title">Límite del registro</string>
   <string name="pref_debug_log_size_summary">Conserva hasta %1$d MB en el visor y los diagnósticos compartidos.</string>
+  <string name="onboarding_configuration_title">Configurar almacenamiento de mpvRx</string>
+  <string name="onboarding_configuration_desc">Elige la carpeta de configuración para ajustes, copias, scripts, subtítulos y descargas.</string>
+  <string name="onboarding_configuration_card_title">Carpeta de configuración</string>
+  <string name="onboarding_configuration_card_desc">Selecciona la carpeta de configuración de mpvRx. Los ajustes del nivel raíz o de Backup se restauran automáticamente.</string>
+  <string name="onboarding_configuration_restoring">Buscando copias de ajustes…</string>
+  <string name="onboarding_configuration_no_backup">Carpeta configurada. Las descargas usarán Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Ajustes restaurados desde %1$s. Las descargas usarán Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">No se pudo completar la configuración de la carpeta: %1$s</string>
 </resources>

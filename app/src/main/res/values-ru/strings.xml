@@ -2633,4 +2633,12 @@
   <string name="watch_stats_empty">Запустите воспроизведение, чтобы начать сбор статистики.</string>
   <string name="pref_debug_log_size_title">Ограничение размера журналов</string>
   <string name="pref_debug_log_size_summary">Хранить до %1$d МБ в просмотрщике и общих диагностических данных.</string>
+  <string name="onboarding_configuration_title">Настройка хранилища mpvRx</string>
+  <string name="onboarding_configuration_desc">Выберите папку конфигурации для настроек, резервных копий, скриптов, субтитров и загрузок.</string>
+  <string name="onboarding_configuration_card_title">Папка конфигурации</string>
+  <string name="onboarding_configuration_card_desc">Выберите папку конфигурации mpvRx. Настройки из корня или Backup будут восстановлены автоматически.</string>
+  <string name="onboarding_configuration_restoring">Проверка резервных копий настроек…</string>
+  <string name="onboarding_configuration_no_backup">Папка настроена. Загрузки будут сохраняться в Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Настройки восстановлены из %1$s. Загрузки будут сохраняться в Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">Не удалось завершить настройку папки: %1$s</string>
 </resources>

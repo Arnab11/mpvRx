@@ -73,6 +73,7 @@ class SettingsManager(
     private const val LAST_BACKUP_TIME = "last_time"
     private const val AUTO_BACKUP_RETENTION = 7
     private val AUTO_BACKUP_FILE_REGEX = Regex("""mpvrx_settings_[0-9]{8}_[0-9]{6}(?: \([0-9]+\))?\.xml""")
+    private val BACKUP_TIMESTAMP_REGEX = Regex("""mpvrx_settings_([0-9]{8}_[0-9]{6})""", RegexOption.IGNORE_CASE)
   }
 
   suspend fun exportSettings(outputUri: Uri): Result<ExportStats> =
@@ -163,8 +164,55 @@ class SettingsManager(
       }
     }
 
+  suspend fun restoreNewestFromConfiguration(treeUri: String): Result<AutoRestoreStats?> =
+    withContext(Dispatchers.IO) {
+      try {
+        val root = DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
+          ?: error("Configuration folder is unavailable")
+        val backupFolder = root.listFiles().firstOrNull { file ->
+          file.isDirectory && file.name.equals("Backup", ignoreCase = true)
+        }
+        val candidates = (root.listFiles().asSequence() + backupFolder?.listFiles().orEmpty().asSequence())
+          .filter { file ->
+            file.isFile && file.name?.let { name ->
+              name.startsWith("mpvrx_settings_", ignoreCase = true) && name.endsWith(".xml", ignoreCase = true)
+            } == true
+          }
+          .sortedWith(
+            compareByDescending<DocumentFile>(::backupSortTime)
+              .thenByDescending { file -> file.name.orEmpty() },
+          )
+          .toList()
+
+        var lastFailure: Throwable? = null
+        for (candidate in candidates) {
+          currentCoroutineContext().ensureActive()
+          val restored = importSettings(candidate.uri)
+          val stats = restored.getOrNull()
+          if (stats != null) return@withContext Result.success(AutoRestoreStats(candidate.name.orEmpty(), stats))
+          lastFailure = restored.exceptionOrNull()
+        }
+        if (candidates.isNotEmpty() && lastFailure != null) {
+          Result.failure(lastFailure!!)
+        } else {
+          Result.success(null)
+        }
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (error: Exception) {
+        Result.failure(error)
+      }
+    }
+
   fun lastAutoBackupTime(): Long =
     context.getSharedPreferences(AUTO_BACKUP_STATE, Context.MODE_PRIVATE).getLong(LAST_BACKUP_TIME, 0L)
+
+  private fun backupSortTime(file: DocumentFile): Long {
+    val fromName = BACKUP_TIMESTAMP_REGEX.find(file.name.orEmpty())?.groupValues?.getOrNull(1)?.let { timestamp ->
+      runCatching { SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT).parse(timestamp)?.time }.getOrNull()
+    } ?: 0L
+    return fromName.takeIf { it > 0L } ?: file.lastModified()
+  }
 
   private fun snapshotSignature(snapshot: File): String {
     val digest = MessageDigest.getInstance("SHA-256")
@@ -493,5 +541,10 @@ class SettingsManager(
   data class AutoBackupStats(
     val fileName: String,
     val totalExported: Int,
+  )
+
+  data class AutoRestoreStats(
+    val fileName: String,
+    val importStats: ImportStats,
   )
 }

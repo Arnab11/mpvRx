@@ -52,6 +52,7 @@ import androidx.core.net.toUri
 import androidx.core.os.LocaleListCompat
 import androidx.documentfile.provider.DocumentFile
 import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.domain.download.DownloadLocations
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
@@ -132,6 +133,7 @@ object AdvancedPreferencesScreen : Screen {
     val preferences = koinInject<AdvancedPreferences>()
     val mpvConfigCache = koinInject<MpvConfigCache>()
     val settingsManager = koinInject<SettingsManager>()
+    val downloadLocations = koinInject<DownloadLocations>()
     val foldersPreferences = koinInject<FoldersPreferences>()
     val subtitlesPreferences = koinInject<SubtitlesPreferences>()
     val scope = rememberCoroutineScope()
@@ -237,8 +239,11 @@ object AdvancedPreferencesScreen : Screen {
         preferences.mpvConfStorageUri.set(uriString)
         subtitlesPreferences.subtitleSaveFolder.set(uriString)
         val root = DocumentFile.fromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
-        listOf("fonts", "Subtitles", "scripts", "script-opts", "shaders").forEach { name ->
+        listOf("Backup", "Downloads", "fonts", "Subtitles", "scripts", "script-opts", "shaders").forEach { name ->
           if (root.findFile(name) == null) root.createDirectory(name)
+        }
+        if (downloadLocations.setLocationUnderTree(uri, "Downloads") == null) {
+          Toast.makeText(context, context.getString(R.string.onboarding_configuration_restore_failed, unknownError), Toast.LENGTH_LONG).show()
         }
         if (autoBackupEnabled) {
           scope.launch {
@@ -1053,6 +1058,8 @@ object AdvancedPreferencesScreen : Screen {
               SliderPreference(
                 value = debugLogSizeMb.toFloat(),
                 onValueChange = { value -> preferences.debugLogSizeMb.set(value.toInt().coerceIn(1, 10)) },
+                sliderValue = debugLogSizeMb.toFloat(),
+                onSliderValueChange = { value -> preferences.debugLogSizeMb.set(value.toInt().coerceIn(1, 10)) },
                 title = { Text(stringResource(R.string.pref_debug_log_size_title)) },
                 summary = {
                   Text(

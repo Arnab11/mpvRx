@@ -2619,4 +2619,12 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="watch_stats_empty">Reproduza alguma mídia para começar a criar estatísticas.</string>
   <string name="pref_debug_log_size_title">Limite do tamanho dos logs</string>
   <string name="pref_debug_log_size_summary">Mantém até %1$d MB no visualizador e nos diagnósticos compartilhados.</string>
+  <string name="onboarding_configuration_title">Configurar armazenamento do mpvRx</string>
+  <string name="onboarding_configuration_desc">Escolha a pasta de configuração usada para ajustes, backups, scripts, legendas e downloads.</string>
+  <string name="onboarding_configuration_card_title">Pasta de configuração</string>
+  <string name="onboarding_configuration_card_desc">Selecione a pasta de configuração do mpvRx. Ajustes na raiz ou em Backup serão restaurados automaticamente.</string>
+  <string name="onboarding_configuration_restoring">Verificando backups de ajustes…</string>
+  <string name="onboarding_configuration_no_backup">Pasta configurada. Os downloads usarão Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restored">Ajustes restaurados de %1$s. Os downloads usarão Configuration/Downloads.</string>
+  <string name="onboarding_configuration_restore_failed">Não foi possível concluir a configuração da pasta: %1$s</string>
 </resources>
