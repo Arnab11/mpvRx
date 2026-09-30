@@ -2506,4 +2506,21 @@
   <string name="oss_six_description">फ़ाइल नाम पार्सर के साथ शामिल Python संगतता सहायक।</string>
   <string name="oss_anime4k_description">एनिमेटेड वीडियो के लिए रियल-टाइम अपस्केलिंग और पुनर्स्थापन शेडर।</string>
   <string name="oss_hdr_toys_description">HDR टोन मैपिंग, गैमट मैपिंग और ट्रांसफ़र फ़ंक्शन शेडर।</string>
+  <string name="pref_auto_backup_title">सेटिंग्स का ऑटो बैकअप</string>
+  <string name="pref_auto_backup_summary">mpvRx के बैकग्राउंड में जाने पर बदली हुई सेटिंग्स का बैकअप लें। नवीनतम सात बैकअप रखे जाते हैं।</string>
+  <string name="pref_auto_backup_select_folder">बैकअप फ़ोल्डर चुनें</string>
+  <string name="pref_auto_backup_last_backup">पिछला बैकअप: %1$s</string>
+  <string name="pref_auto_backup_folder_title">बैकअप फ़ोल्डर</string>
+  <string name="watch_stats_title">देखने के आँकड़े</string>
+  <string name="watch_stats_summary">प्लेबैक समय, गतिविधि और सबसे अधिक चलाया गया मीडिया</string>
+  <string name="watch_stats_total_time">कुल देखने का समय</string>
+  <string name="watch_stats_sessions">%1$d प्लेबैक सत्र</string>
+  <string name="watch_stats_reset">रीसेट</string>
+  <string name="watch_stats_video">वीडियो</string>
+  <string name="watch_stats_audio">ऑडियो</string>
+  <string name="watch_stats_last_seven_days">पिछले 7 दिन</string>
+  <string name="watch_stats_top_media">सबसे अधिक देखा गया</string>
+  <string name="watch_stats_empty">आँकड़े बनाने के लिए कुछ मीडिया चलाएँ।</string>
+  <string name="pref_debug_log_size_title">लॉग आकार सीमा</string>
+  <string name="pref_debug_log_size_summary">लॉग दर्शक और साझा निदान में अधिकतम %1$d MB रखें।</string>
 </resources>

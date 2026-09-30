@@ -2602,4 +2602,21 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="oss_six_description">Outils de compatibilité Python inclus avec l’analyseur.</string>
   <string name="oss_anime4k_description">Shaders d’agrandissement et de restauration en temps réel pour les vidéos animées.</string>
   <string name="oss_hdr_toys_description">Shaders de tone mapping HDR, de gamut mapping et de fonctions de transfert.</string>
+  <string name="pref_auto_backup_title">Sauvegarde automatique des réglages</string>
+  <string name="pref_auto_backup_summary">Sauvegarde les réglages modifiés lorsque mpvRx passe en arrière-plan. Les sept sauvegardes les plus récentes sont conservées.</string>
+  <string name="pref_auto_backup_select_folder">Sélectionner un dossier de sauvegarde</string>
+  <string name="pref_auto_backup_last_backup">Dernière sauvegarde : %1$s</string>
+  <string name="pref_auto_backup_folder_title">Dossier de sauvegarde</string>
+  <string name="watch_stats_title">Statistiques de lecture</string>
+  <string name="watch_stats_summary">Temps, activité et médias les plus regardés</string>
+  <string name="watch_stats_total_time">Temps total</string>
+  <string name="watch_stats_sessions">%1$d sessions de lecture</string>
+  <string name="watch_stats_reset">Réinitialiser</string>
+  <string name="watch_stats_video">Vidéo</string>
+  <string name="watch_stats_audio">Audio</string>
+  <string name="watch_stats_last_seven_days">7 derniers jours</string>
+  <string name="watch_stats_top_media">Les plus regardés</string>
+  <string name="watch_stats_empty">Lisez des médias pour commencer à créer vos statistiques.</string>
+  <string name="pref_debug_log_size_title">Limite de taille des journaux</string>
+  <string name="pref_debug_log_size_summary">Conserve jusqu’à %1$d Mo dans le visualiseur et les diagnostics partagés.</string>
 </resources>

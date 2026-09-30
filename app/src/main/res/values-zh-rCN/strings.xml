@@ -2601,4 +2601,21 @@
   <string name="oss_six_description">随文件名解析器提供的 Python 兼容性辅助库。</string>
   <string name="oss_anime4k_description">用于动画视频的实时放大和修复着色器。</string>
   <string name="oss_hdr_toys_description">HDR 色调映射、色域映射和传递函数着色器。</string>
+  <string name="pref_auto_backup_title">自动备份设置</string>
+  <string name="pref_auto_backup_summary">mpvRx 进入后台时备份已更改的设置，并保留最近七份备份。</string>
+  <string name="pref_auto_backup_select_folder">选择备份文件夹</string>
+  <string name="pref_auto_backup_last_backup">上次备份：%1$s</string>
+  <string name="pref_auto_backup_folder_title">备份文件夹</string>
+  <string name="watch_stats_title">观看统计</string>
+  <string name="watch_stats_summary">播放时长、活动和最常观看的媒体</string>
+  <string name="watch_stats_total_time">总观看时长</string>
+  <string name="watch_stats_sessions">%1$d 次播放</string>
+  <string name="watch_stats_reset">重置</string>
+  <string name="watch_stats_video">视频</string>
+  <string name="watch_stats_audio">音频</string>
+  <string name="watch_stats_last_seven_days">最近 7 天</string>
+  <string name="watch_stats_top_media">观看最多</string>
+  <string name="watch_stats_empty">播放一些媒体后即可生成统计。</string>
+  <string name="pref_debug_log_size_title">日志大小限制</string>
+  <string name="pref_debug_log_size_summary">日志查看器和共享诊断最多保留 %1$d MB。</string>
 </resources>

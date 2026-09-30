@@ -2722,4 +2722,21 @@
   <string name="oss_six_description">Python compatibility helpers bundled with the filename parser.</string>
   <string name="oss_anime4k_description">Real-time upscaling and restoration shaders for animated video.</string>
   <string name="oss_hdr_toys_description">HDR tone-mapping, gamut-mapping, and transfer-function shaders.</string>
+  <string name="pref_auto_backup_title">Automatic settings backup</string>
+  <string name="pref_auto_backup_summary">Back up changed settings when mpvRx moves to the background. The latest seven backups are kept.</string>
+  <string name="pref_auto_backup_select_folder">Select a backup folder</string>
+  <string name="pref_auto_backup_last_backup">Last backup: %1$s</string>
+  <string name="pref_auto_backup_folder_title">Backup folder</string>
+  <string name="watch_stats_title">Watching statistics</string>
+  <string name="watch_stats_summary">Playback time, activity, and most-watched media</string>
+  <string name="watch_stats_total_time">Total watch time</string>
+  <string name="watch_stats_sessions">%1$d playback sessions</string>
+  <string name="watch_stats_reset">Reset</string>
+  <string name="watch_stats_video">Video</string>
+  <string name="watch_stats_audio">Audio</string>
+  <string name="watch_stats_last_seven_days">Last 7 days</string>
+  <string name="watch_stats_top_media">Most watched</string>
+  <string name="watch_stats_empty">Play some media to start building your statistics.</string>
+  <string name="pref_debug_log_size_title">Log size limit</string>
+  <string name="pref_debug_log_size_summary">Keep up to %1$d MB in the log viewer and shared diagnostics.</string>
 </resources>

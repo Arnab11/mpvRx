@@ -2602,4 +2602,21 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="oss_six_description">Auxiliares de compatibilidade Python incluídos com o analisador.</string>
   <string name="oss_anime4k_description">Shaders de ampliação e restauração em tempo real para vídeos animados.</string>
   <string name="oss_hdr_toys_description">Shaders de mapeamento de tons HDR, gama e funções de transferência.</string>
+  <string name="pref_auto_backup_title">Backup automático das configurações</string>
+  <string name="pref_auto_backup_summary">Salva configurações alteradas quando o mpvRx vai para segundo plano. Os sete backups mais recentes são mantidos.</string>
+  <string name="pref_auto_backup_select_folder">Selecionar pasta de backup</string>
+  <string name="pref_auto_backup_last_backup">Último backup: %1$s</string>
+  <string name="pref_auto_backup_folder_title">Pasta de backup</string>
+  <string name="watch_stats_title">Estatísticas de reprodução</string>
+  <string name="watch_stats_summary">Tempo, atividade e mídias mais reproduzidas</string>
+  <string name="watch_stats_total_time">Tempo total</string>
+  <string name="watch_stats_sessions">%1$d sessões de reprodução</string>
+  <string name="watch_stats_reset">Redefinir</string>
+  <string name="watch_stats_video">Vídeo</string>
+  <string name="watch_stats_audio">Áudio</string>
+  <string name="watch_stats_last_seven_days">Últimos 7 dias</string>
+  <string name="watch_stats_top_media">Mais reproduzidos</string>
+  <string name="watch_stats_empty">Reproduza alguma mídia para começar a criar estatísticas.</string>
+  <string name="pref_debug_log_size_title">Limite do tamanho dos logs</string>
+  <string name="pref_debug_log_size_summary">Mantém até %1$d MB no visualizador e nos diagnósticos compartilhados.</string>
 </resources>

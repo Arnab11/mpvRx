@@ -17,12 +17,21 @@ import app.gyrolet.mpvrx.ui.player.NotificationStyle
 class AdvancedPreferences(
   preferenceStore: PreferenceStore,
 ) {
+  companion object {
+    const val AUTO_BACKUP_ENABLED_KEY = "auto_backup_enabled"
+    const val AUTO_BACKUP_FOLDER_URI_KEY = "auto_backup_folder_uri"
+  }
+
   val mpvConfStorageUri = preferenceStore.getString("mpv_conf_storage_location_uri")
   val mpvConf = preferenceStore.getString("mpv.conf")
   val inputConf = preferenceStore.getString("input.conf")
   val mpvConfOverrides = preferenceStore.getStringSet("mpv_conf_overrides", emptySet())
 
   val verboseLogging = preferenceStore.getBoolean("verbose_logging", BuildConfig.BUILD_TYPE != "release")
+  val debugLogSizeMb = preferenceStore.getInt("debug_log_size_mb", 3)
+
+  val autoBackupEnabled = preferenceStore.getBoolean(AUTO_BACKUP_ENABLED_KEY, false)
+  val autoBackupFolderUri = preferenceStore.getString(AUTO_BACKUP_FOLDER_URI_KEY)
 
   val enabledStatisticsPage = preferenceStore.getInt("enabled_stats_page", 0)
 

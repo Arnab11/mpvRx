@@ -62,6 +62,7 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.presentation.components.ConfirmDialog
 import app.gyrolet.mpvrx.presentation.crash.CrashActivity
+import app.gyrolet.mpvrx.presentation.crash.DebugLogReader
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.MpvConfigCache
@@ -81,6 +82,7 @@ import kotlinx.serialization.Serializable
 import me.zhanghai.compose.preference.ListPreference
 import me.zhanghai.compose.preference.Preference
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
+import me.zhanghai.compose.preference.SliderPreference
 import org.koin.compose.koinInject
 import java.io.File
 import java.util.Locale
@@ -207,6 +209,29 @@ object AdvancedPreferencesScreen : Screen {
                   ).show()
               },
             )
+          }
+        }
+      }
+
+    val autoBackupEnabled by preferences.autoBackupEnabled.collectAsState()
+    val autoBackupFolderUri by preferences.autoBackupFolderUri.collectAsState()
+    var lastAutoBackupTime by remember { mutableStateOf(settingsManager.lastAutoBackupTime()) }
+    val autoBackupFolderPicker =
+      rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        runCatching {
+          context.contentResolver.takePersistableUriPermission(
+            uri,
+            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+          )
+        }
+        preferences.autoBackupFolderUri.set(uri.toString())
+        preferences.autoBackupEnabled.set(true)
+        scope.launch {
+          settingsManager.autoBackupIfChanged(uri.toString()).onSuccess {
+            lastAutoBackupTime = settingsManager.lastAutoBackupTime()
+          }.onFailure { error ->
+            Toast.makeText(context, error.message ?: unknownError, Toast.LENGTH_LONG).show()
           }
         }
       }
@@ -375,6 +400,47 @@ object AdvancedPreferencesScreen : Screen {
 
           item {
             PreferenceCard {
+              SwitchPreference(
+                value = autoBackupEnabled,
+                enabled = autoBackupFolderUri.isNotBlank(),
+                onValueChange = preferences.autoBackupEnabled::set,
+                title = { Text(stringResource(R.string.pref_auto_backup_title)) },
+                summary = {
+                  Text(
+                    if (autoBackupFolderUri.isBlank()) {
+                      stringResource(R.string.pref_auto_backup_select_folder)
+                    } else if (lastAutoBackupTime > 0L) {
+                      stringResource(
+                        R.string.pref_auto_backup_last_backup,
+                        android.text.format.DateUtils.getRelativeTimeSpanString(lastAutoBackupTime),
+                      )
+                    } else {
+                      stringResource(R.string.pref_auto_backup_summary)
+                    },
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+
+              Preference(
+                title = { Text(stringResource(R.string.pref_auto_backup_folder_title)) },
+                summary = {
+                  Text(
+                    autoBackupFolderUri.takeIf(String::isNotBlank)
+                      ?.let(Uri::parse)
+                      ?.let { uri -> DocumentFile.fromTreeUri(context, uri)?.name }
+                      ?: stringResource(R.string.pref_auto_backup_select_folder),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+                icon = { Icon(Icons.RoundedFilled.Folder, contentDescription = null) },
+                onClick = { autoBackupFolderPicker.launch(null) },
+              )
+
+              PreferenceDivider()
+
               Preference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_export_settings_title),
                 title = { Text(text = stringResource(R.string.pref_export_settings_title)) },
@@ -669,6 +735,20 @@ object AdvancedPreferencesScreen : Screen {
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },
+              )
+
+              PreferenceDivider()
+
+              Preference(
+                title = { Text(stringResource(R.string.watch_stats_title)) },
+                summary = {
+                  Text(
+                    stringResource(R.string.watch_stats_summary),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+                icon = { Icon(Icons.RoundedFilled.History, contentDescription = null) },
+                onClick = { backStack.navigateTo(WatchStatsScreen) },
               )
 
               PreferenceDivider()
@@ -969,6 +1049,7 @@ object AdvancedPreferencesScreen : Screen {
             PreferenceCard {
               val activity = LocalActivity.current!!
               val verboseLogging by preferences.verboseLogging.collectAsState()
+              val debugLogSizeMb by preferences.debugLogSizeMb.collectAsState()
 
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_advanced_verbose_logging_title),
@@ -985,6 +1066,22 @@ object AdvancedPreferencesScreen : Screen {
 
               PreferenceDivider()
 
+              SliderPreference(
+                value = debugLogSizeMb.toFloat(),
+                onValueChange = { value -> preferences.debugLogSizeMb.set(value.toInt().coerceIn(1, 10)) },
+                title = { Text(stringResource(R.string.pref_debug_log_size_title)) },
+                summary = {
+                  Text(
+                    stringResource(R.string.pref_debug_log_size_summary, debugLogSizeMb),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+                valueRange = 1f..10f,
+                valueSteps = 8,
+              )
+
+              PreferenceDivider()
+
               Preference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_advanced_dump_logs_title),
                 title = { Text(stringResource(R.string.pref_advanced_dump_logs_title)) },
@@ -997,7 +1094,11 @@ object AdvancedPreferencesScreen : Screen {
                 onClick = {
                   scope.launch(Dispatchers.IO) {
                     val deviceInfo = CrashActivity.collectDeviceInfo()
-                    val logcat = CrashActivity.collectLogcat()
+                    val deviceInfoBytes = deviceInfo.toByteArray(Charsets.UTF_8).size
+                    val logcat = DebugLogReader.trimTextToByteBudget(
+                      CrashActivity.collectLogcat(),
+                      (debugLogSizeMb.coerceIn(1, 10) * 1024 * 1024 - deviceInfoBytes - 64).coerceAtLeast(0),
+                    )
 
                     SafeClipboard.copyPlainText(
                       context = context,

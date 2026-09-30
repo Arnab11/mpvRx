@@ -14,6 +14,7 @@ import android.content.SharedPreferences
 import android.net.Uri
 import android.util.Base64
 import android.util.Xml
+import androidx.documentfile.provider.DocumentFile
 import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.database.MpvRxDatabase
 import app.gyrolet.mpvrx.domain.network.NetworkConnection
@@ -31,6 +32,7 @@ import org.xmlpull.v1.XmlSerializer
 import java.io.File
 import java.io.InputStream
 import java.io.OutputStream
+import java.security.MessageDigest
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -66,6 +68,11 @@ class SettingsManager(
     private const val TYPE_BOOLEAN = "boolean"
     private const val TYPE_STRING_SET = "stringSet"
     private const val STRING_SET_SEPARATOR = "|||"
+    private const val AUTO_BACKUP_STATE = "settings_auto_backup_state"
+    private const val LAST_BACKUP_SIGNATURE = "last_signature"
+    private const val LAST_BACKUP_TIME = "last_time"
+    private const val AUTO_BACKUP_RETENTION = 7
+    private val AUTO_BACKUP_FILE_REGEX = Regex("""mpvrx_settings_[0-9]{8}_[0-9]{6}(?: \([0-9]+\))?\.xml""")
   }
 
   suspend fun exportSettings(outputUri: Uri): Result<ExportStats> =
@@ -102,6 +109,66 @@ class SettingsManager(
       }
     }
 
+  suspend fun autoBackupIfChanged(treeUri: String): Result<AutoBackupStats?> =
+    withContext(Dispatchers.IO) {
+      try {
+        val root = DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
+          ?: error("Backup folder is unavailable")
+        require(root.canWrite()) { "Backup folder is not writable" }
+
+        val snapshot = File.createTempFile("auto_backup_", ".xml", context.cacheDir)
+        try {
+          val stats = snapshot.outputStream().use { output -> writeSettingsToXml(output) }
+          currentCoroutineContext().ensureActive()
+          val signature = snapshotSignature(snapshot)
+          val state = context.getSharedPreferences(AUTO_BACKUP_STATE, Context.MODE_PRIVATE)
+          if (signature == state.getString(LAST_BACKUP_SIGNATURE, null)) return@withContext Result.success(null)
+
+          val temporary = root.createFile("text/xml", ".mpvrx-settings-${System.currentTimeMillis()}.tmp")
+            ?: error("Unable to create backup")
+          var finalized = false
+          try {
+            context.contentResolver.openOutputStream(temporary.uri, "wt")?.use { output ->
+              snapshot.inputStream().use { input -> input.copyTo(output) }
+            } ?: error("Unable to open backup")
+            currentCoroutineContext().ensureActive()
+
+            val finalName = getDefaultExportFilename()
+            check(temporary.renameTo(finalName)) { "Unable to finalize backup" }
+            finalized = true
+            root.listFiles()
+              .filter { file -> file.isFile && file.name?.matches(AUTO_BACKUP_FILE_REGEX) == true }
+              .sortedByDescending { file -> file.name.orEmpty() }
+              .drop(AUTO_BACKUP_RETENTION)
+              .forEach(DocumentFile::delete)
+            state.edit()
+              .putString(LAST_BACKUP_SIGNATURE, signature)
+              .putLong(LAST_BACKUP_TIME, System.currentTimeMillis())
+              .apply()
+            Result.success(AutoBackupStats(finalName, stats.totalExported))
+          } finally {
+            if (!finalized) temporary.delete()
+          }
+        } finally {
+          snapshot.delete()
+        }
+      } catch (cancelled: CancellationException) {
+        throw cancelled
+      } catch (error: Exception) {
+        Result.failure(error)
+      }
+    }
+
+  fun lastAutoBackupTime(): Long =
+    context.getSharedPreferences(AUTO_BACKUP_STATE, Context.MODE_PRIVATE).getLong(LAST_BACKUP_TIME, 0L)
+
+  private fun snapshotSignature(snapshot: File): String {
+    val digest = MessageDigest.getInstance("SHA-256")
+    val normalized = snapshot.readText().replace(Regex("""\s+exportDate="[^"]*"""), "")
+    digest.update(normalized.toByteArray(Charsets.UTF_8))
+    return digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+  }
+
   private suspend fun writeSettingsToXml(outputStream: OutputStream): ExportStats {
     val allPreferences: MutableMap<String, Any?> = preferenceStore.getAll().toMutableMap()
     val wallpaper = allPreferences[AppearancePreferences.CUSTOM_WALLPAPER_URI_KEY] as? String
@@ -130,9 +197,13 @@ class SettingsManager(
     val exportedKeys = mutableListOf<String>()
 
     serializer.startTag(null, TAG_PREFERENCES)
-    for ((key, value) in allPreferences) {
+    for ((key, value) in allPreferences.toSortedMap()) {
       currentCoroutineContext().ensureActive()
-      if (key != BrowserPreferences.ONBOARDING_COMPLETED_KEY && value != null) {
+      if (key != BrowserPreferences.ONBOARDING_COMPLETED_KEY &&
+        key != AdvancedPreferences.AUTO_BACKUP_ENABLED_KEY &&
+        key != AdvancedPreferences.AUTO_BACKUP_FOLDER_URI_KEY &&
+        value != null
+      ) {
         writePreference(serializer, key, value)
         exportedCount++
         exportedKeys.add("pref:$key")
@@ -220,7 +291,10 @@ class SettingsManager(
         serializer.attribute(
           null,
           ATTR_VALUE,
-          Base64.encodeToString(JSONArray(value.toList()).toString().toByteArray(Charsets.UTF_8), Base64.NO_WRAP),
+          Base64.encodeToString(
+            JSONArray(value.map(Any?::toString).sorted()).toString().toByteArray(Charsets.UTF_8),
+            Base64.NO_WRAP,
+          ),
         )
       }
       else -> error("Unsupported preference type: $key")
@@ -278,8 +352,11 @@ class SettingsManager(
               stats.version = version ?: "unknown"
             }
             TAG_PREFERENCE -> {
+              val key = parser.getAttributeValue(null, ATTR_KEY)
               if (parents.size == 3 && parents[1] == TAG_PREFERENCES &&
-                parser.getAttributeValue(null, ATTR_KEY) != BrowserPreferences.ONBOARDING_COMPLETED_KEY
+                key != BrowserPreferences.ONBOARDING_COMPLETED_KEY &&
+                key != AdvancedPreferences.AUTO_BACKUP_ENABLED_KEY &&
+                key != AdvancedPreferences.AUTO_BACKUP_FOLDER_URI_KEY
               ) {
                 try {
                   readPreference(parser, editor)
@@ -393,7 +470,7 @@ class SettingsManager(
     )
 
   fun getDefaultExportFilename(): String {
-    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+    val dateFormat = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.ROOT)
     return "mpvrx_settings_${dateFormat.format(Date())}.xml"
   }
 
@@ -407,5 +484,10 @@ class SettingsManager(
   data class ExportStats(
     val totalExported: Int,
     val exportedKeys: List<String>,
+  )
+
+  data class AutoBackupStats(
+    val fileName: String,
+    val totalExported: Int,
   )
 }

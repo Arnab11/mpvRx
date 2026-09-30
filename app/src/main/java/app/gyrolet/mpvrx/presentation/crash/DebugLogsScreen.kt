@@ -64,6 +64,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import app.gyrolet.mpvrx.preferences.AdvancedPreferences
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.utils.clipboard.SafeClipboard
@@ -73,6 +75,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.compose.koinInject
 import java.io.File
 
 private const val DEBUG_LOG_POLL_INTERVAL_MS = 1_500L
@@ -84,6 +87,8 @@ internal fun DebugLogsScreen(onNavigateBack: () -> Unit) {
   val context = LocalContext.current
   val scope = rememberCoroutineScope()
   val listState = rememberLazyListState()
+  val preferences = koinInject<AdvancedPreferences>()
+  val logSizeMb by preferences.debugLogSizeMb.collectAsState()
 
   var query by remember { mutableStateOf("") }
   var selectedLevels by remember { mutableStateOf(DebugLogLevel.entries.toSet()) }
@@ -106,9 +111,11 @@ internal fun DebugLogsScreen(onNavigateBack: () -> Unit) {
 
   // Keep collecting while the UI is paused. Pause freezes the visible snapshot, not collection,
   // so resuming catches up immediately instead of losing everything emitted while paused.
-  LaunchedEffect(clearedAt) {
+  LaunchedEffect(clearedAt, logSizeMb) {
     while (isActive) {
-      val result = withContext(Dispatchers.IO) { runCatching { DebugLogReader.readSnapshot() } }
+      val result = withContext(Dispatchers.IO) {
+        runCatching { DebugLogReader.readSnapshot(logSizeMb.coerceIn(1, 10) * 1024 * 1024) }
+      }
       result
         .onSuccess { snapshot ->
           val nextEntries = snapshot.entries.filter { it.timeMillis >= clearedAt }
@@ -170,6 +177,7 @@ internal fun DebugLogsScreen(onNavigateBack: () -> Unit) {
     buildDebugLogText(
       entries = filteredEntries,
       includeDeviceInfo = includeDeviceInfo,
+      maxBytes = logSizeMb.coerceIn(1, 10) * 1024 * 1024,
     )
 
   fun togglePause() {
@@ -613,16 +621,18 @@ private fun formatDebugLogEntry(entry: DebugLogEntry): String =
 private fun buildDebugLogText(
   entries: List<DebugLogEntry>,
   includeDeviceInfo: Boolean,
+  maxBytes: Int,
 ): String {
   if (entries.isEmpty()) return ""
-  return buildString {
+  val prefix =
     if (includeDeviceInfo) {
-      appendLine(CrashActivity.collectDeviceInfo())
-      appendLine()
-      appendLine("Logcat:")
+      "${CrashActivity.collectDeviceInfo()}\n\nLogcat:\n"
+    } else {
+      ""
     }
-    entries.forEach { entry -> appendLine(formatDebugLogEntry(entry)) }
-  }.trimEnd()
+  val logBudget = (maxBytes - prefix.toByteArray(Charsets.UTF_8).size).coerceAtLeast(0)
+  val logs = entries.joinToString("\n", transform = ::formatDebugLogEntry)
+  return (prefix + DebugLogReader.trimTextToByteBudget(logs, logBudget)).trimEnd()
 }
 
 private fun shareDebugLogs(

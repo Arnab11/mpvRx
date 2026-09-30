@@ -41,6 +41,8 @@ import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -67,6 +69,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -263,104 +267,138 @@ class CrashActivity : AppCompatActivity() {
             Modifier.widthIn(max = 640.dp).fillMaxSize()
               .verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp),
           verticalArrangement = Arrangement.spacedBy(16.dp),
+          horizontalAlignment = Alignment.CenterHorizontally,
         ) {
           Surface(
             shape = MaterialTheme.shapes.extraLarge,
             color = MaterialTheme.colorScheme.tertiaryContainer,
-            modifier = Modifier.size(72.dp),
+            modifier = Modifier.size(88.dp),
           ) {
             Icon(
               painter = painterResource(R.drawable.ic_launcher_monochrome),
               contentDescription = null,
               tint = MaterialTheme.colorScheme.onTertiaryContainer,
-              modifier = Modifier.padding(16.dp),
+              modifier = Modifier.padding(20.dp),
             )
           }
-          Text(stringResource(R.string.crash_screen_title), style = MaterialTheme.typography.headlineMedium)
+          Text(
+            stringResource(R.string.crash_screen_title),
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+          )
           Text(
             stringResource(R.string.crash_screen_subtitle, stringResource(R.string.app_name)),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
           )
-          SelectionContainer {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-              Text(CrashX.getThrowableClassFromIntent(intent), style = MaterialTheme.typography.titleSmall)
-              Text(
-                stringResource(R.string.crash_screen_report_id, CrashX.getCrashIdFromIntent(intent)),
-                style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-              )
-            }
-          }
-          Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(
-              onClick = { CrashX.restartApplication(this@CrashActivity, crashConfig) },
-              modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-              enabled = !resetting,
-            ) {
-              Icon(Icons.RoundedFilled.Refresh, null, modifier = Modifier.size(20.dp))
-              Spacer(Modifier.width(8.dp))
-              Text(stringResource(R.string.crash_screen_restart))
-            }
-            OutlinedButton(
-              onClick = { CrashX.closeApplication(this@CrashActivity, crashConfig) },
-              modifier = Modifier.weight(1f).heightIn(min = 56.dp),
-              enabled = !resetting,
-            ) {
-              Icon(Icons.RoundedFilled.Close, null, modifier = Modifier.size(20.dp))
-              Spacer(Modifier.width(8.dp))
-              Text(stringResource(R.string.ui_close))
-            }
-          }
-          if (preparingReport) {
-            LinearProgressIndicator(Modifier.fillMaxWidth())
-            Text(
-              stringResource(R.string.crash_screen_report_preparing),
-              style = MaterialTheme.typography.bodySmall,
-            )
-          }
-          if (reportFailed) {
-            Text(stringResource(R.string.crash_screen_report_failed), color = MaterialTheme.colorScheme.error)
-            TextButton(onClick = ::prepareReport) { Text(stringResource(R.string.contributors_retry)) }
+
+          Button(
+            onClick = { CrashX.restartApplication(this@CrashActivity, crashConfig) },
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            enabled = !resetting,
+          ) {
+            Icon(Icons.RoundedFilled.Refresh, null, modifier = Modifier.size(20.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(stringResource(R.string.crash_screen_restart))
           }
           OutlinedButton(
-            onClick = ::shareReport,
-            enabled = reportFile != null,
+            onClick = { CrashX.closeApplication(this@CrashActivity, crashConfig) },
             modifier = Modifier.fillMaxWidth().heightIn(min = 52.dp),
+            enabled = !resetting,
           ) {
-            Icon(Icons.RoundedFilled.Share, null, modifier = Modifier.size(20.dp))
+            Icon(Icons.RoundedFilled.Close, null, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(8.dp))
-            Text(stringResource(R.string.crash_screen_share))
+            Text(stringResource(R.string.ui_close))
           }
-          Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            TextButton(onClick = { showDetails = true }, enabled = reportFile != null, modifier = Modifier.weight(1f)) {
-              Icon(Icons.RoundedFilled.BugReport, null, modifier = Modifier.size(20.dp))
-              Spacer(Modifier.width(8.dp))
-              Text(stringResource(R.string.crash_screen_details))
-            }
-            TextButton(onClick = ::copyReport, enabled = reportFile != null) {
-              Icon(Icons.RoundedFilled.ContentCopy, null, modifier = Modifier.size(20.dp))
-              Spacer(Modifier.width(8.dp))
-              Text(stringResource(R.string.ui_copy_all))
+
+          Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainer,
+          ) {
+            SelectionContainer {
+              Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(CrashX.getThrowableClassFromIntent(intent), style = MaterialTheme.typography.titleSmall)
+                Text(
+                  stringResource(R.string.crash_screen_report_id, CrashX.getCrashIdFromIntent(intent)),
+                  style = MaterialTheme.typography.labelMedium,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+              }
             }
           }
-          Text(
-            stringResource(R.string.crash_screen_report_privacy),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-          if (isDatabaseRelated && !databaseDeleted) {
-            TextButton(
-              onClick = { confirmReset = true },
-              enabled = !resetting,
+
+          Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = MaterialTheme.colorScheme.surfaceContainerLow,
+          ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+              Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                Icon(Icons.RoundedFilled.BugReport, null, tint = MaterialTheme.colorScheme.primary)
+                Text(
+                  stringResource(R.string.crash_screen_logs_title),
+                  style = MaterialTheme.typography.titleMedium,
+                  fontWeight = FontWeight.SemiBold,
+                )
+              }
+              Text(
+                stringResource(R.string.crash_screen_report_privacy),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+              )
+              if (preparingReport) {
+                LinearProgressIndicator(Modifier.fillMaxWidth())
+                Text(stringResource(R.string.crash_screen_report_preparing), style = MaterialTheme.typography.bodySmall)
+              }
+              if (reportFailed) {
+                Text(stringResource(R.string.crash_screen_report_failed), color = MaterialTheme.colorScheme.error)
+                TextButton(onClick = ::prepareReport) { Text(stringResource(R.string.contributors_retry)) }
+              }
+              HorizontalDivider()
+              FilledTonalButton(
+                onClick = ::shareReport,
+                enabled = reportFile != null,
+                modifier = Modifier.fillMaxWidth(),
+              ) {
+                Icon(Icons.RoundedFilled.Share, null, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(stringResource(R.string.crash_screen_share))
+              }
+              Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                TextButton(onClick = { showDetails = true }, enabled = reportFile != null, modifier = Modifier.weight(1f)) {
+                  Text(stringResource(R.string.crash_screen_details))
+                }
+                TextButton(onClick = ::copyReport, enabled = reportFile != null, modifier = Modifier.weight(1f)) {
+                  Text(stringResource(R.string.ui_copy_all))
+                }
+              }
+            }
+          }
+
+          if (isDatabaseRelated || databaseDeleted || resetFailed) {
+            Surface(
+              modifier = Modifier.fillMaxWidth(),
+              shape = MaterialTheme.shapes.large,
+              color = if (databaseDeleted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
             ) {
-              Text(stringResource(R.string.crash_screen_fix_crash), color = MaterialTheme.colorScheme.error)
+              Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                  when {
+                    databaseDeleted -> stringResource(R.string.crash_screen_database_deleted)
+                    resetFailed -> stringResource(R.string.crash_screen_reset_failed)
+                    else -> stringResource(R.string.crash_screen_database_hint)
+                  },
+                  color = if (databaseDeleted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+                )
+                if (isDatabaseRelated && !databaseDeleted) {
+                  TextButton(onClick = { confirmReset = true }, enabled = !resetting) {
+                    Text(stringResource(R.string.crash_screen_fix_crash), color = MaterialTheme.colorScheme.error)
+                  }
+                }
+              }
             }
-          }
-          if (databaseDeleted) {
-            Text(stringResource(R.string.crash_screen_database_deleted), color = MaterialTheme.colorScheme.primary)
-          }
-          if (resetFailed) {
-            Text(stringResource(R.string.crash_screen_reset_failed), color = MaterialTheme.colorScheme.error)
           }
         }
       }

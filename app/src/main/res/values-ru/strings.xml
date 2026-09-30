@@ -2616,4 +2616,21 @@
   <string name="oss_six_description">Средства совместимости Python, включённые в анализатор имён.</string>
   <string name="oss_anime4k_description">Шейдеры повышения разрешения и восстановления анимационного видео в реальном времени.</string>
   <string name="oss_hdr_toys_description">Шейдеры тонального и цветового отображения HDR и передаточных функций.</string>
+  <string name="pref_auto_backup_title">Автоматическая копия настроек</string>
+  <string name="pref_auto_backup_summary">Сохраняет изменённые настройки при переходе mpvRx в фон. Хранятся семь последних копий.</string>
+  <string name="pref_auto_backup_select_folder">Выбрать папку копий</string>
+  <string name="pref_auto_backup_last_backup">Последняя копия: %1$s</string>
+  <string name="pref_auto_backup_folder_title">Папка копий</string>
+  <string name="watch_stats_title">Статистика просмотра</string>
+  <string name="watch_stats_summary">Время, активность и самые просматриваемые медиа</string>
+  <string name="watch_stats_total_time">Общее время просмотра</string>
+  <string name="watch_stats_sessions">Сеансов воспроизведения: %1$d</string>
+  <string name="watch_stats_reset">Сбросить</string>
+  <string name="watch_stats_video">Видео</string>
+  <string name="watch_stats_audio">Аудио</string>
+  <string name="watch_stats_last_seven_days">Последние 7 дней</string>
+  <string name="watch_stats_top_media">Самые просматриваемые</string>
+  <string name="watch_stats_empty">Запустите воспроизведение, чтобы начать сбор статистики.</string>
+  <string name="pref_debug_log_size_title">Ограничение размера журналов</string>
+  <string name="pref_debug_log_size_summary">Хранить до %1$d МБ в просмотрщике и общих диагностических данных.</string>
 </resources>

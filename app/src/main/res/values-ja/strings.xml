@@ -2595,4 +2595,21 @@
   <string name="oss_six_description">ファイル名パーサーに同梱された Python 互換ヘルパー。</string>
   <string name="oss_anime4k_description">アニメ動画向けのリアルタイム高解像度化・復元シェーダー。</string>
   <string name="oss_hdr_toys_description">HDR トーンマッピング、色域マッピング、伝達関数シェーダー。</string>
+  <string name="pref_auto_backup_title">設定の自動バックアップ</string>
+  <string name="pref_auto_backup_summary">mpvRx がバックグラウンドに移動したとき、変更された設定を保存します。最新の 7 件を保持します。</string>
+  <string name="pref_auto_backup_select_folder">バックアップフォルダーを選択</string>
+  <string name="pref_auto_backup_last_backup">前回のバックアップ: %1$s</string>
+  <string name="pref_auto_backup_folder_title">バックアップフォルダー</string>
+  <string name="watch_stats_title">視聴統計</string>
+  <string name="watch_stats_summary">再生時間、アクティビティ、よく視聴するメディア</string>
+  <string name="watch_stats_total_time">総視聴時間</string>
+  <string name="watch_stats_sessions">%1$d 回の再生セッション</string>
+  <string name="watch_stats_reset">リセット</string>
+  <string name="watch_stats_video">動画</string>
+  <string name="watch_stats_audio">音声</string>
+  <string name="watch_stats_last_seven_days">過去 7 日間</string>
+  <string name="watch_stats_top_media">よく視聴するメディア</string>
+  <string name="watch_stats_empty">メディアを再生すると統計が記録されます。</string>
+  <string name="pref_debug_log_size_title">ログサイズ上限</string>
+  <string name="pref_debug_log_size_summary">ログ表示と共有診断に最大 %1$d MB を保持します。</string>
 </resources>

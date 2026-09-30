@@ -27,6 +27,7 @@ import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.recentlyplayed.repository.RecentlyPlayedRepository
 import app.gyrolet.mpvrx.domain.network.NetworkImageRepository
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
+import app.gyrolet.mpvrx.repository.WatchStatsRepository
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.singleOf
@@ -1047,6 +1048,7 @@ val DatabaseModule =
 
     single { ThumbnailRepository(androidContext()) }
     single { NetworkImageRepository(context = androidContext(), networkRepository = get()) }
+    single { WatchStatsRepository(androidContext()) }
 
     single { get<MpvRxDatabase>().audiobookDao() }
     single { get<MpvRxDatabase>().playbackBookmarkDao() }
