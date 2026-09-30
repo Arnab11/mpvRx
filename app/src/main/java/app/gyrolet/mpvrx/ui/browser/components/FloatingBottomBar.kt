@@ -42,6 +42,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.presentation.components.LiquidGlassStyle
 import app.gyrolet.mpvrx.presentation.components.LiquidGlassSurface
 import app.gyrolet.mpvrx.presentation.components.rememberLiquidGlassBackdrop
 import app.gyrolet.mpvrx.ui.icons.AppIcon
@@ -270,8 +271,9 @@ fun BrowserBottomBar(
               vertical = layoutParams.surfacePaddingVertical,
             ),
         shape = RoundedCornerShape(percent = 100),
-        glassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.32f),
-        fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        style = LiquidGlassStyle.MiniPlayer,
+        glassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.30f),
+        fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
         backdrop = backdrop,
       ) {
         Row(
