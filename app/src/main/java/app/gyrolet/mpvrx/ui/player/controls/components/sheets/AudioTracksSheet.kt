@@ -30,7 +30,6 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -48,6 +47,7 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetAction
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSectionHeader
+import app.gyrolet.mpvrx.ui.components.IconSwitch
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.TrackNode
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
@@ -180,7 +180,7 @@ fun AudioTracksSheet(
             ) {
               Text(stringResource(R.string.pref_audio_volume_normalization_title), modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge)
-              Switch(checked = volumeNormalization, onCheckedChange = null, enabled = audioEffectsEnabled)
+              IconSwitch(checked = volumeNormalization, onCheckedChange = null, enabled = audioEffectsEnabled)
             }
             Row(
               modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp)
@@ -192,7 +192,7 @@ fun AudioTracksSheet(
             ) {
               Text(stringResource(R.string.pref_audio_drc_title), modifier = Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge)
-              Switch(checked = drcEnabled, onCheckedChange = null, enabled = audioEffectsEnabled)
+              IconSwitch(checked = drcEnabled, onCheckedChange = null, enabled = audioEffectsEnabled)
             }
           }
         }

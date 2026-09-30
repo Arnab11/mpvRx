@@ -26,7 +26,6 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -43,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSectionHeader
+import app.gyrolet.mpvrx.ui.components.IconSwitch
 import app.gyrolet.mpvrx.ui.player.AutoCropState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
@@ -107,9 +107,9 @@ fun AspectRatioSheet(
         },
         supportingContent = { Text(androidx.compose.ui.res.stringResource(autoCropSummary)) },
         trailingContent = {
-          Switch(
+          IconSwitch(
             checked = autoCropEnabled,
-            onCheckedChange = onAutoCropChanged,
+            onCheckedChange = null,
             enabled = autoCropControlEnabled,
           )
         },
