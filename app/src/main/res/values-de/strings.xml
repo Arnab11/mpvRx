@@ -1137,6 +1137,7 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="ui_view_options">Ansichtsoptionen</string>
   <string name="ambient_glow">Leuchten</string>
   <string name="ambient_color">Farbe</string>
+  <string name="ambient_edge_blend">Kantenübergang</string>
   <string name="ambient_compositing">Compositing</string>
   <string name="ambient_visual_style">Visueller Stil</string>
   <string name="controls_reset_default_title">Auf Standard zurücksetzen?</string>

@@ -75,6 +75,9 @@ fun AmbientSheet(
   val warmth by viewModel.ambientWarmth.collectAsState()
   val fadeCurve by viewModel.ambientFadeCurve.collectAsState()
   val opacity by viewModel.ambientOpacity.collectAsState()
+  val glowEdgeBlend by viewModel.ambientGlowEdgeBlend.collectAsState()
+  val youTubeEdgeBlend by viewModel.ambientYouTubeEdgeBlend.collectAsState()
+  val edgeBlend = if (ambientStyle == AmbientStyle.Glow) glowEdgeBlend else youTubeEdgeBlend
   val isFast =
     remember(
       blurSamples, maxRadius, glowIntensity, satBoost, vignetteStrength, warmth, fadeCurve, opacity,
@@ -126,6 +129,24 @@ fun AmbientSheet(
       HorizontalDivider(
         modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
         color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.3f),
+      )
+
+      SliderItem(
+        label = stringResource(R.string.ambient_edge_blend),
+        valueText = "%.1f%%".format(edgeBlend * 100f),
+        value = edgeBlend,
+        onChange = { viewModel.setAmbientEdgeBlend(ambientStyle, it) },
+        min = 0f,
+        max = 0.1f,
+        steps = 19,
+        icon = {
+          AppSymbolIcon(
+            imageVector = Icons.RoundedFilled.Gradient,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.size(20.dp),
+          )
+        },
       )
 
       if (ambientStyle == AmbientStyle.Glow) {

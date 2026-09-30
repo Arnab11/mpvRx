@@ -1137,6 +1137,7 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="ui_view_options">Opções de visualização</string>
   <string name="ambient_glow">Brilho</string>
   <string name="ambient_color">Cor</string>
+  <string name="ambient_edge_blend">Mesclagem das bordas</string>
   <string name="ambient_compositing">Composição</string>
   <string name="ambient_visual_style">Estilo visual</string>
   <string name="controls_reset_default_title">Redefinir para o padrão?</string>

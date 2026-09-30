@@ -1149,6 +1149,7 @@
   <string name="ui_view_options">خيارات العرض</string>
   <string name="ambient_glow">توهّج</string>
   <string name="ambient_color">اللون</string>
+  <string name="ambient_edge_blend">مزج الحواف</string>
   <string name="ambient_compositing">الدمج</string>
   <string name="ambient_visual_style">النمط المرئي</string>
   <string name="controls_reset_default_title">إعادة الضبط إلى الافتراضي؟</string>

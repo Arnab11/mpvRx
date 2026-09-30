@@ -1069,6 +1069,7 @@
   <string name="ui_view_options">व्यू विकल्प</string>
   <string name="ambient_glow">ग्लो</string>
   <string name="ambient_color">रंग</string>
+  <string name="ambient_edge_blend">किनारों का मिश्रण</string>
   <string name="ambient_compositing">कंपोज़िटिंग</string>
   <string name="ambient_visual_style">विज़ुअल स्टाइल</string>
   <string name="controls_reset_default_title">डिफ़ॉल्ट पर रीसेट करें?</string>

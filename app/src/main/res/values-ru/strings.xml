@@ -1145,6 +1145,7 @@
   <string name="ui_view_options">Параметры вида</string>
   <string name="ambient_glow">Свечение</string>
   <string name="ambient_color">Цвет</string>
+  <string name="ambient_edge_blend">Смешивание краёв</string>
   <string name="ambient_compositing">Композиция</string>
   <string name="ambient_visual_style">Визуальный стиль</string>
   <string name="controls_reset_default_title">Сбросить настройки?</string>

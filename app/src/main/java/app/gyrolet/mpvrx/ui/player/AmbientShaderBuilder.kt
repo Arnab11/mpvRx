@@ -21,6 +21,7 @@ data class AmbientSharedShaderConfig(
   val bezelDepth: Float,
   val vignetteStrength: Float,
   val opacity: Float,
+  val edgeBlend: Float = 0f,
 )
 
 data class AmbientGlowShaderSpec(
@@ -148,8 +149,8 @@ vec3 apply_warmth(vec3 rgb, float amount) {
 
 /**
  * Start of hook(): remaps screen UV back to video UV and returns the untouched
- * video pixel for everything inside the video rect. Only ambient-area pixels
- * run the per-style blur below this block.
+ * video pixel outside the optional inner edge band. Only ambient-area pixels
+ * and the edge band run the per-style blur below this block.
  */
 private val GLSL_VIDEO_PROLOGUE =
   """
@@ -163,9 +164,23 @@ private val GLSL_VIDEO_PROLOGUE =
     vec2 safe_min = half_texel;
     vec2 safe_max = vec2(1.0) - half_texel;
 
-    if (video_uv.x >= 0.0 && video_uv.x <= 1.0 &&
-        video_uv.y >= 0.0 && video_uv.y <= 1.0) {
+    bool inside_video = video_uv.x >= 0.0 && video_uv.x <= 1.0 &&
+              video_uv.y >= 0.0 && video_uv.y <= 1.0;
+    float video_weight = 0.0;
+    if (inside_video) {
+      vec2 video_size = HOOKED_size / vec2(SCALE_X, SCALE_Y);
+      float blend_width = EDGE_BLEND * min(video_size.x, video_size.y);
+      float inside_dist = blend_width;
+      if (SCALE_X > 1.0) {
+        inside_dist = min(inside_dist, min(video_uv.x, 1.0 - video_uv.x) * video_size.x);
+      }
+      if (SCALE_Y > 1.0) {
+        inside_dist = min(inside_dist, min(video_uv.y, 1.0 - video_uv.y) * video_size.y);
+      }
+      if (EDGE_BLEND <= 0.0 || inside_dist >= blend_width) {
         return HOOKED_tex(clamp(video_uv, safe_min, safe_max));
+      }
+      video_weight = smoothstep(0.0, blend_width, inside_dist);
     }
 
     vec2 edge_origin = clamp(video_uv, safe_min, safe_max);
@@ -177,13 +192,17 @@ private val GLSL_VIDEO_PROLOGUE =
     vec2 aspect_fix = vec2(HOOKED_size.y / HOOKED_size.x, 1.0);
   """.trimIndent().prependIndent("    ")
 
-/** End of hook(): vignette, opacity, and the optional bezel blend. */
+/** End of hook(): vignette, opacity, and the optional edge and bezel blends. */
 private val GLSL_AMBIENT_EPILOGUE =
   """
     float vig_r = length(uv - 0.5) * 2.0;
     ambient_rgb *= mix(1.0, smoothstep(1.3, 0.1, vig_r), VIGNETTE_STR);
 
     vec4 ambient_out = vec4(ambient_rgb * OPACITY, 1.0);
+
+  if (inside_video) {
+    return mix(ambient_out, HOOKED_tex(clamp(video_uv, safe_min, safe_max)), video_weight);
+  }
 
     // A zero bezel means a hard, gap-free handoff from video to ambience.
     // The old max(BEZEL_DEPTH, 0.001) fallback forced a tiny transition even
@@ -215,6 +234,7 @@ object AmbientShaderBuilder {
 #define GLOW_INTENSITY   ${spec.glowIntensity}
 #define SAT_BOOST        ${spec.satBoost}
 #define BEZEL_DEPTH      ${spec.shared.bezelDepth}
+#define EDGE_BLEND       ${spec.shared.edgeBlend}
 #define VIGNETTE_STR     ${spec.shared.vignetteStrength}
 #define WARMTH           ${spec.warmth}
 #define OPACITY          ${spec.shared.opacity}

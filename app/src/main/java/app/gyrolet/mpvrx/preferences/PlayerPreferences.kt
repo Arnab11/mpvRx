@@ -163,6 +163,8 @@ class PlayerPreferences(
   val ambientWarmth = preferenceStore.getFloat("ambient_warmth", 0.0f)
   val ambientFadeCurve = preferenceStore.getFloat("ambient_fade_curve", 1.5f)
   val ambientOpacity = preferenceStore.getFloat("ambient_opacity", 1.0f)
+  val ambientGlowEdgeBlend = preferenceStore.getFloat("ambient_glow_edge_blend", 0.005f)
+  val ambientYouTubeEdgeBlend = preferenceStore.getFloat("ambient_youtube_edge_blend", 0.005f)
   val isAmbientEnabled = preferenceStore.getBoolean("ambient_enabled", false)
   val ambientBatterySaver = preferenceStore.getBoolean("ambient_battery_saver", false)
 

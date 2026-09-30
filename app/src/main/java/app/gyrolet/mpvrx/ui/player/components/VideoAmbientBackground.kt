@@ -26,9 +26,17 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.ClipOp
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.clipPath
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
@@ -47,6 +55,7 @@ import kotlin.coroutines.resume
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.pow
+import androidx.compose.ui.geometry.Rect as ComposeRect
 
 private const val SAMPLE_WIDTH = 96
 private const val SAMPLE_HEIGHT = 54
@@ -586,6 +595,8 @@ fun VideoAmbientBackground(
   frame: ImageBitmap?,
   baseColor: Color?,
   accentColor: Color?,
+  videoBounds: ComposeRect,
+  edgeBlend: Float,
   modifier: Modifier = Modifier,
 ) {
   val base = baseColor ?: Color.Transparent
@@ -595,6 +606,7 @@ fun VideoAmbientBackground(
     modifier =
       modifier
         .fillMaxSize()
+        .videoAmbientMask(videoBounds, edgeBlend)
         .background(Color.Black),
   ) {
     Box(
@@ -624,5 +636,53 @@ fun VideoAmbientBackground(
           .fillMaxSize()
           .background(Color.Black.copy(alpha = SCRIM_ALPHA)),
     )
+  }
+}
+
+private fun Modifier.videoAmbientMask(videoBounds: ComposeRect, edgeBlend: Float): Modifier {
+  val layer =
+    if (edgeBlend > 0f) {
+      Modifier.graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    } else {
+      Modifier
+    }
+  return then(layer).drawWithCache {
+    val videoPath = Path().apply { addRect(videoBounds) }
+    val horizontal = videoBounds.width < size.width
+    val vertical = videoBounds.height < size.height
+    val mask =
+      if (edgeBlend > 0f && !videoBounds.isEmpty && (horizontal || vertical)) {
+        val axisLength = if (horizontal) videoBounds.width else videoBounds.height
+        val fraction = edgeBlend * minOf(videoBounds.width, videoBounds.height) / axisLength
+        val ramp = List(5) { index ->
+          val progress = index / 4f
+          (progress * fraction) to Color.Black.copy(alpha = progress * progress * (3f - 2f * progress))
+        }
+        val stops = (ramp + ramp.asReversed().map { (position, color) -> (1f - position) to color }).toTypedArray()
+        if (horizontal) {
+          Brush.horizontalGradient(*stops, startX = videoBounds.left, endX = videoBounds.right)
+        } else {
+          Brush.verticalGradient(*stops, startY = videoBounds.top, endY = videoBounds.bottom)
+        }
+      } else {
+        null
+      }
+    onDrawWithContent {
+      if (!videoBounds.isEmpty) {
+        if (mask == null) {
+          clipPath(videoPath, clipOp = ClipOp.Difference) {
+            this@onDrawWithContent.drawContent()
+          }
+        } else {
+          drawContent()
+          drawRect(
+            brush = mask,
+            topLeft = videoBounds.topLeft,
+            size = videoBounds.size,
+            blendMode = BlendMode.DstOut,
+          )
+        }
+      }
+    }
   }
 }

@@ -1307,6 +1307,7 @@
   <string name="ambient_glow">Glow</string>
   <string name="ambient_style_youtube">YouTube</string>
   <string name="ambient_color">Color</string>
+  <string name="ambient_edge_blend">Edge blend</string>
   <string name="ambient_compositing">Compositing</string>
   <string name="ambient_visual_style">Visual Style</string>
   <string name="controls_reset_default_title">Reset to default?</string>

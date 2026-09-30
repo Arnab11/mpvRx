@@ -57,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -432,6 +433,7 @@ class PlayerActivity :
   private var wasInPipMode = false
   private var isAmbientPipMode by mutableStateOf(false)
   private var isVideoAmbientPresentationActive = false
+  private var videoAmbientBounds by mutableStateOf(Rect.Zero)
   private var handledPipDismissal = false
   private var pendingPipExitResolution = false
   private var pendingBackgroundTransition = false
@@ -1119,12 +1121,16 @@ class PlayerActivity :
   }
 
   private fun setupVideoAmbientBackground() {
+    binding.player.addOnLayoutChangeListener { _, left, top, right, bottom, _, _, _, _ ->
+      videoAmbientBounds = Rect(left.toFloat(), top.toFloat(), right.toFloat(), bottom.toFloat())
+    }
     binding.ambientBackground.setViewCompositionStrategy(
       ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
     )
     binding.ambientBackground.setContent {
       val enabled by viewModel.isAmbientEnabled.collectAsState()
       val style by viewModel.ambientStyle.collectAsState()
+      val edgeBlend by viewModel.ambientYouTubeEdgeBlend.collectAsState()
       val lifecycleActive by viewModel.isAmbientLifecycleActive.collectAsState()
       val isAudioOnly by viewModel.isAudioOnly.collectAsState()
       val playbackState by PlaybackSession.state.collectAsState()
@@ -1177,6 +1183,8 @@ class PlayerActivity :
             frame = ambientFrame.frame,
             baseColor = ambientFrame.base,
             accentColor = ambientFrame.accent,
+            videoBounds = videoAmbientBounds,
+            edgeBlend = edgeBlend,
             modifier = Modifier.fillMaxSize(),
           )
         }

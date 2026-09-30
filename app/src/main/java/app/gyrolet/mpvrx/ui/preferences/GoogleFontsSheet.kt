@@ -208,7 +208,7 @@ internal fun GoogleFontsSheet(
           text = stringResource(R.string.app_font_download_error, family),
           color = MaterialTheme.colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
-          modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, top = 8.dp),
+          modifier = Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp),
         )
       }
     }

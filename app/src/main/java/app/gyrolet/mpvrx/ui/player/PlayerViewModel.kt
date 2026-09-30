@@ -2135,6 +2135,14 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private val _ambientOpacity = MutableStateFlow(playerPreferences.ambientOpacity.get())
   val ambientOpacity: StateFlow<Float> = _ambientOpacity.asStateFlow()
 
+  private val _ambientGlowEdgeBlend =
+    MutableStateFlow(playerPreferences.ambientGlowEdgeBlend.get().takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f)
+  val ambientGlowEdgeBlend: StateFlow<Float> = _ambientGlowEdgeBlend.asStateFlow()
+
+  private val _ambientYouTubeEdgeBlend =
+    MutableStateFlow(playerPreferences.ambientYouTubeEdgeBlend.get().takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f)
+  val ambientYouTubeEdgeBlend: StateFlow<Float> = _ambientYouTubeEdgeBlend.asStateFlow()
+
   @Volatile private var lastAmbientScaleX = -1.0
   @Volatile private var lastAmbientScaleY = -1.0
   private var ambientDebounceJob: kotlinx.coroutines.Job? = null
@@ -7145,6 +7153,21 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     scheduleAmbientUpdate(200)
   }
 
+  fun setAmbientEdgeBlend(style: AmbientStyle, edgeBlend: Float) {
+    val clamped = edgeBlend.takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f
+    when (style) {
+      AmbientStyle.Glow -> {
+        _ambientGlowEdgeBlend.value = clamped
+        playerPreferences.ambientGlowEdgeBlend.set(clamped)
+        scheduleAmbientUpdate()
+      }
+      AmbientStyle.YouTube -> {
+        _ambientYouTubeEdgeBlend.value = clamped
+        playerPreferences.ambientYouTubeEdgeBlend.set(clamped)
+      }
+    }
+  }
+
   fun updateAmbientParams(
     blurSamples: Int = _ambientBlurSamples.value,
     maxRadius: Float = _ambientMaxRadius.value,
@@ -7321,6 +7344,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       val warmth = _ambientWarmth.value
       val curve = _ambientFadeCurve.value
       val opacity = _ambientOpacity.value
+      val edgeBlend = _ambientGlowEdgeBlend.value
 
       // ── Generate GLSL shader ───────────────────────────────────────────────
       val spec =
@@ -7335,6 +7359,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           warmth = warmth,
           fadeCurve = curve,
           opacity = opacity,
+          edgeBlend = edgeBlend,
         )
 
       // ── Shader parameter cache ──────────────────────────────────────────────────────
@@ -7413,6 +7438,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     warmth: Float,
     fadeCurve: Float,
     opacity: Float,
+    edgeBlend: Float,
   ): AmbientGlowShaderSpec {
     val context = AmbientRenderContext(scaleX = sx, scaleY = sy)
     val shared =
@@ -7420,6 +7446,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         bezelDepth = 0f,
         vignetteStrength = vignetteStrength,
         opacity = opacity,
+        edgeBlend = edgeBlend,
       )
 
     return AmbientGlowShaderSpec(

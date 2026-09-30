@@ -1137,6 +1137,7 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_view_options">Options d’affichage</string>
   <string name="ambient_glow">Lueur</string>
   <string name="ambient_color">Couleur</string>
+  <string name="ambient_edge_blend">Fondu des bords</string>
   <string name="ambient_compositing">Composition</string>
   <string name="ambient_visual_style">Style visuel</string>
   <string name="controls_reset_default_title">Rétablir les valeurs par défaut ?</string>

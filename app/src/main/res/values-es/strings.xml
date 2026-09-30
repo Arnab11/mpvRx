@@ -1137,6 +1137,7 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="ui_view_options">Opciones de vista</string>
   <string name="ambient_glow">Resplandor</string>
   <string name="ambient_color">Color</string>
+  <string name="ambient_edge_blend">Difuminado de bordes</string>
   <string name="ambient_compositing">Composición</string>
   <string name="ambient_visual_style">Estilo visual</string>
   <string name="controls_reset_default_title">¿Restablecer los valores predeterminados?</string>

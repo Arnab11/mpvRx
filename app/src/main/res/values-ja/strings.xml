@@ -1133,6 +1133,7 @@
   <string name="ui_view_options">表示オプション</string>
   <string name="ambient_glow">グロー</string>
   <string name="ambient_color">カラー</string>
+  <string name="ambient_edge_blend">エッジブレンド</string>
   <string name="ambient_compositing">合成</string>
   <string name="ambient_visual_style">ビジュアルスタイル</string>
   <string name="controls_reset_default_title">既定値に戻しますか？</string>
