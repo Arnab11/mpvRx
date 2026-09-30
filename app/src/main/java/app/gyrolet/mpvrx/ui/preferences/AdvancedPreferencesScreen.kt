@@ -214,27 +214,8 @@ object AdvancedPreferencesScreen : Screen {
       }
 
     val autoBackupEnabled by preferences.autoBackupEnabled.collectAsState()
-    val autoBackupFolderUri by preferences.autoBackupFolderUri.collectAsState()
+    val configurationFolderUri by preferences.mpvConfStorageUri.collectAsState()
     var lastAutoBackupTime by remember { mutableStateOf(settingsManager.lastAutoBackupTime()) }
-    val autoBackupFolderPicker =
-      rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
-        if (uri == null) return@rememberLauncherForActivityResult
-        runCatching {
-          context.contentResolver.takePersistableUriPermission(
-            uri,
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-          )
-        }
-        preferences.autoBackupFolderUri.set(uri.toString())
-        preferences.autoBackupEnabled.set(true)
-        scope.launch {
-          settingsManager.autoBackupIfChanged(uri.toString()).onSuccess {
-            lastAutoBackupTime = settingsManager.lastAutoBackupTime()
-          }.onFailure { error ->
-            Toast.makeText(context, error.message ?: unknownError, Toast.LENGTH_LONG).show()
-          }
-        }
-      }
 
     val baseStorageFolder by foldersPreferences.baseStorageFolder.collectAsState()
 
@@ -258,6 +239,15 @@ object AdvancedPreferencesScreen : Screen {
         val root = DocumentFile.fromTreeUri(context, uri) ?: return@rememberLauncherForActivityResult
         listOf("fonts", "Subtitles", "scripts", "script-opts", "shaders").forEach { name ->
           if (root.findFile(name) == null) root.createDirectory(name)
+        }
+        if (autoBackupEnabled) {
+          scope.launch {
+            settingsManager.autoBackupIfChanged(uriString).onSuccess {
+              lastAutoBackupTime = settingsManager.lastAutoBackupTime()
+            }.onFailure { error ->
+              Toast.makeText(context, error.message ?: unknownError, Toast.LENGTH_LONG).show()
+            }
+          }
         }
       }
 
@@ -353,7 +343,7 @@ object AdvancedPreferencesScreen : Screen {
       },
     ) { padding ->
       ProvidePreferenceLocals {
-        val mpvConfStorageLocation by preferences.mpvConfStorageUri.collectAsState()
+        val mpvConfStorageLocation = configurationFolderUri
         val (settingsListState, settingsHighlight) =
           rememberSettingsSearchList(AdvancedPreferencesScreen, MaterialTheme.colorScheme.primary)
         LazyColumn(
@@ -402,12 +392,23 @@ object AdvancedPreferencesScreen : Screen {
             PreferenceCard {
               SwitchPreference(
                 value = autoBackupEnabled,
-                enabled = autoBackupFolderUri.isNotBlank(),
-                onValueChange = preferences.autoBackupEnabled::set,
+                enabled = configurationFolderUri.isNotBlank(),
+                onValueChange = { enabled ->
+                  preferences.autoBackupEnabled.set(enabled)
+                  if (enabled) {
+                    scope.launch {
+                      settingsManager.autoBackupIfChanged(configurationFolderUri).onSuccess {
+                        lastAutoBackupTime = settingsManager.lastAutoBackupTime()
+                      }.onFailure { error ->
+                        Toast.makeText(context, error.message ?: unknownError, Toast.LENGTH_LONG).show()
+                      }
+                    }
+                  }
+                },
                 title = { Text(stringResource(R.string.pref_auto_backup_title)) },
                 summary = {
                   Text(
-                    if (autoBackupFolderUri.isBlank()) {
+                    if (configurationFolderUri.isBlank()) {
                       stringResource(R.string.pref_auto_backup_select_folder)
                     } else if (lastAutoBackupTime > 0L) {
                       stringResource(
@@ -420,23 +421,6 @@ object AdvancedPreferencesScreen : Screen {
                     color = MaterialTheme.colorScheme.outline,
                   )
                 },
-              )
-
-              PreferenceDivider()
-
-              Preference(
-                title = { Text(stringResource(R.string.pref_auto_backup_folder_title)) },
-                summary = {
-                  Text(
-                    autoBackupFolderUri.takeIf(String::isNotBlank)
-                      ?.let(Uri::parse)
-                      ?.let { uri -> DocumentFile.fromTreeUri(context, uri)?.name }
-                      ?: stringResource(R.string.pref_auto_backup_select_folder),
-                    color = MaterialTheme.colorScheme.outline,
-                  )
-                },
-                icon = { Icon(Icons.RoundedFilled.Folder, contentDescription = null) },
-                onClick = { autoBackupFolderPicker.launch(null) },
               )
 
               PreferenceDivider()

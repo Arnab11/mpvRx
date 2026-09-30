@@ -19,6 +19,7 @@ class AdvancedPreferences(
 ) {
   companion object {
     const val AUTO_BACKUP_ENABLED_KEY = "auto_backup_enabled"
+    // Kept only to ignore backups created by the short-lived separate-folder implementation.
     const val AUTO_BACKUP_FOLDER_URI_KEY = "auto_backup_folder_uri"
   }
 
@@ -31,7 +32,6 @@ class AdvancedPreferences(
   val debugLogSizeMb = preferenceStore.getInt("debug_log_size_mb", 3)
 
   val autoBackupEnabled = preferenceStore.getBoolean(AUTO_BACKUP_ENABLED_KEY, false)
-  val autoBackupFolderUri = preferenceStore.getString(AUTO_BACKUP_FOLDER_URI_KEY)
 
   val enabledStatisticsPage = preferenceStore.getInt("enabled_stats_page", 0)
 

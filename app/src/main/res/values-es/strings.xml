@@ -2603,8 +2603,8 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="oss_anime4k_description">Shaders de escalado y restauración en tiempo real para vídeo animado.</string>
   <string name="oss_hdr_toys_description">Shaders de mapeo de tonos HDR, gama y funciones de transferencia.</string>
   <string name="pref_auto_backup_title">Copia automática de ajustes</string>
-  <string name="pref_auto_backup_summary">Guarda los ajustes modificados cuando mpvRx pasa a segundo plano. Se conservan las siete copias más recientes.</string>
-  <string name="pref_auto_backup_select_folder">Seleccionar carpeta de copias</string>
+  <string name="pref_auto_backup_summary">Guarda los ajustes modificados en Configuration/Backup cuando mpvRx pasa a segundo plano. Se conservan las siete copias más recientes.</string>
+  <string name="pref_auto_backup_select_folder">Selecciona primero una carpeta de configuración</string>
   <string name="pref_auto_backup_last_backup">Última copia: %1$s</string>
   <string name="pref_auto_backup_folder_title">Carpeta de copias</string>
   <string name="watch_stats_title">Estadísticas de reproducción</string>

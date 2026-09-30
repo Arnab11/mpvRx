@@ -112,8 +112,12 @@ class SettingsManager(
   suspend fun autoBackupIfChanged(treeUri: String): Result<AutoBackupStats?> =
     withContext(Dispatchers.IO) {
       try {
-        val root = DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
+        val configurationRoot = DocumentFile.fromTreeUri(context, Uri.parse(treeUri))
           ?: error("Backup folder is unavailable")
+        val root = configurationRoot.findFile("Backup")?.also { existing ->
+          require(existing.isDirectory) { "Backup exists but is not a folder" }
+        } ?: configurationRoot.createDirectory("Backup")
+          ?: error("Unable to create Backup folder")
         require(root.canWrite()) { "Backup folder is not writable" }
 
         val snapshot = File.createTempFile("auto_backup_", ".xml", context.cacheDir)

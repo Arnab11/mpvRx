@@ -2603,8 +2603,8 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="oss_anime4k_description">Echtzeit-Upscaling- und Restaurierungs-Shader für animierte Videos.</string>
   <string name="oss_hdr_toys_description">Shader für HDR-Tonemapping, Farbraumabbildung und Übertragungsfunktionen.</string>
   <string name="pref_auto_backup_title">Automatische Einstellungssicherung</string>
-  <string name="pref_auto_backup_summary">Geänderte Einstellungen sichern, wenn mpvRx in den Hintergrund wechselt. Die letzten sieben Sicherungen werden behalten.</string>
-  <string name="pref_auto_backup_select_folder">Sicherungsordner auswählen</string>
+  <string name="pref_auto_backup_summary">Geänderte Einstellungen beim Wechsel in den Hintergrund unter Configuration/Backup speichern. Die letzten sieben Sicherungen bleiben erhalten.</string>
+  <string name="pref_auto_backup_select_folder">Zuerst einen Konfigurationsordner auswählen</string>
   <string name="pref_auto_backup_last_backup">Letzte Sicherung: %1$s</string>
   <string name="pref_auto_backup_folder_title">Sicherungsordner</string>
   <string name="watch_stats_title">Wiedergabestatistik</string>

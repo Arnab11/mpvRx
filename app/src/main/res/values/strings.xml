@@ -2723,8 +2723,8 @@
   <string name="oss_anime4k_description">Real-time upscaling and restoration shaders for animated video.</string>
   <string name="oss_hdr_toys_description">HDR tone-mapping, gamut-mapping, and transfer-function shaders.</string>
   <string name="pref_auto_backup_title">Automatic settings backup</string>
-  <string name="pref_auto_backup_summary">Back up changed settings when mpvRx moves to the background. The latest seven backups are kept.</string>
-  <string name="pref_auto_backup_select_folder">Select a backup folder</string>
+  <string name="pref_auto_backup_summary">Save changed settings in Configuration/Backup when mpvRx moves to the background. The latest seven backups are kept.</string>
+  <string name="pref_auto_backup_select_folder">Select a Configuration folder first</string>
   <string name="pref_auto_backup_last_backup">Last backup: %1$s</string>
   <string name="pref_auto_backup_folder_title">Backup folder</string>
   <string name="watch_stats_title">Watching statistics</string>

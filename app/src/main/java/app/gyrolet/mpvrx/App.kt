@@ -306,7 +306,7 @@ class App :
 
   private fun scheduleSettingsAutoBackup() {
     val preferences = getKoin().get<AdvancedPreferences>()
-    val folderUri = preferences.autoBackupFolderUri.get().takeIf(String::isNotBlank) ?: return
+    val folderUri = preferences.mpvConfStorageUri.get().takeIf(String::isNotBlank) ?: return
     if (!preferences.autoBackupEnabled.get() || !settingsAutoBackupRunning.compareAndSet(false, true)) return
     applicationScope.launch(Dispatchers.IO) {
       try {
