@@ -348,7 +348,7 @@ object MpvHelpData {
       option("sub-scale", "<number>", "Subtitle font scale factor (default 1)."),
       option("sub-scale-by-window", "<yes|no>", "Scale subtitles with window size (default: yes)."),
       option("sub-ass-scale-with-window", "<yes|no>", "Scale ASS subtitles with window size (default: yes)."),
-      option("sub-font", "<name>", "Subtitle font family (default: sans-serif)."),
+      option("sub-font", "<name>", "Subtitle font family (default: Google Sans Flex)."),
       option("sub-font-size", "<number>", "Subtitle font size in arbitrary units (default 55)."),
       option("sub-color", "<#RRGGBB[AA]>", "Subtitle text color (default white)."),
       option("sub-border-color", "<#RRGGBB[AA]>", "Subtitle border/outline color."),
@@ -384,7 +384,7 @@ object MpvHelpData {
     listOf(
       option("osd-level", "<0-3>", "OSD verbosity: 0=off, 1=seek/volume only, 2=all messages, 3=all plus status."),
       option("osd-duration", "<ms>", "OSD message display duration in ms (default 2000)."),
-      option("osd-font", "<name>", "OSD font family (default: sans-serif)."),
+      option("osd-font", "<name>", "OSD font family (default: Google Sans Flex)."),
       option("osd-font-size", "<number>", "OSD font size (default 60)."),
       option("osd-color", "<#RRGGBB[AA]>", "OSD text color (default white)."),
       option("osd-border-color", "<#RRGGBB[AA]>", "OSD border/outline color."),

@@ -37,6 +37,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,6 +49,8 @@ import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
+import app.gyrolet.mpvrx.ui.player.MpvOsdFont
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 
@@ -59,6 +62,7 @@ internal fun GoogleFontsSheet(
   val repository = koinInject<GoogleFontsRepository>()
   val selectedFamily by preferences.googleFontFamily.collectAsState()
   val useSystemFont by preferences.useSystemFont.collectAsState()
+  val context = LocalContext.current
   val scope = rememberCoroutineScope()
   var searchQuery by rememberSaveable { mutableStateOf("") }
   var catalog by remember { mutableStateOf<List<GoogleFontFamily>>(emptyList()) }
@@ -108,6 +112,9 @@ internal fun GoogleFontsSheet(
           repository.clearActiveFont()
           preferences.googleFontFamily.set("")
           preferences.useSystemFont.set(false)
+          scope.launch(Dispatchers.IO) {
+            runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
+          }
           onDismiss()
         },
       )
@@ -118,6 +125,9 @@ internal fun GoogleFontsSheet(
         selected = useSystemFont,
         onClick = {
           preferences.useSystemFont.set(true)
+          scope.launch(Dispatchers.IO) {
+            runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
+          }
           onDismiss()
         },
       )
@@ -190,6 +200,9 @@ internal fun GoogleFontsSheet(
                         preferences.googleFontFamily.set(font.family)
                         preferences.googleFontRevision.set(preferences.googleFontRevision.get() + 1)
                         preferences.useSystemFont.set(false)
+                        scope.launch(Dispatchers.IO) {
+                          runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
+                        }
                         onDismiss()
                       },
                       onFailure = { downloadFailedFamily = font.family },

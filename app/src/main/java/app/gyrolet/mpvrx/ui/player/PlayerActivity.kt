@@ -81,6 +81,7 @@ import app.gyrolet.mpvrx.database.entities.PlaylistItemEntity
 import app.gyrolet.mpvrx.database.repository.NetworkStreamEntryRepository
 import app.gyrolet.mpvrx.databinding.PlayerLayoutBinding
 import app.gyrolet.mpvrx.domain.anime4k.Anime4KManager
+import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.playbackstate.repository.PlaybackStateRepository
 import app.gyrolet.mpvrx.domain.torrent.TorrentStreamRequest
@@ -278,6 +279,8 @@ class PlayerActivity :
    * Preferences for appearance settings.
    */
   private val appearancePreferences: AppearancePreferences by inject()
+
+  private val googleFontsRepository: GoogleFontsRepository by inject()
 
   /**
    * Manager for file operations.
@@ -1253,18 +1256,6 @@ class PlayerActivity :
     binding.player.layoutParams = params
   }
 
-  private var secondarySubMarginXSupported: Boolean? = null
-
-  // This mpvlib build predates the property; probing property-list avoids a native error log per set.
-  private fun supportsSecondarySubMarginX(): Boolean =
-    secondarySubMarginXSupported
-      ?: PlaybackSession
-        .getPropertyString("property-list")
-        ?.split(',')
-        ?.contains("secondary-sub-margin-x")
-        ?.also { secondarySubMarginXSupported = it }
-      ?: false
-
   private fun setupVideoTransformObserver() {
     lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -1309,9 +1300,6 @@ class PlayerActivity :
               val extraMarginX = if (scale > 1f) (w * (1f - 1f / scale) / 2f + abs(panX) / scale) else 0f
               val compensatedMarginX = (baseMarginX + extraMarginX).roundToInt().coerceIn(0, (w / 2f).toInt())
               PlaybackSession.setPropertyInt("sub-margin-x", compensatedMarginX)
-              if (supportsSecondarySubMarginX()) {
-                PlaybackSession.setPropertyInt("secondary-sub-margin-x", compensatedMarginX)
-              }
 
               applySubtitlePositions(
                 compensatedSubPos,
@@ -1321,9 +1309,6 @@ class PlayerActivity :
               PlaybackSession.setPropertyFloat("sub-scale", baseSubScale)
               PlaybackSession.setPropertyFloat("secondary-sub-scale", baseSecondarySubScale)
               PlaybackSession.setPropertyInt("sub-margin-x", 25)
-              if (supportsSecondarySubMarginX()) {
-                PlaybackSession.setPropertyInt("secondary-sub-margin-x", 25)
-              }
               applySubtitlePositions(
                 baseSubPos,
                 secondaryPosition = baseSecondarySubPos,
@@ -2602,6 +2587,7 @@ class PlayerActivity :
       syncBundledAssetsIfNeeded()
       prepareUserMpvAssetsForStartup()
       MpvOsdFont.ensureInstalled(this)
+      MpvOsdFont.syncDownloadedAppFont(this, appearancePreferences, googleFontsRepository)
       sanitizeInternalFontsDirectory()
       Log.d(TAG, "MPV startup assets ready in ${android.os.SystemClock.elapsedRealtime() - preparationStartedAt} ms")
     }.onFailure { e ->
@@ -4817,7 +4803,9 @@ class PlayerActivity :
    * This ensures subtitle customizations (font, colors, position, etc.) persist across videos.
    */
   private fun applySubtitlePreferences() {
-    val font = subtitlesPreferences.font.get()
+    // Explicit dropdown font wins, otherwise the app's own font, otherwise bundled
+    // Google Sans Flex. Secondary inherits sub-font (no secondary-sub-font in mpv).
+    val font = resolveSubtitleFontFamily(subtitlesPreferences, appearancePreferences, googleFontsRepository)
     val fontSize = subtitlesPreferences.fontSize.get()
     val bold = subtitlesPreferences.bold.get()
     val italic = subtitlesPreferences.italic.get()
@@ -4849,23 +4837,25 @@ class PlayerActivity :
     PlaybackSession.setPropertyString("blend-subtitles", blendMode)
 
     PlaybackSession.setPropertyInt("sub-font-size", fontSize)
-    for ((prefix, scale) in listOf("sub-" to subScale, "secondary-sub-" to secondarySubScale)) {
-      PlaybackSession.setPropertyString("${prefix}font", font)
-      PlaybackSession.setPropertyBoolean("${prefix}bold", bold)
-      PlaybackSession.setPropertyBoolean("${prefix}italic", italic)
-      PlaybackSession.setPropertyString("${prefix}justify", justify)
-      PlaybackSession.setPropertyString("${prefix}border-style", borderStyle)
-      PlaybackSession.setPropertyInt("${prefix}border-size", borderSize)
-      PlaybackSession.setPropertyInt("${prefix}outline-size", borderSize)
-      PlaybackSession.setPropertyInt("${prefix}shadow-offset", shadowOffset)
-      PlaybackSession.setPropertyString("${prefix}color", textColor)
-      PlaybackSession.setPropertyString("${prefix}border-color", borderColor)
-      PlaybackSession.setPropertyString("${prefix}back-color", backgroundColor)
-      PlaybackSession.setPropertyString("${prefix}shadow-color", shadowColor)
-      PlaybackSession.setPropertyString("${prefix}scale-by-window", scaleValue)
-      PlaybackSession.setPropertyString("${prefix}use-margins", scaleValue)
-      PlaybackSession.setPropertyFloat("${prefix}scale", scale)
-    }
+    // Official mpv only has secondary-sub-delay/scale/pos/ass-override — secondary inherits
+    // font/bold/italic/justify/colors/border/shadow/windowing from primary, so both tracks
+    // use Google Sans Flex (Default) unless a custom font is set.
+    PlaybackSession.setPropertyString("sub-font", font)
+    PlaybackSession.setPropertyBoolean("sub-bold", bold)
+    PlaybackSession.setPropertyBoolean("sub-italic", italic)
+    PlaybackSession.setPropertyString("sub-justify", justify)
+    PlaybackSession.setPropertyString("sub-border-style", borderStyle)
+    PlaybackSession.setPropertyInt("sub-border-size", borderSize)
+    PlaybackSession.setPropertyInt("sub-outline-size", borderSize)
+    PlaybackSession.setPropertyInt("sub-shadow-offset", shadowOffset)
+    PlaybackSession.setPropertyString("sub-color", textColor)
+    PlaybackSession.setPropertyString("sub-border-color", borderColor)
+    PlaybackSession.setPropertyString("sub-back-color", backgroundColor)
+    PlaybackSession.setPropertyString("sub-shadow-color", shadowColor)
+    PlaybackSession.setPropertyString("sub-scale-by-window", scaleValue)
+    PlaybackSession.setPropertyString("sub-use-margins", scaleValue)
+    PlaybackSession.setPropertyFloat("sub-scale", subScale)
+    PlaybackSession.setPropertyFloat("secondary-sub-scale", secondarySubScale)
 
     applySubtitleLayout(
       primaryPosition = subtitlesPreferences.subPos.get(),

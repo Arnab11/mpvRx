@@ -18,12 +18,13 @@ import android.view.KeyEvent
 import androidx.core.view.WindowInsetsCompat
 import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.domain.anime4k.Anime4KManager
+import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.domain.hdr.HdrToysManager
 import app.gyrolet.mpvrx.network.AndroidCookieJar
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
+import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
-import app.gyrolet.mpvrx.preferences.DEFAULT_SUBTITLE_FONT_FAMILY
 import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
@@ -59,6 +60,8 @@ class MPVView(
   private val advancedPreferences: AdvancedPreferences by inject()
   private val mpvConfigCache: MpvConfigCache by inject()
   private val subtitlesPreferences: SubtitlesPreferences by inject()
+  private val appearancePreferences: AppearancePreferences by inject()
+  private val googleFontsRepository: GoogleFontsRepository by inject()
   private val ytdlPreferences: YtdlPreferences by inject()
   private val anime4kManager: Anime4KManager by inject()
   private val hdrToysManager: HdrToysManager by inject()
@@ -516,17 +519,20 @@ class MPVView(
       if (subtitlesPreferences.forceRtlSubtitles.get()) "yes" else "no",
     )
 
-    // Delay and speed for both primary and secondary
+    // Delay for both primary and secondary (secondary-sub-delay exists in official mpv).
+    // Note: there is no secondary-sub-speed in official mpv — sub-speed covers text subs.
     val subDelay = (subtitlesPreferences.defaultSubDelay.get() / 1000.0).toString()
     val subSpeed = subtitlesPreferences.defaultSubSpeed.get().toString()
     PlaybackSession.setOptionString("sub-delay", subDelay)
     PlaybackSession.setOptionString("sub-speed", subSpeed)
     PlaybackSession.setOptionString("secondary-sub-delay", subDelay)
-    PlaybackSession.setOptionString("secondary-sub-speed", subSpeed)
 
-    val preferredFont = subtitlesPreferences.font.get().ifBlank { DEFAULT_SUBTITLE_FONT_FAMILY }
+    // Both primary and secondary use the same font. Official mpv has no secondary-sub-font —
+    // secondary inherits the primary sub-font. Falls back to the app's own font, then the
+    // bundled Google Sans Flex (see resolveSubtitleFontFamily).
+    val preferredFont =
+      resolveSubtitleFontFamily(subtitlesPreferences, appearancePreferences, googleFontsRepository)
     PlaybackSession.setOptionString("sub-font", preferredFont)
-    PlaybackSession.setOptionString("secondary-sub-font", preferredFont)
 
     if (subtitlesPreferences.overrideAssSubs.get()) {
       PlaybackSession.setOptionString("sub-ass-override", "force")
@@ -566,25 +572,25 @@ class MPVView(
     PlaybackSession.setOptionString("blend-subtitles", blendMode)
 
     PlaybackSession.setOptionString("sub-font-size", fontSize)
-    for ((prefix, pos, scale) in listOf(
-      Triple("sub-", subPos.toString(), subScale),
-      Triple("secondary-sub-", secondarySubPos.toString(), secondarySubScale),
-    )) {
-      PlaybackSession.setOptionString("${prefix}bold", bold)
-      PlaybackSession.setOptionString("${prefix}italic", italic)
-      PlaybackSession.setOptionString("${prefix}justify", justify)
-      PlaybackSession.setOptionString("${prefix}color", textColor)
-      PlaybackSession.setOptionString("${prefix}back-color", backgroundColor)
-      PlaybackSession.setOptionString("${prefix}border-color", borderColor)
-      PlaybackSession.setOptionString("${prefix}shadow-color", shadowColor)
-      PlaybackSession.setOptionString("${prefix}border-size", borderSize)
-      PlaybackSession.setOptionString("${prefix}border-style", borderStyle)
-      PlaybackSession.setOptionString("${prefix}shadow-offset", shadowOffset)
-      PlaybackSession.setOptionString("${prefix}scale", scale)
-      PlaybackSession.setOptionString("${prefix}pos", pos)
-      PlaybackSession.setOptionString("${prefix}scale-by-window", scaleByWindow)
-      PlaybackSession.setOptionString("${prefix}use-margins", scaleByWindow)
-    }
+    // Primary style. Official mpv only has secondary-sub-delay/scale/pos/ass-override —
+    // secondary inherits font/bold/italic/justify/colors/border/shadow/windowing from primary.
+    PlaybackSession.setOptionString("sub-bold", bold)
+    PlaybackSession.setOptionString("sub-italic", italic)
+    PlaybackSession.setOptionString("sub-justify", justify)
+    PlaybackSession.setOptionString("sub-color", textColor)
+    PlaybackSession.setOptionString("sub-back-color", backgroundColor)
+    PlaybackSession.setOptionString("sub-border-color", borderColor)
+    PlaybackSession.setOptionString("sub-shadow-color", shadowColor)
+    PlaybackSession.setOptionString("sub-border-size", borderSize)
+    PlaybackSession.setOptionString("sub-border-style", borderStyle)
+    PlaybackSession.setOptionString("sub-shadow-offset", shadowOffset)
+    PlaybackSession.setOptionString("sub-scale", subScale)
+    PlaybackSession.setOptionString("sub-pos", subPos.toString())
+    PlaybackSession.setOptionString("sub-scale-by-window", scaleByWindow)
+    PlaybackSession.setOptionString("sub-use-margins", scaleByWindow)
+    // Secondary has its own position/scale only.
+    PlaybackSession.setOptionString("secondary-sub-scale", secondarySubScale)
+    PlaybackSession.setOptionString("secondary-sub-pos", secondarySubPos.toString())
   }
 
   fun applyAnime4KShaders() {
