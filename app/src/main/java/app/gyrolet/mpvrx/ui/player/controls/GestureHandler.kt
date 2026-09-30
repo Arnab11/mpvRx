@@ -1305,8 +1305,6 @@ fun GestureHandler(
                           viewModel.pause()
                         }
 
-                        // Show seekbar and start seeking mode (same as seekbar scrubbing)
-                        viewModel.showSeekBar()
                         change.consume()
                       }
                     }
@@ -1355,7 +1353,6 @@ fun GestureHandler(
                     viewModel.unpause()
                   }
                   viewModel.playerUpdate.update { PlayerUpdates.None }
-                  viewModel.hideSeekBar()
                 }
                 releaseGesture(GestureOwner.HORIZONTAL_SEEK)
                 releaseGesture(GestureOwner.SUBTITLE_SEEK)
@@ -1370,11 +1367,10 @@ fun GestureHandler(
                 viewModel.unpause()
               }
 
-              // Clear the horizontal seek update and hide seekbar after a short delay
+              // Keep the chip visible briefly after the gesture settles.
               coroutineScope.launch {
                 delay(300)
                 viewModel.playerUpdate.update { PlayerUpdates.None }
-                viewModel.hideSeekBar()
               }
             }
             releaseGesture(GestureOwner.HORIZONTAL_SEEK)

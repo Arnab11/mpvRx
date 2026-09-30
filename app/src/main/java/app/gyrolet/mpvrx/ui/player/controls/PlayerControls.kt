@@ -819,6 +819,7 @@ fun PlayerControls(
 
           val holdForMultipleSpeed by playerPreferences.holdForMultipleSpeed.collectAsState()
           val currentPlayerUpdate by viewModel.playerUpdate.collectAsState()
+          val isHorizontalSeekActive = currentPlayerUpdate is PlayerUpdates.HorizontalSeek
           val isTranslatingSub by viewModel.isTranslatingSub.collectAsState()
           val translationProgress by viewModel.translationProgress.collectAsState()
           val translationStatus by viewModel.translationStatus.collectAsState()
@@ -1703,7 +1704,10 @@ is PlayerUpdates.FrameInfo -> {
           }
 
           AnimatedVisibility(
-            visible = (controlsShown || (!isPortrait && seekBarShown)) && !areControlsLocked,
+            visible =
+              (controlsShown || (!isPortrait && seekBarShown)) &&
+                !areControlsLocked &&
+                !isHorizontalSeekActive,
             enter = buildControlsEnterV(controlsAnimStyle, reduceMotion, enterMs) { it },
             exit = buildControlsExitV(controlsAnimStyle, reduceMotion, exitMs) { it },
             modifier =

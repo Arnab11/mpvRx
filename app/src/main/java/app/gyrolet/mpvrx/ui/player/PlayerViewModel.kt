@@ -4872,13 +4872,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     seekBarVisibleForPolling = true
   }
 
-  fun showSeekBar() {
-    if (sheetShown.value == Sheets.None) {
-      _seekBarShown.value = true
-      seekBarVisibleForPolling = true
-    }
-  }
-
   fun hideSeekBar() {
     _seekBarShown.value = false
     seekBarVisibleForPolling = false
