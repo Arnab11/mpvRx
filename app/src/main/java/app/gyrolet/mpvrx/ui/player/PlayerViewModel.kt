@@ -1259,6 +1259,7 @@ class PlayerViewModel : ViewModel(),
         isrc = isrc,
       )
 
+      ensureActive()
       // The track may have changed again while this fetch was in-flight; only apply the
       // result if we're still on the same track (extra guard on top of job cancellation).
       val stillCurrentPath = currentLyricsPath()
@@ -1362,6 +1363,7 @@ class PlayerViewModel : ViewModel(),
           mediaPath = path,
         )
 
+        ensureActive()
         val stillCurrentPath = currentLyricsPath()
         if (stillCurrentPath != path) return@launch
 
@@ -1441,10 +1443,13 @@ class PlayerViewModel : ViewModel(),
     val autoTranslate = audioPreferences.lyricsAutoTranslate.get()
     val defaultTargetLang = audioPreferences.lyricsTargetLanguage.get().ifBlank { "en" }
 
+    lyricsLoadJob?.cancel()
+    lyricsTranslateJob?.cancel()
     val cached = lyricsRepository.switchProvider(path, provider, allowOnline)
     if (cached != null && cached.onlineLyrics != null) {
       val activeLyrics = cached.onlineLyrics
       lyricsUiState.value = current.copy(
+        isLoading = false,
         lyrics = activeLyrics,
         originalLyrics = activeLyrics,
         onlineLyrics = activeLyrics,
@@ -1463,8 +1468,6 @@ class PlayerViewModel : ViewModel(),
     }
 
     lyricsUiState.value = current.copy(isLoading = true, errorMessage = null, preferredProvider = provider)
-    lyricsLoadJob?.cancel()
-    lyricsTranslateJob?.cancel()
     lyricsLoadJob = viewModelScope.launch(Dispatchers.IO) {
       val title = currentMediaTitle.takeIf { it.isNotBlank() }
         ?: PlaybackSession.getPropertyString("metadata/by-key/Title")
@@ -1487,6 +1490,7 @@ class PlayerViewModel : ViewModel(),
         mediaPath = path,
       )
 
+      ensureActive()
       if (!PlaybackSession.isCurrentGeneration(generation) || currentLyricsPath() != path) return@launch
 
       val updated = lyricsRepository.mergeOnline(path, fetched, allowOnline)

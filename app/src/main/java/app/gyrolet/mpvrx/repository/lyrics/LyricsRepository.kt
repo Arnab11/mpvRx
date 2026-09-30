@@ -18,11 +18,14 @@ import app.gyrolet.mpvrx.domain.lyrics.LyricsProvider
 import app.gyrolet.mpvrx.domain.lyrics.LyricsSourceType
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.utils.media.EmbeddedLyricsExtractor
+import java.io.File
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
@@ -137,6 +140,7 @@ class LyricsRepository(
   )
 
   private val cache = LruCache<CacheKey, LyricsResult>(64)
+  private val providerCache = LyricsProviderCache(File(context.cacheDir, "lyrics/providers-v1"))
 
   /**
    * The recording behind a track, once something has worked it out.
@@ -263,8 +267,12 @@ class LyricsRepository(
   ): LyricsResult =
     withContext(Dispatchers.IO) {
       val cacheKey = CacheKey(mediaPath, allowOnline)
+      val requestedProvider = preferredProvider
       if (!forceRefresh) {
-        cache.get(cacheKey)?.let { return@withContext it }
+        cache.get(cacheKey)?.let { existing ->
+          if (!allowOnline || existing.preferredOnlineProvider == requestedProvider) return@withContext existing
+          switchProvider(mediaPath, requestedProvider, allowOnline)?.let { return@withContext it }
+        }
       }
 
       Log.d(TAG, "Loading lyrics for: $title by $artist ($mediaPath)")
@@ -277,10 +285,11 @@ class LyricsRepository(
             rawTitle = title,
             rawArtist = artist,
             durationSeconds = durationSeconds,
-            provider = preferredProvider,
+            provider = requestedProvider,
             album = album,
             isrc = isrc,
             mediaPath = mediaPath,
+            forceRefresh = forceRefresh,
           )
         } else {
           OnlineLyricsResult()
@@ -321,7 +330,7 @@ class LyricsRepository(
           LyricsSourceType.ONLINE -> online.lyrics ?: embedded
         }
 
-      val autoResult = online.lyrics.takeIf { preferredProvider == null }
+      val autoResult = online.lyrics.takeIf { online.raced }
       val result =
         LyricsResult(
           embeddedLyrics = embedded,
@@ -331,16 +340,17 @@ class LyricsRepository(
           availableSources = sources.distinct(),
           onlineProvider = online.provider,
           preferredOnlineProvider =
-            if (preferredProvider != null && online.provider == preferredProvider) {
+            if (requestedProvider != null && online.provider == requestedProvider) {
               online.provider
             } else {
               null
             },
           autoOnlineLyrics = autoResult,
           autoOnlineProvider = if (autoResult != null) online.provider else null,
-          onlineByProvider = online.byProvider,
+          onlineByProvider = cache.get(cacheKey)?.onlineByProvider.orEmpty() + online.byProvider,
         )
 
+      currentCoroutineContext().ensureActive()
       cache.put(cacheKey, result)
       result
     }
@@ -360,8 +370,11 @@ class LyricsRepository(
     album: String? = null,
     isrc: String? = null,
     mediaPath: String? = null,
+    forceRefresh: Boolean = false,
   ): OnlineLyricsResult =
     withContext(Dispatchers.IO) {
+      val saved = if (!forceRefresh && !mediaPath.isNullOrBlank()) providerCache.read(mediaPath) else emptyMap()
+      cachedOnlineResult(saved, provider)?.let { return@withContext it }
       if (rawTitle.isNullOrBlank()) return@withContext OnlineLyricsResult()
 
       val query =
@@ -379,14 +392,41 @@ class LyricsRepository(
       val resolved = withRecording(query)
 
       if (provider != null) {
-        val found = registry.fetch(provider, resolved)
+        val found = fetchProvider(provider, resolved, mediaPath)
         if (found != null && found.isValid()) {
-          return@withContext OnlineLyricsResult(provider, found, false, mapOf(provider to found))
+          val answers = mediaPath?.let(providerCache::read).orEmpty() + (provider to found)
+          return@withContext OnlineLyricsResult(provider, found, false, answers)
         }
         Log.d(TAG, "${provider.label} had nothing; falling back to the automatic lookup")
       }
 
-      raceProviders(resolved)
+      val result = raceProviders(resolved, mediaPath, saved)
+      result.copy(byProvider = mediaPath?.let(providerCache::read).orEmpty() + result.byProvider)
+    }
+
+  private fun cachedOnlineResult(
+    answers: Map<LyricsProvider, Lyrics>,
+    provider: LyricsProvider?,
+  ): OnlineLyricsResult? {
+    if (provider != null) {
+      val lyrics = answers[provider] ?: return null
+      return OnlineLyricsResult(provider, lyrics, false, answers)
+    }
+    val candidates = LyricsProvider.entries.mapNotNull { source -> answers[source]?.let { source to it } }
+    val winner = candidates.firstOrNull { (_, lyrics) -> lyrics.synced.orEmpty().any { !it.words.isNullOrEmpty() } }
+      ?: candidates.firstOrNull { (_, lyrics) -> !lyrics.synced.isNullOrEmpty() }
+      ?: candidates.firstOrNull()
+      ?: return null
+    return OnlineLyricsResult(winner.first, winner.second, true, answers)
+  }
+
+  private suspend fun fetchProvider(
+    provider: LyricsProvider,
+    query: LyricsFetchQuery,
+    mediaPath: String?,
+  ): Lyrics? =
+    registry.fetch(provider, query)?.takeIf(Lyrics::isValid)?.also { lyrics ->
+      if (!mediaPath.isNullOrBlank()) providerCache.write(mediaPath, provider, lyrics)
     }
 
   /**
@@ -421,12 +461,18 @@ class LyricsRepository(
   }
 
   /** Every provider is asked together; actual timing quality wins, then provider priority. */
-  private suspend fun raceProviders(query: LyricsFetchQuery): OnlineLyricsResult =
+  private suspend fun raceProviders(
+    query: LyricsFetchQuery,
+    mediaPath: String?,
+    cached: Map<LyricsProvider, Lyrics>,
+  ): OnlineLyricsResult =
     coroutineScope {
       val jobs =
         LyricsProvider.entries.map { provider ->
           val start = if (provider in LyricsProvider.LAZY_PROVIDERS) CoroutineStart.LAZY else CoroutineStart.DEFAULT
-          provider to async(Dispatchers.IO, start = start) { registry.fetch(provider, query) }
+          provider to async(Dispatchers.IO, start = start) {
+            cached[provider] ?: fetchProvider(provider, query, mediaPath)
+          }
         }
 
       try {
@@ -500,6 +546,7 @@ class LyricsRepository(
     provider: LyricsProvider?,
     allowOnline: Boolean = true,
   ): LyricsResult? {
+    if (!allowOnline) return null
     preferredProvider = provider
     val cacheKey = CacheKey(mediaPath, allowOnline)
     val existing = cache.get(cacheKey) ?: return null
