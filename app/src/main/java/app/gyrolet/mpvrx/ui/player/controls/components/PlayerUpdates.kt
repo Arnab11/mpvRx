@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -51,6 +52,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
@@ -65,7 +67,7 @@ private val tabularFigures = "tnum"
 private val compactSpeedIndicatorWidth = 32.dp
 
 @Composable
-private fun rememberPlayerUpdateOffset(): androidx.compose.ui.unit.Dp {
+private fun rememberPlayerUpdateOffset(): State<androidx.compose.ui.unit.Dp> {
   val activity = LocalActivity.current as? PlayerActivity
   val playerViewModel =
     remember(activity) {
@@ -95,7 +97,7 @@ private fun rememberPlayerUpdateOffset(): androidx.compose.ui.unit.Dp {
     targetValue = targetOffset,
     animationSpec = spring(),
     label = "player_update_controls_offset",
-  ).value
+  )
 }
 
 @Composable
@@ -118,7 +120,7 @@ fun PlayerUpdate(
       ),
     modifier =
       modifier
-        .offset(y = controlsOffset)
+        .offset { IntOffset(0, controlsOffset.value.roundToPx()) }
         .animateContentSize(),
   ) {
     Box(

@@ -20,6 +20,7 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.BatteryManager
 import android.os.Build
+import android.os.PowerManager
 import android.os.SystemClock
 import `is`.xyz.mpv.MPVNode
 import android.provider.OpenableColumns
@@ -162,8 +163,8 @@ enum class AutoCropState {
 class PlayerViewModel : ViewModel(),
   KoinComponent {
   private var hostReference = WeakReference<PlayerHost>(null)
-  private val host: PlayerHost
-    get() = checkNotNull(hostReference.get()) { "Player host is not attached" }
+  private val host: PlayerHost?
+    get() = hostReference.get()
 
   fun minimizeToMiniPlayer(): Boolean = hostReference.get()?.minimizeToMiniPlayer() == true
 
@@ -790,7 +791,7 @@ class PlayerViewModel : ViewModel(),
       val selectedAudio = pairedYtdlTrack(track, TrackNode::isAudio)
         ?: allTracks.value.firstOrNull { candidate -> candidate.isAudio && candidate.isSelected }
       val selector = buildYtdlFormatSelector(videoTrack = track, audioTrack = selectedAudio)
-      if (selector != null && host.reloadCurrentYtdlFormat(selector)) return
+      if (selector != null && host?.reloadCurrentYtdlFormat(selector) == true) return
     }
 
     val selectedProgramIds = track.effectiveProgramIds.toSet()
@@ -822,7 +823,7 @@ class PlayerViewModel : ViewModel(),
       val selectedVideo = pairedYtdlTrack(track, TrackNode::isVideo)
         ?: allTracks.value.firstOrNull { candidate -> candidate.isVideo && candidate.isSelected }
       val selector = buildYtdlFormatSelector(videoTrack = selectedVideo, audioTrack = track)
-      if (selector != null && host.reloadCurrentYtdlFormat(selector)) return
+      if (selector != null && host?.reloadCurrentYtdlFormat(selector) == true) return
     }
 
     setTrackSelectionId("aid", track.id)
@@ -2166,6 +2167,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   @Volatile private var lastAmbientScaleX = -1.0
   @Volatile private var lastAmbientScaleY = -1.0
+  @Volatile private var lastAmbientOsdW = -1
+  @Volatile private var lastAmbientOsdH = -1
   private var ambientDebounceJob: kotlinx.coroutines.Job? = null
   private val ambientScheduleLock = Any()
   private val ambientRenderLock = Any()
@@ -2294,12 +2297,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         val currentlyPaused = PlaybackSession.getPropertyBoolean("pause") ?: false
         if (currentlyPaused != shouldPause) {
           if (!shouldPause) {
-            val focusGranted = withContext(Dispatchers.Main) { host.requestAudioFocus() }
+            val focusGranted = withContext(Dispatchers.Main) { host?.requestAudioFocus() ?: false }
             if (!focusGranted) return@launch
           }
           PlaybackSession.setPropertyBoolean("pause", shouldPause)
           if (shouldPause) {
-            withContext(Dispatchers.Main) { host.abandonAudioFocus() }
+            withContext(Dispatchers.Main) { host?.abandonAudioFocus() }
           }
         }
       }
@@ -2573,6 +2576,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         } else {
           playlistMetadataJob?.cancel()
         }
+        if (_isAmbientEnabled.value && _ambientStyle.value == AmbientStyle.Glow) {
+          scheduleAmbientUpdate(100)
+        }
       }
     }
 
@@ -2677,7 +2683,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       PlaybackSession.setPropertyInt("user-data/android/battery-level", state.level)
       PlaybackSession.setPropertyBoolean("user-data/android/battery-charging", state.charging)
       PlaybackSession.setPropertyBoolean("user-data/android/battery-plugged", state.plugged)
-      onBatteryStateChanged(state.charging)
+      onBatteryStateChanged(
+        isCharging = state.charging,
+        level = state.level,
+        isPowerSaveMode = state.isPowerSaveMode,
+      )
     }.onFailure { error ->
       Log.w(TAG, "Failed to publish Android battery properties", error)
     }
@@ -2687,10 +2697,13 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     val level: Int,
     val charging: Boolean,
     val plugged: Boolean,
+    val isPowerSaveMode: Boolean,
   )
 
   private fun readAndroidBatteryState(context: Context): AndroidBatteryState {
     val batteryManager = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+    val powerManager = context.getSystemService(Context.POWER_SERVICE) as? PowerManager
+    val isPowerSaveMode = powerManager?.isPowerSaveMode ?: false
     val batteryIntent = context.registerReceiver(null, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
     val intentLevel = batteryIntent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
     val scale = batteryIntent?.getIntExtra(BatteryManager.EXTRA_SCALE, -1) ?: -1
@@ -2713,6 +2726,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       level = propertyLevel ?: fallbackLevel,
       charging = charging,
       plugged = pluggedExtra != 0,
+      isPowerSaveMode = isPowerSaveMode,
     )
   }
 
@@ -3608,7 +3622,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private fun currentVideoUriForSubtitleGeneration(): Uri? {
-    val media = host.currentMediaLookupHint()?.takeIf { it.isNotBlank() } ?: return null
+    val media = host?.currentMediaLookupHint()?.takeIf { it.isNotBlank() } ?: return null
     return if (media.startsWith("/")) File(media).toUri() else Uri.parse(media)
   }
 
@@ -3630,7 +3644,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         ?: runtimeSource?.takeUnless { it.startsWith("fd://") || it.startsWith("memory://") }
         ?: item?.originalUri?.takeIf(String::isNotBlank)
         ?: item?.playableUri?.takeIf(String::isNotBlank)
-        ?: host.currentMediaLookupHint()?.takeIf(String::isNotBlank)
+        ?: host?.currentMediaLookupHint()?.takeIf(String::isNotBlank)
         ?: return null
     val audioTrackOrdinal =
       selectedAudio
@@ -4104,12 +4118,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
     val lookupKey = mediaTitle
     val provider = playerPreferences.introSegmentProvider.get()
-    val lookupHints = host.currentPlayerLookupHints()
+    val lookupHints = host?.currentPlayerLookupHints() ?: PlayerLookupHints()
     val lookupRequest =
       IntroDbLookupRequest(
         mediaTitle = mediaTitle,
         canonicalTitle = lookupHints.canonicalTitle,
-        lookupHint = host.currentMediaLookupHint(),
+        lookupHint = host?.currentMediaLookupHint(),
         imdbId = lookupHints.imdbId,
         tmdbId = lookupHints.tmdbId,
         mediaType = lookupHints.mediaType,
@@ -4634,7 +4648,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       viewModelScope.launch {
         _isSearchingSub.value = true
         val cleanSubHubTitle = MediaInfoParser.parse(query).title.ifBlank { query.trim() }
-        val lookupHints = host.currentPlayerLookupHints()
+        val lookupHints = host?.currentPlayerLookupHints() ?: PlayerLookupHints()
         val lookupTitle = lookupHints.canonicalTitle ?: currentMediaTitle
         val cleanLookupTitle = MediaInfoParser.parse(lookupTitle).title.ifBlank { lookupTitle.trim() }
         val matchesCurrentLookup =
@@ -4814,7 +4828,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     viewModelScope.launch(playbackStateDispatcher) {
       val wasPaused = PlaybackSession.getPropertyBoolean("pause") ?: PlaybackSession.state.value.paused
       if (wasPaused) {
-        val focusGranted = withContext(Dispatchers.Main) { host.requestAudioFocus() }
+        val focusGranted = withContext(Dispatchers.Main) { host?.requestAudioFocus() ?: false }
         if (!focusGranted) return@launch
         if (PlaybackSession.state.value.currentItem?.audiobook != null && PlaybackSession.getPropertyBoolean("eof-reached") == true) {
           AudiobookPlayback.resumeAtEnd()
@@ -4825,7 +4839,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       } else {
         PlaybackSession.setPropertyBoolean("pause", true)
         syncplayManager.updatePlayerState(precisePosition.value.toDouble(), true, doSeek = false)
-        withContext(Dispatchers.Main) { host.abandonAudioFocus() }
+        withContext(Dispatchers.Main) { host?.abandonAudioFocus() }
       }
     }
   }
@@ -4834,13 +4848,13 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     viewModelScope.launch(playbackStateDispatcher) {
       PlaybackSession.setPropertyBoolean("pause", true)
       syncplayManager.updatePlayerState(precisePosition.value.toDouble(), true, doSeek = false)
-      withContext(Dispatchers.Main) { host.abandonAudioFocus() }
+      withContext(Dispatchers.Main) { host?.abandonAudioFocus() }
     }
   }
 
   fun unpause() {
     viewModelScope.launch(playbackStateDispatcher) {
-      val focusGranted = withContext(Dispatchers.Main) { host.requestAudioFocus() }
+      val focusGranted = withContext(Dispatchers.Main) { host?.requestAudioFocus() ?: false }
       if (!focusGranted) return@launch
       PlaybackSession.setPropertyBoolean("pause", false)
       syncplayManager.updatePlayerState(precisePosition.value.toDouble(), false, doSeek = false)
@@ -4854,11 +4868,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     if (!isAudioOnly.value) {
       try {
         if (playerPreferences.showSystemStatusBar.get()) {
-          host.windowInsetsController.show(WindowInsetsCompat.Type.statusBars())
-          host.windowInsetsController.isAppearanceLightStatusBars = false
+          host?.windowInsetsController?.show(WindowInsetsCompat.Type.statusBars())
+          host?.windowInsetsController?.isAppearanceLightStatusBars = false
         }
         if (playerPreferences.showSystemNavigationBar.get()) {
-          host.windowInsetsController.show(WindowInsetsCompat.Type.navigationBars())
+          host?.windowInsetsController?.show(WindowInsetsCompat.Type.navigationBars())
         }
       } catch (e: Exception) {
         // Defensive: InsetsController animation can crash under FD pressure
@@ -4874,8 +4888,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun hideControls() {
     if (!isAudioOnly.value) {
       try {
-        host.windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-        host.windowInsetsController.hide(WindowInsetsCompat.Type.navigationBars())
+        host?.windowInsetsController?.hide(WindowInsetsCompat.Type.statusBars())
+        host?.windowInsetsController?.hide(WindowInsetsCompat.Type.navigationBars())
       } catch (e: Exception) {
         Log.e(TAG, "Failed to hide system bars", e)
       }
@@ -4889,8 +4903,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun autoHideControls() {
     if (!isAudioOnly.value) {
       try {
-        host.windowInsetsController.hide(WindowInsetsCompat.Type.statusBars())
-        host.windowInsetsController.hide(WindowInsetsCompat.Type.navigationBars())
+        host?.windowInsetsController?.hide(WindowInsetsCompat.Type.statusBars())
+        host?.windowInsetsController?.hide(WindowInsetsCompat.Type.navigationBars())
       } catch (e: Exception) {
         Log.e(TAG, "Failed to hide system bars", e)
       }
@@ -5119,11 +5133,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   // ==================== Brightness & Volume ====================
 
   fun changeBrightnessTo(brightness: Float) {
-    val isAudio = host.isCurrentMediaKnownAudio() || isAudioOnly.value
+    val currentHost = host ?: return
+    val isAudio = currentHost.isCurrentMediaKnownAudio() || isAudioOnly.value
     val minBrightness = if (isAudio) 0f else -0.75f
     val coercedBrightness = brightness.coerceIn(minBrightness, 1f)
-    host.hostWindow.attributes =
-      host.hostWindow.attributes.apply {
+    currentHost.hostWindow.attributes =
+      currentHost.hostWindow.attributes.apply {
         screenBrightness = coercedBrightness.coerceIn(0f, 1f)
       }
     currentBrightness.value = coercedBrightness
@@ -5153,9 +5168,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           .coerceIn(0f, 255f) / 255f
       }.getOrNull() ?: 0f
     currentBrightness.value = systemBrightness
+    val currentHost = host ?: return
     runCatching {
-      host.hostWindow.attributes =
-        host.hostWindow.attributes.apply {
+      currentHost.hostWindow.attributes =
+        currentHost.hostWindow.attributes.apply {
           screenBrightness = WindowManager.LayoutParams.BRIGHTNESS_OVERRIDE_NONE
         }
     }
@@ -5165,7 +5181,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     change: Int,
     showUi: Boolean = false,
   ) {
-    val isAudio = host.isCurrentMediaKnownAudio() || isAudioOnly.value
+    val isAudio = host?.isCurrentMediaKnownAudio() == true || isAudioOnly.value
     val currentSystemVolume = syncCurrentSystemVolume()
     val mpvVolume = PlaybackSession.getPropertyInt("volume") ?: 100
     // Audio playback must not apply gain boost (>100%). Boost is a video-only feature,
@@ -5288,10 +5304,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       }
       VideoAspect.Stretch -> {
         // To STRETCH: Calculate screen ratio accounting for video rotation
+        val currentHost = host ?: return
         @Suppress("DEPRECATION")
         val dm = DisplayMetrics()
         @Suppress("DEPRECATION")
-        host.hostWindowManager.defaultDisplay.getRealMetrics(dm)
+        currentHost.hostWindowManager.defaultDisplay.getRealMetrics(dm)
 
         // Get video rotation from metadata
         val rotate = PlaybackSession.getPropertyInt("video-params/rotate") ?: 0
@@ -5412,7 +5429,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     }
     val generation = session.generation
     if (!force && autoCropAnalyzedGeneration == generation) return
-    val source = runCatching { host.currentThumbnailSource() }.getOrNull()?.takeIf(String::isNotBlank)
+    val source = host?.currentThumbnailSource()?.takeIf(String::isNotBlank)
     val durationSeconds =
       sequenceOf(
         PlaybackSession.getPropertyDouble("duration"),
@@ -5794,14 +5811,15 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   // ==================== Screen Rotation ====================
 
   fun cycleScreenRotations() {
+    val currentHost = host ?: return
     if (isAudioOnly.value) {
-      host.hostRequestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+      currentHost.hostRequestedOrientation = ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
       return
     }
     // Temporarily cycle orientation WITHOUT modifying preferences
     // Preferences remain the single source of truth and will be reapplied on next video
-    host.hostRequestedOrientation =
-      when (host.hostRequestedOrientation) {
+    currentHost.hostRequestedOrientation =
+      when (currentHost.hostRequestedOrientation) {
         ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE,
         ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE,
         ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE,
@@ -6101,7 +6119,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         pendingSeekOffset = 0
         if (PlaybackSession.getPropertyBoolean("pause") != true) {
           PlaybackSession.setPropertyBoolean("pause", true)
-          withContext(Dispatchers.Main) { host.abandonAudioFocus() }
+          withContext(Dispatchers.Main) { host?.abandonAudioFocus() }
         }
 
         var refinedPosition = targetPosition
@@ -6640,14 +6658,14 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   fun playPlaylistItem(index: Int) {
-    host.playQueueItem(index)
+    host?.playQueueItem(index)
   }
 
   fun reorderPlaylistItem(
     from: Int,
     to: Int,
   ) {
-    host.reorderQueueItem(from, to)
+    host?.reorderQueueItem(from, to)
   }
 
   /**
@@ -6765,11 +6783,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun hasPrevious(): Boolean = PlaybackSession.hasPrevious()
 
   fun playNext() {
-    host.playNextQueueItem()
+    host?.playNextQueueItem()
   }
 
   fun playPrevious() {
-    host.playPreviousQueueItem()
+    host?.playPreviousQueueItem()
   }
 
   // ==================== Repeat and Shuffle ====================
@@ -6777,7 +6795,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun applyPersistedShuffleState() {
     PlaybackSession.setShuffleEnabled(_shuffleEnabled.value)
     if (_shuffleEnabled.value) {
-      host.onQueueShuffleChanged(true)
+      host?.onQueueShuffleChanged(true)
     }
   }
 
@@ -6807,7 +6825,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     PlaybackSession.setShuffleEnabled(_shuffleEnabled.value)
 
     // Notify activity to handle shuffle state change
-    host.onQueueShuffleChanged(_shuffleEnabled.value)
+    host?.onQueueShuffleChanged(_shuffleEnabled.value)
 
     // Show overlay update instead of toast
     playerUpdate.value = PlayerUpdates.Shuffle(_shuffleEnabled.value)
@@ -7131,11 +7149,17 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         file.delete()
       }
       ambientShaderFile = null
+      runCatching {
+        File(appContext.cacheDir, "ambient_slot_0.glsl").delete()
+        File(appContext.cacheDir, "ambient_slot_1.glsl").delete()
+      }
       // Reset the shader cache and scale tracking so a subsequent enable always
       // compiles a fresh shader and recalculates the correct video-scale offsets.
       lastCompiledSpec = null
       lastAmbientScaleX = -1.0
       lastAmbientScaleY = -1.0
+      lastAmbientOsdW = -1
+      lastAmbientOsdH = -1
       runCatching {
         PlaybackSession.setPropertyDouble("video-scale-x", 1.0)
         PlaybackSession.setPropertyDouble("video-scale-y", 1.0)
@@ -7148,7 +7172,14 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun onOrientationChanged() {
     if (!isAmbientGlowRuntimeActive()) return
 
-    // The compiled spec is the cache key; scale sentinels alone do not force a rebuild.
+    val osdW = PlaybackSession.getPropertyInt("osd-width") ?: 0
+    val osdH = PlaybackSession.getPropertyInt("osd-height") ?: 0
+    // If output dimensions are unchanged (e.g. 180° rotation or layout bounce), avoid discarding compiled spec
+    if (osdW > 0 && osdH > 0 && osdW == lastAmbientOsdW && osdH == lastAmbientOsdH) {
+      return
+    }
+    lastAmbientOsdW = osdW
+    lastAmbientOsdH = osdH
     lastCompiledSpec = null
     lastAmbientScaleX = -1.0
     lastAmbientScaleY = -1.0
@@ -7320,21 +7351,32 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     playerUpdate.value = PlayerUpdates.ShowText(appContext.getString(R.string.player_ambient_battery_saver_off))
   }
 
-  fun onBatteryStateChanged(isCharging: Boolean) {
-    if (!_isAmbientBatterySaver.value || !_isAmbientEnabled.value) return
-    if (isCharging) {
-      restoreFromBatterySaver()
-    } else {
+  fun onBatteryStateChanged(
+    isCharging: Boolean,
+    level: Int = -1,
+    isPowerSaveMode: Boolean = false,
+  ) {
+    if (!_isAmbientEnabled.value) return
+    val shouldThrottle = (!isCharging && _isAmbientBatterySaver.value) ||
+      isPowerSaveMode ||
+      (!isCharging && level in 0..19)
+
+    if (shouldThrottle) {
       applyBatterySaverPolicy()
+    } else if (ambientWasOnBattery && (isCharging || (!isPowerSaveMode && (level < 0 || level >= 20)))) {
+      restoreFromBatterySaver()
     }
   }
 
   private suspend fun updateAmbientStretch(generation: Long) {
     if (!isAmbientGlowRuntimeActive() || generation != ambientUpdateGeneration.get()) return
+    if (paused == true && lastCompiledSpec != null && ambientShaderFile?.exists() == true) return
 
     runCatching {
       val osdW = PlaybackSession.getPropertyInt("osd-width") ?: 1920
       val osdH = PlaybackSession.getPropertyInt("osd-height") ?: 1080
+      lastAmbientOsdW = osdW
+      lastAmbientOsdH = osdH
 
       // Portrait mode: ambient glow goes on top/bottom (letterbox)
       // Landscape mode: ambient glow goes on left/right (pillarbox)
@@ -7354,10 +7396,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       // ── Snapshot current parameter values ─────────────────────────────────
       val sx = scaleX
       val sy = scaleY
-      // Thermal-aware sample budget: cap shader complexity before the device enters
-      // hard CPU/GPU throttling.  On a cool device this is a no-op.
+      // Thermal-aware and sheet-aware sample budget: cap shader complexity before the device enters
+      // hard CPU/GPU throttling or when modal sheets obscure the video.
       val rawSamples = _ambientBlurSamples.value
-      val samples = ThermalMonitor.clampAmbientSampleBudget(rawSamples, thermalHeadroom)
+      val sheetThrottledSamples = if (sheetShown.value != Sheets.None) rawSamples.coerceAtMost(4) else rawSamples
+      val samples = ThermalMonitor.clampAmbientSampleBudget(sheetThrottledSamples, thermalHeadroom)
       val radius = _ambientMaxRadius.value
       val glow = _ambientGlowIntensity.value
       val sat = _ambientSatBoost.value
@@ -7397,10 +7440,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         return
       }
 
-      // Each reload gets a unique filename so MPV never reuses a cached
-      // compiled shader — incrementing seq guarantees a fresh compile every time.
+      // Dual-slot ping-pong buffer: alternates between slot 0 and 1 so MPV recognizes
+      // a path change without creating endless temporary files on flash storage.
+      val slot = (ambientShaderSeq.incrementAndGet() % 2L).toInt()
       val shaderCode = AmbientShaderBuilder.build(appContext, spec)
-      val newFile = File(appContext.cacheDir, "ambient_${ambientShaderSeq.incrementAndGet()}.glsl")
+      val newFile = File(appContext.cacheDir, "ambient_slot_$slot.glsl")
       // Blocking file write — dispatched to IO pool to avoid stalling renderPrepDispatcher.
       // Catch CancellationException here: IO is not preemptible, so the write always
       // completes fully even when the job is cancelled mid-flight. Without this guard,

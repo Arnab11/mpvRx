@@ -82,7 +82,10 @@ fun ChaptersSheet(
           Text(stringResource(R.string.playback_bookmarks_empty), Modifier.padding(MaterialTheme.spacing.medium),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        itemsIndexed(chapters) { index, chapter ->
+        itemsIndexed(
+          chapters,
+          key = { index, chapter -> "${chapter.start}_${chapter.name}_$index" },
+        ) { index, chapter ->
           ChapterTrack(
             chapter = chapter,
             index = index,

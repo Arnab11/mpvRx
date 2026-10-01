@@ -40,7 +40,7 @@ internal fun AudiobookSheet(sheet: Sheets, onChapterEnd: () -> Unit, onDismiss: 
   })) {
       LazyColumn(contentPadding = PaddingValues(bottom = 8.dp)) {
         when (sheet) {
-          Sheets.AudiobookRewind -> items(listOf(0, 5, 10, 15, 30)) { seconds ->
+          Sheets.AudiobookRewind -> items(listOf(0, 5, 10, 15, 30), key = { it }) { seconds ->
             BookSettingOption(
               label = if (seconds == 0) stringResource(R.string.audiobook_timer_off) else stringResource(R.string.audiobook_seconds, seconds),
               selected = book?.book?.rewindSeconds == seconds,
@@ -55,7 +55,7 @@ internal fun AudiobookSheet(sheet: Sheets, onChapterEnd: () -> Unit, onDismiss: 
           }
           Sheets.AudiobookSleepTimer -> {
             item { BookSettingOption(stringResource(R.string.audiobook_timer_off), timer == null) { AudiobookPlayback.clearTimer(); onDismiss() } }
-            items(listOf(5, 10, 15, 30, 45, 60, 90)) { minutes ->
+            items(listOf(5, 10, 15, 30, 45, 60, 90), key = { it }) { minutes ->
               BookSettingOption(stringResource(R.string.audiobook_minutes, minutes), timer?.durationMinutes == minutes, enabled = ready) {
                 AudiobookPlayback.setTimer(minutes)
                 haptics.selection(true)
