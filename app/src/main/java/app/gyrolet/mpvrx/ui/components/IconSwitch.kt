@@ -24,6 +24,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.LocalIndication
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Box
@@ -144,7 +145,7 @@ fun IconSwitch(
         enabled = enabled,
         role = Role.Switch,
         interactionSource = interactionSource,
-        indication = LocalIndication.current,
+        indication = null,
       ) { value ->
         if (value != checked) {
           onCheckedChange(value)
@@ -167,6 +168,7 @@ fun IconSwitch(
           .alpha(if (enabled) 1f else 0.38f)
           .clip(CircleShape)
           .background(trackColor)
+          .indication(interactionSource, LocalIndication.current)
           .border(2.dp, borderColor, CircleShape),
     ) {
       Box(
