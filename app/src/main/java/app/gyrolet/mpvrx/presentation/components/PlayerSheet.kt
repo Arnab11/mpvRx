@@ -199,12 +199,13 @@ fun PlayerSheet(
   Box(
     modifier =
       Modifier
+        // Before clickable so it targets the scrim's own focus node, not the sheet's descendants.
+        .focusProperties { canFocus = false }
         .clickable(
           interactionSource = remember { MutableInteractionSource() },
           indication = null,
           onClick = internalOnDismissRequest,
           ).fillMaxSize()
-          .focusProperties { canFocus = false }
           .background(Color.Black.copy(alpha))
         .onSizeChanged {
           val anchors =
@@ -221,6 +222,7 @@ fun PlayerSheet(
         Modifier
           .sizeIn(maxWidth = maxWidth, maxHeight = maxHeight)
           .fillMaxWidth()
+          .focusProperties { canFocus = false }
           .clickable(
             interactionSource = remember { MutableInteractionSource() },
             indication = null,
@@ -232,7 +234,6 @@ fun PlayerSheet(
           ).then(modifier)
           .tvFocusGroup()
           .tvInitialFocus(sheetInitialFocus)
-          .focusProperties { canFocus = false }
           .offset {
             val baseOffset =
               anchoredDraggableState.offset
@@ -258,7 +259,13 @@ fun PlayerSheet(
         )
         CompositionLocalProvider(LocalMotionPolicy provides MotionPolicy(reduceMotion = reducedMotion)) {
           Column(
-            modifier = Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp),
+            // The keyboard already covers the navigation bar; its padding would push content under the IME.
+            modifier =
+              if (isImeVisible) {
+                Modifier.fillMaxWidth()
+              } else {
+                Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 12.dp)
+              },
             horizontalAlignment = Alignment.CenterHorizontally,
           ) {
             PlayerSheetDragHandle()

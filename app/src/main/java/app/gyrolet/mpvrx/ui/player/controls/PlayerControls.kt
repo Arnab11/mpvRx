@@ -546,11 +546,14 @@ fun PlayerControls(
   val isBrightnessSliderShown by viewModel.isBrightnessSliderShown.collectAsState()
   val isVolumeSliderShown by viewModel.isVolumeSliderShown.collectAsState()
   val areSlidersShown = isBrightnessSliderShown || isVolumeSliderShown
+  val gestureSeekUpdate by viewModel.playerUpdate.collectAsState()
+  // Swipe-seek pauses playback internally; the auto-hide timer should still run through it.
+  val isPlayingForAutoHide = paused == false || gestureSeekUpdate is PlayerUpdates.HorizontalSeek
 
   LaunchedEffect(
     controlsShown,
     controlsInteractionEpoch,
-    paused,
+    isPlayingForAutoHide,
     isSeeking,
     resetControlsTimestamp,
     areControlsLocked,
@@ -561,7 +564,7 @@ fun PlayerControls(
     if (!isTelevision &&
       !isAudioOnly &&
       controlsShown &&
-      paused == false &&
+      isPlayingForAutoHide &&
       !isSeeking &&
       !(showControlsDrawer && isPlayerDrawerShown)
     ) {
@@ -1705,9 +1708,8 @@ is PlayerUpdates.FrameInfo -> {
 
           AnimatedVisibility(
             visible =
-              (controlsShown || (!isPortrait && seekBarShown)) &&
-                !areControlsLocked &&
-                !isHorizontalSeekActive,
+              (controlsShown || (!isPortrait && seekBarShown && !isHorizontalSeekActive)) &&
+                !areControlsLocked,
             enter = buildControlsEnterV(controlsAnimStyle, reduceMotion, enterMs) { it },
             exit = buildControlsExitV(controlsAnimStyle, reduceMotion, exitMs) { it },
             modifier =

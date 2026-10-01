@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -122,6 +123,7 @@ fun OnlineSubtitleSearchSheet(
     Column(modifier) {
       val keyboardController = LocalSoftwareKeyboardController.current
       val context = LocalContext.current
+      val isImeVisible = WindowInsets.ime.getBottom(LocalDensity.current) > 0
       val mediaInfo = remember(mediaTitle) { MediaInfoParser.parse(mediaTitle) }
       var searchQuery by remember { mutableStateOf(mediaInfo.title) }
       val aiPreferences = koinInject<AiPreferences>()
@@ -192,10 +194,10 @@ fun OnlineSubtitleSearchSheet(
       }
 
       Column(
-        modifier = Modifier.padding(top = 8.dp),
+        modifier = Modifier.padding(top = if (isImeVisible) 0.dp else 8.dp),
       ) {
-        // Detected info chip
-        if (detectedInfo.isNotBlank() && mediaInfo.title.isNotBlank()) {
+        // Detected info chip; dropped while typing so the field stays above the keyboard.
+        if (!isImeVisible && detectedInfo.isNotBlank() && mediaInfo.title.isNotBlank()) {
           Row(
             modifier =
               Modifier

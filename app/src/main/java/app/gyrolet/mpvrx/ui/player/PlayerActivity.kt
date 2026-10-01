@@ -50,6 +50,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -1130,6 +1131,8 @@ class PlayerActivity :
     binding.ambientBackground.setViewCompositionStrategy(
       ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed,
     )
+    // Pre-Android 11 stops inset dispatch at a consuming sibling, which would starve the controls of IME insets.
+    binding.ambientBackground.consumeWindowInsets = false
     binding.ambientBackground.setContent {
       val enabled by viewModel.isAmbientEnabled.collectAsState()
       val style by viewModel.ambientStyle.collectAsState()
