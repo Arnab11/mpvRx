@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.ime
@@ -207,6 +208,8 @@ fun PlayerSheet(
           onClick = internalOnDismissRequest,
           ).fillMaxSize()
           .background(Color.Black.copy(alpha))
+          // Lifts the whole sheet above the keyboard instead of padding inside a height-capped surface.
+          .imePadding()
         .onSizeChanged {
           val anchors =
             DraggableAnchors {
@@ -222,6 +225,8 @@ fun PlayerSheet(
         Modifier
           .sizeIn(maxWidth = maxWidth, maxHeight = maxHeight)
           .fillMaxWidth()
+          // While typing, use all the room above the keyboard so the field and results stay visible.
+          .then(if (isImeVisible) Modifier.fillMaxHeight() else Modifier)
           .focusProperties { canFocus = false }
           .clickable(
             interactionSource = remember { MutableInteractionSource() },
@@ -248,7 +253,7 @@ fun PlayerSheet(
           ).windowInsetsPadding(
             WindowInsets.systemBars
               .only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
-          ).imePadding(),
+          ),
       shape = MaterialTheme.shapes.extraLarge.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize),
       color = surfaceColor ?: MaterialTheme.colorScheme.surface,
       tonalElevation = tonalElevation,

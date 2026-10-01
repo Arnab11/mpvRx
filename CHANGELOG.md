@@ -44,6 +44,14 @@ These notes are written in plain English and focus on what changed for real use.
 - **IconSwitch clipping:** Confined touch-interaction ripples to the rounded switch pill so press feedback stays strictly within bounds.
 - **Sheet refinements:** Polished layout, typography, and scrolling in the lyrics provider and Google Fonts picker sheets.
 
+### Fixes
+
+- **Seeking with controls shown:** Swipe seeking no longer hides the seekbar, bottom buttons, and custom Lua buttons while the full controls are visible; they now auto-hide after the normal timeout even mid-seek.
+- **Online subtitle search:** The search field can be edited again, and it stays above the keyboard while typing.
+- **Text input in player sheets:** Text fields inside player bottom sheets can take focus and receive keyboard input again.
+- **Bookmarks:** Bookmark names no longer accumulate past bookmark titles.
+- **Image viewer:** Pinch zoom now anchors inside the picture rather than the letterbox area.
+
 ## 2.7.0 & 2.7.1 - Font Hotfix - Snapshots, Rich Lyrics, Smarter Browsing, and Playback Polish
 
 ### App and Player Fonts
