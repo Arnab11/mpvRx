@@ -43,7 +43,6 @@ import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.PlayerActivity
 import app.gyrolet.mpvrx.ui.theme.AppTheme
 import app.gyrolet.mpvrx.ui.theme.DarkMode
-import app.gyrolet.mpvrx.utils.media.VideoCodecSupportInspector
 import com.developer.crashx.config.CrashConfig
 import `is`.xyz.mpv.FastThumbnails
 import kotlinx.coroutines.CancellationException
@@ -97,7 +96,6 @@ class App :
     private const val TAG = "App"
     private const val POST_START_MAINTENANCE_DELAY_MS = 10_000L
     private const val THUMBNAIL_WARMUP_DELAY_MS = 1_500L
-    private const val DECODER_CAPABILITY_WARMUP_DELAY_MS = 1_500L
     private const val IDLE_MPV_CORE_GRACE_MS = 3L * 60L * 1000L
     private const val WATCH_STATS_INTERVAL_MS = 15_000L
   }
@@ -162,7 +160,6 @@ class App :
     startIdleMpvCoreReaper()
     startWidgetUpdates()
     startWatchStatsTracking()
-    prewarmDecoderCapabilities()
 
     applicationScope.launch {
       runCatching {
@@ -216,14 +213,6 @@ class App :
   override fun onConfigurationChanged(newConfig: Configuration) {
     super.onConfigurationChanged(newConfig)
     MediaPlayerWidget.requestUpdate(this)
-  }
-
-  /** MediaCodecList enumeration is a binder round trip the first libmpv core init otherwise pays on the main thread. */
-  private fun prewarmDecoderCapabilities() {
-    applicationScope.launch {
-      delay(DECODER_CAPABILITY_WARMUP_DELAY_MS)
-      runCatching { VideoCodecSupportInspector.hardwareDecoderCodecIds() }
-    }
   }
 
   private fun startWidgetUpdates() {

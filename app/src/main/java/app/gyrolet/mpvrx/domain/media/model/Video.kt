@@ -32,8 +32,6 @@ data class Video(
   val height: Int,
   val fps: Float,
   val resolution: String,
-  /** Display rotation in degrees; width and height stay as stored in the container. */
-  val rotation: Int = 0,
   val hasEmbeddedSubtitles: Boolean = false,
   val subtitleCodec: String = "",
   val videoCodec: String = "",

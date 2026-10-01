@@ -23,19 +23,11 @@ object VulkanCapabilities {
   val isBackendIncluded: Boolean
     get() = BuildConfig.MPV_SUPPORTS_VULKAN
 
-  // Device capabilities never change within a process; renderer selection asks several times per launch.
-  @Volatile private var cachedDeviceSupport: Boolean? = null
-
   /** Returns whether this APK and the device can both use mpv's Vulkan renderer. */
   fun isAvailable(context: Context): Boolean = isBackendIncluded && isDeviceSupported(context)
 
   /** Returns whether the device meets mpvRx's Vulkan renderer requirements. */
   fun isDeviceSupported(context: Context): Boolean {
-    cachedDeviceSupport?.let { return it }
-    return probeDeviceSupport(context).also { cachedDeviceSupport = it }
-  }
-
-  private fun probeDeviceSupport(context: Context): Boolean {
     try {
       if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
         Log.d(TAG, "Vulkan unavailable: Android API ${Build.VERSION.SDK_INT} is below 33")

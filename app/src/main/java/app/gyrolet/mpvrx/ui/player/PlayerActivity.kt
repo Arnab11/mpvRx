@@ -6333,13 +6333,43 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
     if (playerPreferences.orientation.get() != PlayerOrientation.Video || isKnownAudioLaunch(sourceIntent)) return
 
-    // Only launcher-supplied metadata is used here. Probing the container on the main thread before
-    // the window exists delayed every open by the demux time; unknown files rotate on video-params.
-    val width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
-    val height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
+    var width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
+    var height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
+    var rotation = 0
+
+    extractUriFromIntent(sourceIntent)
+      ?.takeIf { uri -> uri.scheme.equals("content", true) || uri.scheme.equals("file", true) }
+      ?.let { uri ->
+        runCatching {
+          val retriever = android.media.MediaMetadataRetriever()
+          try {
+            retriever.setDataSource(this, uri)
+            if (width <= 0) {
+              width =
+                retriever
+                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                  ?.toIntOrNull()
+                  ?: 0
+            }
+            if (height <= 0) {
+              height =
+                retriever
+                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                  ?.toIntOrNull()
+                  ?: 0
+            }
+            rotation =
+              retriever
+                .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                ?.toIntOrNull()
+                ?: 0
+          } finally {
+            retriever.release()
+          }
+        }
+      }
     if (width <= 0 || height <= 0) return
 
-    val rotation = sourceIntent.getIntExtra(EXTRA_VIDEO_ROTATION, 0)
     val normalizedRotation = ((rotation % 360) + 360) % 360
     val swapsDimensions = normalizedRotation == 90 || normalizedRotation == 270
     val initialOrientation =
@@ -8431,7 +8461,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     private const val EXTRA_SCRIPT_RESTORE_PAUSED = "script_restore_paused"
     const val EXTRA_VIDEO_WIDTH = "video_width"
     const val EXTRA_VIDEO_HEIGHT = "video_height"
-    const val EXTRA_VIDEO_ROTATION = "video_rotation"
 
     /** Start playback at this many seconds in, overriding resume-from-history. Set by snapshot jumps. */
     const val EXTRA_START_POSITION_SECONDS = "start_position_seconds"

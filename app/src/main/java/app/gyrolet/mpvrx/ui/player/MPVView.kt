@@ -259,12 +259,6 @@ class MPVView(
 
     PlaybackSession.setOptionString("keep-open", "yes")
     PlaybackSession.setOptionString("input-default-bindings", "yes")
-    // The app draws its own controls and has no mouse or keyboard menus, so these built-in Lua
-    // scripts only add VM startups to core creation. stats and console stay available to the UI.
-    PlaybackSession.setOptionString("osc", "no")
-    PlaybackSession.setOptionString("load-select", "no")
-    PlaybackSession.setOptionString("load-positioning", "no")
-    PlaybackSession.setOptionString("load-commands", "no")
 
     PlaybackSession.setOptionString("tls-verify", "yes")
     PlaybackSession.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")
@@ -313,9 +307,7 @@ class MPVView(
 
     val preciseSeek = playerPreferences.usePreciseSeeking.get()
     PlaybackSession.setOptionString("hr-seek", if (preciseSeek) "yes" else "no")
-    // Dropping pre-target frames never moves where an exact seek lands; it only shortens the decode
-    // run before the first displayed frame, including start= resume loads.
-    PlaybackSession.setOptionString("hr-seek-framedrop", "yes")
+    PlaybackSession.setOptionString("hr-seek-framedrop", if (preciseSeek) "no" else "yes")
 
     // Use audio-based video sync for better frame pacing with 4K HDR content.
     // This prevents timing jitter when the display refresh rate doesn't perfectly
