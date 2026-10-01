@@ -1491,6 +1491,9 @@
   <string name="ui_artists">Artists</string>
   <string name="ui_network">Network</string>
   <string name="ui_pinned_folder">Pinned folder</string>
+  <string name="ui_pin_videos">Pin videos</string>
+  <string name="ui_unpin_videos">Unpin videos</string>
+  <string name="ui_pinned_video">Pinned video</string>
   <string name="ui_folder">Folder</string>
   <string name="ui_connect_automatically_on_app_launch">Connect automatically on app launch</string>
   <string name="ui_connecting">Connecting</string>

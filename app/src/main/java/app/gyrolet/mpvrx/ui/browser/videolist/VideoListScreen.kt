@@ -171,9 +171,17 @@ data class VideoListScreen(
     val videoSortOrder by browserPreferences.videoSortOrder.collectAsState()
     val mediaLayoutMode by browserPreferences.folderViewVideoLayoutMode.collectAsState()
     val musicCoverArtSize by browserPreferences.musicCoverArtSize.collectAsState()
+    val foldersPreferences = koinInject<app.gyrolet.mpvrx.preferences.FoldersPreferences>()
+    val pinnedVideoPaths by foldersPreferences.pinnedVideos.collectAsState()
     val sortedVideos =
-      remember(videos, videoSortType, videoSortOrder) {
-        SortUtils.sortVideos(videos, videoSortType, videoSortOrder)
+      remember(videos, videoSortType, videoSortOrder, pinnedVideoPaths, archiveFolder) {
+        val sorted = SortUtils.sortVideos(videos, videoSortType, videoSortOrder)
+        if (archiveFolder || pinnedVideoPaths.isEmpty()) {
+          sorted
+        } else {
+          val (pinned, unpinned) = sorted.partition { it.path in pinnedVideoPaths }
+          pinned + unpinned
+        }
       }
     val sortedVideosWithInfo =
       remember(sortedVideos, videosWithPlaybackInfo) {
@@ -516,6 +524,7 @@ data class VideoListScreen(
           isAudio = isAudio,
           musicCoverArtSize = musicCoverArtSize,
           isDualPane = isDualPane,
+          pinnedVideoPaths = if (archiveFolder) emptySet() else pinnedVideoPaths,
         )
 
         // Floating Material 3 Button Group overlay with animation
@@ -544,6 +553,13 @@ data class VideoListScreen(
             onRenameClick = { renameDialogOpen.value = true },
             onDeleteClick = { deleteDialogOpen.value = true },
             onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
+            onPinClick = {
+              foldersPreferences.togglePinnedVideos(selectionManager.getSelectedItems().map { it.path })
+              selectionManager.clear()
+            },
+            unpinSelected = selectedVideos.isNotEmpty() && selectedVideos.all { it.path in pinnedVideoPaths },
+            pinLabelRes = R.string.ui_pin_videos,
+            unpinLabelRes = R.string.ui_unpin_videos,
             showDownscale = selectionManager.getSelectedItems().let { items -> items.isNotEmpty() && items.none { it.isAudio } },
             showRename = selectionManager.selectedCount > 0,
             modifier =
@@ -818,6 +834,7 @@ internal fun VideoListContent(
   isFabExpanded: Boolean = false,
   onFabExpandedChange: (Boolean) -> Unit = {},
   isDualPane: Boolean = false,
+  pinnedVideoPaths: Set<String> = emptySet(),
 ) {
   val archiveFolder = remember(folderId) { ZipArchiveMedia.isBrowserPath(folderId) }
   val swipeScope = rememberCoroutineScope()
@@ -1175,6 +1192,7 @@ internal fun VideoListContent(
                       isSelected = selectionManager.isSelected(videoWithInfo.video),
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
+                      isPinned = videoWithInfo.video.path in pinnedVideoPaths,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =
@@ -1242,6 +1260,7 @@ internal fun VideoListContent(
                       isSelected = selectionManager.isSelected(videoWithInfo.video),
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
+                      isPinned = videoWithInfo.video.path in pinnedVideoPaths,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =

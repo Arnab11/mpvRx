@@ -196,7 +196,21 @@ fun FileSystemBrowserScreen(path: String? = null) {
 
   // State collection
   val currentPath by viewModel.currentPath.collectAsState()
-  val items by viewModel.items.collectAsState()
+  val sortedItems by viewModel.items.collectAsState()
+  val foldersPreferences = koinInject<app.gyrolet.mpvrx.preferences.FoldersPreferences>()
+  val pinnedVideoPaths by foldersPreferences.pinnedVideos.collectAsState()
+  // Pinned videos lead the video section; folders keep their sorted positions.
+  val items =
+    remember(sortedItems, pinnedVideoPaths) {
+      val videoItems = sortedItems.filterIsInstance<FileSystemItem.VideoFile>()
+      if (pinnedVideoPaths.isEmpty() || videoItems.none { it.video.path in pinnedVideoPaths }) {
+        sortedItems
+      } else {
+        val (pinned, unpinned) = videoItems.partition { it.video.path in pinnedVideoPaths }
+        val reordered = (pinned + unpinned).iterator()
+        sortedItems.map { item -> if (item is FileSystemItem.VideoFile) reordered.next() else item }
+      }
+    }
   val videoFilesWithPlayback by viewModel.videoFilesWithPlayback.collectAsState()
   val newVideoIds by viewModel.newVideoIds.collectAsState()
   val watchedVideoIds by viewModel.watchedVideoIds.collectAsState()
@@ -824,6 +838,7 @@ fun FileSystemBrowserScreen(path: String? = null) {
                 selectionManager = selectionManager,
                 modifier = Modifier,
                 isInSelectionMode = isInSelectionMode,
+                pinnedVideoPaths = pinnedVideoPaths,
               )
             }
         } else if (isPermissionSetupCompleted) {
@@ -895,6 +910,18 @@ fun FileSystemBrowserScreen(path: String? = null) {
         onRenameClick = { renameDialogOpen.value = true },
         onDeleteClick = { deleteDialogOpen = true },
         onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
+        onPinClick =
+          if (onlyVideosSelected) {
+            {
+              foldersPreferences.togglePinnedVideos(selectedVideos.map { it.path })
+              selectionManager.clear()
+            }
+          } else {
+            null
+          },
+        unpinSelected = onlyVideosSelected && selectedVideos.all { it.path in pinnedVideoPaths },
+        pinLabelRes = R.string.ui_pin_videos,
+        unpinLabelRes = R.string.ui_unpin_videos,
         showDownscale =
           selectedVideos.isNotEmpty() && selectedVideos.none { it.isAudio } && selectedFolders.isEmpty(),
         showRename = selectionManager.isSingleSelection,
@@ -1226,6 +1253,7 @@ private fun FileSystemBrowserContent(
   selectionManager: app.gyrolet.mpvrx.ui.browser.selection.SelectionManager<FileSystemItem, String>,
   modifier: Modifier = Modifier,
   isInSelectionMode: Boolean = false,
+  pinnedVideoPaths: Set<String> = emptySet(),
 ) {
   val swipeScope = rememberCoroutineScope()
   val swipeActions = rememberVideoSwipeActions { swipeScope.launch { onRefresh() } }
@@ -1490,6 +1518,7 @@ private fun FileSystemBrowserContent(
                         },
                       isOldAndUnplayed = newVideoIds.contains(videoFile.video.id),
                       isWatched = watchedVideoIds.contains(videoFile.video.id),
+                      isPinned = videoFile.video.path in pinnedVideoPaths,
                       isGridMode = true,
                       showSubtitleIndicator = showSubtitleIndicator,
                       overrideShowSizeChip = null,
@@ -1607,6 +1636,7 @@ private fun FileSystemBrowserContent(
                       },
                     isOldAndUnplayed = newVideoIds.contains(videoFile.video.id),
                     isWatched = watchedVideoIds.contains(videoFile.video.id),
+                    isPinned = videoFile.video.path in pinnedVideoPaths,
                     isGridMode = false,
                     onSwipeAction =
                       swipeActions.video.takeUnless { archiveEntry || selectionManager.isInSelectionMode || isInSelectionMode },

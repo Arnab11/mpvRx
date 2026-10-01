@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -42,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
@@ -156,6 +158,50 @@ fun rememberVideoCardUiConfig(): VideoCardUiConfig {
 }
 
 @Composable
+private fun VideoTopStartBadges(
+  isPinned: Boolean,
+  showNewLabel: Boolean,
+  modifier: Modifier = Modifier,
+) {
+  if (!isPinned && !showNewLabel) return
+  Row(
+    modifier = modifier,
+    horizontalArrangement = Arrangement.spacedBy(4.dp),
+    verticalAlignment = Alignment.CenterVertically,
+  ) {
+    if (isPinned) {
+      Surface(
+        shape = AppShapeScale.full,
+        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.94f),
+        contentColor = MaterialTheme.colorScheme.onPrimary,
+        shadowElevation = 3.dp,
+        modifier = Modifier.rotate(-18f),
+      ) {
+        Icon(
+          imageVector = Icons.RoundedFilled.PushPin,
+          contentDescription = stringResource(R.string.ui_pinned_video),
+          modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp).size(12.dp),
+        )
+      }
+    }
+    if (showNewLabel) {
+      Box(
+        modifier =
+          Modifier
+            .cardOverlay(containerColor = Color(0xFFD32F2F))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+      ) {
+        Text(
+          text = stringResource(R.string.video_label_new),
+          style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+          color = Color.White,
+        )
+      }
+    }
+  }
+}
+
+@Composable
 fun VideoCard(
   video: Video,
   onClick: () -> Unit,
@@ -166,6 +212,7 @@ fun VideoCard(
   progressPercentage: Float? = null,
   isOldAndUnplayed: Boolean = false,
   isWatched: Boolean = false,
+  isPinned: Boolean = false,
   onThumbClick: () -> Unit = {},
   isGridMode: Boolean = false,
   gridColumns: Int = 1,
@@ -402,22 +449,11 @@ fun VideoCard(
               )
             }
 
-            if (showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge) {
-              Box(
-                modifier =
-                  Modifier
-                    .align(Alignment.TopStart)
-                    .padding(6.dp)
-                    .cardOverlay(containerColor = Color(0xFFD32F2F))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-              ) {
-                Text(
-                  text = stringResource(R.string.video_label_new),
-                  style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                  color = Color.White,
-                )
-              }
-            }
+            VideoTopStartBadges(
+              isPinned = isPinned && !showSelectionBadge,
+              showNewLabel = showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge,
+              modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+            )
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(6.dp))
 
@@ -764,22 +800,11 @@ fun VideoCard(
               )
             }
 
-            if (showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge) {
-              Box(
-                modifier =
-                  Modifier
-                    .align(Alignment.TopStart)
-                    .padding(6.dp)
-                    .cardOverlay(containerColor = Color(0xFFD32F2F))
-                    .padding(horizontal = 8.dp, vertical = 3.dp),
-              ) {
-                Text(
-                  text = stringResource(R.string.video_label_new),
-                  style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
-                  color = Color.White,
-                )
-              }
-            }
+            VideoTopStartBadges(
+              isPinned = isPinned && !showSelectionBadge,
+              showNewLabel = showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge,
+              modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
+            )
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(6.dp))
 

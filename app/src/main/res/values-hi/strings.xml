@@ -1206,6 +1206,9 @@
   <string name="ui_playlists">प्लेलिस्ट</string>
   <string name="ui_network">नेटवर्क</string>
   <string name="ui_pinned_folder">पिन किया फोल्डर</string>
+  <string name="ui_pin_videos">वीडियो पिन करें</string>
+  <string name="ui_unpin_videos">वीडियो अनपिन करें</string>
+  <string name="ui_pinned_video">पिन किया वीडियो</string>
   <string name="ui_folder">फोल्डर</string>
   <string name="ui_connect_automatically_on_app_launch">ऐप शुरू होने पर अपने आप कनेक्ट करें</string>
   <string name="ui_connecting">कनेक्ट हो रहा है</string>

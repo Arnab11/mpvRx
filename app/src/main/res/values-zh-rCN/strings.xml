@@ -1272,6 +1272,9 @@
   <string name="ui_playlists">播放列表</string>
   <string name="ui_network">网络</string>
   <string name="ui_pinned_folder">已固定文件夹</string>
+  <string name="ui_pin_videos">固定视频</string>
+  <string name="ui_unpin_videos">取消固定视频</string>
+  <string name="ui_pinned_video">已固定视频</string>
   <string name="ui_folder">文件夹</string>
   <string name="ui_connect_automatically_on_app_launch">应用启动时自动连接</string>
   <string name="ui_connecting">正在连接</string>

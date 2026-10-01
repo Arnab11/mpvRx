@@ -85,6 +85,8 @@ fun BrowserBottomBar(
   onAddToQueueClick: (() -> Unit)? = null,
   onPinClick: (() -> Unit)? = null,
   unpinSelected: Boolean = false,
+  pinLabelRes: Int = app.gyrolet.mpvrx.R.string.ui_pin_folders,
+  unpinLabelRes: Int = app.gyrolet.mpvrx.R.string.ui_unpin_folders,
   modifier: Modifier = Modifier,
   showCopy: Boolean = true,
   showMove: Boolean = true,
@@ -356,11 +358,7 @@ fun BrowserBottomBar(
               },
               Icons.RoundedFilled.PushPin,
               androidx.compose.ui.res.stringResource(
-                if (effectiveUnpinSelected) {
-                  app.gyrolet.mpvrx.R.string.ui_unpin_folders
-                } else {
-                  app.gyrolet.mpvrx.R.string.ui_pin_folders
-                },
+                if (effectiveUnpinSelected) unpinLabelRes else pinLabelRes,
               ),
               layoutParams.buttonSize,
               layoutParams.iconSize,

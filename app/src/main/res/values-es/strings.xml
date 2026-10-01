@@ -1274,6 +1274,9 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="ui_playlists">Listas de reproducción</string>
   <string name="ui_network">Red</string>
   <string name="ui_pinned_folder">Carpeta fijada</string>
+  <string name="ui_pin_videos">Fijar videos</string>
+  <string name="ui_unpin_videos">Desfijar videos</string>
+  <string name="ui_pinned_video">Video fijado</string>
   <string name="ui_folder">Carpeta</string>
   <string name="ui_connect_automatically_on_app_launch">Conectar automáticamente al iniciar la aplicación</string>
   <string name="ui_connecting">Conectando</string>
