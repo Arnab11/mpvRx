@@ -2,31 +2,41 @@
 
 These notes are written in plain English and focus on what changed for real use.
 
-## 2.7.2 - Hotfixes - mpvlib 1.1.1, Track Badges, Font Sharing, and Startup Polish
+## 2.7.2 - Hotfixes - mpvlib 1.1.1, Track Badges, Pinned Videos, and Font Sharing
 
 ### Highlights
 
 - Upgraded the standard and non-Vulkan mpv backends to mpvlib 1.1.1.
+- Pin individual videos to the top of their folder in both the folder and file-tree browsers, in list and grid layouts.
+- The lyrics source sheet now shows a clear status marker for every provider: currently showing, fetching, found, nothing found, failed, or not fetched yet.
 - Added visual track badges for audio and subtitle streams (Default, Forced, External, Descriptive, Mono, and Stereo).
 - Redesigned audio and subtitle selection rows to match the playlist sheet with vibrant gradient outlines and accent highlights.
-- Downloaded Google Fonts are now saved directly to mpv's font directory, making them immediately available for OSD and subtitles.
+- Downloaded Google Fonts are now saved directly to mpv's font directory, making them immediately available for OSD and subtitles, and can be deleted from the font picker.
 - Added independent ambient edge-blending sliders for Glow and YouTube ambient lighting.
-- Reduced main-thread work on video startup for faster, smoother playback starts.
 - Cleaned up obsolete mpv configuration options and streamlined subtitle settings.
 - Clipped IconSwitch ripples to the pill shape to prevent press feedback from overflowing.
 
-### mpv Core and Playback Performance
+### mpv Core and Playback
 
 - **mpvlib 1.1.1:** Upgraded the native mpv library for standard and non-Vulkan distributions.
-- **Fast video open:** Removed the synchronous metadata probe from player initialization, prewarmed MediaCodec capability checks off the main thread, and retained hr-seek-framedrop so resume playback reaches the first frame sooner.
 - **Option and property cleanup:** Dropped invalid or dead options (`vd-lavc-queue`, `http-allow-redirect`, `ytdl-path`), corrected dynamic property names, and ensured subtitle languages are passed via `sub-add`.
 - **Ambient edge blending:** Added independent edge-blending sliders for Glow and YouTube ambient lighting to smoothly feather illumination into video edges.
+
+### Library and Browsing
+
+- **Pinned videos:** Select one or more videos and use the pin action in the selection bar to keep them at the top of the folder, ahead of the chosen sort order. Pinned videos show a pin badge on their thumbnail; selecting only pinned videos switches the action to Unpin.
+
+### Lyrics
+
+- **Provider status markers:** Each lyrics source row now has a colored status chip on the right with an icon and label, and the Auto row shows which provider is currently supplying the lyrics.
+- **Failures told apart from misses:** Providers that time out or error are now reported as Failed instead of being treated as having no lyrics, and providers that answered empty during the automatic search are marked as Nothing found.
 
 ### Subtitles, Audio, and Fonts
 
 - **Track badges:** Added clear badges indicating default, forced, external, descriptive, mono, and stereo tracks across audio and subtitle sheets.
 - **Track selection styling:** Unified audio and subtitle track rows with playlist-style active indicators, featuring a themed accent fill and gradient outline.
 - **Direct font sharing with mpv:** Downloaded Google Fonts are written directly to mpv's configuration fonts directory, enabling instant subtitle and OSD rendering without manual font mapping.
+- **Delete downloaded fonts:** Each downloaded font in the picker has a delete button on the right; deleting the active font falls back to the built-in Google Sans Flex.
 - **Streamlined subtitle preferences:** Reorganized typography cards and removed redundant secondary subtitle options for a cleaner settings experience.
 
 ### User Interface and Interaction
