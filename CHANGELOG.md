@@ -2,6 +2,38 @@
 
 These notes are written in plain English and focus on what changed for real use.
 
+## 2.7.2 - Hotfixes - mpvlib 1.1.1, Track Badges, Font Sharing, and Startup Polish
+
+### Highlights
+
+- Upgraded the standard and non-Vulkan mpv backends to mpvlib 1.1.1.
+- Added visual track badges for audio and subtitle streams (Default, Forced, External, Descriptive, Mono, and Stereo).
+- Redesigned audio and subtitle selection rows to match the playlist sheet with vibrant gradient outlines and accent highlights.
+- Downloaded Google Fonts are now saved directly to mpv's font directory, making them immediately available for OSD and subtitles.
+- Added independent ambient edge-blending sliders for Glow and YouTube ambient lighting.
+- Reduced main-thread work on video startup for faster, smoother playback starts.
+- Cleaned up obsolete mpv configuration options and streamlined subtitle settings.
+- Clipped IconSwitch ripples to the pill shape to prevent press feedback from overflowing.
+
+### mpv Core and Playback Performance
+
+- **mpvlib 1.1.1:** Upgraded the native mpv library for standard and non-Vulkan distributions.
+- **Fast video open:** Removed the synchronous metadata probe from player initialization, prewarmed MediaCodec capability checks off the main thread, and retained hr-seek-framedrop so resume playback reaches the first frame sooner.
+- **Option and property cleanup:** Dropped invalid or dead options (`vd-lavc-queue`, `http-allow-redirect`, `ytdl-path`), corrected dynamic property names, and ensured subtitle languages are passed via `sub-add`.
+- **Ambient edge blending:** Added independent edge-blending sliders for Glow and YouTube ambient lighting to smoothly feather illumination into video edges.
+
+### Subtitles, Audio, and Fonts
+
+- **Track badges:** Added clear badges indicating default, forced, external, descriptive, mono, and stereo tracks across audio and subtitle sheets.
+- **Track selection styling:** Unified audio and subtitle track rows with playlist-style active indicators, featuring a themed accent fill and gradient outline.
+- **Direct font sharing with mpv:** Downloaded Google Fonts are written directly to mpv's configuration fonts directory, enabling instant subtitle and OSD rendering without manual font mapping.
+- **Streamlined subtitle preferences:** Reorganized typography cards and removed redundant secondary subtitle options for a cleaner settings experience.
+
+### User Interface and Interaction
+
+- **IconSwitch clipping:** Confined touch-interaction ripples to the rounded switch pill so press feedback stays strictly within bounds.
+- **Sheet refinements:** Polished layout, typography, and scrolling in the lyrics provider and Google Fonts picker sheets.
+
 ## 2.7.0 & 2.7.1 - Font Hotfix - Snapshots, Rich Lyrics, Smarter Browsing, and Playback Polish
 
 ### App and Player Fonts
