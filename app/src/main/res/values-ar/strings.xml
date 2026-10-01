@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">الخطوط المنزّلة</string>
   <string name="app_font_section_browse">تصفح Google Fonts</string>
   <string name="app_font_no_downloaded">لا توجد خطوط منزّلة بعد</string>
+  <string name="app_font_delete_title">حذف الخط</string>
+  <string name="app_font_delete_message">هل تريد إزالة %1$s من هذا الجهاز؟ سيستخدم التطبيق والترجمات الخط الافتراضي.</string>
   <string name="lyrics_provider_status_current">معروض حاليًا</string>
   <string name="lyrics_provider_status_found">تم العثور</string>
   <string name="lyrics_provider_status_missing">لم يُعثر على شيء</string>

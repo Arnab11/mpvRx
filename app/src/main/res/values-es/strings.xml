@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">Fuentes descargadas</string>
   <string name="app_font_section_browse">Explorar Google Fonts</string>
   <string name="app_font_no_downloaded">Aún no hay fuentes descargadas</string>
+  <string name="app_font_delete_title">Eliminar fuente</string>
+  <string name="app_font_delete_message">¿Quitar %1$s de este dispositivo? Los subtítulos y la app usarán la fuente predeterminada.</string>
   <string name="lyrics_provider_status_current">Mostrándose</string>
   <string name="lyrics_provider_status_found">Encontrado</string>
   <string name="lyrics_provider_status_missing">Sin resultados</string>

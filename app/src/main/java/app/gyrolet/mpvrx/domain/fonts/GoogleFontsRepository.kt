@@ -124,6 +124,14 @@ class GoogleFontsRepository(
         ?: legacyActiveFontFile.takeIf { family.isNotBlank() && it.isFile }
     }
 
+  /** Removes a downloaded font from the shared app and mpv font directory. */
+  fun uninstall(appFamily: String): Boolean =
+    synchronized(installedFontsLock) {
+      val file = fontFileForFamily(appFamily)
+      File(file.path + ".bak").delete()
+      !file.exists() || file.delete()
+    }
+
   fun installedFonts(legacySelectedFamily: String? = null): List<InstalledGoogleFont> =
     synchronized(installedFontsLock) {
       migrateLegacyActiveFont(legacySelectedFamily)

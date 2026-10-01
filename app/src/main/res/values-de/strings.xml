@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">Heruntergeladene Schriftarten</string>
   <string name="app_font_section_browse">Google Fonts durchsuchen</string>
   <string name="app_font_no_downloaded">Noch keine Schriftarten heruntergeladen</string>
+  <string name="app_font_delete_title">Schriftart löschen</string>
+  <string name="app_font_delete_message">%1$s von diesem Gerät entfernen? Untertitel und App verwenden dann die Standardschrift.</string>
   <string name="lyrics_provider_status_current">Wird angezeigt</string>
   <string name="lyrics_provider_status_found">Gefunden</string>
   <string name="lyrics_provider_status_missing">Nichts gefunden</string>

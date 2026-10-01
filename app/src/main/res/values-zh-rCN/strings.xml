@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">已下载字体</string>
   <string name="app_font_section_browse">浏览 Google Fonts</string>
   <string name="app_font_no_downloaded">尚未下载字体</string>
+  <string name="app_font_delete_title">删除字体</string>
+  <string name="app_font_delete_message">要从此设备删除 %1$s 吗？字幕和应用将恢复使用默认字体。</string>
   <string name="lyrics_provider_status_current">正在显示</string>
   <string name="lyrics_provider_status_found">已找到</string>
   <string name="lyrics_provider_status_missing">未找到</string>

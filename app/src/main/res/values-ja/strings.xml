@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">ダウンロード済みフォント</string>
   <string name="app_font_section_browse">Google Fonts を閲覧</string>
   <string name="app_font_no_downloaded">ダウンロード済みのフォントはありません</string>
+  <string name="app_font_delete_title">フォントを削除</string>
+  <string name="app_font_delete_message">%1$s をこの端末から削除しますか？字幕とアプリはデフォルトのフォントに戻ります。</string>
   <string name="lyrics_provider_status_current">表示中</string>
   <string name="lyrics_provider_status_found">見つかりました</string>
   <string name="lyrics_provider_status_missing">見つかりません</string>

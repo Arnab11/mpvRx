@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">Fontes baixadas</string>
   <string name="app_font_section_browse">Explorar Google Fonts</string>
   <string name="app_font_no_downloaded">Nenhuma fonte baixada ainda</string>
+  <string name="app_font_delete_title">Excluir fonte</string>
+  <string name="app_font_delete_message">Remover %1$s deste dispositivo? As legendas e o app usarão a fonte padrão.</string>
   <string name="lyrics_provider_status_current">Exibindo agora</string>
   <string name="lyrics_provider_status_found">Encontrado</string>
   <string name="lyrics_provider_status_missing">Nada encontrado</string>

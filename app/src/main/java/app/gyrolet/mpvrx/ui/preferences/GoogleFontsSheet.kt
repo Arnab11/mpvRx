@@ -19,8 +19,10 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
@@ -49,6 +51,8 @@ import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
+import app.gyrolet.mpvrx.ui.icons.Icon
+import app.gyrolet.mpvrx.ui.icons.Icons
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -71,6 +75,40 @@ internal fun GoogleFontsSheet(
   var downloadFailedFamily by remember { mutableStateOf<String?>(null) }
   var installedFonts by remember { mutableStateOf<List<InstalledGoogleFont>>(emptyList()) }
   var refreshKey by remember { mutableIntStateOf(0) }
+  var pendingDeletion by remember { mutableStateOf<InstalledGoogleFont?>(null) }
+
+  pendingDeletion?.let { font ->
+    AlertDialog(
+      onDismissRequest = { pendingDeletion = null },
+      title = { Text(stringResource(R.string.app_font_delete_title)) },
+      text = { Text(stringResource(R.string.app_font_delete_message, font.family)) },
+      confirmButton = {
+        TextButton(
+          onClick = {
+            pendingDeletion = null
+            scope.launch {
+              withContext(Dispatchers.IO) { repository.uninstall(font.appFamily) }
+              if (preferences.googleFontFamily.get() == font.appFamily) {
+                preferences.googleFontFamily.set("")
+              }
+              preferences.googleFontRevision.set(preferences.googleFontRevision.get() + 1)
+              installedFonts =
+                withContext(Dispatchers.IO) {
+                  repository.installedFonts(preferences.googleFontFamily.get())
+                }
+            }
+          },
+        ) {
+          Text(stringResource(R.string.delete), color = MaterialTheme.colorScheme.error)
+        }
+      },
+      dismissButton = {
+        TextButton(onClick = { pendingDeletion = null }) {
+          Text(stringResource(R.string.generic_cancel))
+        }
+      },
+    )
+  }
 
   LaunchedEffect(selectedFamily) {
     installedFonts =
@@ -166,6 +204,7 @@ internal fun GoogleFontsSheet(
                 preferences.useSystemFont.set(false)
                 onDismiss()
               },
+              onDelete = { pendingDeletion = font },
             )
           }
         }
@@ -287,6 +326,7 @@ private fun AppFontRow(
   modifier: Modifier = Modifier,
   downloading: Boolean = false,
   enabled: Boolean = true,
+  onDelete: (() -> Unit)? = null,
 ) {
   Surface(
     onClick = onClick,
@@ -327,6 +367,15 @@ private fun AppFontRow(
             color = MaterialTheme.colorScheme.outline,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
+          )
+        }
+      }
+      if (onDelete != null) {
+        IconButton(onClick = onDelete, enabled = enabled) {
+          Icon(
+            imageVector = Icons.RoundedFilled.Delete,
+            contentDescription = stringResource(R.string.app_font_delete_title),
+            tint = MaterialTheme.colorScheme.error,
           )
         }
       }

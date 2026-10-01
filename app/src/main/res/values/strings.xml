@@ -43,6 +43,8 @@
   <string name="app_font_section_downloaded">Downloaded fonts</string>
   <string name="app_font_section_browse">Browse Google Fonts</string>
   <string name="app_font_no_downloaded">No downloaded fonts yet</string>
+  <string name="app_font_delete_title">Delete font</string>
+  <string name="app_font_delete_message">Remove %1$s from this device? Subtitles and the app will fall back to the default font.</string>
   <string name="app_font_downloaded">Downloaded</string>
   <string name="app_font_catalog_error">Couldn\'t load Google Fonts</string>
   <string name="app_font_download_error">Couldn\'t download %1$s</string>

@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">Загруженные шрифты</string>
   <string name="app_font_section_browse">Просмотреть Google Fonts</string>
   <string name="app_font_no_downloaded">Загруженных шрифтов пока нет</string>
+  <string name="app_font_delete_title">Удалить шрифт</string>
+  <string name="app_font_delete_message">Удалить %1$s с этого устройства? Субтитры и приложение будут использовать шрифт по умолчанию.</string>
   <string name="lyrics_provider_status_current">Показывается</string>
   <string name="lyrics_provider_status_found">Найдено</string>
   <string name="lyrics_provider_status_missing">Ничего не найдено</string>

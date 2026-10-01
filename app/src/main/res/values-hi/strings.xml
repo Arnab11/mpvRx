@@ -32,6 +32,8 @@
   <string name="app_font_section_downloaded">डाउनलोड किए गए फ़ॉन्ट</string>
   <string name="app_font_section_browse">Google Fonts ब्राउज़ करें</string>
   <string name="app_font_no_downloaded">अभी तक कोई फ़ॉन्ट डाउनलोड नहीं किया गया</string>
+  <string name="app_font_delete_title">फ़ॉन्ट हटाएँ</string>
+  <string name="app_font_delete_message">इस डिवाइस से %1$s हटाएँ? सबटाइटल और ऐप डिफ़ॉल्ट फ़ॉन्ट का उपयोग करेंगे।</string>
   <string name="lyrics_provider_status_current">अभी दिख रहा है</string>
   <string name="lyrics_provider_status_found">मिला</string>
   <string name="lyrics_provider_status_missing">कुछ नहीं मिला</string>
