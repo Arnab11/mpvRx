@@ -27,13 +27,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.DpSize
@@ -42,6 +45,7 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import me.saket.telephoto.zoomable.ZoomSpec
+import me.saket.telephoto.zoomable.ZoomableContentLocation
 import me.saket.telephoto.zoomable.rememberZoomableState
 import me.saket.telephoto.zoomable.zoomable
 
@@ -74,9 +78,25 @@ fun ZoomableImage(
       bitmap != null -> {
         val imageAspect = remember(bitmap) { bitmap.width.toFloat() / bitmap.height.toFloat() }
         val fitted = fitInto(imageAspect, fitWidth, fitHeight)
-        // The gesture surface stays full-screen so a zoomed image can use all of it, while the image
-        // is drawn at its fitted size inside. Putting the fit constraint on the gesture surface
-        // instead would confine zoomed content to the image's own rectangle.
+        // The gesture surface stays full-screen so a zoomed image can use all of it and a pinch can
+        // start in the blank space around the image; putting the fit constraint here instead would
+        // confine zoomed content to the image's own rectangle. Telephoto assumes that surface is the
+        // whole content, so it has to be told the rectangle the image really covers, or it anchors a
+        // pinch in the letterbox to the empty space under the fingers.
+        val density = LocalDensity.current
+        val contentSize =
+          remember(fitted, quarterTurned, density) {
+            with(density) {
+              // A quarter turn puts the image on screen with its axes swapped.
+              if (quarterTurned) Size(fitted.height.toPx(), fitted.width.toPx())
+              else Size(fitted.width.toPx(), fitted.height.toPx())
+            }
+          }
+        SideEffect {
+          zoomableState.setContentLocation(
+            ZoomableContentLocation.scaledInsideAndCenterAligned(contentSize),
+          )
+        }
         Box(
           modifier =
             Modifier
