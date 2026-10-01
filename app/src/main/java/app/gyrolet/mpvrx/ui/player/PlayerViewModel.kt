@@ -997,14 +997,24 @@ class PlayerViewModel : ViewModel(),
       if (mediaId == null) flowOf(emptyList()) else playbackBookmarkDao.observe(mediaId).onStart { emit(emptyList()) }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+  /**
+   * Chapters that come from the media itself: mpv's chapter list, or the book's own track
+   * chapters for audiobooks. Saved bookmarks are deliberately excluded, so anything deriving a
+   * chapter name from this can't feed a bookmark's own title back into the next one.
+   */
+  private val sourceChapters: StateFlow<List<dev.vivvvek.seeker.Segment>> =
+    combine(chapters, AudiobookPlayback.book, AudiobookPlayback.chapters, PlaybackSession.state) { native, book, bookChapters, state ->
+      val item = state.currentItem
+      if (item?.audiobook == null) native
+      else if (book?.book?.id != item.audiobook.bookId) emptyList()
+      else bookChapters.map { dev.vivvvek.seeker.Segment(it.title, it.bookStartMs / 1000f) }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, persistentListOf())
+
   val playbackChapters: StateFlow<List<dev.vivvvek.seeker.Segment>> =
-    combine(chapters, AudiobookPlayback.book, AudiobookPlayback.chapters, playbackBookmarks, PlaybackSession.state) { native, book, bookChapters, bookmarks, state ->
+    combine(sourceChapters, playbackBookmarks, AudiobookPlayback.book, PlaybackSession.state) { sourceChapters, bookmarks, book, state ->
       val item = state.currentItem
       val mediaId = bookmarkMediaId(item)
       val currentBook = book?.takeIf { it.book.id == item?.audiobook?.bookId }
-      val sourceChapters = if (item?.audiobook == null) native else if (currentBook == null) emptyList() else {
-        bookChapters.map { dev.vivvvek.seeker.Segment(it.title, it.bookStartMs / 1000f) }
-      }
       val customChapters = bookmarks.filter { it.mediaId == mediaId }.mapNotNull { bookmark ->
         val positionMs = if (bookmark.bookTrackId == null) bookmark.positionMs else {
           currentBook?.takeIf { book -> book.tracks.any { it.id == bookmark.bookTrackId } }
@@ -1924,7 +1934,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       val timelinePosition = item.audiobook?.let { info ->
         AudiobookPlayback.book.value?.takeIf { it.book.id == info.bookId }?.positionInBook(info.trackId, positionMs)
       } ?: positionMs
-      val chapter = playbackChapters.value.lastOrNull { it.start * 1000 <= timelinePosition }?.name ?: currentMediaTitle
+      val chapter = sourceChapters.value.lastOrNull { it.start * 1000 <= timelinePosition }?.name ?: currentMediaTitle
       val time = android.text.format.DateUtils.formatElapsedTime(timelinePosition / 1000)
       _bookmarkDraft.value = app.gyrolet.mpvrx.database.entities.PlaybackBookmarkEntity(
         mediaId = mediaId, bookTrackId = item.audiobook?.trackId, positionMs = positionMs, title = "$chapter $time".trim(),
