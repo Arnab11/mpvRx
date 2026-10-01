@@ -116,19 +116,22 @@ object VideoScanUtils : KoinComponent {
     videosMap: MutableMap<String, Video>,
     noMediaPathFilter: NoMediaPathFilter,
   ) {
+    // MediaStore keeps coded dimensions; the display rotation column only exists from Android 10.
+    val hasOrientationColumn = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
     val projection =
-      arrayOf(
-        MediaStore.Video.Media._ID,
-        MediaStore.Video.Media.DISPLAY_NAME,
-        MediaStore.Video.Media.DATA,
-        MediaStore.Video.Media.SIZE,
-        MediaStore.Video.Media.DURATION,
-        MediaStore.Video.Media.DATE_MODIFIED,
-        MediaStore.Video.Media.DATE_ADDED,
-        MediaStore.Video.Media.MIME_TYPE,
-        MediaStore.Video.Media.WIDTH,
-        MediaStore.Video.Media.HEIGHT,
-      )
+      buildList {
+        add(MediaStore.Video.Media._ID)
+        add(MediaStore.Video.Media.DISPLAY_NAME)
+        add(MediaStore.Video.Media.DATA)
+        add(MediaStore.Video.Media.SIZE)
+        add(MediaStore.Video.Media.DURATION)
+        add(MediaStore.Video.Media.DATE_MODIFIED)
+        add(MediaStore.Video.Media.DATE_ADDED)
+        add(MediaStore.Video.Media.MIME_TYPE)
+        add(MediaStore.Video.Media.WIDTH)
+        add(MediaStore.Video.Media.HEIGHT)
+        if (hasOrientationColumn) add(MediaStore.Video.Media.ORIENTATION)
+      }.toTypedArray()
 
     val normalizedFolderPath = normalizeStoragePath(folderPath) ?: return
     val normalizedFolderKey = storagePathKey(normalizedFolderPath) ?: return
@@ -154,6 +157,8 @@ object VideoScanUtils : KoinComponent {
           val mimeTypeColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.MIME_TYPE)
           val widthColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.WIDTH)
           val heightColumn = cursor.getColumnIndexOrThrow(MediaStore.Video.Media.HEIGHT)
+          val orientationColumn =
+            if (hasOrientationColumn) cursor.getColumnIndex(MediaStore.Video.Media.ORIENTATION) else -1
 
           while (cursor.moveToNext()) {
             currentCoroutineContext().ensureActive()
@@ -177,6 +182,7 @@ object VideoScanUtils : KoinComponent {
             val mimeType = cursor.getString(mimeTypeColumn) ?: "video/*"
             val width = cursor.getInt(widthColumn)
             val height = cursor.getInt(heightColumn)
+            val rotation = if (orientationColumn >= 0) cursor.getInt(orientationColumn) else 0
 
             val uri =
               Uri.withAppendedPath(
@@ -205,6 +211,7 @@ object VideoScanUtils : KoinComponent {
                 height = height,
                 fps = 0f,
                 resolution = formatResolution(width, height),
+                rotation = rotation,
                 hasEmbeddedSubtitles = false,
                 subtitleCodec = "",
               )

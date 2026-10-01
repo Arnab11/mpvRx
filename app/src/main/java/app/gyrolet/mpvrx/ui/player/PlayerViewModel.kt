@@ -2507,7 +2507,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           val isLoopActive = abLoop.a != null || abLoop.b != null
           val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || videoDuration < 120 || isLoopActive
           PlaybackSession.setPropertyString("hr-seek", if (shouldUsePreciseSeeking) "yes" else "no")
-          PlaybackSession.setPropertyString("hr-seek-framedrop", if (shouldUsePreciseSeeking) "no" else "yes")
         }
       }
     }
@@ -2521,7 +2520,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           val isLoopActive = _abLoopState.value.a != null || _abLoopState.value.b != null
           val shouldUsePreciseSeeking = usePrecise || videoDuration < 120 || isLoopActive
           PlaybackSession.setPropertyString("hr-seek", if (shouldUsePreciseSeeking) "yes" else "no")
-          PlaybackSession.setPropertyString("hr-seek-framedrop", if (shouldUsePreciseSeeking) "no" else "yes")
         }
       }
     }

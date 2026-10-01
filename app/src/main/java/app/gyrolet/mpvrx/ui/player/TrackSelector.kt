@@ -17,6 +17,12 @@ import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.contentOrNull
+import kotlinx.serialization.json.intOrNull
 
 /**
  * Handles automatic track selection based on user preferences.
@@ -112,6 +118,8 @@ class TrackSelector(
     }
 
   private fun readTracks(count: Int): List<Track> {
+    // One node read replaces nine synchronous core round trips per track on the unpause path.
+    readTrackListNode()?.let { return it }
     val list = mutableListOf<Track>()
     for (i in 0 until count) {
       val id = PlaybackSession.getPropertyInt("track-list/$i/id") ?: continue
@@ -132,6 +140,27 @@ class TrackSelector(
       )
     }
     return list
+  }
+
+  private fun readTrackListNode(): List<Track>? {
+    val entries =
+      runCatching { PlaybackSession.getPropertyNode("track-list")?.toObject<List<JsonObject>>(Json) }
+        .getOrNull() ?: return null
+    return entries.mapNotNull { entry ->
+      val id = (entry["id"] as? JsonPrimitive)?.intOrNull ?: return@mapNotNull null
+      val type = (entry["type"] as? JsonPrimitive)?.contentOrNull ?: return@mapNotNull null
+      Track(
+        id = id,
+        type = type,
+        lang = (entry["lang"] as? JsonPrimitive)?.contentOrNull.orEmpty().lowercase(),
+        title = (entry["title"] as? JsonPrimitive)?.contentOrNull.orEmpty().lowercase(),
+        isDefault = (entry["default"] as? JsonPrimitive)?.booleanOrNull ?: false,
+        forced = (entry["forced"] as? JsonPrimitive)?.booleanOrNull ?: false,
+        hearing = (entry["hearing-impaired"] as? JsonPrimitive)?.booleanOrNull ?: false,
+        external = (entry["external"] as? JsonPrimitive)?.booleanOrNull ?: false,
+        image = (entry["image"] as? JsonPrimitive)?.booleanOrNull ?: false,
+      )
+    }
   }
 
   // ==================================================
