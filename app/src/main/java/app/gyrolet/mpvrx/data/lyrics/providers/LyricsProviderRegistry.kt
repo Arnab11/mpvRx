@@ -10,13 +10,24 @@ import app.gyrolet.mpvrx.domain.lyrics.LyricsProvider
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.withTimeoutOrNull
 
+/** What one provider said about one track. */
+sealed interface ProviderOutcome {
+  data class Found(val lyrics: Lyrics) : ProviderOutcome
+
+  /** The provider answered and has nothing for this track. */
+  data object Missing : ProviderOutcome
+
+  /** The provider errored out or ran past its time budget. */
+  data object Failed : ProviderOutcome
+}
+
 /**
  * Every online source the app knows how to ask, keyed by the entry the picker
  * shows.
  *
- * A provider that hangs, errors out or is simply not configured is a miss, not
- * a failure: [fetch] swallows everything but cancellation so one bad host
- * cannot take the whole lookup down with it.
+ * A provider that hangs or errors out is reported as [ProviderOutcome.Failed]
+ * rather than thrown: [fetch] swallows everything but cancellation so one bad
+ * host cannot take the whole lookup down with it.
  */
 internal class LyricsProviderRegistry(
   lrcLibApiService: LrcLibApiService,
@@ -44,16 +55,21 @@ internal class LyricsProviderRegistry(
       LyricsProvider.GENIUS to GeniusProvider,
     )
 
-  /** Lyrics from one provider, or null when it does not have this track. */
+  /** Lyrics from one provider, or why there are none. */
   suspend fun fetch(
     provider: LyricsProvider,
     query: LyricsFetchQuery,
-  ): Lyrics? {
-    val client = clients[provider] ?: return null
+  ): ProviderOutcome {
+    val client = clients[provider] ?: return ProviderOutcome.Missing
     return withTimeoutOrNull(budgetFor(provider)) {
-      runCatching { client.fetch(query) }
-        .getOrElse { error -> if (error is CancellationException) throw error else null }
-    }
+      try {
+        client.fetch(query)?.let(ProviderOutcome::Found) ?: ProviderOutcome.Missing
+      } catch (error: CancellationException) {
+        throw error
+      } catch (error: Throwable) {
+        ProviderOutcome.Failed
+      }
+    } ?: ProviderOutcome.Failed
   }
 
   /**

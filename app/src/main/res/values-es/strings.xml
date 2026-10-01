@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">Fuentes descargadas</string>
   <string name="app_font_section_browse">Explorar Google Fonts</string>
   <string name="app_font_no_downloaded">Aún no hay fuentes descargadas</string>
+  <string name="lyrics_provider_status_current">Mostrándose</string>
+  <string name="lyrics_provider_status_found">Encontrado</string>
+  <string name="lyrics_provider_status_missing">Sin resultados</string>
+  <string name="lyrics_provider_status_fetching">Obteniendo…</string>
+  <string name="lyrics_provider_status_unfetched">Aún no consultado</string>
+  <string name="lyrics_provider_status_failed">Falló</string>
   <string name="app_font_downloaded">Descargada</string>
   <string name="app_font_catalog_error">No se pudo cargar Google Fonts</string>
   <string name="app_font_download_error">No se pudo descargar %1$s</string>

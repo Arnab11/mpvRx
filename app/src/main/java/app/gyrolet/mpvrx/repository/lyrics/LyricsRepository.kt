@@ -12,6 +12,7 @@ import app.gyrolet.mpvrx.data.lyrics.providers.BiniLyricsProvider
 import app.gyrolet.mpvrx.data.lyrics.providers.LyricsFetchQuery
 import app.gyrolet.mpvrx.data.lyrics.providers.LyricsProviderRegistry
 import app.gyrolet.mpvrx.data.lyrics.providers.PaxSenixApi
+import app.gyrolet.mpvrx.data.lyrics.providers.ProviderOutcome
 import app.gyrolet.mpvrx.data.lyrics.providers.TrackRef
 import app.gyrolet.mpvrx.domain.lyrics.Lyrics
 import app.gyrolet.mpvrx.domain.lyrics.LyricsProvider
@@ -48,7 +49,20 @@ data class LyricsResult(
   val autoOnlineProvider: LyricsProvider? = null,
   /** Every online answer seen for this track, so changing provider costs no network. */
   val onlineByProvider: Map<LyricsProvider, Lyrics> = emptyMap(),
-)
+  /** Providers that answered with nothing for this track. */
+  val missingProviders: Set<LyricsProvider> = emptySet(),
+  /** Providers that errored out or timed out for this track. */
+  val failedProviders: Set<LyricsProvider> = emptySet(),
+) {
+  /** Folds what one lookup learned about each provider into this track's statuses. */
+  fun withOutcomes(result: OnlineLyricsResult): LyricsResult {
+    val answered = result.byProvider.keys
+    return copy(
+      missingProviders = (missingProviders - answered - result.failed) + result.missing,
+      failedProviders = (failedProviders - answered - result.missing) + result.failed,
+    )
+  }
+}
 
 /** What one online lookup produced, and what else it saw on the way. */
 data class OnlineLyricsResult(
@@ -57,6 +71,8 @@ data class OnlineLyricsResult(
   /** Whether this came from the automatic race rather than one chosen source. */
   val raced: Boolean = false,
   val byProvider: Map<LyricsProvider, Lyrics> = emptyMap(),
+  val missing: Set<LyricsProvider> = emptySet(),
+  val failed: Set<LyricsProvider> = emptySet(),
 )
 
 /**
@@ -331,6 +347,7 @@ class LyricsRepository(
         }
 
       val autoResult = online.lyrics.takeIf { online.raced }
+      val previous = cache.get(cacheKey)
       val result =
         LyricsResult(
           embeddedLyrics = embedded,
@@ -347,8 +364,10 @@ class LyricsRepository(
             },
           autoOnlineLyrics = autoResult,
           autoOnlineProvider = if (autoResult != null) online.provider else null,
-          onlineByProvider = cache.get(cacheKey)?.onlineByProvider.orEmpty() + online.byProvider,
-        )
+          onlineByProvider = previous?.onlineByProvider.orEmpty() + online.byProvider,
+          missingProviders = previous?.missingProviders.orEmpty(),
+          failedProviders = previous?.failedProviders.orEmpty(),
+        ).withOutcomes(online)
 
       currentCoroutineContext().ensureActive()
       cache.put(cacheKey, result)
@@ -392,12 +411,19 @@ class LyricsRepository(
       val resolved = withRecording(query)
 
       if (provider != null) {
-        val found = fetchProvider(provider, resolved, mediaPath)
-        if (found != null && found.isValid()) {
-          val answers = mediaPath?.let(providerCache::read).orEmpty() + (provider to found)
-          return@withContext OnlineLyricsResult(provider, found, false, answers)
+        val outcome = fetchProvider(provider, resolved, mediaPath)
+        if (outcome is ProviderOutcome.Found) {
+          val answers = mediaPath?.let(providerCache::read).orEmpty() + (provider to outcome.lyrics)
+          return@withContext OnlineLyricsResult(provider, outcome.lyrics, false, answers)
         }
         Log.d(TAG, "${provider.label} had nothing; falling back to the automatic lookup")
+        val raced = raceProviders(resolved, mediaPath, saved)
+        val raceKnows = provider in raced.byProvider || provider in raced.missing || provider in raced.failed
+        return@withContext raced.copy(
+          byProvider = mediaPath?.let(providerCache::read).orEmpty() + raced.byProvider,
+          missing = if (!raceKnows && outcome == ProviderOutcome.Missing) raced.missing + provider else raced.missing,
+          failed = if (!raceKnows && outcome == ProviderOutcome.Failed) raced.failed + provider else raced.failed,
+        )
       }
 
       val result = raceProviders(resolved, mediaPath, saved)
@@ -424,9 +450,16 @@ class LyricsRepository(
     provider: LyricsProvider,
     query: LyricsFetchQuery,
     mediaPath: String?,
-  ): Lyrics? =
-    registry.fetch(provider, query)?.takeIf(Lyrics::isValid)?.also { lyrics ->
-      if (!mediaPath.isNullOrBlank()) providerCache.write(mediaPath, provider, lyrics)
+  ): ProviderOutcome =
+    when (val outcome = registry.fetch(provider, query)) {
+      is ProviderOutcome.Found ->
+        if (outcome.lyrics.isValid()) {
+          if (!mediaPath.isNullOrBlank()) providerCache.write(mediaPath, provider, outcome.lyrics)
+          outcome
+        } else {
+          ProviderOutcome.Missing
+        }
+      else -> outcome
     }
 
   /**
@@ -471,7 +504,7 @@ class LyricsRepository(
         LyricsProvider.entries.map { provider ->
           val start = if (provider in LyricsProvider.LAZY_PROVIDERS) CoroutineStart.LAZY else CoroutineStart.DEFAULT
           provider to async(Dispatchers.IO, start = start) {
-            cached[provider] ?: fetchProvider(provider, query, mediaPath)
+            cached[provider]?.let(ProviderOutcome::Found) ?: fetchProvider(provider, query, mediaPath)
           }
         }
 
@@ -480,13 +513,30 @@ class LyricsRepository(
         var lineTimed: Pair<LyricsProvider, Lyrics>? = null
         var plainFallback: Pair<LyricsProvider, Lyrics>? = null
         val seen = mutableMapOf<LyricsProvider, Lyrics>()
+        val missing = mutableSetOf<LyricsProvider>()
+        val failed = mutableSetOf<LyricsProvider>()
 
         for ((provider, job) in jobs) {
           if ((wordTimed != null || lineTimed != null) && provider in LyricsProvider.LAZY_PROVIDERS) continue
-          val found =
+          val outcome =
             runCatching { job.await() }
-              .getOrElse { error -> if (error is CancellationException) throw error else null } ?: continue
-          if (!found.isValid()) continue
+              .getOrElse { error -> if (error is CancellationException) throw error else ProviderOutcome.Failed }
+          val found =
+            when (outcome) {
+              is ProviderOutcome.Found -> outcome.lyrics
+              ProviderOutcome.Missing -> {
+                missing += provider
+                continue
+              }
+              ProviderOutcome.Failed -> {
+                failed += provider
+                continue
+              }
+            }
+          if (!found.isValid()) {
+            missing += provider
+            continue
+          }
           seen[provider] = found
 
           if (found.synced.orEmpty().any { !it.words.isNullOrEmpty() }) {
@@ -505,9 +555,11 @@ class LyricsRepository(
             lyrics = winner.second,
             raced = true,
             byProvider = seen.toMap(),
+            missing = missing.toSet(),
+            failed = failed.toSet(),
           )
         } else {
-          OnlineLyricsResult(byProvider = seen.toMap())
+          OnlineLyricsResult(byProvider = seen.toMap(), missing = missing.toSet(), failed = failed.toSet())
         }
       } finally {
         jobs.forEach { it.second.cancel() }
@@ -612,7 +664,7 @@ class LyricsRepository(
           } else {
             existing.availableSources
           },
-      )
+      ).withOutcomes(result)
     cache.put(cacheKey, updated)
     return updated
   }

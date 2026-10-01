@@ -276,6 +276,7 @@ fun AudioTrackRow(
   modifier: Modifier = Modifier,
   enabled: Boolean = true,
   details: String? = null,
+  trailing: (@Composable () -> Unit)? = null,
 ) {
   val haptics = rememberAppHaptics()
   val reducedMotion = AppMotion.playerReducedMotion()
@@ -332,6 +333,7 @@ fun AudioTrackRow(
           )
         }
       }
+      trailing?.invoke()
     }
   }
 }

@@ -2237,6 +2237,7 @@
   <string name="lyrics_provider_status_missing">Nothing found</string>
   <string name="lyrics_provider_status_fetching">Fetching…</string>
   <string name="lyrics_provider_status_unfetched">Not fetched yet</string>
+  <string name="lyrics_provider_status_failed">Failed</string>
   <string name="lyrics_search_online">Search Online</string>
   <string name="pref_paxsenix_api_key">PaxSenix API key</string>
   <string name="pref_paxsenix_api_key_summary">Unlocks the Spotify and Musixmatch routes</string>

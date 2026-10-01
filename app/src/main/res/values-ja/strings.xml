@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">ダウンロード済みフォント</string>
   <string name="app_font_section_browse">Google Fonts を閲覧</string>
   <string name="app_font_no_downloaded">ダウンロード済みのフォントはありません</string>
+  <string name="lyrics_provider_status_current">表示中</string>
+  <string name="lyrics_provider_status_found">見つかりました</string>
+  <string name="lyrics_provider_status_missing">見つかりません</string>
+  <string name="lyrics_provider_status_fetching">取得中…</string>
+  <string name="lyrics_provider_status_unfetched">未取得</string>
+  <string name="lyrics_provider_status_failed">失敗</string>
   <string name="app_font_downloaded">ダウンロード済み</string>
   <string name="app_font_catalog_error">Google Fontsを読み込めませんでした</string>
   <string name="app_font_download_error">%1$sをダウンロードできませんでした</string>

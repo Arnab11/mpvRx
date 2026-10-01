@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">Polices téléchargées</string>
   <string name="app_font_section_browse">Parcourir Google Fonts</string>
   <string name="app_font_no_downloaded">Aucune police téléchargée</string>
+  <string name="lyrics_provider_status_current">Affiché actuellement</string>
+  <string name="lyrics_provider_status_found">Trouvé</string>
+  <string name="lyrics_provider_status_missing">Rien trouvé</string>
+  <string name="lyrics_provider_status_fetching">Récupération…</string>
+  <string name="lyrics_provider_status_unfetched">Pas encore récupéré</string>
+  <string name="lyrics_provider_status_failed">Échec</string>
   <string name="app_font_downloaded">Téléchargée</string>
   <string name="app_font_catalog_error">Impossible de charger Google Fonts</string>
   <string name="app_font_download_error">Impossible de télécharger %1$s</string>

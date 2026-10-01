@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">डाउनलोड किए गए फ़ॉन्ट</string>
   <string name="app_font_section_browse">Google Fonts ब्राउज़ करें</string>
   <string name="app_font_no_downloaded">अभी तक कोई फ़ॉन्ट डाउनलोड नहीं किया गया</string>
+  <string name="lyrics_provider_status_current">अभी दिख रहा है</string>
+  <string name="lyrics_provider_status_found">मिला</string>
+  <string name="lyrics_provider_status_missing">कुछ नहीं मिला</string>
+  <string name="lyrics_provider_status_fetching">ला रहे हैं…</string>
+  <string name="lyrics_provider_status_unfetched">अभी नहीं लाया गया</string>
+  <string name="lyrics_provider_status_failed">विफल</string>
   <string name="app_font_downloaded">डाउनलोड किया गया</string>
   <string name="app_font_catalog_error">Google Fonts लोड नहीं हो सके</string>
   <string name="app_font_download_error">%1$s डाउनलोड नहीं हो सका</string>

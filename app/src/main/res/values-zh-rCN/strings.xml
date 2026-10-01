@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">已下载字体</string>
   <string name="app_font_section_browse">浏览 Google Fonts</string>
   <string name="app_font_no_downloaded">尚未下载字体</string>
+  <string name="lyrics_provider_status_current">正在显示</string>
+  <string name="lyrics_provider_status_found">已找到</string>
+  <string name="lyrics_provider_status_missing">未找到</string>
+  <string name="lyrics_provider_status_fetching">正在获取…</string>
+  <string name="lyrics_provider_status_unfetched">尚未获取</string>
+  <string name="lyrics_provider_status_failed">失败</string>
   <string name="app_font_downloaded">已下载</string>
   <string name="app_font_catalog_error">无法加载 Google Fonts</string>
   <string name="app_font_download_error">无法下载 %1$s</string>

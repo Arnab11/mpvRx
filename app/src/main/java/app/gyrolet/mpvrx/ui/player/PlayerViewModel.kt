@@ -1065,6 +1065,8 @@ class PlayerViewModel : ViewModel(),
     val fetchedProviders: Set<app.gyrolet.mpvrx.domain.lyrics.LyricsProvider> = emptySet(),
     /** Providers asked for this track that came back empty. */
     val missingProviders: Set<app.gyrolet.mpvrx.domain.lyrics.LyricsProvider> = emptySet(),
+    /** Providers asked for this track that errored out or timed out. */
+    val failedProviders: Set<app.gyrolet.mpvrx.domain.lyrics.LyricsProvider> = emptySet(),
     /** Whether this item may be looked up online at all (false for audiobooks). */
     val onlineEnabled: Boolean = false,
     val syncOffsetMs: Int = 0,
@@ -1287,6 +1289,8 @@ class PlayerViewModel : ViewModel(),
         onlineProvider = result.onlineProvider,
         preferredProvider = result.preferredOnlineProvider,
         fetchedProviders = result.onlineByProvider.keys,
+        missingProviders = result.missingProviders,
+        failedProviders = result.failedProviders,
         onlineEnabled = allowOnline,
         syncOffsetMs = 0,
       )
@@ -1389,6 +1393,8 @@ class PlayerViewModel : ViewModel(),
           onlineProvider = updated?.onlineProvider ?: fetched.provider,
           preferredProvider = updated?.preferredOnlineProvider ?: if (fetched.raced) null else fetched.provider,
           fetchedProviders = (updated?.onlineByProvider ?: fetched.byProvider).keys,
+          missingProviders = updated?.missingProviders ?: fetched.missing,
+          failedProviders = updated?.failedProviders ?: fetched.failed,
           activeLineIndex = activeIndex,
         )
 
@@ -1416,6 +1422,8 @@ class PlayerViewModel : ViewModel(),
         selectedSource = updatedResult.selectedSource,
         activeLineIndex = activeIndex,
         fetchedProviders = updatedResult.onlineByProvider.keys,
+        missingProviders = updatedResult.missingProviders,
+        failedProviders = updatedResult.failedProviders,
       )
 
       if (autoTranslate && hasSynced) {
@@ -1458,6 +1466,8 @@ class PlayerViewModel : ViewModel(),
         onlineProvider = cached.onlineProvider,
         preferredProvider = cached.preferredOnlineProvider,
         fetchedProviders = cached.onlineByProvider.keys,
+        missingProviders = cached.missingProviders,
+        failedProviders = cached.failedProviders,
         activeLineIndex = currentActiveLineIndex(activeLyrics, current.syncOffsetMs),
         availableSources = (current.availableSources + app.gyrolet.mpvrx.domain.lyrics.LyricsSourceType.ONLINE)
           .distinct(),
@@ -1498,8 +1508,8 @@ class PlayerViewModel : ViewModel(),
       val activeLyrics = online ?: current.embeddedLyrics
       val hasSynced = activeLyrics?.synced?.isNotEmpty() == true
       val answered = (updated?.onlineByProvider ?: fetched.byProvider).keys
-      val missed = if (provider != null && provider !in answered) setOf(provider) else emptySet()
-      val missing = (current.missingProviders - answered) + missed
+      val failed = updated?.failedProviders ?: ((current.failedProviders - answered - fetched.missing) + fetched.failed)
+      val missing = updated?.missingProviders ?: ((current.missingProviders - answered - fetched.failed) + fetched.missing)
 
       lyricsUiState.value = current.copy(
         isLoading = false,
@@ -1521,6 +1531,7 @@ class PlayerViewModel : ViewModel(),
         preferredProvider = updated?.preferredOnlineProvider ?: if (fetched.raced) null else fetched.provider,
         fetchedProviders = answered,
         missingProviders = missing,
+        failedProviders = failed,
         activeLineIndex = currentActiveLineIndex(activeLyrics, current.syncOffsetMs),
         errorMessage = if (online == null && provider != null) {
           appContext.getString(R.string.lyrics_provider_not_found, provider.label)

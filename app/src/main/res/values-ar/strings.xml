@@ -32,6 +32,12 @@
   <string name="app_font_section_downloaded">الخطوط المنزّلة</string>
   <string name="app_font_section_browse">تصفح Google Fonts</string>
   <string name="app_font_no_downloaded">لا توجد خطوط منزّلة بعد</string>
+  <string name="lyrics_provider_status_current">معروض حاليًا</string>
+  <string name="lyrics_provider_status_found">تم العثور</string>
+  <string name="lyrics_provider_status_missing">لم يُعثر على شيء</string>
+  <string name="lyrics_provider_status_fetching">جارٍ الجلب…</string>
+  <string name="lyrics_provider_status_unfetched">لم يُجلب بعد</string>
+  <string name="lyrics_provider_status_failed">فشل</string>
   <string name="app_font_downloaded">تم التنزيل</string>
   <string name="app_font_catalog_error">تعذر تحميل Google Fonts</string>
   <string name="app_font_download_error">تعذر تنزيل %1$s</string>
