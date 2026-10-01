@@ -7,7 +7,9 @@ package app.gyrolet.mpvrx.domain.fonts
 import android.content.Context
 import android.graphics.Typeface
 import android.util.AtomicFile
+import android.util.Base64
 import app.gyrolet.mpvrx.network.awaitResponse
+import com.yubyf.truetypeparser.TTFFile
 import java.io.File
 import java.io.IOException
 import java.util.concurrent.TimeUnit
@@ -34,6 +36,12 @@ private data class GoogleFontsCatalog(
   val familyMetadataList: List<GoogleFontFamily> = emptyList(),
 )
 
+data class InstalledGoogleFont(
+  val family: String,
+  val appFamily: String,
+  val file: File,
+)
+
 class GoogleFontsRepository(
   context: Context,
   private val httpClient: OkHttpClient,
@@ -41,7 +49,9 @@ class GoogleFontsRepository(
   private val appContext = context.applicationContext
   private val directory = File(appContext.filesDir, DIRECTORY_NAME)
   private val catalogFile = File(directory, CATALOG_FILE_NAME)
-  private val activeFontFile = File(directory, ACTIVE_FONT_FILE_NAME)
+  private val legacyActiveFontFile = File(directory, LEGACY_ACTIVE_FONT_FILE_NAME)
+  private val mpvFontsDirectory = File(appContext.filesDir, MPV_FONTS_DIRECTORY_NAME)
+  private val installedFontsLock = Any()
   private val json = Json { ignoreUnknownKeys = true }
 
   suspend fun loadCatalog(forceRefresh: Boolean = false): Result<List<GoogleFontFamily>> =
@@ -97,7 +107,9 @@ class GoogleFontsRepository(
         } finally {
           validationFile.delete()
         }
-        writeAtomically(activeFontFile, fontBytes)
+        synchronized(installedFontsLock) {
+          writeAtomically(fontFileForFamily(family), fontBytes)
+        }
         Result.success(Unit)
       } catch (cancellation: CancellationException) {
         throw cancellation
@@ -106,12 +118,48 @@ class GoogleFontsRepository(
       }
     }
 
-  fun activeFontFile(): File = activeFontFile
+  fun fontFile(family: String): File? =
+    synchronized(installedFontsLock) {
+      fontFileForFamily(family).takeIf(File::isFile)
+        ?: legacyActiveFontFile.takeIf { family.isNotBlank() && it.isFile }
+    }
 
-  fun clearActiveFont() {
-    activeFontFile.delete()
-    File(activeFontFile.path + ".bak").delete()
+  fun installedFonts(legacySelectedFamily: String? = null): List<InstalledGoogleFont> =
+    synchronized(installedFontsLock) {
+      migrateLegacyActiveFont(legacySelectedFamily)
+      managedGoogleFontFiles()
+        .mapNotNull { file ->
+          val appFamily = appFamilyFromFileName(file.name) ?: return@mapNotNull null
+          val family = readFamilyName(file) ?: appFamily
+          InstalledGoogleFont(family = family, appFamily = appFamily, file = file)
+        }
+        .distinctBy { it.appFamily }
+        .sortedBy { it.family }
+    }
+
+  fun syncMpvFonts(legacySelectedFamily: String? = null) {
+    synchronized(installedFontsLock) {
+      migrateLegacyActiveFont(legacySelectedFamily)
+      mpvFontsDirectory.mkdirs()
+      File(mpvFontsDirectory, LEGACY_BUNDLED_MPV_FONT_FILE_NAME).delete()
+      File(mpvFontsDirectory, LEGACY_ACTIVE_MPV_FONT_FILE_NAME).delete()
+    }
   }
+
+  fun clearImportedMpvFonts() {
+    synchronized(installedFontsLock) {
+      mpvFontsDirectory.listFiles()?.forEach { file ->
+        if (!file.isFile || !file.name.startsWith(MPV_GOOGLE_FONT_PREFIX)) {
+          file.deleteRecursively()
+        }
+      }
+    }
+  }
+
+  fun isManagedMpvFont(file: File): Boolean =
+    file.parentFile == mpvFontsDirectory &&
+      file.isFile &&
+      file.name.startsWith(MPV_GOOGLE_FONT_PREFIX)
 
   private suspend fun resolveTtfUrl(family: String): String {
     val cssUrl =
@@ -132,6 +180,41 @@ class GoogleFontsRepository(
 
   private fun readCatalog(): List<GoogleFontFamily>? =
     runCatching { parseCatalog(AtomicFile(catalogFile).openRead().bufferedReader().use { it.readText() }) }.getOrNull()
+
+  private fun migrateLegacyActiveFont(selectedFamily: String?) {
+    val family = selectedFamily?.takeIf(String::isNotBlank) ?: return
+    if (!legacyActiveFontFile.isFile || fontFileForFamily(family).isFile) return
+    val bytes = legacyActiveFontFile.readBytes()
+    writeAtomically(fontFileForFamily(family), bytes)
+    legacyActiveFontFile.delete()
+    File(legacyActiveFontFile.path + ".bak").delete()
+  }
+
+  private fun managedGoogleFontFiles(): List<File> =
+    mpvFontsDirectory
+      .listFiles()
+      ?.filter { it.isFile && it.name.startsWith(MPV_GOOGLE_FONT_PREFIX) && it.extension.equals("ttf", true) }
+      .orEmpty()
+
+  private fun readFamilyName(file: File): String? =
+    runCatching {
+      file.inputStream().use { input -> TTFFile.open(input).families.values.firstOrNull() }
+    }.getOrNull()?.takeIf(String::isNotBlank)
+
+  private fun fontFileForFamily(family: String): File = File(mpvFontsDirectory, fileNameForFamily(family))
+
+  private fun fileNameForFamily(family: String): String {
+    val encoded = Base64.encodeToString(family.toByteArray(Charsets.UTF_8), Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
+    return "$MPV_GOOGLE_FONT_PREFIX$encoded.ttf"
+  }
+
+  private fun appFamilyFromFileName(fileName: String): String? {
+    if (!fileName.startsWith(MPV_GOOGLE_FONT_PREFIX) || !fileName.endsWith(".ttf", true)) return null
+    val encoded = fileName.removePrefix(MPV_GOOGLE_FONT_PREFIX).dropLast(4)
+    return runCatching {
+      Base64.decode(encoded, Base64.URL_SAFE or Base64.NO_WRAP).toString(Charsets.UTF_8)
+    }.getOrNull()?.takeIf(String::isNotBlank)
+  }
 
   private fun parseCatalog(payload: String): List<GoogleFontFamily> =
     json
@@ -171,7 +254,11 @@ class GoogleFontsRepository(
       "Mozilla/5.0 (Linux; U; Android 4.4; en-us) AppleWebKit/534.30 Version/4.0 Mobile Safari/534.30"
     const val DIRECTORY_NAME = "app-fonts"
     const val CATALOG_FILE_NAME = "catalog.json"
-    const val ACTIVE_FONT_FILE_NAME = "active.ttf"
+    const val LEGACY_ACTIVE_FONT_FILE_NAME = "active.ttf"
+    const val MPV_FONTS_DIRECTORY_NAME = "fonts"
+    const val MPV_GOOGLE_FONT_PREFIX = "mpvrx-google-font-"
+    const val LEGACY_BUNDLED_MPV_FONT_FILE_NAME = "mpvrx-google-sans-flex.ttf"
+    const val LEGACY_ACTIVE_MPV_FONT_FILE_NAME = "mpvrx-app-font.ttf"
     const val CATALOG_MAX_AGE_DAYS = 7L
     const val MAX_FONT_BYTES = 10 * 1024 * 1024
     val TTF_URL_REGEX = Regex("url\\((https://fonts\\.gstatic\\.com/[^)]+\\.ttf)\\)")

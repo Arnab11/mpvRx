@@ -11,7 +11,6 @@ package app.gyrolet.mpvrx.ui.player.controls.components.panels
 
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
 
-import android.annotation.SuppressLint
 import androidx.annotation.StringRes
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
@@ -52,7 +51,6 @@ import app.gyrolet.mpvrx.preferences.LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY
 import app.gyrolet.mpvrx.preferences.SubtitleJustification
 import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.preferences.preference.deleteAndGet
-import app.gyrolet.mpvrx.preferences.preference.collectAsState as collectPreferenceAsState
 import app.gyrolet.mpvrx.presentation.components.ExpandableCard
 import app.gyrolet.mpvrx.presentation.components.ExposedTextDropDownMenu
 import app.gyrolet.mpvrx.presentation.components.SliderItem
@@ -65,8 +63,7 @@ import app.gyrolet.mpvrx.ui.player.defaultSubtitleFontDisplayName
 import app.gyrolet.mpvrx.ui.player.resolveSubtitleFontFamily
 import app.gyrolet.mpvrx.ui.theme.spacing
 import app.gyrolet.mpvrx.ui.utils.currentMpvConfigOverrideOptions
-import com.github.k1rakishou.fsaf.FileManager
-import com.yubyf.truetypeparser.TTFFile
+import app.gyrolet.mpvrx.utils.media.loadCustomFontEntries
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -76,7 +73,6 @@ import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.preferenceTheme
 import org.koin.compose.koinInject
 
-@SuppressLint("MutableCollectionMutableState")
 @Composable
 fun SubtitleSettingsTypographyCard(
   viewModel: PlayerViewModel,
@@ -101,23 +97,9 @@ fun SubtitleSettingsTypographyCard(
   val typographyOptions =
     boldOptions + italicOptions + justifyOptions + fontOptions + fontSizeOptions +
       borderStyleOptions + borderSizeOptions + shadowOffsetOptions
-  val fileManager = koinInject<FileManager>()
   var isExpanded by remember { mutableStateOf(true) }
-  // "Default" follows the app's own font, falling back to bundled Google Sans Flex.
-  val storedSubtitleFont by preferences.font.collectPreferenceAsState()
-  val appFontFamily by appearancePreferences.googleFontFamily.collectPreferenceAsState()
-  val useSystemAppFont by appearancePreferences.useSystemFont.collectPreferenceAsState()
-  val appFontRevision by appearancePreferences.googleFontRevision.collectPreferenceAsState()
-  val effectiveDefaultFont =
-    remember(storedSubtitleFont, appFontFamily, useSystemAppFont, appFontRevision) {
-      resolveSubtitleFontFamily(
-        explicitFont = "",
-        useSystemAppFont = useSystemAppFont,
-        appFontFamily = appFontFamily,
-        hasDownloadedAppFont = googleFontsRepository.activeFontFile().isFile,
-      )
-    }
-  val fonts by remember { mutableStateOf(mutableListOf<String>("Default")) }
+  val effectiveDefaultFont = DEFAULT_SUBTITLE_FONT_FAMILY
+  var fonts by remember { mutableStateOf(listOf("Default")) }
   var fontsLoadingIndicator: (@Composable () -> Unit)? by remember {
     val indicator: (@Composable () -> Unit) = {
       CircularProgressIndicator(Modifier.size(32.dp))
@@ -125,27 +107,20 @@ fun SubtitleSettingsTypographyCard(
     mutableStateOf(indicator)
   }
   LaunchedEffect(Unit) {
-    withContext(Dispatchers.IO) {
-      val fontsDir = fileManager.fromPath(context.filesDir.path + "/fonts")
-      if (fileManager.exists(fontsDir)) {
-        fonts.addAll(
-          fileManager
-            .listFiles(fontsDir)
-            .filter { fileManager.isFile(it) && fileManager.getName(it).lowercase().matches(".*\\.[ot]tf$".toRegex()) }
-            .mapNotNull {
-              runCatching {
-                TTFFile
-                  .open(fileManager.getInputStream(it) ?: return@mapNotNull null)
-                  .families.values
-                  .first()
-              }.getOrNull()
-            }.distinct()
-            // Default is the bundled Google Sans Flex — don't list it as a separate entry.
-            .filter { it != DEFAULT_SUBTITLE_FONT_FAMILY && it != LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY },
-        )
+    fonts =
+      withContext(Dispatchers.IO) {
+        val downloaded =
+          googleFontsRepository
+            .installedFonts(appearancePreferences.googleFontFamily.get())
+            .map { it.family }
+        val custom = loadCustomFontEntries(context).map { it.familyName }
+        listOf("Default") +
+          (downloaded + custom)
+            .filter { it != DEFAULT_SUBTITLE_FONT_FAMILY && it != LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY }
+            .distinct()
+            .sorted()
       }
-      fontsLoadingIndicator = null
-    }
+    fontsLoadingIndicator = null
   }
 
   ExpandableCard(

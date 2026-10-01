@@ -2586,8 +2586,7 @@ class PlayerActivity :
       val preparationStartedAt = android.os.SystemClock.elapsedRealtime()
       syncBundledAssetsIfNeeded()
       prepareUserMpvAssetsForStartup()
-      MpvOsdFont.ensureInstalled(this)
-      MpvOsdFont.syncDownloadedAppFont(this, appearancePreferences, googleFontsRepository)
+      googleFontsRepository.syncMpvFonts()
       sanitizeInternalFontsDirectory()
       Log.d(TAG, "MPV startup assets ready in ${android.os.SystemClock.elapsedRealtime() - preparationStartedAt} ms")
     }.onFailure { e ->
@@ -4790,9 +4789,7 @@ class PlayerActivity :
    * This ensures subtitle customizations (font, colors, position, etc.) persist across videos.
    */
   private fun applySubtitlePreferences() {
-    // Explicit dropdown font wins, otherwise the app's own font, otherwise bundled
-    // Google Sans Flex. Secondary inherits sub-font (no secondary-sub-font in mpv).
-    val font = resolveSubtitleFontFamily(subtitlesPreferences, appearancePreferences, googleFontsRepository)
+    val font = resolveSubtitleFontFamily(subtitlesPreferences)
     val fontSize = subtitlesPreferences.fontSize.get()
     val bold = subtitlesPreferences.bold.get()
     val italic = subtitlesPreferences.italic.get()
@@ -4824,9 +4821,7 @@ class PlayerActivity :
     PlaybackSession.setPropertyString("blend-subtitles", blendMode)
 
     PlaybackSession.setPropertyInt("sub-font-size", fontSize)
-    // Official mpv only has secondary-sub-delay/scale/pos/ass-override — secondary inherits
-    // font/bold/italic/justify/colors/border/shadow/windowing from primary, so both tracks
-    // use Google Sans Flex (Default) unless a custom font is set.
+    // Official mpv only has secondary-sub-delay/scale/pos/ass-override; secondary inherits primary style.
     PlaybackSession.setPropertyString("sub-font", font)
     PlaybackSession.setPropertyBoolean("sub-bold", bold)
     PlaybackSession.setPropertyBoolean("sub-italic", italic)

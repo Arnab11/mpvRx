@@ -65,7 +65,6 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
-import java.io.File
 import org.koin.compose.koinInject
 import kotlin.math.hypot
 
@@ -301,8 +300,7 @@ fun MpvrxTheme(
         .takeIf { it.isNotBlank() }
         ?.let {
           googleFontsRepository
-            .activeFontFile()
-            .takeIf(File::isFile)
+            .fontFile(it)
             ?.let { file ->
               runCatching { FontFamily(Typeface.createFromFile(file)) }
                 .onFailure { Log.w("MpvrxTheme", "Could not load downloaded app font", it) }

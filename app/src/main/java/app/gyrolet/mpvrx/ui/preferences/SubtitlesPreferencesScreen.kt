@@ -104,7 +104,6 @@ import me.zhanghai.compose.preference.Preference
 import me.zhanghai.compose.preference.ProvidePreferenceLocals
 import me.zhanghai.compose.preference.TextFieldPreference
 import org.koin.compose.koinInject
-import java.io.File
 
 @Serializable
 object SubtitlesPreferencesScreen : Screen {
@@ -199,8 +198,6 @@ object SubtitlesPreferencesScreen : Screen {
         val fontsFolder by preferences.fontsFolder.collectAsState()
         val selectedFont by preferences.font.collectAsState()
         val appFontFamily by appearancePreferences.googleFontFamily.collectAsState()
-        val useSystemAppFont by appearancePreferences.useSystemFont.collectAsState()
-        val appFontRevision by appearancePreferences.googleFontRevision.collectAsState()
         val wyzieHearingImpaired by preferences.wyzieHearingImpaired.collectAsState()
         val wyzieSources by preferences.wyzieSources.collectAsState()
         val wyzieFormats by preferences.wyzieFormats.collectAsState()
@@ -276,26 +273,29 @@ object SubtitlesPreferencesScreen : Screen {
           subtitleApiKeyPreferences.filter { it.sourceKey in subtitleHubSources }
         val requestedSearchTarget by SettingsSearchNavigation.target.collectFlowAsState()
         var customFonts by remember { mutableStateOf<List<String>>(emptyList()) }
+        var downloadedGoogleFonts by remember { mutableStateOf<List<String>>(emptyList()) }
 
-        LaunchedEffect(fontsFolder, fontRefreshKey) {
+        LaunchedEffect(fontsFolder, fontRefreshKey, appFontFamily) {
+          downloadedGoogleFonts =
+            withContext(Dispatchers.IO) {
+              googleFontsRepository.installedFonts(appFontFamily).map { it.family }
+            }
           customFonts =
             loadCustomFontEntries(context)
+              .filterNot { googleFontsRepository.isManagedMpvFont(it.file) }
               .map { it.familyName }
               .distinct()
-              // Default is the bundled Google Sans Flex — don't list it as a separate entry.
               .filter { it != DEFAULT_SUBTITLE_FONT_FAMILY && it != LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY }
         }
 
-        // "Default" follows the app's own font, falling back to bundled Google Sans Flex.
-        val effectiveDefaultFont =
-          remember(selectedFont, appFontFamily, useSystemAppFont, appFontRevision, fontRefreshKey) {
-            resolveSubtitleFontFamily(
-              explicitFont = "",
-              useSystemAppFont = useSystemAppFont,
-              appFontFamily = appFontFamily,
-              hasDownloadedAppFont = googleFontsRepository.activeFontFile().isFile,
-            )
+        val availableFonts =
+          remember(downloadedGoogleFonts, customFonts) {
+            (downloadedGoogleFonts + customFonts)
+              .filter { it != DEFAULT_SUBTITLE_FONT_FAMILY && it != LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY }
+              .distinct()
+              .sorted()
           }
+        val effectiveDefaultFont = DEFAULT_SUBTITLE_FONT_FAMILY
 
         var sourcesResponse by remember { mutableStateOf<WyzieSourcesResponse?>(null) }
         var isLoadingSources by remember { mutableStateOf(false) }
@@ -477,17 +477,15 @@ object SubtitlesPreferencesScreen : Screen {
               PreferenceDivider()
 
               val fontValues =
-                remember(customFonts, selectedFont) {
+                remember(availableFonts, selectedFont) {
                   val effectiveSelected =
                     selectedFont.takeUnless {
                       it.isBlank() ||
                         it == DEFAULT_SUBTITLE_FONT_FAMILY ||
                         it == LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY
                     }.orEmpty()
-                  (listOf("") + customFonts + listOf(effectiveSelected).filter { it.isNotBlank() }).distinct()
+                  (listOf("") + availableFonts + listOf(effectiveSelected).filter { it.isNotBlank() }).distinct()
                 }
-              // Blank, legacy sans-serif, or bundled Google Sans Flex all mean Default,
-              // which follows the app's own font.
               val fontValue = if (selectedFont in fontValues) selectedFont else ""
               val fontLabel =
                 selectedFont.takeUnless {
@@ -513,10 +511,10 @@ object SubtitlesPreferencesScreen : Screen {
                       color = MaterialTheme.colorScheme.outline,
                     )
                     Text(
-                      if (customFonts.isEmpty()) {
+                      if (availableFonts.isEmpty()) {
                         stringResource(R.string.pref_subtitles_font_no_custom)
                       } else {
-                        stringResource(R.string.fonts_loaded, customFonts.size)
+                        stringResource(R.string.fonts_loaded, availableFonts.size)
                       },
                       color = MaterialTheme.colorScheme.outline,
                       style = MaterialTheme.typography.bodySmall,
@@ -547,7 +545,7 @@ object SubtitlesPreferencesScreen : Screen {
                 onClick = { reloadFontsFrom(fontsFolder) },
               )
 
-              if (fontsFolder.isNotBlank() || selectedFont.isNotBlank() || customFonts.isNotEmpty()) {
+              if (fontsFolder.isNotBlank() || customFonts.isNotEmpty()) {
                 PreferenceDivider()
 
                 Preference(
@@ -567,8 +565,11 @@ object SubtitlesPreferencesScreen : Screen {
                   onClick = {
                     preferences.fontsFolder.set("")
                     preferences.font.set("")
-                    File(context.filesDir, "fonts").deleteRecursively()
-                    fontRefreshKey++
+                    scope.launch(Dispatchers.IO) {
+                      googleFontsRepository.clearImportedMpvFonts()
+                      googleFontsRepository.syncMpvFonts(appFontFamily)
+                      withContext(Dispatchers.Main) { fontRefreshKey++ }
+                    }
                   },
                 )
               }

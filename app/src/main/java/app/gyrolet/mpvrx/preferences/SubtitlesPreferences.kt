@@ -19,8 +19,8 @@ import app.gyrolet.mpvrx.ui.icons.AppIcon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.panels.SubtitlesBorderStyle
 
-const val DEFAULT_SUBTITLE_FONT_FAMILY = "Google Sans Flex"
-const val LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY = "sans-serif"
+const val DEFAULT_SUBTITLE_FONT_FAMILY = "sans-serif"
+const val LEGACY_DEFAULT_SUBTITLE_FONT_FAMILY = "Google Sans Flex"
 
 class SubtitlesPreferences(
   preferenceStore: PreferenceStore,

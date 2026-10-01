@@ -37,7 +37,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -45,13 +44,14 @@ import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.domain.fonts.GoogleFontFamily
 import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
+import app.gyrolet.mpvrx.domain.fonts.InstalledGoogleFont
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.AppPickerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSearchField
-import app.gyrolet.mpvrx.ui.player.MpvOsdFont
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
 
 @Composable
@@ -62,7 +62,6 @@ internal fun GoogleFontsSheet(
   val repository = koinInject<GoogleFontsRepository>()
   val selectedFamily by preferences.googleFontFamily.collectAsState()
   val useSystemFont by preferences.useSystemFont.collectAsState()
-  val context = LocalContext.current
   val scope = rememberCoroutineScope()
   var searchQuery by rememberSaveable { mutableStateOf("") }
   var catalog by remember { mutableStateOf<List<GoogleFontFamily>>(emptyList()) }
@@ -70,7 +69,15 @@ internal fun GoogleFontsSheet(
   var catalogFailed by remember { mutableStateOf(false) }
   var downloadingFamily by remember { mutableStateOf<String?>(null) }
   var downloadFailedFamily by remember { mutableStateOf<String?>(null) }
+  var installedFonts by remember { mutableStateOf<List<InstalledGoogleFont>>(emptyList()) }
   var refreshKey by remember { mutableIntStateOf(0) }
+
+  LaunchedEffect(selectedFamily) {
+    installedFonts =
+      withContext(Dispatchers.IO) {
+        repository.installedFonts(selectedFamily)
+      }
+  }
 
   LaunchedEffect(refreshKey) {
     isLoading = true
@@ -82,10 +89,13 @@ internal fun GoogleFontsSheet(
     isLoading = false
   }
 
+  val installedSet = remember(installedFonts) { installedFonts.mapTo(mutableSetOf(), InstalledGoogleFont::appFamily) }
+  val catalogByFamily = remember(catalog) { catalog.associateBy(GoogleFontFamily::family) }
   val filteredFonts =
-    remember(catalog, searchQuery) {
+    remember(catalog, searchQuery, installedSet) {
       catalog.filter { font ->
         font.family != BUILT_IN_FONT_FAMILY &&
+          font.family !in installedSet &&
           (searchQuery.isBlank() ||
             font.family.contains(searchQuery, ignoreCase = true) ||
             font.category.contains(searchQuery, ignoreCase = true))
@@ -104,17 +114,14 @@ internal fun GoogleFontsSheet(
     },
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)) {
+      FontSectionLabel(stringResource(R.string.app_font_section_app_fonts))
       AppFontRow(
         title = stringResource(R.string.app_font_google_sans_flex),
         subtitle = stringResource(R.string.app_font_built_in),
         selected = !useSystemFont && selectedFamily.isBlank(),
         onClick = {
-          repository.clearActiveFont()
           preferences.googleFontFamily.set("")
           preferences.useSystemFont.set(false)
-          scope.launch(Dispatchers.IO) {
-            runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
-          }
           onDismiss()
         },
       )
@@ -125,26 +132,57 @@ internal fun GoogleFontsSheet(
         selected = useSystemFont,
         onClick = {
           preferences.useSystemFont.set(true)
-          scope.launch(Dispatchers.IO) {
-            runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
-          }
           onDismiss()
         },
       )
       HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
-      PlayerSheetSearchField(
-        query = searchQuery,
-        onQueryChange = { searchQuery = it },
-        placeholder = stringResource(R.string.generic_search),
-        modifier = Modifier.padding(bottom = 10.dp),
-      )
 
       LazyColumn(
         modifier = Modifier.fillMaxWidth().heightIn(max = 460.dp),
         contentPadding = PaddingValues(bottom = 8.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp),
       ) {
+        item(key = "downloaded-label") {
+          FontSectionLabel(stringResource(R.string.app_font_section_downloaded))
+        }
+        if (installedFonts.isEmpty()) {
+          item(key = "no-downloads") {
+            Text(
+              text = stringResource(R.string.app_font_no_downloaded),
+              style = MaterialTheme.typography.bodySmall,
+              color = MaterialTheme.colorScheme.outline,
+              modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 12.dp),
+            )
+          }
+        } else {
+          items(installedFonts, key = { font -> "installed:${font.appFamily}" }) { font ->
+            AppFontRow(
+              title = font.family,
+              subtitle = catalogByFamily[font.appFamily]?.category ?: stringResource(R.string.app_font_downloaded),
+              selected = !useSystemFont && selectedFamily == font.appFamily,
+              enabled = downloadingFamily == null,
+              onClick = {
+                preferences.googleFontFamily.set(font.appFamily)
+                preferences.useSystemFont.set(false)
+                onDismiss()
+              },
+            )
+          }
+        }
+        item(key = "browse-divider") {
+          HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+        }
+        item(key = "browse-label") {
+          FontSectionLabel(stringResource(R.string.app_font_section_browse))
+        }
+        item(key = "search") {
+          PlayerSheetSearchField(
+            query = searchQuery,
+            onQueryChange = { searchQuery = it },
+            placeholder = stringResource(R.string.generic_search),
+            modifier = Modifier.padding(bottom = 10.dp),
+          )
+        }
         when {
           isLoading -> {
             item(key = "loading") {
@@ -200,9 +238,10 @@ internal fun GoogleFontsSheet(
                         preferences.googleFontFamily.set(font.family)
                         preferences.googleFontRevision.set(preferences.googleFontRevision.get() + 1)
                         preferences.useSystemFont.set(false)
-                        scope.launch(Dispatchers.IO) {
-                          runCatching { MpvOsdFont.syncDownloadedAppFont(context, preferences, repository) }
-                        }
+                        installedFonts =
+                          withContext(Dispatchers.IO) {
+                            repository.installedFonts(font.family)
+                          }
                         onDismiss()
                       },
                       onFailure = { downloadFailedFamily = font.family },
@@ -226,6 +265,17 @@ internal fun GoogleFontsSheet(
       }
     }
   }
+}
+
+@Composable
+private fun FontSectionLabel(text: String) {
+  Text(
+    text = text,
+    style = MaterialTheme.typography.labelLarge,
+    color = MaterialTheme.colorScheme.primary,
+    fontWeight = FontWeight.SemiBold,
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 6.dp),
+  )
 }
 
 @Composable

@@ -18,11 +18,9 @@ import android.view.KeyEvent
 import androidx.core.view.WindowInsetsCompat
 import app.gyrolet.mpvrx.BuildConfig
 import app.gyrolet.mpvrx.domain.anime4k.Anime4KManager
-import app.gyrolet.mpvrx.domain.fonts.GoogleFontsRepository
 import app.gyrolet.mpvrx.domain.hdr.HdrToysManager
 import app.gyrolet.mpvrx.network.AndroidCookieJar
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
-import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
@@ -60,8 +58,6 @@ class MPVView(
   private val advancedPreferences: AdvancedPreferences by inject()
   private val mpvConfigCache: MpvConfigCache by inject()
   private val subtitlesPreferences: SubtitlesPreferences by inject()
-  private val appearancePreferences: AppearancePreferences by inject()
-  private val googleFontsRepository: GoogleFontsRepository by inject()
   private val ytdlPreferences: YtdlPreferences by inject()
   private val anime4kManager: Anime4KManager by inject()
   private val hdrToysManager: HdrToysManager by inject()
@@ -269,7 +265,6 @@ class MPVView(
     PlaybackSession.setOptionString("load-select", "no")
     PlaybackSession.setOptionString("load-positioning", "no")
     PlaybackSession.setOptionString("load-commands", "no")
-    PlaybackSession.setOptionString("osd-font", MpvOsdFont.FAMILY)
 
     PlaybackSession.setOptionString("tls-verify", "yes")
     PlaybackSession.setOptionString("tls-ca-file", "${context.filesDir.path}/cacert.pem")
@@ -533,11 +528,8 @@ class MPVView(
     PlaybackSession.setOptionString("sub-speed", subSpeed)
     PlaybackSession.setOptionString("secondary-sub-delay", subDelay)
 
-    // Both primary and secondary use the same font. Official mpv has no secondary-sub-font —
-    // secondary inherits the primary sub-font. Falls back to the app's own font, then the
-    // bundled Google Sans Flex (see resolveSubtitleFontFamily).
-    val preferredFont =
-      resolveSubtitleFontFamily(subtitlesPreferences, appearancePreferences, googleFontsRepository)
+    // Both primary and secondary use the same font; blank/default choices use mpv's sans-serif.
+    val preferredFont = resolveSubtitleFontFamily(subtitlesPreferences)
     PlaybackSession.setOptionString("sub-font", preferredFont)
 
     if (subtitlesPreferences.overrideAssSubs.get()) {
