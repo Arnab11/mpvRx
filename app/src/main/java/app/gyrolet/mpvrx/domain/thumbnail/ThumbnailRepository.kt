@@ -500,7 +500,8 @@ class ThumbnailRepository(
   fun diskCacheKey(video: Video): String =
     "video-thumb-v2|${diskVideoBaseKey(video)}|${thumbnailModeKey()}|${thumbnailQualityKey()}".also { key ->
       val group = videoGroupKey(video)
-      synchronized(diskKeysByVideoGroup) { diskKeysByVideoGroup[group] = key }
+      // LruCache exposes put(), not a set operator.
+      synchronized(diskKeysByVideoGroup) { diskKeysByVideoGroup.put(group, key) }
     }
 
   private fun canonicalLocalPath(video: Video): String {

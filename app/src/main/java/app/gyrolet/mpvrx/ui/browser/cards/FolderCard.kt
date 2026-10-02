@@ -274,7 +274,7 @@ fun FolderCard(
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(6.dp))
 
-            if (isPinned && !showSelectionBadge) {
+            if (isPinned) {
               PinnedFolderBadge(
                 modifier =
                   Modifier
@@ -407,7 +407,7 @@ fun FolderCard(
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(4.dp))
 
-            if (isPinned && !showSelectionBadge) {
+            if (isPinned) {
               PinnedFolderBadge(
                 modifier =
                   Modifier

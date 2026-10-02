@@ -450,7 +450,9 @@ fun VideoCard(
             }
 
             VideoTopStartBadges(
-              isPinned = isPinned && !showSelectionBadge,
+              // The pin always stays visible, including on a selected card: it says the video is
+              // pinned, not anything about the current selection.
+              isPinned = isPinned,
               showNewLabel = showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge,
               modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
             )
@@ -801,7 +803,9 @@ fun VideoCard(
             }
 
             VideoTopStartBadges(
-              isPinned = isPinned && !showSelectionBadge,
+              // The pin always stays visible, including on a selected card: it says the video is
+              // pinned, not anything about the current selection.
+              isPinned = isPinned,
               showNewLabel = showUnplayedOldVideoLabel && isOldAndUnplayed && !showSelectionBadge,
               modifier = Modifier.align(Alignment.TopStart).padding(6.dp),
             )
