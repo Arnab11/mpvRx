@@ -199,6 +199,14 @@ object PlaybackSession : MPVLib.EventObserver {
   @Volatile
   private var initialized = false
   private var nativeCoreReady = false
+
+  /**
+   * Whether libmpv's process-wide `mpv_handle` currently exists, i.e. whether `MPVLib.create` has
+   * run without a matching `MPVLib.destroy`. Mirrors native state that the JNI layer exposes no
+   * accessor for. Guarded by [nativeLock]; `MPVLib.create` exits the process if it is called twice
+   * and `MPVLib.init` exits if it is never called, so it must never disagree with the native layer.
+   */
+  private var nativeCoreCreated = false
   private var pendingEofSeekGeneration: Long? = null
   private var applicationContext: Context? = null
   private var desiredVideoOutput = "gpu"
@@ -233,8 +241,47 @@ object PlaybackSession : MPVLib.EventObserver {
   val isInitialized: Boolean
     get() = initialized
 
+  /**
+   * True only inside the `MPVLib.create()`..`MPVLib.init()` window of a core being created.
+   * [nativeCoreReady] is the single source of that window: it is cleared at the top of every core
+   * (re)build and in [destroyLocked], and only set once `MPVLib.init()` has returned. Init-time
+   * option writers can use it to tell "writing to a pristine core" apart from "writing to a live
+   * core that already ran mpv.conf". Only safe to read while holding [nativeLock], which is
+   * re-entrant for the `initialize()` call stack that runs those writers.
+   */
+  internal val isNativeCorePendingInit: Boolean
+    get() = nativeLock.withLock { !nativeCoreReady }
+
   fun invalidateCoreConfiguration() {
     nativeLock.withLock { activeCoreConfigurationKey = null }
+  }
+
+  /**
+   * Moves libmpv's native core creation off the main thread, ahead of the first video open.
+   *
+   * Touching [MPVLib] for the first time runs its `System.loadLibrary` of the ~30-40MB libmpv
+   * (`dlopen` + ELF relocation + page faults), and `MPVLib.create` then allocates the process-wide
+   * `mpv_handle`. Both used to happen on the main thread inside `initialize()`, before the
+   * SurfaceView surface is created — delaying the `vo` flip and therefore MediaCodec startup.
+   *
+   * libmpv's core is a process-wide singleton with no handle to stash: `MPVLib.create` exits the
+   * process when `g_mpv` is already non-null, and `MPVLib.init` exits when it is null. So this
+   * only creates the core and records that it exists; [initialize] adopts it instead of creating a
+   * second one. [nativeLock] serializes the two, and it is released again immediately, so the main
+   * thread never pays for the load twice.
+   *
+   * Deliberately does *not* call `MPVLib.init()`: that parses mpv.conf and loads Lua scripts, and
+   * every option must first be written by `initOptions()`, which is bound to `MPVView`. Leaving the
+   * core uninitialized costs nothing either, because `destroy()` and `destroyLocked()` are the only
+   * callers of `MPVLib.destroy()` and both are guarded on [initialized].
+   */
+  internal fun prewarmNativeCore(context: Context) {
+    nativeLock.withLock {
+      if (nativeCoreCreated) return
+      runCatching { MPVLib.create(context.applicationContext) }
+        .onSuccess { nativeCoreCreated = true }
+        .onFailure { error -> Log.w(TAG, "Failed to prewarm the libmpv core", error) }
+    }
   }
 
   internal fun userScriptsNeedReload(currentKey: String): Boolean = nativeLock.withLock {
@@ -300,7 +347,12 @@ object PlaybackSession : MPVLib.EventObserver {
         resetAmbientShaderTrackingLocked()
         updateState { it.copy(phase = PlaybackPhase.INITIALIZING, error = null) }
         try {
-          MPVLib.create(context.applicationContext)
+          // Adopts the core [prewarmNativeCore] already created instead of calling
+          // MPVLib.create a second time, which libmpv treats as a fatal double-create.
+          if (!nativeCoreCreated) {
+            MPVLib.create(context.applicationContext)
+            nativeCoreCreated = true
+          }
           MPVLib.setOptionString("config", "yes")
           MPVLib.setOptionString("config-dir", configDir)
           MPVLib.setOptionString("gpu-shader-cache-dir", cacheDir)
@@ -335,6 +387,7 @@ object PlaybackSession : MPVLib.EventObserver {
           runCatching { MPVLib.destroy() }
           initialized = false
           nativeCoreReady = false
+          nativeCoreCreated = false
           activeCoreConfigurationKey = null
           activeUserScriptsKey = null
           suspendedVideoTrack = null
@@ -648,6 +701,7 @@ object PlaybackSession : MPVLib.EventObserver {
     _videoPanY.value = 0f
     initialized = false
     nativeCoreReady = false
+    nativeCoreCreated = false
     activeCoreConfigurationKey = null
     activeUserScriptsKey = null
     clearTimelinePropertiesLocked()

@@ -27,6 +27,8 @@ import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.network.NetworkConnection
 import app.gyrolet.mpvrx.preferences.ThumbnailMode
 import app.gyrolet.mpvrx.repository.NetworkRepository
+import app.gyrolet.mpvrx.ui.player.PlaybackPhase
+import app.gyrolet.mpvrx.ui.player.PlaybackSession
 import app.gyrolet.mpvrx.ui.player.resolveLocalPath
 import `is`.xyz.mpv.FastThumbnails
 import kotlinx.coroutines.CancellationException
@@ -44,10 +46,12 @@ import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.yield
 import org.koin.java.KoinJavaComponent
 import java.io.ByteArrayOutputStream
@@ -62,6 +66,13 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 private const val NETWORK_THUMBNAIL_FAILURE_RETRY_MS = 30_000L
+
+/**
+ * Total time one folder prefetch may spend waiting for the player to go quiet before it stops and
+ * leaves the rest of the batch for the next visit. Without a budget a long video would starve the
+ * prefetch for as long as it plays.
+ */
+private const val FOLDER_PLAYBACK_WAIT_BUDGET_MS = 15_000L
 
 class ThumbnailRepository(
   private val context: Context,
@@ -100,6 +111,17 @@ class ThumbnailRepository(
   private val localGenerationSemaphore = Semaphore(localGenerationParallelism)
   private val networkGenerationSemaphore = Semaphore(1)
   private val maxFolderBatchSize = 48
+
+  // Phases where libmpv holds the current file open or is about to open one. A folder prefetch
+  // decode in one of these competes with the player for the same cores and IO, so it must yield.
+  private val playbackBusyPhases =
+    setOf(
+      PlaybackPhase.INITIALIZING,
+      PlaybackPhase.LOADING,
+      PlaybackPhase.READY,
+      PlaybackPhase.BACKGROUND,
+      PlaybackPhase.STOPPING,
+    )
 
   private data class FolderState(
     val signature: String,
@@ -327,7 +349,15 @@ class ThumbnailRepository(
       folderJobs[folderId] =
         repositoryScope.launch {
           var i = state.nextIndex
+          var playbackWaitMs = FOLDER_PLAYBACK_WAIT_BUDGET_MS
           while (i < filteredVideos.size) {
+            // The video the user just tapped is normally inside this window, so wait for the cores
+            // and the IO before taking a batch. state.nextIndex is only advanced by a completed
+            // batch below, so pausing and resuming here loses no progress, and the wait is a plain
+            // collection on this job, so cancelling the job still takes effect immediately.
+            val waitStartedAt = SystemClock.elapsedRealtime()
+            if (!awaitThumbnailPlaybackWindow(playbackWaitMs)) return@launch
+            playbackWaitMs -= (SystemClock.elapsedRealtime() - waitStartedAt)
             val batchEnd = (i + localGenerationParallelism).coerceAtMost(filteredVideos.size)
             coroutineScope {
               (i until batchEnd)
@@ -349,6 +379,27 @@ class ThumbnailRepository(
     folderJobs.remove(folderId)?.cancel()
     folderStates.remove(folderId)
   }
+
+  /**
+   * Suspends while mpv is holding a file open so a folder prefetch never runs its native decodes
+   * and a second demuxer alongside the file the player is opening or playing.
+   *
+   * Returns true as soon as the session is safe to work in again, and false once [budgetMs] of
+   * waiting is spent. The caller then stops instead of fighting playback for the rest of the
+   * session: [FolderState.nextIndex] still marks the last completed batch, so the next
+   * [startFolderThumbnailGeneration] resumes from exactly there.
+   */
+  private suspend fun awaitThumbnailPlaybackWindow(budgetMs: Long): Boolean {
+    currentCoroutineContext().ensureActive()
+    if (!isPlaybackBusyPhase(PlaybackSession.state.value.phase)) return true
+    if (budgetMs <= 0L) return false
+    return withTimeoutOrNull(budgetMs) {
+      PlaybackSession.state.first { !isPlaybackBusyPhase(it.phase) }
+      true
+    } == true
+  }
+
+  private fun isPlaybackBusyPhase(phase: PlaybackPhase): Boolean = phase in playbackBusyPhases
 
   fun thumbnailKey(
     video: Video,
@@ -541,7 +592,13 @@ class ThumbnailRepository(
     val dimension = maxOf(widthPx, heightPx, MAX_THUMBNAIL_SIZE).coerceAtMost(thumbnailMaxSize())
 
     if (video.isAudio || mode == ThumbnailMode.Smart || mode == ThumbnailMode.EmbeddedThumbnail) {
-      generateEmbeddedArtwork(video)?.let { return scaleBitmap(it, widthPx, heightPx) }
+      // Opening a MediaMetadataRetriever here means a second demuxer on the very file the native
+      // decode below is about to open. Smart mode wants a real frame anyway, so only pay for the
+      // probe when a sidecar image is provably there. Audio and EmbeddedThumbnail keep it: there
+      // is no native frame to fall back to.
+      if (mode != ThumbnailMode.Smart || EmbeddedArtworkCandidates.hasSidecarArtwork(canonicalLocalPath(video))) {
+        generateEmbeddedArtwork(video)?.let { return scaleBitmap(it, widthPx, heightPx) }
+      }
       if (video.isAudio) return null
     }
 
