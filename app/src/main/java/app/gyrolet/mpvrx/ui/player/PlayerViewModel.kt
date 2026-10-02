@@ -3228,15 +3228,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     return true
   }
 
+  // Runs on the UI thread during a double-tap, so it clamps against the already-polled duration and
+  // position rather than reading mpv here.
   private fun previewSeekPositionOptimistically(offsetSeconds: Int) {
-    val maxDuration =
-      PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt()
-    val base =
-      if (pendingSeekOffset != 0) {
-        _precisePosition.value.toDouble()
-      } else {
-        PlaybackSession.getPropertyDouble("time-pos") ?: _precisePosition.value.toDouble()
-      }
+    val maxDuration = duration ?: _preciseDuration.value.toInt()
+    val base = _precisePosition.value.toDouble()
     val clamped =
       if (maxDuration > 0) (base + offsetSeconds).coerceIn(0.0, maxDuration.toDouble())
       else (base + offsetSeconds).coerceAtLeast(0.0)
@@ -3244,15 +3240,17 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     beginSeekFeedbackHold(clamped.toFloat(), RELATIVE_SEEK_FEEDBACK_HOLD_MS)
   }
 
+  // Called from both the drag handler and the seek path, so it clamps against the polled duration
+  // rather than reading mpv on the UI thread.
   private fun previewAbsoluteSeekPositionOptimistically(positionSeconds: Double) {
-    val maxDuration =
-      PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt()
+    val maxDuration = duration ?: _preciseDuration.value.toInt()
     val clamped =
       if (maxDuration > 0) positionSeconds.coerceIn(0.0, maxDuration.toDouble())
       else positionSeconds.coerceAtLeast(0.0)
     _precisePosition.value = clamped.toFloat()
     beginSeekFeedbackHold(clamped.toFloat(), ABSOLUTE_SEEK_FEEDBACK_HOLD_MS)
   }
+
   private var seekPreviewJob: Job? = null
   private var frameSeekJob: Job? = null
 
@@ -5070,9 +5068,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
       // Every committed seek lands exactly on the requested position. Keyframe seeking would
       // leave the player at a different time than the thumb already showed, so the bar would
-      // visibly snap back once the seek finished.
+      // visibly snap back once the seek finished. Flags stay within the vocabulary mpv accepts
+      // for the seek command; "hr-seek" is an option, not a flag, and using it here made mpv
+      // reject the command, so the thumb moved while the video stayed put.
       val seekMode =
-        if (!fast) "absolute+exact+hr-seek" else "absolute+keyframes"
+        if (!fast) "absolute+exact" else "absolute+keyframes"
       if (!PlaybackSession.commandForGeneration(generation, "seek", clampedPosition.toString(), seekMode)) return@launch
       syncplayManager.updatePlayerState(
         clampedPosition.toDouble(),
@@ -5111,7 +5111,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             PlaybackSession.commandForGeneration(generation, "seek", "100", "absolute-percent+exact")
           } else {
             // Exact landing, for the same reason as the absolute seek above.
-            val seekMode = "relative+exact+hr-seek"
+            val seekMode = "relative+exact"
             PlaybackSession.commandForGeneration(generation, "seek", toApply.toString(), seekMode)
           }
           val currentPositionDouble =
