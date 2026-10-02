@@ -6440,64 +6440,47 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
     if (playerPreferences.orientation.get() != PlayerOrientation.Video || isKnownAudioLaunch(sourceIntent)) return
 
-    val width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
-    val height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
+    // This must stay synchronous, before super.onCreate(), so the requested orientation is applied
+    // while the window does not exist yet. Deferring it (even by one frame) makes the assignment
+    // land after the window is added and after overrideActivityTransition() has begun, and the
+    // resulting relayout drops the open animation — reproducible as a vertical video no longer
+    // sliding in. PlayerActivity handles orientation|screenSize|screenLayout itself, so the late
+    // assignment does not recreate the Activity; it relayouts the window mid-transition.
+    var width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
+    var height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
+    var rotation = 0
 
-    val probeUri =
-      extractUriFromIntent(sourceIntent)
-        ?.takeIf { uri -> uri.scheme.equals("content", true) || uri.scheme.equals("file", true) }
-    if (probeUri == null) {
-      applyProbedInitialVideoOrientation(width = width, height = height, rotation = 0)
-      return
-    }
-    // MediaMetadataRetriever.setDataSource opens and parses the container (10-100 ms for local
-    // files, far worse for 4K/SAF/network sources), so it never runs on the main thread here.
-    // The orientation lands a frame or two later; handleFileLoaded re-derives it from
-    // video-params/aspect for PlayerOrientation.Video users anyway.
-    lifecycleScope.launch {
-      val probed = withContext(Dispatchers.IO) { probeVideoMetadata(probeUri) }
-      applyProbedInitialVideoOrientation(
-        width = if (width > 0) width else probed.width,
-        height = if (height > 0) height else probed.height,
-        rotation = probed.rotation,
-      )
-    }
-  }
-
-  private data class ProbedVideoMetadata(
-    val width: Int,
-    val height: Int,
-    val rotation: Int,
-  )
-
-  private fun probeVideoMetadata(uri: Uri): ProbedVideoMetadata =
-    runCatching {
-      val retriever = android.media.MediaMetadataRetriever()
-      try {
-        retriever.setDataSource(this, uri)
-        ProbedVideoMetadata(
-          width =
-            retriever
-              .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-              ?.toIntOrNull()
-              ?: 0,
-          height =
-            retriever
-              .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-              ?.toIntOrNull()
-              ?: 0,
-          rotation =
-            retriever
-              .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
-              ?.toIntOrNull()
-              ?: 0,
-        )
-      } finally {
-        retriever.release()
+    extractUriFromIntent(sourceIntent)
+      ?.takeIf { uri -> uri.scheme.equals("content", true) || uri.scheme.equals("file", true) }
+      ?.let { uri ->
+        runCatching {
+          val retriever = android.media.MediaMetadataRetriever()
+          try {
+            retriever.setDataSource(this, uri)
+            if (width <= 0) {
+              width =
+                retriever
+                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                  ?.toIntOrNull()
+                  ?: 0
+            }
+            if (height <= 0) {
+              height =
+                retriever
+                  .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                  ?.toIntOrNull()
+                  ?: 0
+            }
+            rotation =
+              retriever
+                .extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_VIDEO_ROTATION)
+                ?.toIntOrNull()
+                ?: 0
+          } finally {
+            retriever.release()
+          }
+        }
       }
-    }.getOrDefault(ProbedVideoMetadata(width = 0, height = 0, rotation = 0))
-
-  private fun applyProbedInitialVideoOrientation(width: Int, height: Int, rotation: Int) {
     if (width <= 0 || height <= 0) return
 
     val normalizedRotation = ((rotation % 360) + 360) % 360
