@@ -183,7 +183,6 @@ private val GLSL_VIDEO_PROLOGUE =
     bool inside_video = video_uv.x >= 0.0 && video_uv.x <= 1.0 &&
               video_uv.y >= 0.0 && video_uv.y <= 1.0;
     mediump float video_weight = 0.0;
-#if EDGE_BLEND > 0.0
     if (inside_video) {
       highp vec2 video_size = HOOKED_size / vec2(SCALE_X, SCALE_Y);
       mediump float blend_width = EDGE_BLEND * min(video_size.x, video_size.y);
@@ -194,16 +193,11 @@ private val GLSL_VIDEO_PROLOGUE =
       if (SCALE_Y > 1.0) {
         inside_dist = min(inside_dist, min(video_uv.y, 1.0 - video_uv.y) * video_size.y);
       }
-      if (inside_dist >= blend_width) {
+      if (EDGE_BLEND <= 0.0 || inside_dist >= blend_width) {
         return HOOKED_tex(clamp(video_uv, safe_min, safe_max));
       }
       video_weight = smoothstep(0.0, blend_width, inside_dist);
     }
-#else
-    if (inside_video) {
-      return HOOKED_tex(clamp(video_uv, safe_min, safe_max));
-    }
-#endif
 
     highp vec2 edge_origin = clamp(video_uv, safe_min, safe_max);
     mediump float edge_dist = length(video_uv - clamp(video_uv, 0.0, 1.0));
@@ -225,22 +219,21 @@ private val GLSL_AMBIENT_EPILOGUE =
 
     mediump vec4 ambient_out = vec4(ambient_rgb * OPACITY, 1.0);
 
-#if EDGE_BLEND > 0.0
     if (inside_video) {
       return mix(ambient_out, HOOKED_tex(clamp(video_uv, safe_min, safe_max)), video_weight);
     }
-#endif
 
-#if BEZEL_DEPTH > 0.0
+    // A zero bezel means a hard, gap-free handoff from video to ambience.
+    if (BEZEL_DEPTH <= 0.0) {
+      return ambient_out;
+    }
+
     highp vec2 outside_dist = max(max(-video_uv, video_uv - vec2(1.0)), vec2(0.0));
     mediump float dist_to_edge = max(outside_dist.x, outside_dist.y);
     mediump float bezel_alpha = smoothstep(0.0, BEZEL_DEPTH, dist_to_edge);
 
     vec4 edge_pixel = HOOKED_tex(edge_origin);
     return mix(edge_pixel, ambient_out, bezel_alpha);
-#else
-    return ambient_out;
-#endif
   """.trimIndent().prependIndent("    ")
 
 object AmbientShaderBuilder {
@@ -255,8 +248,14 @@ object AmbientShaderBuilder {
 //!BIND HOOKED
 //!DESC True Ambient Mode (Glow)
 
+#ifdef GL_ES
 precision mediump float;
 precision highp int;
+#else
+#define mediump
+#define highp
+#define lowp
+#endif
 
 #define BLUR_SAMPLES     ${spec.blurSamples}
 #define MAX_RADIUS       ${glslFloat(spec.maxRadius.toDouble())}

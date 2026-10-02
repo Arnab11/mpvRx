@@ -2167,8 +2167,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   @Volatile private var lastAmbientScaleX = -1.0
   @Volatile private var lastAmbientScaleY = -1.0
-  @Volatile private var lastAmbientOsdW = -1
-  @Volatile private var lastAmbientOsdH = -1
   private var ambientDebounceJob: kotlinx.coroutines.Job? = null
   private val ambientScheduleLock = Any()
   private val ambientRenderLock = Any()
@@ -7150,16 +7148,15 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       }
       ambientShaderFile = null
       runCatching {
-        File(appContext.cacheDir, "ambient_slot_0.glsl").delete()
-        File(appContext.cacheDir, "ambient_slot_1.glsl").delete()
+        appContext.cacheDir.listFiles { _, name ->
+          name.startsWith("ambient_") && name.endsWith(".glsl")
+        }?.forEach { it.delete() }
       }
       // Reset the shader cache and scale tracking so a subsequent enable always
       // compiles a fresh shader and recalculates the correct video-scale offsets.
       lastCompiledSpec = null
       lastAmbientScaleX = -1.0
       lastAmbientScaleY = -1.0
-      lastAmbientOsdW = -1
-      lastAmbientOsdH = -1
       runCatching {
         PlaybackSession.setPropertyDouble("video-scale-x", 1.0)
         PlaybackSession.setPropertyDouble("video-scale-y", 1.0)
@@ -7172,14 +7169,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun onOrientationChanged() {
     if (!isAmbientGlowRuntimeActive()) return
 
-    val osdW = PlaybackSession.getPropertyInt("osd-width") ?: 0
-    val osdH = PlaybackSession.getPropertyInt("osd-height") ?: 0
-    // If output dimensions are unchanged (e.g. 180° rotation or layout bounce), avoid discarding compiled spec
-    if (osdW > 0 && osdH > 0 && osdW == lastAmbientOsdW && osdH == lastAmbientOsdH) {
-      return
-    }
-    lastAmbientOsdW = osdW
-    lastAmbientOsdH = osdH
+    // The compiled spec is the cache key; scale sentinels alone do not force a rebuild.
     lastCompiledSpec = null
     lastAmbientScaleX = -1.0
     lastAmbientScaleY = -1.0
@@ -7357,9 +7347,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     isPowerSaveMode: Boolean = false,
   ) {
     if (!_isAmbientEnabled.value) return
-    val shouldThrottle = (!isCharging && _isAmbientBatterySaver.value) ||
-      isPowerSaveMode ||
-      (!isCharging && level in 0..19)
+    val shouldThrottle = _isAmbientBatterySaver.value &&
+      (!isCharging || isPowerSaveMode || (level in 0..19))
 
     if (shouldThrottle) {
       applyBatterySaverPolicy()
@@ -7370,13 +7359,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   private suspend fun updateAmbientStretch(generation: Long) {
     if (!isAmbientGlowRuntimeActive() || generation != ambientUpdateGeneration.get()) return
-    if (paused == true && lastCompiledSpec != null && ambientShaderFile?.exists() == true) return
 
     runCatching {
       val osdW = PlaybackSession.getPropertyInt("osd-width") ?: 1920
       val osdH = PlaybackSession.getPropertyInt("osd-height") ?: 1080
-      lastAmbientOsdW = osdW
-      lastAmbientOsdH = osdH
 
       // Portrait mode: ambient glow goes on top/bottom (letterbox)
       // Landscape mode: ambient glow goes on left/right (pillarbox)
@@ -7396,11 +7382,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       // ── Snapshot current parameter values ─────────────────────────────────
       val sx = scaleX
       val sy = scaleY
-      // Thermal-aware and sheet-aware sample budget: cap shader complexity before the device enters
-      // hard CPU/GPU throttling or when modal sheets obscure the video.
+      // Thermal-aware sample budget: cap shader complexity before the device enters
+      // hard CPU/GPU throttling.  On a cool device this is a no-op.
       val rawSamples = _ambientBlurSamples.value
-      val sheetThrottledSamples = if (sheetShown.value != Sheets.None) rawSamples.coerceAtMost(4) else rawSamples
-      val samples = ThermalMonitor.clampAmbientSampleBudget(sheetThrottledSamples, thermalHeadroom)
+      val samples = ThermalMonitor.clampAmbientSampleBudget(rawSamples, thermalHeadroom)
       val radius = _ambientMaxRadius.value
       val glow = _ambientGlowIntensity.value
       val sat = _ambientSatBoost.value
@@ -7440,11 +7425,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         return
       }
 
-      // Dual-slot ping-pong buffer: alternates between slot 0 and 1 so MPV recognizes
-      // a path change without creating endless temporary files on flash storage.
-      val slot = (ambientShaderSeq.incrementAndGet() % 2L).toInt()
+      // Each reload gets a unique filename so MPV never reuses a cached
+      // compiled shader — incrementing seq guarantees a fresh compile every time.
       val shaderCode = AmbientShaderBuilder.build(appContext, spec)
-      val newFile = File(appContext.cacheDir, "ambient_slot_$slot.glsl")
+      val newFile = File(appContext.cacheDir, "ambient_${ambientShaderSeq.incrementAndGet()}.glsl")
       // Blocking file write — dispatched to IO pool to avoid stalling renderPrepDispatcher.
       // Catch CancellationException here: IO is not preemptible, so the write always
       // completes fully even when the job is cancelled mid-flight. Without this guard,
