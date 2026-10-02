@@ -2354,7 +2354,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           val time = PlaybackSession.getPropertyDouble("time-pos")
           if (time != null) {
             val posFloat = time.toFloat()
-            if (_precisePosition.value != posFloat) {
+            // While the optimistic seek preview is in its hold window, the player's reported
+            // time-pos is still the pre-seek position; overwriting would snap the thumb back.
+            if (_precisePosition.value != posFloat &&
+              android.os.SystemClock.elapsedRealtime() >= seekFeedbackHoldUntilElapsed
+            ) {
               _precisePosition.value = posFloat
               updateLyricsActiveLine()
             }
@@ -3200,6 +3204,37 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private var seekCoalesceJob: Job? = null
   private val seekPreviewLock = Any()
   private var pendingSeekPreviewPosition: Float? = null
+
+  // Moves the seekbar thumb immediately so rapid seeks animate instead of jumping only
+  // after the decoder reports the new position. The polling loop reconciles with the
+  // player's real time-pos on the next tick.
+  private var seekFeedbackHoldUntilElapsed = 0L
+
+  private fun previewSeekPositionOptimistically(offsetSeconds: Int) {
+    val maxDuration =
+      PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt()
+    val base =
+      if (pendingSeekOffset != 0) {
+        _precisePosition.value.toDouble()
+      } else {
+        PlaybackSession.getPropertyDouble("time-pos") ?: _precisePosition.value.toDouble()
+      }
+    val clamped =
+      if (maxDuration > 0) (base + offsetSeconds).coerceIn(0.0, maxDuration.toDouble())
+      else (base + offsetSeconds).coerceAtLeast(0.0)
+    _precisePosition.value = clamped.toFloat()
+    seekFeedbackHoldUntilElapsed = android.os.SystemClock.elapsedRealtime() + 400L
+  }
+
+  private fun previewAbsoluteSeekPositionOptimistically(positionSeconds: Double) {
+    val maxDuration =
+      PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt()
+    val clamped =
+      if (maxDuration > 0) positionSeconds.coerceIn(0.0, maxDuration.toDouble())
+      else positionSeconds.coerceAtLeast(0.0)
+    _precisePosition.value = clamped.toFloat()
+    seekFeedbackHoldUntilElapsed = android.os.SystemClock.elapsedRealtime() + 400L
+  }
   private var seekPreviewJob: Job? = null
   private var frameSeekJob: Job? = null
 
@@ -4936,6 +4971,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun seekBy(offset: Int) {
     cancelFrameSeek()
     coalesceSeek(offset)
+    previewSeekPositionOptimistically(offset)
   }
 
   /**
@@ -4946,6 +4982,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun seekPreviewTo(position: Float) {
     cancelFrameSeek()
     val generation = PlaybackSession.state.value.generation
+    previewAbsoluteSeekPositionOptimistically(position.coerceAtLeast(0f).toDouble())
     synchronized(seekPreviewLock) {
       pendingSeekPreviewPosition = position.coerceAtLeast(0f)
       if (seekPreviewJob?.isActive == true) return
@@ -5002,12 +5039,14 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
       if (maxDuration > 0 && clampedPosition !in 0..maxDuration) return@launch
 
+      previewAbsoluteSeekPositionOptimistically(clampedPosition.toDouble())
+
       // Cancel pending relative seek before absolute seek
       seekCoalesceJob?.cancel()
       pendingSeekOffset = 0
 
       // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
-      val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || maxDuration < 120
+      val shouldUsePreciseSeeking = true // always land exact so the optimistic thumb never snaps back to a keyframe
       val seekMode =
         if (!fast && shouldUsePreciseSeeking) "absolute+exact" else "absolute+keyframes"
       if (!PlaybackSession.commandForGeneration(generation, "seek", clampedPosition.toString(), seekMode)) return@launch
@@ -5048,7 +5087,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             PlaybackSession.commandForGeneration(generation, "seek", "100", "absolute-percent+exact")
           } else {
             // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
-            val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || duration < 120
+            val shouldUsePreciseSeeking = true // always land exact so the optimistic thumb never snaps back to a keyframe
             val seekMode = if (shouldUsePreciseSeeking) "relative+exact" else "relative+keyframes"
             PlaybackSession.commandForGeneration(generation, "seek", toApply.toString(), seekMode)
           }
