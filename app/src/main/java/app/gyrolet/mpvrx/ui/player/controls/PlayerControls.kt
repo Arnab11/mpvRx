@@ -589,6 +589,19 @@ fun PlayerControls(
     label = "controls_transparent_overlay",
   )
 
+  // Vignette behind the top and bottom bars. Fades with the bars instead of sliding, so it stays
+  // anchored to the frame edges whatever animation style the bars themselves use.
+  val edgeVignetteAlpha by animateFloatAsState(
+    if (controlsShown && !areControlsLocked) 1f else 0f,
+    animationSpec =
+      if (controlsShown && !areControlsLocked) {
+        playerControlsEnterAnimationSpec((100 * animSpeed).toInt().coerceAtLeast(30))
+      } else {
+        playerControlsExitAnimationSpec((300 * animSpeed).toInt().coerceAtLeast(50))
+      },
+    label = "controls_edge_vignette",
+  )
+
   GestureHandler(
     viewModel = viewModel,
     interactionSource = interactionSource,
@@ -674,6 +687,10 @@ fun PlayerControls(
               .drawBehind {
                 if (reduceMotion && transparentOverlay > 0f) {
                   drawRect(FullScreenScrimBrush, alpha = transparentOverlay)
+                }
+                // Only while the bars are up, and only at the edges, so the frame stays clean.
+                if (edgeVignetteAlpha > 0f) {
+                  drawRect(ControlsEdgeVignetteBrush, alpha = edgeVignetteAlpha)
                 }
               }.then(safeAreaInsetModifier)
               .then(navigationBarBottomInsetModifier),
@@ -2652,6 +2669,23 @@ private val FullScreenScrimBrush =
     Pair(.4f, Color.Transparent),
     Pair(.6f, Color.Transparent),
     Pair(1f, Color.Black),
+  )
+
+/**
+ * Subtle edge vignette for the control bars: darkening confined to the top and bottom of the
+ * frame so white controls stay legible over bright footage without dimming the whole picture.
+ */
+private val ControlsEdgeVignetteBrush =
+  Brush.verticalGradient(
+    0.00f to Color.Black.copy(alpha = 0.55f),
+    0.06f to Color.Black.copy(alpha = 0.38f),
+    0.14f to Color.Black.copy(alpha = 0.18f),
+    0.22f to Color.Transparent,
+    0.62f to Color.Transparent,
+    0.74f to Color.Black.copy(alpha = 0.16f),
+    0.86f to Color.Black.copy(alpha = 0.36f),
+    0.95f to Color.Black.copy(alpha = 0.52f),
+    1.00f to Color.Black.copy(alpha = 0.58f),
   )
 
 private val PlaySkipButtonShadowBrush =
