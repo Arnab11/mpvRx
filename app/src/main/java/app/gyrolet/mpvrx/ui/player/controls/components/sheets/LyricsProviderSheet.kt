@@ -71,7 +71,6 @@ fun LyricsProviderSheet(
           details = state.onlineProvider?.takeIf { status == ProviderStatus.CURRENT }?.label,
           onClick = {
             viewModel.switchLyricsProvider(null)
-            onDismissRequest()
           },
           trailing = { ProviderStatusChip(status) },
         )
@@ -85,7 +84,6 @@ fun LyricsProviderSheet(
           enabled = state.onlineEnabled,
           onClick = {
             viewModel.switchLyricsProvider(provider)
-            onDismissRequest()
           },
           trailing = { ProviderStatusChip(providerStatus(provider, state)) },
         )
