@@ -72,7 +72,7 @@ private const val NETWORK_THUMBNAIL_FAILURE_RETRY_MS = 30_000L
  * leaves the rest of the batch for the next visit. Without a budget a long video would starve the
  * prefetch for as long as it plays.
  */
-private const val FOLDER_PLAYBACK_WAIT_BUDGET_MS = 15_000L
+private const val FOLDER_PLAYBACK_WAIT_BUDGET_MS = 2_000L
 
 class ThumbnailRepository(
   private val context: Context,
@@ -114,13 +114,17 @@ class ThumbnailRepository(
 
   // Phases where libmpv holds the current file open or is about to open one. A folder prefetch
   // decode in one of these competes with the player for the same cores and IO, so it must yield.
-  private val playbackBusyPhases =
+  /**
+   * The only phases where mpv is actively opening and decoding a file. Generating a thumbnail then
+   * competes for the same cores and opens a second demuxer on the very file mpv is opening, so it
+   * is worth standing aside. Once playback is merely running (READY) or in the background the open
+   * is already done, so thumbnails must be allowed to proceed: blocking there would leave a folder
+   * the user is scrolling permanently blank for as long as anything is playing.
+   */
+  private val playbackOpeningPhases =
     setOf(
       PlaybackPhase.INITIALIZING,
       PlaybackPhase.LOADING,
-      PlaybackPhase.READY,
-      PlaybackPhase.BACKGROUND,
-      PlaybackPhase.STOPPING,
     )
 
   private data class FolderState(
@@ -351,12 +355,11 @@ class ThumbnailRepository(
           var i = state.nextIndex
           var playbackWaitMs = FOLDER_PLAYBACK_WAIT_BUDGET_MS
           while (i < filteredVideos.size) {
-            // The video the user just tapped is normally inside this window, so wait for the cores
-            // and the IO before taking a batch. state.nextIndex is only advanced by a completed
-            // batch below, so pausing and resuming here loses no progress, and the wait is a plain
-            // collection on this job, so cancelling the job still takes effect immediately.
+            // Stand aside only while mpv is opening a file, and only briefly. Progress is recorded by
+            // state.nextIndex after each completed batch, and cancelling the job still takes effect
+            // immediately, so pausing and resuming here never loses or repeats work.
             val waitStartedAt = SystemClock.elapsedRealtime()
-            if (!awaitThumbnailPlaybackWindow(playbackWaitMs)) return@launch
+            awaitThumbnailPlaybackWindow(playbackWaitMs)
             playbackWaitMs -= (SystemClock.elapsedRealtime() - waitStartedAt)
             val batchEnd = (i + localGenerationParallelism).coerceAtMost(filteredVideos.size)
             coroutineScope {
@@ -381,25 +384,22 @@ class ThumbnailRepository(
   }
 
   /**
-   * Suspends while mpv is holding a file open so a folder prefetch never runs its native decodes
-   * and a second demuxer alongside the file the player is opening or playing.
+   * Stands aside while mpv is opening a file, but never indefinitely and never by giving up.
    *
-   * Returns true as soon as the session is safe to work in again, and false once [budgetMs] of
-   * waiting is spent. The caller then stops instead of fighting playback for the rest of the
-   * session: [FolderState.nextIndex] still marks the last completed batch, so the next
-   * [startFolderThumbnailGeneration] resumes from exactly there.
+   * Returns as soon as [PlaybackSession] is past its open window. If that has not happened within
+   * [budgetMs] the caller proceeds anyway: the list screens call
+   * [startFolderThumbnailGeneration] exactly once per scroll settle, so abandoning the batch here
+   * would leave the remaining thumbnails ungenerated with nothing to retry them.
    */
-  private suspend fun awaitThumbnailPlaybackWindow(budgetMs: Long): Boolean {
+  private suspend fun awaitThumbnailPlaybackWindow(budgetMs: Long) {
     currentCoroutineContext().ensureActive()
-    if (!isPlaybackBusyPhase(PlaybackSession.state.value.phase)) return true
-    if (budgetMs <= 0L) return false
-    return withTimeoutOrNull(budgetMs) {
-      PlaybackSession.state.first { !isPlaybackBusyPhase(it.phase) }
-      true
-    } == true
+    if (!isPlaybackOpeningPhase(PlaybackSession.state.value.phase)) return
+    withTimeoutOrNull(budgetMs) {
+      PlaybackSession.state.first { !isPlaybackOpeningPhase(it.phase) }
+    }
   }
 
-  private fun isPlaybackBusyPhase(phase: PlaybackPhase): Boolean = phase in playbackBusyPhases
+  private fun isPlaybackOpeningPhase(phase: PlaybackPhase): Boolean = phase in playbackOpeningPhases
 
   fun thumbnailKey(
     video: Video,
