@@ -48,6 +48,7 @@ import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.animateFloatingActionButton
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.derivedStateOf
@@ -1031,8 +1032,12 @@ internal fun VideoListContent(
             }
           }
         val allowThumbnailLoading = !isViewportScrolling && !isScrollbarDragging
+        val generationIdValue = "$folderId:${mediaLayoutMode.name}"
 
         val latestVideosWithInfo by rememberUpdatedState(videosWithInfo)
+        // Read inside the effect instead of being effect keys: keying on the scroll flags tore
+        // this effect down and rebuilt it on every scroll start and stop.
+        val latestAllowThumbnailLoading by rememberUpdatedState(allowThumbnailLoading)
         val thumbnailListKey =
           remember(videosWithInfo) {
             buildString {
@@ -1064,18 +1069,20 @@ internal fun VideoListContent(
           mediaLayoutMode,
           thumbnailListKey,
           videoGridColumns,
-          isViewportScrolling,
-          isScrollbarDragging,
         ) {
-          val generationId = "$folderId:${mediaLayoutMode.name}"
-          if (!showVideoThumbnails || latestVideosWithInfo.isEmpty() || !allowThumbnailLoading) {
-            if (!allowThumbnailLoading) {
-              thumbnailRepository.cancelFolderThumbnailGeneration(generationId)
-            }
+          val generationId = generationIdValue
+          if (!showVideoThumbnails || latestVideosWithInfo.isEmpty()) {
+            thumbnailRepository.cancelFolderThumbnailGeneration(generationId)
             return@LaunchedEffect
           }
 
           snapshotFlow {
+            // While a scroll is in flight, keep cancelling the batch and report no window. The
+            // next settled window resumes it instead of restarting the whole batch.
+            if (!latestAllowThumbnailLoading) {
+              thumbnailRepository.cancelFolderThumbnailGeneration(generationId)
+              return@snapshotFlow null
+            }
             val itemCount = latestVideosWithInfo.size
             val visibleIndices =
               if (mediaLayoutMode == MediaLayoutMode.GRID) {
@@ -1108,10 +1115,13 @@ internal fun VideoListContent(
           }.distinctUntilChanged()
             .map { indices ->
               val currentVideos = latestVideosWithInfo
-              indices.mapNotNull { index -> currentVideos.getOrNull(index)?.video }
+              indices?.mapNotNull { index -> currentVideos.getOrNull(index)?.video }.orEmpty()
             }.collectLatest { visibleVideos ->
+              // A scrolling viewport reports no videos, so nothing is generated until it settles.
+              if (visibleVideos.isEmpty()) return@collectLatest
               // Ignore transient viewports while a fling/jump is still replacing composed cards.
               delay(THUMBNAIL_SCROLL_SETTLE_MILLIS)
+              if (!latestAllowThumbnailLoading) return@collectLatest
               thumbnailRepository.startFolderThumbnailGeneration(
                 folderId = generationId,
                 videos = visibleVideos,
@@ -1119,6 +1129,11 @@ internal fun VideoListContent(
                 heightPx = thumbHeightPx,
               )
             }
+          }
+
+        // Leaving the screen stops the batch; the marks survive, so returning resumes it.
+        DisposableEffect(generationIdValue) {
+          onDispose { thumbnailRepository.cancelFolderThumbnailGeneration(generationIdValue) }
         }
 
         FabScrollHelper.trackScrollForFabVisibility(
@@ -1193,6 +1208,7 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       isPinned = videoWithInfo.video.path in pinnedVideoPaths,
+                      isInSelectionMode = selectionManager.isInSelectionMode,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =
@@ -1261,6 +1277,7 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       isPinned = videoWithInfo.video.path in pinnedVideoPaths,
+                      isInSelectionMode = selectionManager.isInSelectionMode,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =

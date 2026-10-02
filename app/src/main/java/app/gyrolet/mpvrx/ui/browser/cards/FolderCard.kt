@@ -84,6 +84,8 @@ fun FolderCard(
   customChipContent: @Composable (() -> Unit)? = null,
   isGridMode: Boolean = false,
   isPinned: Boolean = false,
+  /** True while a multi-select gesture is running; suppresses the pin badge until it ends. */
+  isInSelectionMode: Boolean = false,
   onPinClick: (() -> Unit)? = null,
   thumbnail: ImageBitmap? = null,
   isDualPane: Boolean = false,
@@ -112,7 +114,11 @@ fun FolderCard(
   val context = androidx.compose.ui.platform.LocalContext.current
   val thumbnailRepository = koinInject<ThumbnailRepository>()
   var thumbnailSize by remember { mutableStateOf(IntSize.Zero) }
-  var folderThumbnail by remember(folder.bucketId) { mutableStateOf<android.graphics.Bitmap?>(null) }
+  // Seeded from the last frame shown for this folder: fetching again on every return showed the
+  // placeholder for a frame even though the thumbnail was already decoded.
+  var folderThumbnail by remember(folder.bucketId) {
+    mutableStateOf<android.graphics.Bitmap?>(thumbnailRepository.peekFolderThumbnail(folder.bucketId))
+  }
 
   LaunchedEffect(
     folder.bucketId,
@@ -143,7 +149,7 @@ fun FolderCard(
   val maxLines = if (unlimitedNameLines) Int.MAX_VALUE else 2
   val selectionInset = 2.dp
   val selectionContainerColor = animatedSelectionColor(isSelected)
-  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f
+  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f || isInSelectionMode
 
   // Remove the redundant folder name from the path
   val parentPath = folder.path.substringBeforeLast("/", folder.path)
@@ -270,7 +276,7 @@ fun FolderCard(
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(6.dp))
 
-            if (isPinned) {
+            if (isPinned && !showSelectionBadge) {
               PinnedFolderBadge(
                 modifier =
                   Modifier
@@ -403,7 +409,7 @@ fun FolderCard(
 
             SelectionIndicator(isSelected, Modifier.align(Alignment.TopEnd).padding(4.dp))
 
-            if (isPinned) {
+            if (isPinned && !showSelectionBadge) {
               PinnedFolderBadge(
                 modifier =
                   Modifier
