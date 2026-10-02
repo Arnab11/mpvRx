@@ -1772,11 +1772,14 @@ is PlayerUpdates.FrameInfo -> {
                 }
                 isSeeking = true
                 resetControlsTimestamp = System.currentTimeMillis()
-                viewModel.seekTo(it.toInt())
+                // Live preview only during scrub; the final seek is emitted once on release.
+                viewModel.seekPreviewTo(it)
               },
               onValueChangeFinished = { targetPosition ->
                 isSeeking = false
                 resetControlsTimestamp = System.currentTimeMillis()
+                // Finalize the release position with the normal seek mode.
+                viewModel.seekTo(targetPosition.toInt())
                 // Unpause if it wasn't paused before seeking
                 if (!wasPlayerAlreadyPaused) {
                   viewModel.unpause()

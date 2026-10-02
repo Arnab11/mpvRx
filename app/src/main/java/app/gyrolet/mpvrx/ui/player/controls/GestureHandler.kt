@@ -1317,9 +1317,9 @@ fun GestureHandler(
                       val clampedPosition = targetPosition.coerceAtMost(maxDuration)
                       pendingSeekPosition = clampedPosition
 
-                      // Use the same seeking mechanism as seekbar scrubbing
-                      // This will update the seekbar position and provide live preview
-                      viewModel.seekTo(clampedPosition.toInt())
+                      // Keep the live preview bounded and keyframe-only while scrubbing. The final
+                      // exact seek is issued once on gesture release below.
+                      viewModel.seekPreviewTo(clampedPosition)
 
                       // Format and display time position updates
                       val currentPos = clampedPosition.toInt()
@@ -1362,6 +1362,9 @@ fun GestureHandler(
 
             // Apply the final seek when gesture ends
             if (hasStartedSeeking) {
+              // Finalize with the last bounded preview target; seekTo cancels any pending preview.
+              pendingSeekPosition?.let { viewModel.seekTo(it.toInt()) }
+
               // Unpause if it wasn't paused before seeking
               if (!wasPlayerAlreadyPaused) {
                 viewModel.unpause()
