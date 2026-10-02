@@ -1208,7 +1208,6 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       isPinned = videoWithInfo.video.path in pinnedVideoPaths,
-                      isInSelectionMode = selectionManager.isInSelectionMode,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =
@@ -1277,7 +1276,6 @@ internal fun VideoListContent(
                       isOldAndUnplayed = videoWithInfo.isOldAndUnplayed,
                       isWatched = videoWithInfo.isWatched,
                       isPinned = videoWithInfo.video.path in pinnedVideoPaths,
-                      isInSelectionMode = selectionManager.isInSelectionMode,
                       onClick = { onVideoClick(videoWithInfo.video) },
                       onLongClick = if (archiveFolder) null else ({ onVideoLongClick(videoWithInfo.video) }),
                       onThumbClick =

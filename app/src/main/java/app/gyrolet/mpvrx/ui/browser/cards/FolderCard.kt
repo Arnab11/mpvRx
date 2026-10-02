@@ -84,8 +84,6 @@ fun FolderCard(
   customChipContent: @Composable (() -> Unit)? = null,
   isGridMode: Boolean = false,
   isPinned: Boolean = false,
-  /** True while a multi-select gesture is running; suppresses the pin badge until it ends. */
-  isInSelectionMode: Boolean = false,
   onPinClick: (() -> Unit)? = null,
   thumbnail: ImageBitmap? = null,
   isDualPane: Boolean = false,
@@ -149,7 +147,7 @@ fun FolderCard(
   val maxLines = if (unlimitedNameLines) Int.MAX_VALUE else 2
   val selectionInset = 2.dp
   val selectionContainerColor = animatedSelectionColor(isSelected)
-  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f || isInSelectionMode
+  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f
 
   // Remove the redundant folder name from the path
   val parentPath = folder.path.substringBeforeLast("/", folder.path)
