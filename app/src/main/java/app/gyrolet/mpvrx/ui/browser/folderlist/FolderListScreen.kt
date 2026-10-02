@@ -1439,6 +1439,7 @@ private fun GridContent(
           customIcon = if (archiveFolder) Icons.RoundedFilled.FolderZip else null,
           isGridMode = true,
           isPinned = folder.path in pinnedFolderPaths,
+          isInSelectionMode = selectionManager.isInSelectionMode,
           onPinClick =
             if (!selectionManager.isInSelectionMode) {
               { onTogglePin(folder) }
@@ -1534,6 +1535,7 @@ private fun ListContent(
           isGridMode = false,
           onSwipeAction = onFolderSwipe.takeUnless { archiveFolder },
           isPinned = folder.path in pinnedFolderPaths,
+          isInSelectionMode = selectionManager.isInSelectionMode,
           onPinClick =
             if (!selectionManager.isInSelectionMode) {
               { onTogglePin(folder) }
@@ -1541,7 +1543,7 @@ private fun ListContent(
               null
             },
           customChipContent =
-            if (folder.path in pinnedFolderPaths) {
+            if (folder.path in pinnedFolderPaths && !selectionManager.isInSelectionMode) {
               {
                 Text(
                   androidx.compose.ui.res

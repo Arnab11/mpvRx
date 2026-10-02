@@ -1519,6 +1519,7 @@ private fun FileSystemBrowserContent(
                       isOldAndUnplayed = newVideoIds.contains(videoFile.video.id),
                       isWatched = watchedVideoIds.contains(videoFile.video.id),
                       isPinned = videoFile.video.path in pinnedVideoPaths,
+                      isInSelectionMode = isInSelectionMode,
                       isGridMode = true,
                       showSubtitleIndicator = showSubtitleIndicator,
                       overrideShowSizeChip = null,
@@ -1637,6 +1638,7 @@ private fun FileSystemBrowserContent(
                     isOldAndUnplayed = newVideoIds.contains(videoFile.video.id),
                     isWatched = watchedVideoIds.contains(videoFile.video.id),
                     isPinned = videoFile.video.path in pinnedVideoPaths,
+                    isInSelectionMode = isInSelectionMode,
                     isGridMode = false,
                     onSwipeAction =
                       swipeActions.video.takeUnless { archiveEntry || selectionManager.isInSelectionMode || isInSelectionMode },

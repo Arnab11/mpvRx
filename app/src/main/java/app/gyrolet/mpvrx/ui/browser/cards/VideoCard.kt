@@ -213,6 +213,11 @@ fun VideoCard(
   isOldAndUnplayed: Boolean = false,
   isWatched: Boolean = false,
   isPinned: Boolean = false,
+  /**
+   * True while a multi-select gesture is active. Overlays such as the pin and the NEW badge are
+   * suppressed for every card then, so a selection in progress is not fighting other chrome.
+   */
+  isInSelectionMode: Boolean = false,
   onThumbClick: () -> Unit = {},
   isGridMode: Boolean = false,
   gridColumns: Int = 1,
@@ -281,7 +286,9 @@ fun VideoCard(
 
   val selectionInset = 2.dp
   val selectionContainerColor = animatedSelectionColor(isSelected)
-  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f
+  // Stays true through the selection fade-out so overlays do not pop back in before the tint
+  // disappears, and covers every card once a multi-select gesture is running.
+  val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f || isInSelectionMode
 
   val cardShape = AppShapeScale.large
 
