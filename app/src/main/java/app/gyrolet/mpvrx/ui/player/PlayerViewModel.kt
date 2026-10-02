@@ -2354,11 +2354,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           val time = PlaybackSession.getPropertyDouble("time-pos")
           if (time != null) {
             val posFloat = time.toFloat()
-            // While the optimistic seek preview is in its hold window, the player's reported
-            // time-pos is still the pre-seek position; overwriting would snap the thumb back.
-            if (_precisePosition.value != posFloat &&
-              android.os.SystemClock.elapsedRealtime() >= seekFeedbackHoldUntilElapsed
-            ) {
+            // While a seek is in flight, the player's reported time-pos is still the pre-seek
+            // position; overwriting it would snap the thumb backwards mid-gesture.
+            if (_precisePosition.value != posFloat && !shouldHoldOptimisticPosition(posFloat)) {
               _precisePosition.value = posFloat
               updateLyricsActiveLine()
             }
@@ -3206,9 +3204,29 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private var pendingSeekPreviewPosition: Float? = null
 
   // Moves the seekbar thumb immediately so rapid seeks animate instead of jumping only
-  // after the decoder reports the new position. The polling loop reconciles with the
-  // player's real time-pos on the next tick.
+  // after the decoder reports the new position. The position poller then keeps the optimistic
+  // value until the player actually lands on it, so the thumb never snaps backwards.
   private var seekFeedbackHoldUntilElapsed = 0L
+  private var seekFeedbackTargetPosition = 0f
+
+  /** How close the player's reported position must be to count as "the seek landed". */
+  private fun seekFeedbackTolerance(): Double = SEEK_FEEDBACK_TOLERANCE_SECONDS
+
+  private fun beginSeekFeedbackHold(targetPosition: Float, holdMillis: Long) {
+    seekFeedbackTargetPosition = targetPosition
+    seekFeedbackHoldUntilElapsed = android.os.SystemClock.elapsedRealtime() + holdMillis
+  }
+
+  private fun shouldHoldOptimisticPosition(reportedPosition: Float): Boolean {
+    val now = android.os.SystemClock.elapsedRealtime()
+    if (now >= seekFeedbackHoldUntilElapsed) return false
+    if (kotlin.math.abs(reportedPosition - seekFeedbackTargetPosition) <= seekFeedbackTolerance()) {
+      // The player caught up with the requested position: resume normal polling.
+      seekFeedbackHoldUntilElapsed = 0L
+      return false
+    }
+    return true
+  }
 
   private fun previewSeekPositionOptimistically(offsetSeconds: Int) {
     val maxDuration =
@@ -3223,7 +3241,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       if (maxDuration > 0) (base + offsetSeconds).coerceIn(0.0, maxDuration.toDouble())
       else (base + offsetSeconds).coerceAtLeast(0.0)
     _precisePosition.value = clamped.toFloat()
-    seekFeedbackHoldUntilElapsed = android.os.SystemClock.elapsedRealtime() + 400L
+    beginSeekFeedbackHold(clamped.toFloat(), RELATIVE_SEEK_FEEDBACK_HOLD_MS)
   }
 
   private fun previewAbsoluteSeekPositionOptimistically(positionSeconds: Double) {
@@ -3233,7 +3251,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       if (maxDuration > 0) positionSeconds.coerceIn(0.0, maxDuration.toDouble())
       else positionSeconds.coerceAtLeast(0.0)
     _precisePosition.value = clamped.toFloat()
-    seekFeedbackHoldUntilElapsed = android.os.SystemClock.elapsedRealtime() + 400L
+    beginSeekFeedbackHold(clamped.toFloat(), ABSOLUTE_SEEK_FEEDBACK_HOLD_MS)
   }
   private var seekPreviewJob: Job? = null
   private var frameSeekJob: Job? = null
@@ -3259,6 +3277,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     const val AUTO_CROP_OPEN_SETTLE_MS = 4_000L
     const val AUTO_SHOW_SKIP_CHIP_DURATION = 10.0
     const val SEEK_COALESCE_DELAY_MS = 60L
+    // Reported positions within this distance of the requested target count as "landed".
+    const val SEEK_FEEDBACK_TOLERANCE_SECONDS = 0.35
+    // Upper bound on how long the optimistic thumb may outrun the player.
+    const val RELATIVE_SEEK_FEEDBACK_HOLD_MS = 1500L
+    const val ABSOLUTE_SEEK_FEEDBACK_HOLD_MS = 3000L
     const val RELATIVE_SEEK_EOF_GUARD_SECONDS = 0.25
     const val SEEK_TARGET_TOLERANCE_SECONDS = 0.05
     const val PREVIEW_SEEK_INTERVAL_MS = 100L
@@ -5045,10 +5068,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       seekCoalesceJob?.cancel()
       pendingSeekOffset = 0
 
-      // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
-      val shouldUsePreciseSeeking = true // always land exact so the optimistic thumb never snaps back to a keyframe
+      // Every committed seek lands exactly on the requested position. Keyframe seeking would
+      // leave the player at a different time than the thumb already showed, so the bar would
+      // visibly snap back once the seek finished.
       val seekMode =
-        if (!fast && shouldUsePreciseSeeking) "absolute+exact" else "absolute+keyframes"
+        if (!fast) "absolute+exact+hr-seek" else "absolute+keyframes"
       if (!PlaybackSession.commandForGeneration(generation, "seek", clampedPosition.toString(), seekMode)) return@launch
       syncplayManager.updatePlayerState(
         clampedPosition.toDouble(),
@@ -5086,9 +5110,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             // If seeking past the end, force seek to 100% absolute to ensure EOF is triggered
             PlaybackSession.commandForGeneration(generation, "seek", "100", "absolute-percent+exact")
           } else {
-            // Use precise seeking for videos shorter than 2 minutes (120 seconds) or if preference is enabled
-            val shouldUsePreciseSeeking = true // always land exact so the optimistic thumb never snaps back to a keyframe
-            val seekMode = if (shouldUsePreciseSeeking) "relative+exact" else "relative+keyframes"
+            // Exact landing, for the same reason as the absolute seek above.
+            val seekMode = "relative+exact+hr-seek"
             PlaybackSession.commandForGeneration(generation, "seek", toApply.toString(), seekMode)
           }
           val currentPositionDouble =
