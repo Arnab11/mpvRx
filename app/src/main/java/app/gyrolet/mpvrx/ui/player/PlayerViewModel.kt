@@ -521,6 +521,7 @@ class PlayerViewModel : ViewModel(),
   private val renderPrepDispatcher = Dispatchers.Default.limitedParallelism(1)
   private var autoCropJob: Job? = null
   private var autoCropReadinessJob: Job? = null
+  private var autoCropSettleJob: Job? = null
   private var autoCropAnalyzedGeneration = -1L
   private var autoCropApplied = false
   // Memory-only analysis cache. This is not playback history and does not enable auto-crop.
@@ -2782,7 +2783,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     syncplayManager.updateFileInfo(currentSyncplayFileInfo())
     applyEqualizerMpvFilters()
     if (isAudioOnly.value) loadLyricsForCurrentTrack()
-    scheduleAutoCropAnalysis()
+    scheduleAutoCropSettled()
   }
 
   fun updateTorrentState(state: TorrentStreamingState) {
@@ -3218,6 +3219,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     const val AUTO_CROP_HWDEC_TIMEOUT_MS = 1_500L
     const val AUTO_CROP_ACTIVE_FRAME_TIMEOUT_MS = 2_500L
     const val AUTO_CROP_ACTIVE_FRAME_INTERVAL_MS = 300L
+    // Analysis flips hwdec and inserts a cropdetect filter, so it must not run during open.
+    // It is scheduled after the first frames are on screen instead (see scheduleAutoCropSettled).
+    const val AUTO_CROP_OPEN_SETTLE_MS = 4_000L
     const val AUTO_SHOW_SKIP_CHIP_DURATION = 10.0
     const val SEEK_COALESCE_DELAY_MS = 60L
     const val RELATIVE_SEEK_EOF_GUARD_SECONDS = 0.25
@@ -5793,11 +5797,31 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private fun cancelAutoCropAnalysis() {
+    autoCropSettleJob?.cancel()
+    autoCropSettleJob = null
     autoCropJob?.cancel()
     autoCropJob = null
     autoCropReadinessJob?.cancel()
     autoCropReadinessJob = null
     PlaybackSession.removeVideoFilter(AUTO_CROP_FILTER_LABEL)
+  }
+
+  /**
+   * Starts auto-crop analysis only after the open has settled. The analysis can switch hwdec and
+   * touch the filter chain, so running it from the load-completed signal directly stalls the first
+   * seconds of playback. A new load cancels the pending run via [cancelAutoCropAnalysis].
+   */
+  private fun scheduleAutoCropSettled() {
+    autoCropSettleJob?.cancel()
+    if (!playerPreferences.autoCropBlackBars.get()) return
+    val generation = PlaybackSession.state.value.generation
+    autoCropSettleJob =
+      viewModelScope.launch {
+        delay(AUTO_CROP_OPEN_SETTLE_MS)
+        autoCropSettleJob = null
+        if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
+        scheduleAutoCropAnalysis()
+      }
   }
 
   private fun refreshStretchAspectAfterCropChange() {
