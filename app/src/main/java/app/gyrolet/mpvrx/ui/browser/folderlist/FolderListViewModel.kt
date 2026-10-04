@@ -255,7 +255,9 @@ class FolderListViewModel(
   }
 
   private fun currentFolderCacheKey(): String =
-    "folders_${if (audioOnly) "audioOnly" else "video"}" +
+    // v2: folder names are derived through leafStorageName, which now labels the internal volume
+    // instead of surfacing its "0" leaf segment. The old key is retired so stale names are dropped.
+    "folders_v2_${if (audioOnly) "audioOnly" else "video"}" +
       "_${if (foldersPreferences.includeNoMediaFolders.get()) "with_nomedia" else "exclude_nomedia"}" +
       "_audio_${browserPreferences.includeAudioBrowser.get()}_${browserPreferences.minimumAudioDurationSeconds.get()}"
 
