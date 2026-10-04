@@ -529,8 +529,8 @@ class MPVView(
       PlaybackSession.setOptionString("sub-ass-justify", "yes")
       PlaybackSession.setOptionString("secondary-sub-ass-override", "force")
     } else {
-      PlaybackSession.setOptionString("sub-ass-override", "no")
-      PlaybackSession.setOptionString("secondary-sub-ass-override", "no")
+      PlaybackSession.setOptionString("sub-ass-override", "scale")
+      PlaybackSession.setOptionString("secondary-sub-ass-override", "scale")
     }
 
     // Typography and styling for both primary and secondary
