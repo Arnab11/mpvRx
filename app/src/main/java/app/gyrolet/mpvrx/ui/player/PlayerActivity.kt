@@ -667,6 +667,9 @@ class PlayerActivity :
     // Kick the multi-MB asset copy and the user mpv.conf SAF walk off the main thread first, so
     // they run concurrently with everything below instead of being joined inside setupMPV().
     startMpvAssetPreparation()
+    // Derive every init option value up front on IO. Only the option writes themselves need the
+    // core, so this overlaps with layout inflation and the Compose trees.
+    player.prepareInitInputs()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
       intent.action == MediaPlaybackService.ACTION_OPEN_PLAYER
     ) {
