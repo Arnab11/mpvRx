@@ -26,9 +26,11 @@ import app.gyrolet.mpvrx.preferences.FoldersPreferences
 import app.gyrolet.mpvrx.utils.media.MediaInfoOps
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import app.gyrolet.mpvrx.utils.storage.FolderViewScanner
+import app.gyrolet.mpvrx.utils.storage.INTERNAL_STORAGE_LABEL
 import app.gyrolet.mpvrx.utils.storage.MediaScanOptions
 import app.gyrolet.mpvrx.utils.storage.StorageVolumeUtils
 import app.gyrolet.mpvrx.utils.storage.TreeViewScanner
+import app.gyrolet.mpvrx.utils.storage.leafStorageName
 import app.gyrolet.mpvrx.utils.storage.VideoScanUtils
 import app.gyrolet.mpvrx.utils.storage.mediaPathKey
 import kotlinx.coroutines.Dispatchers
@@ -322,8 +324,7 @@ object MediaFileRepository : KoinComponent {
   private fun normalizeAudioFolderKey(path: String): String =
     path.replace('\\', '/').trimEnd('/').lowercase(Locale.ROOT)
 
-  private fun leafName(path: String): String =
-    path.replace('\\', '/').trimEnd('/').substringAfterLast('/')
+  private fun leafName(path: String): String = leafStorageName(path)
 
   fun scanNoMediaFoldersIncrementally(
     context: Context,
@@ -594,7 +595,7 @@ object MediaFileRepository : KoinComponent {
     var currentPath = ""
     for (part in parts) {
       currentPath += "/$part"
-      components.add(PathComponent(part, currentPath))
+      components.add(PathComponent(leafStorageName(currentPath), currentPath))
     }
 
     return components
@@ -720,7 +721,7 @@ object MediaFileRepository : KoinComponent {
 
           roots.add(
             FileSystemItem.Folder(
-              name = "Internal Storage",
+              name = INTERNAL_STORAGE_LABEL,
               path = primaryPath,
               lastModified = primaryStorage.lastModified(),
               videoCount = folderData?.videoCount ?: 0,
