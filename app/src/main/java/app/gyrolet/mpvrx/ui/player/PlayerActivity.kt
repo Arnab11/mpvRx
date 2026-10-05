@@ -6129,24 +6129,26 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
       }
       ensureCurrentMediaRequest(requestGeneration)
       if (requiresYtdlp) player.setupYtdlpOptions()
-      PlaybackSession.load(
-        item = item,
-        restoreSavedPosition = restoreSavedPosition,
-        positionRestoreOverride = effectivePositionOverride,
-        initialPositionSeconds = initialPositionSeconds,
-        flattenEditions = requiresYtdlp && !MpvConfigOverridePolicy.isOwnedByMpvConf("flatten-editions"),
-        commit = { nativeLoad ->
-          PlaybackActivityOwner.runIfOwner(playbackOwnerToken, -1L) {
-            if (requestGeneration != mediaRequestGeneration) {
-              -1L
-            } else {
-              if (requiresYtdlp) PlaybackSession.setPropertyString("ytdl-format", ytdlFormat.orEmpty())
-              nativeLoad()
+      val loadGeneration =
+        PlaybackSession.load(
+          item = item,
+          restoreSavedPosition = restoreSavedPosition,
+          positionRestoreOverride = effectivePositionOverride,
+          initialPositionSeconds = initialPositionSeconds,
+          flattenEditions = requiresYtdlp && !MpvConfigOverridePolicy.isOwnedByMpvConf("flatten-editions"),
+          commit = { nativeLoad ->
+            PlaybackActivityOwner.runIfOwner(playbackOwnerToken, -1L) {
+              if (requestGeneration != mediaRequestGeneration) {
+                -1L
+              } else {
+                if (requiresYtdlp) PlaybackSession.setPropertyString("ytdl-format", ytdlFormat.orEmpty())
+                nativeLoad()
+              }
             }
-          }
-        },
-      )
+          },
+        )
       player.applyDeferredStartupOptions()
+      loadGeneration
     }
     if (generation < 0L) {
       ensureCurrentMediaRequest(requestGeneration)
