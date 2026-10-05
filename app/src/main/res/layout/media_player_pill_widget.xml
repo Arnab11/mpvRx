@@ -22,38 +22,40 @@
             android:layout_height="match_parent"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingStart="7dp"
-            android:paddingEnd="12dp">
+            android:paddingStart="8dp"
+            android:paddingEnd="10dp">
 
             <ImageView
                 android:id="@+id/media_widget_pill_artwork"
                 android:layout_width="@dimen/media_widget_pill_art"
                 android:layout_height="@dimen/media_widget_pill_art"
-                android:background="@drawable/media_widget_pill_art_placeholder"
+                android:background="@drawable/media_widget_pill_art_frame"
                 android:contentDescription="@null"
+                android:padding="2dp"
                 android:scaleType="fitXY" />
 
             <LinearLayout
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:layout_marginTop="4dp"
+                android:layout_height="match_parent"
+                android:layout_marginStart="8dp"
                 android:layout_weight="1"
+                android:gravity="center_vertical"
                 android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/media_widget_pill_title"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginBottom="2dp"
                     android:ellipsize="end"
                     android:fontFamily="@font/gflex_variable"
                     android:includeFontPadding="false"
                     android:maxLines="1"
-                    android:paddingStart="10dp"
-                    android:paddingEnd="10dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
                     android:text="@string/media_widget_empty"
                     android:textColor="#FFFFFFFF"
-                    android:textSize="16sp"
+                    android:textSize="15sp"
                     android:textStyle="bold" />
 
                 <LinearLayout
@@ -68,7 +70,7 @@
                         android:layout_height="@dimen/media_widget_pill_button"
                         android:background="@drawable/media_widget_control_background_dark"
                         android:contentDescription="@string/notification_add_to_favorites"
-                        android:padding="9dp"
+                        android:padding="8dp"
                         android:src="@drawable/media_widget_pill_heart" />
 
                     <FrameLayout
@@ -82,7 +84,7 @@
                         android:layout_height="@dimen/media_widget_pill_button"
                         android:background="@drawable/media_widget_control_background_dark"
                         android:contentDescription="@string/pref_gesture_media_previous"
-                        android:padding="6dp"
+                        android:padding="7dp"
                         android:src="@drawable/media_widget_previous" />
 
                     <FrameLayout
@@ -96,7 +98,7 @@
                         android:layout_height="@dimen/media_widget_pill_button"
                         android:background="@drawable/media_widget_control_background_dark"
                         android:contentDescription="@string/ui_play"
-                        android:padding="6dp"
+                        android:padding="7dp"
                         android:src="@drawable/media_widget_play" />
 
                     <FrameLayout
@@ -110,7 +112,7 @@
                         android:layout_height="@dimen/media_widget_pill_button"
                         android:background="@drawable/media_widget_control_background_dark"
                         android:contentDescription="@string/pref_gesture_media_next"
-                        android:padding="6dp"
+                        android:padding="7dp"
                         android:src="@drawable/media_widget_next" />
 
                     <FrameLayout
@@ -124,7 +126,7 @@
                         android:layout_height="@dimen/media_widget_pill_button"
                         android:background="@drawable/media_widget_control_background_dark"
                         android:contentDescription="@string/btn_label_shuffle"
-                        android:padding="8dp"
+                        android:padding="7dp"
                         android:src="@drawable/media_widget_pill_shuffle" />
                 </LinearLayout>
             </LinearLayout>
