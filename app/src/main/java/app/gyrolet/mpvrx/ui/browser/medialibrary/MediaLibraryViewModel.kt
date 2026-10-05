@@ -26,6 +26,7 @@ import app.gyrolet.mpvrx.ui.browser.videolist.videoPlaybackIdentifiers
 import app.gyrolet.mpvrx.utils.media.MetadataRetrieval
 import app.gyrolet.mpvrx.utils.media.PlaybackStateEvents
 import app.gyrolet.mpvrx.utils.media.PlaybackStateOps
+import app.gyrolet.mpvrx.utils.storage.MediaStoreGenerationGuard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -56,9 +57,17 @@ class MediaLibraryViewModel(
   private val tag = "MediaLibraryViewModel"
 
   init {
-    loadData()
+    // Try the persisted list first so an unchanged library needs no scan at all. Without this, every
+    // cold boot queried MediaStore once per folder before the screen had anything to show.
+    val restored = loadCachedVideos()
+    if (!restored) {
+      loadData()
+    }
     viewModelScope.launch(Dispatchers.IO) {
       app.gyrolet.mpvrx.utils.media.MediaLibraryEvents.changes.collectLatest {
+        // A media event means both the cached list and its recorded generation are suspect.
+        MediaLibraryCache.clear(getApplication())
+        MediaStoreGenerationGuard.invalidate(getApplication())
         loadData()
       }
     }
@@ -69,10 +78,46 @@ class MediaLibraryViewModel(
     }
   }
 
-  private fun loadData() {
+  /**
+ * Restores the persisted list without scanning, when it is still trustworthy.
+ *
+ * The cache stores no fps, dimensions or codec, so it is only complete enough to use when no
+ * metadata chip is enabled. With a chip on, the list must be rebuilt so the chips have real values,
+ * which also means the scan runs regardless — the cache then only avoids an empty first frame.
+ */
+  private fun loadCachedVideos(): Boolean {
+    if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) return false
+    if (!MediaStoreGenerationGuard.isUnchangedSinceLastScan(getApplication())) return false
+    val cached = MediaLibraryCache.load(getApplication())
+    if (cached.isNullOrEmpty()) return false
+    _videos.value = cached
+    viewModelScope.launch(Dispatchers.IO) {
+      loadPlaybackInfo(cached)
+    }
+    return true
+  }
+
+  private fun loadData(force: Boolean = false) {
+    // Guards a re-entry that has nothing new to learn: a media event fired while the list on screen
+    // still matches the current MediaStore, or refresh() was asked to invalidate and rebuild. force
+    // comes from refresh() and always re-reads.
+    if (!force &&
+      _videos.value.isNotEmpty() &&
+      MediaStoreGenerationGuard.isUnchangedSinceLastScan(getApplication())
+    ) {
+      Log.d(tag, "MediaStore unchanged, keeping current media library")
+      return
+    }
+
     viewModelScope.launch(Dispatchers.IO) {
       try {
-        _isLoading.value = true
+        // Read before scanning: recording the generation afterwards would bless a MediaStore newer
+        // than the data, and the next cold boot would keep a stale list.
+        val observedGeneration = MediaStoreGenerationGuard.currentToken(getApplication())
+
+        if (_videos.value.isEmpty()) {
+          _isLoading.value = true
+        }
         var videoList =
           MediaFileRepository.getAllVideos(
             context = getApplication(),
@@ -90,6 +135,8 @@ class MediaLibraryViewModel(
         }
 
         _videos.value = videoList
+        MediaLibraryCache.save(getApplication(), videoList)
+        MediaStoreGenerationGuard.remember(getApplication(), observedGeneration)
         loadPlaybackInfo(videoList)
       } catch (e: Exception) {
         Log.e(tag, "Error loading media library videos", e)
@@ -100,7 +147,10 @@ class MediaLibraryViewModel(
   }
 
   override fun refresh() {
-    loadData()
+    // A user-driven refresh must never be satisfied by the persisted list.
+    MediaLibraryCache.clear(getApplication())
+    MediaStoreGenerationGuard.invalidate(getApplication())
+    loadData(force = true)
   }
 
   private suspend fun loadPlaybackInfo(videos: List<Video>) {
