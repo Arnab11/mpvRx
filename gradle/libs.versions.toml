@@ -26,6 +26,7 @@ sardineAndroid = "0.9"
 reorderable = "3.1.0"
 googleMaterial = "1.14.0"
 androidxCore = "1.19.0"
+androidxCoreSplashScreen = "1.2.0"
 androidxPreference = "1.2.1"
 androidxConstraintLayout = "2.2.2"
 media3 = "1.11.1"
@@ -95,6 +96,7 @@ mpvlib-fongmi = { module = "app.gyrolet.mpvlib:mpvlib-fongmi", version.ref = "mp
 
 google-material = { module = "com.google.android.material:material", version.ref = "googleMaterial" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
+androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidxCoreSplashScreen" }
 androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "androidxPreference" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintLayout" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
