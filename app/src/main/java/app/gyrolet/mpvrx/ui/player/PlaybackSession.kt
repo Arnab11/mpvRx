@@ -961,9 +961,12 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         speedBeforeAudiobook = null
       }
       val videoSelection = resolvedItem.videoSelection()
-      // Select the track during demuxer initialization. Video output remains `vo=null` until a
-      // Surface is attached, so cold starts do not need a post-load track reselect.
+      // MediaCodec needs a valid native window when the video decoder is created. The optimized
+      // startup path can issue loadfile before SurfaceView.surfaceCreated, so defer video-track
+      // selection until bindSurface attaches a valid Surface.
       val selectVideoForNewFile = videoSelection == PlaybackVideoSelection.IMMEDIATE
+      val deferVideoSelectionUntilSurface =
+        selectVideoForNewFile && !_state.value.surfaceAttached
 
       // An OUTPUT Ambient shader bakes the previous video's aspect ratio into its GLSL. Because the
       // libmpv core outlives PlayerActivity, a late/cancelled Ambient job can otherwise poison the
@@ -990,7 +993,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       pendingPositionRestoreOverride = positionRestoreOverride?.let { generation to it }
       initialPositionGeneration = generation.takeIf { initialPosition != null } ?: 0L
       val holdForPositionRestore = pendingPositionRestoreGeneration == generation
-      deferredVideoSelectionGeneration = null
+      deferredVideoSelectionGeneration =
+        generation.takeIf { deferVideoSelectionUntilSurface }
       updateState {
         it.copy(
           phase = PlaybackPhase.LOADING,
@@ -1031,7 +1035,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       val loadOptions =
         buildList {
           add("pause=yes")
-          add(if (selectVideoForNewFile) "vid=auto" else "vid=no")
+          add(if (selectVideoForNewFile && !deferVideoSelectionUntilSurface) "vid=auto" else "vid=no")
           initialPosition?.let { add("start=$it") }
           if (flattenEditions && !MpvConfigOverridePolicy.isOwnedByMpvConf("flatten-editions")) {
             add("flatten-editions=yes")
