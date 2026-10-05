@@ -138,6 +138,7 @@ import `is`.xyz.mpv.MPVNode
 import `is`.xyz.mpv.Utils
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.DelicateCoroutinesApi
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
@@ -463,6 +464,7 @@ class PlayerActivity :
   private var deferredFontSyncJob: Job? = null
   private var deferredMpvAssetSyncJob: Job? = null
   private var mpvAssetPreparationJob: Job? = null
+  private var mpvCorePreparationJob: Deferred<String?>? = null
   private var systemBarsAutoHideJob: Job? = null
   private var videoParamRefreshJob: Job? = null
   private var intentSubtitleJob: Job? = null
@@ -699,13 +701,16 @@ class PlayerActivity :
     }
     // Read from the actual launch intent now that it's safe to (see isSecureFolderLaunch kdoc).
     isSecureFolderLaunch = intent.getStringExtra("launch_source") == "secure_folder"
+    // Decide whether a live background core is being adopted before native initialization can
+    // change session state, then overlap MPVLib.init() with the remaining Android window setup.
+    releaseDetachedBackgroundPlaybackBeforeFreshLaunch()
+    startMpvCorePreparation()
     setContentView(binding.root)
     setupSystemBarsAutoHide()
     setupPipHelper()
 
     // A detached background session belongs to PlaybackSession, not to the old Activity.
     // Notification re-entry attaches this new surface to that live core without reloading it.
-    releaseDetachedBackgroundPlaybackBeforeFreshLaunch()
     val setupResult = setupMPV()
     if (setupResult != null) {
       isUserFinishing = true
@@ -725,16 +730,10 @@ class PlayerActivity :
     viewModel.attachHost(this)
     viewModelHostAttached = true
     viewModel.onMpvCoreInitialized()
-    MediaPlaybackService.createNotificationChannel(this)
+    // Audio focus and video transforms must be ready before loadfile can begin. The remaining UI,
+    // media-session and notification plumbing is initialized after the load has been dispatched.
     setupAudio()
-    setupBackPressHandler()
-    setupVideoAmbientBackground()
-    setupPlayerControls()
     setupVideoTransformObserver()
-    setupAudioPlayerViewObserver()
-    setupMediaSession()
-    observePlaybackSessionQueue()
-    observeTorrentStreamingState()
     // Note: screenStateReceiver is now registered in onStart() and
     // unregistered in onStop(), matching the noisyReceiver pattern.
     // Previously it was registered here in onCreate and stayed registered
@@ -852,6 +851,16 @@ class PlayerActivity :
         }
       }
     }
+
+    // The local/network resolver now runs in parallel with this non-critical Android/UI setup.
+    MediaPlaybackService.createNotificationChannel(this)
+    setupBackPressHandler()
+    setupVideoAmbientBackground()
+    setupPlayerControls()
+    setupAudioPlayerViewObserver()
+    setupMediaSession()
+    observePlaybackSessionQueue()
+    observeTorrentStreamingState()
     setupCastPlayback()
 
     // Video mode waits for mpv geometry; every other preference is decidable now. Audio launches
@@ -2659,14 +2668,9 @@ class PlayerActivity :
    * CRITICAL: Must copy config and scripts BEFORE initializing MPV, as MPV loads scripts during init.
    */
   private fun setupMPV(): String? {
-    // The asset prep itself was already started on IO at the top of onCreate, so by the time we
-    // get here it has overlapped layout inflation and the Compose trees. Only MPVLib.init() needs
-    // the scripts on disk, so that is the single point where the work is joined.
+    // Asset preparation and MPVLib.init() were already started on IO. The main thread waits only
+    // for the portion that did not overlap Android window/surface setup.
     val waitStartedAt = android.os.SystemClock.elapsedRealtime()
-    runCatching { joinMpvAssetPreparation() }
-      .onFailure { e -> Log.e(TAG, "Error copying MPV config and assets", e) }
-    Log.d(TAG, "MPV startup assets joined in ${android.os.SystemClock.elapsedRealtime() - waitStartedAt} ms")
-
     player.onSurfaceReady = {
       if (!isDeviceScreenOffOrLocked() && (isInBackgroundPlayback || lastVid > 0)) {
         enableVideoAfterBackground()
@@ -2676,15 +2680,23 @@ class PlayerActivity :
       binding.root.post(::updateVideoAmbientPlayerBounds)
     }
 
-    // NOW initialize MPV - it will find and load the scripts we just copied
-    val initError = synchronized(USER_MPV_ASSET_LOCK) {
-      val cleanupFailure = runCatching { removeDisabledCachedScripts() }.exceptionOrNull()
-      if (cleanupFailure != null) {
-        Log.e(TAG, "Could not remove disabled cached scripts", cleanupFailure)
-        cleanupFailure.message ?: getString(R.string.toast_playback_load_failed)
-      } else initializePlayerWithRendererFallback()
-    }
+    val corePreparation = mpvCorePreparationJob
+    val initError =
+      if (corePreparation != null) {
+        runCatching { runBlocking { corePreparation.await() } }
+          .getOrElse { error ->
+            Log.e(TAG, "Could not initialize MPV", error)
+            error.message ?: getString(R.string.toast_playback_load_failed)
+          }
+      } else {
+        initializeMpvCore()
+      }
+    Log.d(TAG, "MPV core joined in ${android.os.SystemClock.elapsedRealtime() - waitStartedAt} ms")
     if (initError != null) return initError
+
+    // SurfaceHolder and View callbacks stay on the main thread even though the native core was
+    // prepared in parallel.
+    player.attachSessionSurface()
     runCatching { PlaybackSession.setThumbnailJavaVM(applicationContext) }
     mpvInitialized = true
     Log.d(TAG, "MPV initialized")
@@ -2695,6 +2707,27 @@ class PlayerActivity :
     scheduleDeferredSubtitleFontsSync()
     return null
   }
+
+  /** Starts native initialization once the launch has been validated and session handoff decided. */
+  private fun startMpvCorePreparation() {
+    mpvCorePreparationJob?.cancel()
+    mpvCorePreparationJob =
+      lifecycleScope.async(Dispatchers.IO) {
+        mpvAssetPreparationJob?.join()
+        initializeMpvCore()
+      }
+  }
+
+  private fun initializeMpvCore(): String? =
+    synchronized(USER_MPV_ASSET_LOCK) {
+      val cleanupFailure = runCatching { removeDisabledCachedScripts() }.exceptionOrNull()
+      if (cleanupFailure != null) {
+        Log.e(TAG, "Could not remove disabled cached scripts", cleanupFailure)
+        cleanupFailure.message ?: getString(R.string.toast_playback_load_failed)
+      } else {
+        initializePlayerWithRendererFallback()
+      }
+    }
 
   /**
    * Starts the multi-MB asset copy and the user mpv.conf SAF walk on IO. Called at the top of
@@ -2712,11 +2745,6 @@ class PlayerActivity :
         }.onFailure { e -> Log.e(TAG, "Error copying MPV config and assets", e) }
         Log.d(TAG, "MPV startup assets prepared in ${android.os.SystemClock.elapsedRealtime() - startedAt} ms")
       }
-  }
-
-  /** The only point that must wait: MPVLib.init() loads the scripts this produced. */
-  private fun joinMpvAssetPreparation() {
-    runBlocking { mpvAssetPreparationJob?.join() }
   }
 
   private fun prepareUserMpvAssetsForStartup() {
@@ -2809,7 +2837,7 @@ class PlayerActivity :
 
   private fun initializePlayerWithRendererFallback(): String? {
     player.forceOpenGlFallback = false
-    val firstAttempt = player.initializeSession(filesDir.path, cacheDir.path)
+    val firstAttempt = player.initializeCoreSession(filesDir.path, cacheDir.path)
     if (firstAttempt.isSuccess) return null
 
     val firstError = firstAttempt.exceptionOrNull()
@@ -2820,7 +2848,7 @@ class PlayerActivity :
 
     Log.w(TAG, "MPV Vulkan init failed, retrying with OpenGL fallback for this session", firstError)
     player.forceOpenGlFallback = true
-    val fallbackAttempt = player.initializeSession(filesDir.path, cacheDir.path)
+    val fallbackAttempt = player.initializeCoreSession(filesDir.path, cacheDir.path)
     fallbackAttempt.exceptionOrNull()?.let { error -> Log.e(TAG, "Failed to initialize MPV", error) }
     return if (fallbackAttempt.isSuccess) null else fallbackAttempt.exceptionOrNull()?.message ?: fallbackAttempt.exceptionOrNull()?.toString() ?: "Unknown fallback error"
   }
@@ -3102,7 +3130,11 @@ class PlayerActivity :
     deferredFontSyncJob?.cancel()
     deferredFontSyncJob =
       lifecycleScope.launch(Dispatchers.IO) {
-        delay(750)
+        val readyState = PlaybackSession.state.first { state ->
+          state.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND, PlaybackPhase.ERROR)
+        }
+        if (readyState.phase == PlaybackPhase.ERROR) return@launch
+        delay(POST_FIRST_FRAME_IO_DELAY_MS)
         runCatching {
           googleFontsRepository.syncMpvFonts()
           sanitizeInternalFontsDirectory()
@@ -3119,6 +3151,10 @@ class PlayerActivity :
       lifecycleScope.launch(Dispatchers.IO) {
         var completed = false
         try {
+          val readyState = PlaybackSession.state.first { state ->
+            state.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND, PlaybackPhase.ERROR)
+          }
+          if (readyState.phase == PlaybackPhase.ERROR) return@launch
           delay(DEFERRED_MPV_ASSET_SYNC_DELAY_MS)
           if (!ownsPlaybackSession() || isFinishing || isDestroyed) return@launch
           deferredFontSyncJob?.join()
@@ -8601,6 +8637,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     private const val PLAYBACK_LOAD_RETRY_DELAY_MS = 200L
     private const val PLAYBACK_LOAD_ERROR_SETTLE_MS = 300L
     private const val MAX_PLAYBACK_LOAD_RETRIES = 1
+    private const val POST_FIRST_FRAME_IO_DELAY_MS = 2_000L
     private const val DEFERRED_MPV_ASSET_SYNC_DELAY_MS = 5_000L
     private const val LOCKED_CONTROLS_DOUBLE_BACK_TIMEOUT_MS = 2_000L
     private const val MPV_ASSET_SYNC_PREFERENCES = "mpv_asset_sync"

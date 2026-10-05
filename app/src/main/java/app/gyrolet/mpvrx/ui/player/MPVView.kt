@@ -85,6 +85,22 @@ class MPVView(
     configDir: String,
     cacheDir: String,
   ): Result<Boolean> {
+    val result = initializeCoreSession(configDir, cacheDir)
+    if (result.isSuccess) attachSessionSurface()
+    return result
+  }
+
+  /**
+   * Configures the process-wide native core without touching Android view state.
+   *
+   * Keeping the Surface handoff out of this method lets [PlayerActivity] overlap the expensive
+   * `MPVLib.init()` call with window attachment and system-UI setup on the main thread. The
+   * caller must invoke [attachSessionSurface] on the main thread after this succeeds.
+   */
+  internal fun initializeCoreSession(
+    configDir: String,
+    cacheDir: String,
+  ): Result<Boolean> {
     // The libmpv core is process-wide, so returning to the player can reuse a core created with
     // older renderer preferences. Keep fallbacks stable for the lifetime of that preference
     // selection, but recreate the core when gpu-next/Vulkan selection actually changes.
@@ -97,23 +113,23 @@ class MPVView(
     val coreConfigurationKey =
       "${requestedBackend.configurationKey}|conf=${MpvConfigOverridePolicy.configurationKey()}" +
         "|mpv=${mpvConfigCache.configurationKey()}|scripts=$scriptsKey"
-    val result =
-      PlaybackSession.initialize(
-        context = context.applicationContext,
-        configDir = configDir,
-        cacheDir = cacheDir,
-        coreConfigurationKey = coreConfigurationKey,
-        initOptions = ::initOptions,
-        postInitOptions = ::postInitOptions,
-        observeProperties = ::observeProperties,
-        userScriptsKey = scriptsKey,
-      )
-    if (result.isSuccess) {
-      holder.removeCallback(this)
-      holder.addCallback(this)
-      if (holder.surface.isValid && !isSurfaceReady) surfaceCreated(holder)
-    }
-    return result
+    return PlaybackSession.initialize(
+      context = context.applicationContext,
+      configDir = configDir,
+      cacheDir = cacheDir,
+      coreConfigurationKey = coreConfigurationKey,
+      initOptions = ::initOptions,
+      postInitOptions = ::postInitOptions,
+      observeProperties = ::observeProperties,
+      userScriptsKey = scriptsKey,
+    )
+  }
+
+  /** Binds this Android view to an initialized core. Must be called on the main thread. */
+  internal fun attachSessionSurface() {
+    holder.removeCallback(this)
+    holder.addCallback(this)
+    if (holder.surface.isValid && !isSurfaceReady) surfaceCreated(holder)
   }
 
   /**
@@ -398,7 +414,10 @@ class MPVView(
   }
 
   override fun postInitOptions() {
-    applyOsdSafeAreaMargins()
+    // Native initialization can run off the main thread. Start with a safe baseline and let the
+    // Activity's WindowInsets listener apply the real cutout margins when the view is attached.
+    PlaybackSession.setOptionString("osd-margin-x", DEFAULT_OSD_SAFE_MARGIN.toString())
+    PlaybackSession.setOptionString("osd-margin-y", DEFAULT_OSD_SAFE_MARGIN.toString())
 
     when (decoderPreferences.debanding.get()) {
       Debanding.None -> {}
@@ -419,10 +438,15 @@ class MPVView(
       insets ?: androidx.core.view.ViewCompat
         .getRootWindowInsets(this)
     val cutoutInsets = resolvedInsets?.getInsets(WindowInsetsCompat.Type.displayCutout())
-    val horizontalMargin = maxOf(cutoutInsets?.left ?: 0, cutoutInsets?.right ?: 0).coerceAtLeast(16)
-    val verticalMargin = (cutoutInsets?.top ?: 0).coerceAtLeast(16)
+    val horizontalMargin =
+      maxOf(cutoutInsets?.left ?: 0, cutoutInsets?.right ?: 0).coerceAtLeast(DEFAULT_OSD_SAFE_MARGIN)
+    val verticalMargin = (cutoutInsets?.top ?: 0).coerceAtLeast(DEFAULT_OSD_SAFE_MARGIN)
     PlaybackSession.setOptionString("osd-margin-x", horizontalMargin.toString())
     PlaybackSession.setOptionString("osd-margin-y", verticalMargin.toString())
+  }
+
+  private companion object {
+    const val DEFAULT_OSD_SAFE_MARGIN = 16
   }
 
   @Suppress("ReturnCount", "DEPRECATION")
