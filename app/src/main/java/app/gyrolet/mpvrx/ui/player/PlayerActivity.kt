@@ -1727,6 +1727,7 @@ class PlayerActivity :
     deferredFontSyncJob?.cancel()
     deferredMpvAssetSyncJob?.cancel()
     mpvAssetPreparationJob?.cancel()
+    mpvCorePreparationJob?.cancel()
     mediaLoadJob?.cancel()
     cancelPlaybackLoadRecovery()
     eofAdvanceJob?.cancel()
@@ -2731,8 +2732,7 @@ class PlayerActivity :
 
   /**
    * Starts the multi-MB asset copy and the user mpv.conf SAF walk on IO. Called at the top of
-   * onCreate so they overlap layout inflation, Compose setup and the notification channel instead
-   * of blocking them.
+   * onCreate so they overlap binding inflation and player setup instead of blocking them.
    */
   private fun startMpvAssetPreparation() {
     mpvAssetPreparationJob?.cancel()
