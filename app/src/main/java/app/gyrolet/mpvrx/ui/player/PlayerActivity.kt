@@ -96,7 +96,6 @@ import app.gyrolet.mpvrx.network.NetworkUserAgent
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.AudioChannels
-import app.gyrolet.mpvrx.preferences.AudioPlayerOrientation
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
@@ -855,8 +854,9 @@ class PlayerActivity :
     }
     setupCastPlayback()
 
-    // Only set orientation immediately if NOT in Video mode
-    // For Video mode, wait for video-params/aspect to become available
+    // Video mode waits for mpv geometry; every other preference is decidable now. Audio launches
+    // always decide now. In the waiting case applyInitialVideoOrientation already ran before
+    // super.onCreate() with the intent's geometry.
     if (isKnownAudioLaunch(intent) || playerPreferences.orientation.get() != PlayerOrientation.Video) {
       setOrientation()
     }
@@ -4406,16 +4406,7 @@ class PlayerActivity :
         Log.d(TAG, "Coalesced video params refresh, aspect: $aspect")
         pipHelper.updatePictureInPictureParams()
 
-        val aspectOverride =
-          withContext(playbackRenderDispatcher) {
-            PlaybackSession.getPropertyDouble("video-aspect-override") ?: -1.0
-          }
-        if (playerPreferences.orientation.get() == PlayerOrientation.Video &&
-          aspect != null &&
-          aspectOverride <= 0.0
-        ) {
-          setOrientation()
-        }
+        setOrientation(aspect)
 
         if (pendingVideoParamRefreshRequiresShaderReload) {
           pendingVideoParamRefreshRequiresShaderReload = false
@@ -4645,27 +4636,13 @@ class PlayerActivity :
       }
     }
 
-    // Only set orientation immediately if NOT in Video mode
-    // For Video mode, wait for video-params/aspect to become available
+    // Video mode waits for geometry; every other preference is known now. Either way, re-apply once
+    // the track list settles — audio track info only arrives after FILE_LOADED, so without this an
+    // album-art video would be treated as a video. One deferred pass covers both reasons, and
+    // setOrientation is a no-op when it would not change anything.
     if (playerPreferences.orientation.get() != PlayerOrientation.Video) {
       setOrientation()
-    } else {
-      // For Video mode, try to set orientation after a short delay to ensure
-      // video dimensions are available
-      lifecycleScope.launch {
-        kotlinx.coroutines.delay(100)
-        if (PlaybackSession.isCurrentGeneration(loadGeneration) && mpvInitialized && !player.isExiting && !isFinishing) {
-          val aspect = player.getVideoOutAspect()
-          Log.d(TAG, "handleFileLoaded - Video mode, aspect after delay: $aspect")
-          if (aspect != null && aspect > 0) {
-            setOrientation()
-          }
-        }
-      }
     }
-
-    // Audio track information becomes available only after FILE_LOADED. Re-apply
-    // orientation once the track list settles so album art is not treated as video.
     lifecycleScope.launch {
       delay(100)
       if (PlaybackSession.isCurrentGeneration(loadGeneration) && mpvInitialized && !player.isExiting && !isFinishing) {
@@ -6465,65 +6442,55 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
   // ==================== Orientation Management ====================
 
   /**
-   * Sets the screen orientation based on user preferences.
+   * Applies the orientation for the current media, per [PlayerOrientationPolicy].
    *
-   * IMPORTANT: Preferences are the single source of truth for orientation.
-   * This method applies the preference value when videos load.
-   * The rotation button temporarily overrides this without changing preferences.
+   * Preferences remain the single source of truth; the rotation button overrides this temporarily
+   * without changing them. Nothing is applied when the geometry needed to decide is not known yet,
+   * so the launch orientation survives until mpv reports it.
    *
-   * For "Video" orientation mode, this will wait for video-params/aspect to update
-   * to the correct orientation, starting with landscape as fallback.
+   * [sourceAspect] is for callers that already read mpv geometry; null makes PlayerOrientation.Video
+   * read it here instead.
    */
-  private fun setOrientation() {
+  private fun setOrientation(sourceAspect: Double? = null) {
     if (isTelevision) {
       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
       return
     }
-    if (isCurrentMediaKnownAudio() || viewModel.isAudioOnly.value) {
-      val audioOrient =
-        when (audioPreferences.audioOrientation.get()) {
-          AudioPlayerOrientation.Auto -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
-          AudioPlayerOrientation.Portrait -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-          AudioPlayerOrientation.Landscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-        }
-      requestedOrientation = audioOrient
-      return
-    }
-    val orientationPref = playerPreferences.orientation.get()
 
-    requestedOrientation =
-      when (orientationPref) {
-        PlayerOrientation.Free -> ActivityInfo.SCREEN_ORIENTATION_SENSOR
-        PlayerOrientation.Video -> {
-          // For video orientation, check if aspect is available
-          val aspect = runCatching { player.getVideoOutAspect() }.getOrNull()
-          Log.d(TAG, "setOrientation - Video mode: aspect=$aspect")
-          if (aspect == null || !aspect.isFinite() || aspect <= 0.0) {
-            // Aspect not available yet - wait for video-params/aspect update
-            Log.d(TAG, "setOrientation - Aspect not available, retaining launch orientation")
-            return
-          } else {
-            // Aspect available - set correct orientation now
-            val orientation =
-              if (aspect > 1.0) {
-                Log.d(TAG, "setOrientation - Aspect $aspect > 1.0, setting landscape")
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-              } else {
-                Log.d(TAG, "setOrientation - Aspect $aspect <= 1.0, setting portrait")
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-              }
-            orientation
-          }
+    val target =
+      if (isCurrentMediaKnownAudio() || viewModel.isAudioOnly.value) {
+        PlayerOrientationPolicy.forAudioPreference(audioPreferences.audioOrientation.get())
+      } else {
+        val preference = playerPreferences.orientation.get()
+        // A hand-set aspect ratio is a deliberate override of the picture's shape, so keep the
+        // current orientation rather than rotating to the source geometry behind the user's back.
+        if (preference == PlayerOrientation.Video && hasCustomAspectRatio()) {
+          return
         }
-        PlayerOrientation.Portrait -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
-        PlayerOrientation.ReversePortrait -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
-        PlayerOrientation.SensorPortrait -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-        PlayerOrientation.Landscape -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        PlayerOrientation.ReverseLandscape -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_LANDSCAPE
-        PlayerOrientation.SensorLandscape -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-      }
+        PlayerOrientationPolicy.forPreference(preference) {
+          sourceAspect ?: player.getVideoOutAspect()
+        }
+      } ?: return
+
+    if (requestedOrientation != target) requestedOrientation = target
   }
 
+  private fun hasCustomAspectRatio(): Boolean =
+    playerPreferences.lastCustomAspectRatio.get() > 0f
+
+  /**
+   * Orientation for "Video" mode before mpv exists, so the window opens the right way round.
+   *
+   * This must stay synchronous, before super.onCreate(), so the requested orientation is applied
+   * while the window does not exist yet. Deferring it (even by one frame) makes the assignment land
+   * after the window is added and after overrideActivityTransition() has begun, and the resulting
+   * relayout drops the open animation — reproducible as a vertical video no longer sliding in.
+   * PlayerActivity handles orientation|screenSize|screenLayout itself, so the late assignment does
+   * not recreate the Activity; it relayouts the window mid-transition.
+   *
+   * Media library launches carry width/height/rotation in the intent, so this is a pure lookup.
+   * Anything else falls back to MediaMetadataRetriever for the missing fields.
+   */
   private fun applyInitialVideoOrientation(sourceIntent: Intent) {
     if (isTelevision) {
       requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
@@ -6531,19 +6498,12 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
     if (playerPreferences.orientation.get() != PlayerOrientation.Video || isKnownAudioLaunch(sourceIntent)) return
 
-    // This must stay synchronous, before super.onCreate(), so the requested orientation is applied
-    // while the window does not exist yet. Deferring it (even by one frame) makes the assignment
-    // land after the window is added and after overrideActivityTransition() has begun, and the
-    // resulting relayout drops the open animation — reproducible as a vertical video no longer
-    // sliding in. PlayerActivity handles orientation|screenSize|screenLayout itself, so the late
-    // assignment does not recreate the Activity; it relayouts the window mid-transition.
     var width = sourceIntent.getIntExtra(EXTRA_VIDEO_WIDTH, 0)
     var height = sourceIntent.getIntExtra(EXTRA_VIDEO_HEIGHT, 0)
-    var rotation = sourceIntent.getIntExtra(EXTRA_VIDEO_ROTATION, 0).takeIf { it != 0 }
-      ?: sourceIntent.getIntExtra("rotation", 0)
+    var rotation = sourceIntent.getIntExtra(EXTRA_VIDEO_ROTATION, 0)
 
-    // Only invoke expensive MediaMetadataRetriever synchronously if dimensions are not provided in intent extras
-    if (width <= 0 || height <= 0) {
+    // Only invoke expensive MediaMetadataRetriever synchronously if the intent carried no geometry.
+    if (width <= 0 || height <= 0 || rotation == 0) {
       extractUriFromIntent(sourceIntent)
         ?.takeIf { uri -> uri.scheme.equals("content", true) || uri.scheme.equals("file", true) }
         ?.let { uri ->
@@ -6578,17 +6538,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
           }
         }
     }
-    if (width <= 0 || height <= 0) return
-
-    val normalizedRotation = ((rotation % 360) + 360) % 360
-    val swapsDimensions = normalizedRotation == 90 || normalizedRotation == 270
-    val initialOrientation =
-      if ((width > height) != swapsDimensions) {
-        ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
-      } else {
-        ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-      }
-
+    val initialOrientation = PlayerOrientationPolicy.forSourceGeometry(width, height, rotation) ?: return
     if (requestedOrientation != initialOrientation) requestedOrientation = initialOrientation
   }
 
