@@ -6128,6 +6128,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         throw IllegalStateException("Timed out waiting for previous playback to stop")
       }
       ensureCurrentMediaRequest(requestGeneration)
+      if (requiresYtdlp) player.setupYtdlpOptions()
       PlaybackSession.load(
         item = item,
         restoreSavedPosition = restoreSavedPosition,

@@ -406,7 +406,13 @@ class MPVView(
 
     setupSubtitlesOptions()
     setupAudioOptions()
+  /**
+   * Applies yt-dlp integration only when a web playback request actually needs it.
+   * Local files do not need the hook, generated config, or bridge option writes.
+   */
+  fun setupYtdlpOptions() {
     YtdlpManager.setupMpvOptions(context, ytdlPreferences, subtitlesPreferences)
+  }
   }
 
   override fun observeProperties() {
