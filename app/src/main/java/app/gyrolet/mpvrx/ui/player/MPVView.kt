@@ -116,8 +116,15 @@ class MPVView(
     return result
   }
 
-  internal fun userScriptsNeedReload(): Boolean =
-    PlaybackSession.userScriptsNeedReload(advancedPreferences.userScriptsConfigurationKey())
+  /**
+   * Whether the live core was built for a different user-script selection than the current
+   * preference. Answered without touching libmpv while scripts are disabled, which is the state
+   * for the ordinary video open, so the check costs one preference read and no lock.
+   */
+  internal fun userScriptsNeedReload(): Boolean {
+    if (!advancedPreferences.enableLuaScripts.get()) return false
+    return PlaybackSession.userScriptsNeedReload(advancedPreferences.userScriptsConfigurationKey())
+  }
 
   fun releaseSurface() {
     holder.removeCallback(this)
@@ -150,6 +157,12 @@ class MPVView(
    * Only the `PlaybackSession.setOptionString` calls actually need the core, so deriving these
    * values off the main thread removes ~15 DataStore reads, a MediaCodecList query and an mkdirs
    * from the open path without touching the MPVLib.create -> option writes -> MPVLib.init order.
+   *
+   * The subtitle and audio blocks are held as ready-to-write option pairs for the same reason:
+   * they were the two largest preference-read groups in the whole init (about 24 and 4 reads plus
+   * a font resolution and five colour conversions), and every one of those values is known well
+   * before a core exists. Deriving them here leaves `setupSubtitlesOptions`/`setupAudioOptions` as
+   * pure option writes, matching the cost of the other blocks instead of dominating them.
    */
   private class InitInputs(
     val profile: String,
@@ -166,6 +179,8 @@ class MPVView(
     val filterValues: List<Pair<String, String>>,
     val defaultSpeed: String,
     val preciseSeek: Boolean,
+    val subtitleOptionValues: List<Pair<String, String>>,
+    val audioOptionValues: List<Pair<String, String>>,
   )
 
   @Volatile
@@ -213,6 +228,8 @@ class MPVView(
       filterValues = VideoFilters.entries.map { it.mpvProperty to it.preference(decoderPreferences).get().toString() },
       defaultSpeed = playerPreferences.defaultSpeed.get().toString(),
       preciseSeek = playerPreferences.usePreciseSeeking.get(),
+      subtitleOptionValues = computeSubtitleOptionValues(),
+      audioOptionValues = computeAudioOptionValues(),
     )
   }
 
@@ -522,81 +539,31 @@ class MPVView(
       "sub-scale" to MPVLib.MpvFormat.MPV_FORMAT_DOUBLE,
     )
 
-  private fun setupAudioOptions() {
-    // Let mpv resolve the common case during demuxer initialization. TrackSelector still applies
-    // title-based commentary/description filtering after load when mpv's choice needs correction.
-    PlaybackSession.setOptionString("alang", audioPreferences.preferredLanguages.get().toMpvLanguageList())
-    PlaybackSession.setOptionString("audio-display", "embedded-first")
-    PlaybackSession.setOptionString("audio-delay", (audioPreferences.defaultAudioDelay.get() / 1000.0).toString())
-    PlaybackSession.setOptionString("audio-pitch-correction", audioPreferences.audioPitchCorrection.get().toString())
-    PlaybackSession.setOptionString("volume-max", (audioPreferences.volumeBoostCap.get() + 100).toString())
-    // Prevent automatic volume normalization when downmixing multi-channel audio
-    PlaybackSession.setOptionString("audio-normalize-downmix", "no")
-  }
-
-  // Setup
-  private fun setupSubtitlesOptions() {
+  /**
+   * Derives every `sub-*` option from preferences, off the main thread.
+   *
+   * The values are written to the core verbatim by [setupSubtitlesOptions]; the option *names* and
+   * their order are kept identical to the previous inline block so libmpv still receives the same
+   * configuration in the same sequence before `MPVLib.init()`.
+   */
+  private fun computeSubtitleOptionValues(): List<Pair<String, String>> {
     // Resolve preferred languages before packet reads begin, but preserve the global subtitle-off
     // preference. TrackSelector remains responsible for title/forced/hearing-impaired filtering.
     val preferredSubtitleLanguages =
       subtitlesPreferences.preferredLanguages.get().toMpvLanguageList()
         .takeIf { subtitlesPreferences.autoEnableSubtitles.get() }
         .orEmpty()
-    PlaybackSession.setOptionString("slang", preferredSubtitleLanguages)
-    PlaybackSession.setOptionString("sub-auto", "no")
-    PlaybackSession.setOptionString("sub-file-paths", "")
-    PlaybackSession.setOptionString("subs-fallback", "no")
 
     val fontsDirPath = "${context.filesDir.path}/fonts/"
-    PlaybackSession.setOptionString("sub-fonts-dir", fontsDirPath)
-    // Auto-detect subtitle encoding
-    PlaybackSession.setOptionString("sub-codepage", "auto")
-    // Allow embedded fonts from MKV/MP4 containers
-    PlaybackSession.setOptionString("embeddedfonts", "yes")
-    // Auto-detect font provider (system fonts, embedded fonts, etc.)
-    PlaybackSession.setOptionString("sub-font-provider", "auto")
-    PlaybackSession.setOptionString(
-      "sub-vsfilter-bidi-compat",
-      if (subtitlesPreferences.forceRtlSubtitles.get()) "yes" else "no",
-    )
-
-    // Delay for both primary and secondary (secondary-sub-delay exists in official mpv).
-    // Note: there is no secondary-sub-speed in official mpv — sub-speed covers text subs.
-    val subDelay = (subtitlesPreferences.defaultSubDelay.get() / 1000.0).toString()
-    val subSpeed = subtitlesPreferences.defaultSubSpeed.get().toString()
-    PlaybackSession.setOptionString("sub-delay", subDelay)
-    PlaybackSession.setOptionString("sub-speed", subSpeed)
-    PlaybackSession.setOptionString("secondary-sub-delay", subDelay)
 
     // Both primary and secondary use the same font; blank/default choices use mpv's sans-serif.
     val preferredFont = resolveSubtitleFontFamily(subtitlesPreferences)
-    PlaybackSession.setOptionString("sub-font", preferredFont)
+    val overrideAssSubs = subtitlesPreferences.overrideAssSubs.get()
+    val subAssOverride = if (overrideAssSubs) "force" else "scale"
 
-    if (subtitlesPreferences.overrideAssSubs.get()) {
-      PlaybackSession.setOptionString("sub-ass-override", "force")
-      PlaybackSession.setOptionString("sub-ass-justify", "yes")
-      PlaybackSession.setOptionString("secondary-sub-ass-override", "force")
-    } else {
-      PlaybackSession.setOptionString("sub-ass-override", "scale")
-      PlaybackSession.setOptionString("secondary-sub-ass-override", "scale")
-    }
-
-    // Typography and styling for both primary and secondary
-    val fontSize = subtitlesPreferences.fontSize.get().toString()
-    val bold = if (subtitlesPreferences.bold.get()) "yes" else "no"
-    val italic = if (subtitlesPreferences.italic.get()) "yes" else "no"
-    val justify = subtitlesPreferences.justification.get().value
-    val textColor = subtitlesPreferences.textColor.get().toColorHexString()
-    val backgroundColor = subtitlesPreferences.backgroundColor.get().toColorHexString()
-    val borderColor = subtitlesPreferences.borderColor.get().toColorHexString()
-    val shadowColor = subtitlesPreferences.shadowColor.get().toColorHexString()
-    val borderSize = subtitlesPreferences.borderSize.get().toString()
-    val borderStyle = subtitlesPreferences.borderStyle.get().value
-    val shadowOffset = subtitlesPreferences.shadowOffset.get().toString()
-    val subPos = clampSubtitlePosition(subtitlesPreferences.subPos.get())
-    val secondarySubPos = clampSubtitlePosition(subtitlesPreferences.secondarySubPos.get())
-    val subScale = subtitlesPreferences.subScale.get().toString()
-    val secondarySubScale = subtitlesPreferences.secondarySubScale.get().toString()
+    // Note: there is no secondary-sub-speed in official mpv — sub-speed covers text subs.
+    val subDelay = (subtitlesPreferences.defaultSubDelay.get() / 1000.0).toString()
+    val subSpeed = subtitlesPreferences.defaultSubSpeed.get().toString()
 
     val scaleByWindow = if (subtitlesPreferences.scaleByWindow.get()) "yes" else "no"
     val blendMode =
@@ -607,28 +574,84 @@ class MPVView(
       } else {
         "no"
       }
-    PlaybackSession.setOptionString("blend-subtitles", blendMode)
 
-    PlaybackSession.setOptionString("sub-font-size", fontSize)
-    // Primary style. Official mpv only has secondary-sub-delay/scale/pos/ass-override —
-    // secondary inherits font/bold/italic/justify/colors/border/shadow/windowing from primary.
-    PlaybackSession.setOptionString("sub-bold", bold)
-    PlaybackSession.setOptionString("sub-italic", italic)
-    PlaybackSession.setOptionString("sub-justify", justify)
-    PlaybackSession.setOptionString("sub-color", textColor)
-    PlaybackSession.setOptionString("sub-back-color", backgroundColor)
-    PlaybackSession.setOptionString("sub-border-color", borderColor)
-    PlaybackSession.setOptionString("sub-shadow-color", shadowColor)
-    PlaybackSession.setOptionString("sub-border-size", borderSize)
-    PlaybackSession.setOptionString("sub-border-style", borderStyle)
-    PlaybackSession.setOptionString("sub-shadow-offset", shadowOffset)
-    PlaybackSession.setOptionString("sub-scale", subScale)
-    PlaybackSession.setOptionString("sub-pos", subPos.toString())
-    PlaybackSession.setOptionString("sub-scale-by-window", scaleByWindow)
-    PlaybackSession.setOptionString("sub-use-margins", scaleByWindow)
-    // Secondary has its own position/scale only.
-    PlaybackSession.setOptionString("secondary-sub-scale", secondarySubScale)
-    PlaybackSession.setOptionString("secondary-sub-pos", secondarySubPos.toString())
+    return buildList {
+      add("slang" to preferredSubtitleLanguages)
+      add("sub-auto" to "no")
+      add("sub-file-paths" to "")
+      add("subs-fallback" to "no")
+
+      add("sub-fonts-dir" to fontsDirPath)
+      // Auto-detect subtitle encoding
+      add("sub-codepage" to "auto")
+      // Allow embedded fonts from MKV/MP4 containers
+      add("embeddedfonts" to "yes")
+      // Auto-detect font provider (system fonts, embedded fonts, etc.)
+      add("sub-font-provider" to "auto")
+      add("sub-vsfilter-bidi-compat" to if (subtitlesPreferences.forceRtlSubtitles.get()) "yes" else "no")
+
+      // Delay for both primary and secondary (secondary-sub-delay exists in official mpv).
+      add("sub-delay" to subDelay)
+      add("sub-speed" to subSpeed)
+      add("secondary-sub-delay" to subDelay)
+
+      add("sub-font" to preferredFont)
+      add("sub-ass-override" to subAssOverride)
+      // Left at mpv's default (not written) unless ASS rendering is forced on.
+      if (overrideAssSubs) add("sub-ass-justify" to "yes")
+      add("secondary-sub-ass-override" to subAssOverride)
+
+      add("blend-subtitles" to blendMode)
+
+      add("sub-font-size" to subtitlesPreferences.fontSize.get().toString())
+      // Primary style. Official mpv only has secondary-sub-delay/scale/pos/ass-override —
+      // secondary inherits font/bold/italic/justify/colors/border/shadow/windowing from primary.
+      add("sub-bold" to if (subtitlesPreferences.bold.get()) "yes" else "no")
+      add("sub-italic" to if (subtitlesPreferences.italic.get()) "yes" else "no")
+      add("sub-justify" to subtitlesPreferences.justification.get().value)
+      add("sub-color" to subtitlesPreferences.textColor.get().toColorHexString())
+      add("sub-back-color" to subtitlesPreferences.backgroundColor.get().toColorHexString())
+      add("sub-border-color" to subtitlesPreferences.borderColor.get().toColorHexString())
+      add("sub-shadow-color" to subtitlesPreferences.shadowColor.get().toColorHexString())
+      add("sub-border-size" to subtitlesPreferences.borderSize.get().toString())
+      add("sub-border-style" to subtitlesPreferences.borderStyle.get().value)
+      add("sub-shadow-offset" to subtitlesPreferences.shadowOffset.get().toString())
+      add("sub-scale" to subtitlesPreferences.subScale.get().toString())
+      add("sub-pos" to clampSubtitlePosition(subtitlesPreferences.subPos.get()).toString())
+      add("sub-scale-by-window" to scaleByWindow)
+      add("sub-use-margins" to scaleByWindow)
+      // Secondary has its own position/scale only.
+      add("secondary-sub-scale" to subtitlesPreferences.secondarySubScale.get().toString())
+      add(
+        "secondary-sub-pos" to
+          clampSubtitlePosition(subtitlesPreferences.secondarySubPos.get()).toString(),
+      )
+    }
+  }
+
+  private fun computeAudioOptionValues(): List<Pair<String, String>> =
+    buildList {
+      // Let mpv resolve the common case during demuxer initialization. TrackSelector still applies
+      // title-based commentary/description filtering after load when mpv's choice needs correction.
+      add("alang" to audioPreferences.preferredLanguages.get().toMpvLanguageList())
+      add("audio-display" to "embedded-first")
+      add("audio-delay" to (audioPreferences.defaultAudioDelay.get() / 1000.0).toString())
+      add("audio-pitch-correction" to audioPreferences.audioPitchCorrection.get().toString())
+      add("volume-max" to (audioPreferences.volumeBoostCap.get() + 100).toString())
+      // Prevent automatic volume normalization when downmixing multi-channel audio
+      add("audio-normalize-downmix" to "no")
+    }
+
+  private fun setupSubtitlesOptions() {
+    awaitInitInputs().subtitleOptionValues.forEach { (property, value) ->
+      PlaybackSession.setOptionString(property, value)
+    }
+  }
+
+  private fun setupAudioOptions() {
+    awaitInitInputs().audioOptionValues.forEach { (property, value) ->
+      PlaybackSession.setOptionString(property, value)
+    }
   }
 
   fun applyAnime4KShaders() {

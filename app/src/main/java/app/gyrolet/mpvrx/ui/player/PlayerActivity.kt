@@ -1136,22 +1136,38 @@ class PlayerActivity :
     return true
   }
 
+/**
+   * Mounts the controls Compose tree.
+   *
+   * [PlayerControls] is a 2.7k-line composable with its own preference and MPV subscriptions, and
+   * inflating it inline here made it the single largest item in `onCreate` — larger than the MPV
+   * core bring-up it was blocking. Nothing in it is visible on arrival: the controls start hidden
+   * and only appear on a tap or a key event. So the tree is mounted on the first frame after layout
+   * rather than before it, which takes the whole composition off the open path while still landing
+   * well before the user can plausibly interact.
+   *
+   * An input arriving inside that one-frame window is not lost: every tap and key path already sets
+   * `viewModel.controlsShown`, which the tree reads when it mounts, so the controls still appear.
+   */
   private fun setupPlayerControls() {
-    binding.controls.setContent {
-      MpvrxTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-          Box(
-            modifier = Modifier.fillMaxSize().graphicsLayer {
-              alpha = PlayerArtworkTransitions.contentAlpha(PlayerArtworkDestination.FULL)
-            },
-          ) {
-            PlayerControls(
-              viewModel = viewModel,
-              onBackPress = ::handleBackPress,
-              modifier = Modifier,
-            )
+    binding.controls.postOnAnimation {
+      if (isDestroyed || isFinishing) return@postOnAnimation
+      binding.controls.setContent {
+        MpvrxTheme {
+          Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+              modifier = Modifier.fillMaxSize().graphicsLayer {
+                alpha = PlayerArtworkTransitions.contentAlpha(PlayerArtworkDestination.FULL)
+              },
+            ) {
+              PlayerControls(
+                viewModel = viewModel,
+                onBackPress = ::handleBackPress,
+                modifier = Modifier,
+              )
+            }
+            PlayerArtworkTransitionOverlay(PlayerArtworkDestination.FULL)
           }
-          PlayerArtworkTransitionOverlay(PlayerArtworkDestination.FULL)
         }
       }
     }
@@ -1166,6 +1182,25 @@ class PlayerActivity :
     )
     // Pre-Android 11 stops inset dispatch at a consuming sibling, which would starve the controls of IME insets.
     binding.ambientBackground.consumeWindowInsets = false
+
+    // The ambient tree subscribes to eleven sources and registers its own MPV observer. With the
+    // effect off — the default, and every offline open — that whole composition would render
+    // nothing, because `presentationActive` requires `isAmbientEnabled`. So mount it only once the
+    // preference says it can produce output, and keep a single cheap watcher to mount it later if
+    // the user turns it on.
+    if (viewModel.isAmbientEnabled.value) {
+      setVideoAmbientBackgroundContent()
+    } else {
+      lifecycleScope.launch {
+        // `first` unsubscribes once the preference turns on, so this costs one idle subscription
+        // while the effect is off instead of a mounted composition.
+        viewModel.isAmbientEnabled.first { it }
+        setVideoAmbientBackgroundContent()
+      }
+    }
+  }
+
+  private fun setVideoAmbientBackgroundContent() {
     binding.ambientBackground.setContent {
       val enabled by viewModel.isAmbientEnabled.collectAsState()
       val style by viewModel.ambientStyle.collectAsState()
@@ -1769,7 +1804,13 @@ class PlayerActivity :
     }
   }
 
+  /**
+ * The torrent engine can only emit state for torrent-backed items, so an offline launch has
+ * nothing to observe and skips the subscription entirely. A source that is not local may still be
+ * a magnet/hash/http torrent, and a later queue item can be one, so anything else keeps observing.
+ */
   private fun observeTorrentStreamingState() {
+    if (isOfflineLocalLaunch(intent)) return
     lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.STARTED) {
         torrentStreamingEngine.state.collect { state ->
@@ -6251,6 +6292,24 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     return if (isRemote) NETWORK_PLAYBACK_LOAD_TIMEOUT_MS else LOCAL_PLAYBACK_LOAD_TIMEOUT_MS
   }
 
+  /**
+   * Whether this launch is plain offline media: a `file://` or `content://` URI that is not itself
+   * a `.torrent` payload.
+   *
+   * The torrent hand-off and the torrent engine observer only exist for magnet/hash/http sources,
+   * plus the `content://`/`.torrent` case that the picker has to resolve. Recognising the ordinary
+   * local file up front means an offline open never reaches [isTorrentSource]'s hash and magnet
+   * parsing, and it still cannot swallow the one local form that genuinely is a torrent. Network
+   * launches deliberately keep the existing checks, since a later queue item can be a torrent.
+   */
+  private fun isOfflineLocalLaunch(sourceIntent: Intent): Boolean {
+    val data = sourceIntent.data ?: return false
+    val scheme = data.scheme?.lowercase() ?: return false
+    if (scheme != "file" && scheme != "content") return false
+    return !data.toString().substringBefore('?').substringBefore('#')
+      .endsWith(".torrent", ignoreCase = true)
+  }
+
   private fun redirectUnselectedTorrentToPicker(
     sourceIntent: Intent,
     finishCurrent: Boolean,
@@ -6261,6 +6320,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     ) {
       return false
     }
+    if (isOfflineLocalLaunch(sourceIntent)) return false
     val source = extractUriFromIntent(sourceIntent)?.toString()?.trim().orEmpty()
     if (!isTorrentSource(source, sourceIntent.type)) return false
 

@@ -22,6 +22,7 @@ import app.gyrolet.mpvrx.data.network.proxy.XtreamStreamingProxy
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.XtreamPlaybackUri
 import app.gyrolet.mpvrx.network.AndroidCookieJar
+import app.gyrolet.mpvrx.preferences.AdvancedPreferences
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import `is`.xyz.mpv.MPVLib
@@ -294,9 +295,18 @@ object PlaybackSession : MPVLib.EventObserver {
     }
   }
 
-  internal fun userScriptsNeedReload(currentKey: String): Boolean = nativeLock.withLock {
-    initialized && activeUserScriptsKey != currentKey
-  }
+/**
+ * Whether a core built for [currentKey] must be recreated for a changed user-script selection.
+ *
+ * [AdvancedPreferences.USER_SCRIPTS_DISABLED] can never mismatch: [initialize] stores that exact
+ * key for a core created with scripts off, so this answers `false` without taking [nativeLock].
+ * The open path calls this on the main thread before the core exists, where acquiring the lock
+ * would contend with the MPV event thread for a decision that is already known.
+ */
+internal fun userScriptsNeedReload(currentKey: String): Boolean {
+  if (currentKey == AdvancedPreferences.USER_SCRIPTS_DISABLED) return false
+  return nativeLock.withLock { initialized && activeUserScriptsKey != currentKey }
+}
 
   fun reloadMpvConfig(configPath: String): Boolean =
     nativeLock.withLock {
