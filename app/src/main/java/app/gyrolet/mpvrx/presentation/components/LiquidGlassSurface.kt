@@ -79,9 +79,10 @@ fun LiquidGlassSurface(
   content: @Composable BoxScope.() -> Unit,
 ) {
   val reducedMotion = AppMotion.shouldReduceMotion()
-  val blurRadius = if (style == LiquidGlassStyle.MiniPlayer) 12.dp else 8.dp
-  val refractionHeightFraction = if (style == LiquidGlassStyle.MiniPlayer) 0.30f else 0.28f
-  val refractionAmount = if (style == LiquidGlassStyle.MiniPlayer) 26.dp else 22.dp
+  // Apple-style frosted glass: diffusion does most of the work, while refraction stays subtle.
+  val blurRadius = if (style == LiquidGlassStyle.MiniPlayer) 14.dp else 12.dp
+  val refractionHeightFraction = if (style == LiquidGlassStyle.MiniPlayer) 0.16f else 0.14f
+  val refractionAmount = if (style == LiquidGlassStyle.MiniPlayer) 7.dp else 5.dp
   val shadowElevation: Dp = if (style == LiquidGlassStyle.MiniPlayer) 10.dp else 8.dp
   val roundedShape = shape as? RoundedCornerShape
 
@@ -91,25 +92,25 @@ fun LiquidGlassSurface(
         GlassStyle {
           shape(resolvedShape)
           tint(glassColor)
-          // A very light backing tint keeps the simplified renderer readable without making the
-          // normal source-backed path opaque.
-          backgroundColor(fallbackColor.copy(alpha = 0.08f))
+          // A soft milky backing tint produces the frosted iOS-style diffusion without making
+          // the surface look opaque.
+          backgroundColor(fallbackColor.copy(alpha = 0.16f))
           optics(
-            refractionStrength = if (reducedMotion) 0f else 0.72f,
+            refractionStrength = if (reducedMotion) 0f else 0.22f,
             refractionHeightFraction = if (reducedMotion) 0f else refractionHeightFraction,
             refractionDisplacement = if (reducedMotion) 0.dp else refractionAmount,
-            depth = if (reducedMotion) 0f else 0.6f,
+            depth = if (reducedMotion) 0f else 0.24f,
             blurRadius = blurRadius,
-            refractionDetailIntensity = if (reducedMotion) 0f else 0.5f,
+            refractionDetailIntensity = if (reducedMotion) 0f else 0.14f,
           )
-          // Replaces Backdrop's vibrancy/highlight/rim treatment.
-          chromaMultiplier(1.08f)
-          contrast(0.04f)
-          specularIntensity(if (reducedMotion) 0.28f else 0.52f)
-          ambientResponse(0.36f)
-          edgeSoftness(1.dp)
-          edgeShadow(Color.Black.copy(alpha = 0.16f))
-          chromaticAberrationStrength(if (reducedMotion) 0f else 0.12f)
+          // Keep the material glossy enough to read as glass, but avoid a watery/lens look.
+          chromaMultiplier(1.02f)
+          contrast(0.015f)
+          specularIntensity(if (reducedMotion) 0.18f else 0.24f)
+          ambientResponse(0.28f)
+          edgeSoftness(1.5.dp)
+          edgeShadow(Color.Black.copy(alpha = 0.08f))
+          chromaticAberrationStrength(if (reducedMotion) 0f else 0.015f)
         }
       }
     }
