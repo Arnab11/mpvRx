@@ -365,13 +365,6 @@ class MPVView(
     if (inputs.useYuv420p) {
       PlaybackSession.setOptionString("vf", "format=yuv420p")
     }
-    PlaybackSession.setOptionString("msg-level", "all=${inputs.logLevel}")
-
-    PlaybackSession.setOptionString("keep-open", "yes")
-    PlaybackSession.setOptionString("input-default-bindings", "yes")
-
-    PlaybackSession.setOptionString("screenshot-directory", inputs.screenshotDirectoryPath)
-
     inputs.filterValues.forEach { (property, value) ->
       PlaybackSession.setOptionString(property, value)
     }
@@ -386,9 +379,6 @@ class MPVView(
     // Drop only video-output-bound late frames when rendering cannot keep up.
     // This prevents long-term jitter buildup without aggressively sacrificing smoothness.
     PlaybackSession.setOptionString("framedrop", "vo")
-
-    PlaybackSession.setOptionString("hr-seek", if (inputs.preciseSeek) "yes" else "no")
-    PlaybackSession.setOptionString("hr-seek-framedrop", if (inputs.preciseSeek) "no" else "yes")
 
     // Use audio-based video sync for better frame pacing with 4K HDR content.
     // This prevents timing jitter when the display refresh rate doesn't perfectly
@@ -416,6 +406,26 @@ class MPVView(
     YtdlpManager.setupMpvOptions(context, ytdlPreferences, subtitlesPreferences)
   }
 
+  /**
+   * Applies options that do not affect decoder creation after the load command is dispatched.
+   * Keeping them out of initOptions shortens the cold-start critical section.
+   */
+  fun applyDeferredStartupOptions() {
+    val inputs = awaitInitInputs()
+    PlaybackSession.setOptionString("msg-level", "all=${inputs.logLevel}")
+    PlaybackSession.setOptionString("keep-open", "yes")
+    PlaybackSession.setOptionString("input-default-bindings", "yes")
+    PlaybackSession.setOptionString("screenshot-directory", inputs.screenshotDirectoryPath)
+    PlaybackSession.setOptionString("hr-seek", if (inputs.preciseSeek) "yes" else "no")
+    PlaybackSession.setOptionString("hr-seek-framedrop", if (inputs.preciseSeek) "no" else "yes")
+    advancedPreferences.enabledStatisticsPage.get().let {
+      if (it in 1..5) {
+        PlaybackSession.command("script-binding", "stats/display-stats-toggle")
+        PlaybackSession.command("script-binding", "stats/display-page-$it")
+      }
+    }
+  }
+
   override fun observeProperties() {
     for ((name, format) in observedProps) PlaybackSession.observeProperty(name, format)
   }
@@ -432,12 +442,6 @@ class MPVView(
       Debanding.GPU -> PlaybackSession.setOptionString("deband", "yes")
     }
 
-    advancedPreferences.enabledStatisticsPage.get().let {
-      if (it in 1..5) {
-        PlaybackSession.command("script-binding", "stats/display-stats-toggle")
-        PlaybackSession.command("script-binding", "stats/display-page-$it")
-      }
-    }
   }
 
   fun applyOsdSafeAreaMargins(insets: WindowInsetsCompat? = null) {

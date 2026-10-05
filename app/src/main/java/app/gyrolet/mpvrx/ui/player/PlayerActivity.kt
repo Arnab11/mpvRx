@@ -6146,6 +6146,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
           }
         },
       )
+      player.applyDeferredStartupOptions()
     }
     if (generation < 0L) {
       ensureCurrentMediaRequest(requestGeneration)
