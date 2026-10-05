@@ -43,6 +43,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.presentation.components.LiquidGlassBackdrop
 import app.gyrolet.mpvrx.presentation.components.LiquidGlassStyle
 import app.gyrolet.mpvrx.presentation.components.LiquidGlassSurface
 import app.gyrolet.mpvrx.presentation.components.rememberLiquidGlassBackdrop
@@ -51,11 +52,10 @@ import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.ui.theme.AppMotion
-import com.kyant.backdrop.backdrops.LayerBackdrop
 import org.koin.compose.koinInject
 
 @Composable
-internal fun rememberBrowserBottomBarBackdrop(): LayerBackdrop? {
+internal fun rememberBrowserBottomBarBackdrop(): LiquidGlassBackdrop? {
   val preferences = koinInject<AppearancePreferences>()
   val enabled by preferences.liquidGlassEnabled.collectAsState()
   return rememberLiquidGlassBackdrop().takeIf { enabled }
@@ -94,7 +94,7 @@ fun BrowserBottomBar(
   showRename: Boolean = true,
   showDelete: Boolean = true,
   showAddToPlaylist: Boolean = true,
-  backdrop: LayerBackdrop? = null,
+  backdrop: LiquidGlassBackdrop? = null,
 ) {
   val configuration = LocalConfiguration.current
   val isTablet = configuration.smallestScreenWidthDp >= 600
