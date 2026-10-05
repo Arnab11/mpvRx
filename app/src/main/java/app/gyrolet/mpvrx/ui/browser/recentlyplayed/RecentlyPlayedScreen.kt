@@ -606,6 +606,7 @@ object RecentlyPlayedScreen : Screen {
           customContent = {
             androidx.compose.foundation.layout.Row(
               modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.spacedBy(4.dp),
               verticalAlignment = androidx.compose.ui.Alignment.CenterVertically,
             ) {
               androidx.compose.material3.Checkbox(

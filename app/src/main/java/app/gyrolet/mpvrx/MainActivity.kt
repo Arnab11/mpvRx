@@ -16,6 +16,7 @@ import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.view.animation.PathInterpolator
 import android.app.Activity
 import androidx.activity.ComponentActivity
 import androidx.compose.runtime.withFrameNanos
@@ -366,7 +367,7 @@ class MainActivity : AppCompatActivity() {
 
       val contentAnim =
         ValueAnimator.ofFloat(1f, 0f).apply {
-          interpolator = android.view.animation.LinearOutSlowInInterpolator()
+          interpolator = PathInterpolator(0f, 0f, 0.2f, 1f)
           duration = SPLASH_EXIT_ANIMATION_MS
           addUpdateListener { animator ->
             val value = animator.animatedValue as Float
@@ -375,7 +376,7 @@ class MainActivity : AppCompatActivity() {
         }
       val splashAnim =
         ValueAnimator.ofFloat(1f, 0f).apply {
-          interpolator = android.view.animation.FastOutSlowInInterpolator()
+          interpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
           duration = SPLASH_EXIT_ANIMATION_MS
           addUpdateListener { animator ->
             splashProvider.view.alpha = animator.animatedValue as Float
