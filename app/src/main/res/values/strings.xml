@@ -1485,6 +1485,8 @@
   <string name="player_unknown_video">Unknown Video</string>
   <string name="media_widget_name">mpvRx playback</string>
   <string name="media_widget_description">Control audio and video playback</string>
+  <string name="media_widget_pill_name">mpvRx music pill</string>
+  <string name="media_widget_pill_description">Compact music playback controls</string>
   <string name="media_widget_empty">Nothing playing</string>
   <string name="media_widget_audio">Audio</string>
   <string name="media_widget_video">Video</string>
