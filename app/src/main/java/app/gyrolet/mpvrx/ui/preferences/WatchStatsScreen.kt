@@ -21,7 +21,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.Slider
 import androidx.compose.material3.FilterChip
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -46,8 +45,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import app.gyrolet.mpvrx.preferences.BrowserPreferences
-import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.repository.WatchMediaStats
@@ -65,8 +62,6 @@ import org.koin.compose.koinInject
 @Composable
 internal fun ProfileWatchStatistics() {
   val repository = koinInject<WatchStatsRepository>()
-  val preferences = koinInject<BrowserPreferences>()
-  val threshold by preferences.watchedThreshold.collectAsState()
   val scope = rememberCoroutineScope()
   val revision by repository.revision.collectAsStateWithLifecycle()
   val stats by produceState(WatchStatsSnapshot(), repository, revision) { value = repository.snapshot() }
@@ -91,22 +86,6 @@ internal fun ProfileWatchStatistics() {
     WatchTimeHero(stats)
     WatchSplit(stats)
     WeeklyActivity(stats.days)
-    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-      Text(stringResource(R.string.pref_appearance_watched_threshold_title), style = MaterialTheme.typography.titleMedium)
-      Text(
-        if (threshold <= 0) stringResource(R.string.pref_appearance_watched_threshold_summary_infinite)
-        else stringResource(R.string.pref_appearance_watched_threshold_summary, threshold),
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-      )
-      Slider(
-        value = threshold.coerceIn(0, 100).toFloat(),
-        onValueChange = { preferences.watchedThreshold.set(kotlin.math.round(it).toInt()) },
-        valueRange = 0f..100f,
-        steps = 19,
-        modifier = Modifier.semantics { contentDescription = "${threshold.coerceIn(0, 100)}%" },
-      )
-    }
     Text(
       text = stringResource(R.string.watch_stats_top_media),
       style = MaterialTheme.typography.titleMedium,

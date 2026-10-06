@@ -66,6 +66,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -163,7 +164,7 @@ object PlaylistScreen : Screen {
     val layoutMode by browserPreferences.playlistView.layoutMode.collectAsState()
     val sortType = savedSortType.takeIf { it in LIBRARY_SORT_TYPES } ?: PlaylistSortType.Original
 
-    val favoriteSongsLabel = stringResource(R.string.playlist_favorite_songs)
+    val favoriteAudioLabel = stringResource(R.string.playlist_favorite_songs)
     val favoriteVideosLabel = stringResource(R.string.playlist_favorite_videos)
 
     var libraryType by rememberSaveable { mutableStateOf(MediaLibraryType.Video) }
@@ -185,7 +186,7 @@ object PlaylistScreen : Screen {
         )
       }
     val visiblePlaylistsByType =
-      remember(playlistsByType, activeQuery, favoriteSongsLabel, favoriteVideosLabel) {
+      remember(playlistsByType, activeQuery, favoriteAudioLabel, favoriteVideosLabel) {
         if (activeQuery.isEmpty()) {
           playlistsByType
         } else {
@@ -195,7 +196,7 @@ object PlaylistScreen : Screen {
               val displayName =
                 when {
                   !playlist.isFavoritesPlaylist() -> playlist.name
-                  playlist.isAudio -> favoriteSongsLabel
+                  playlist.isAudio -> favoriteAudioLabel
                   else -> favoriteVideosLabel
                 }
               displayName.contains(activeQuery, ignoreCase = true) ||
@@ -246,6 +247,7 @@ object PlaylistScreen : Screen {
     val isRefreshing = remember { mutableStateOf(false) }
     val isFabVisible = remember { mutableStateOf(true) }
     var renameTarget by remember { mutableStateOf<PlaylistEntity?>(null) }
+    var directDeleteTarget by remember { mutableStateOf<PlaylistWithCount?>(null) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
     var showSortDialog by rememberSaveable { mutableStateOf(false) }
     var showPlaylistActionSheet by remember { mutableStateOf(false) }
@@ -312,6 +314,7 @@ object PlaylistScreen : Screen {
             onBackClick = if (LocalIsMainTabPage.current) null else ({ backStack.popSafely() }),
             onCancelSelection = { selectionManager.clear() },
             isSingleSelection = selectionManager.isSingleSelection,
+            onSortClick = { showSortDialog = true },
             onSearchClick = { isSearching = true },
             onSettingsClick = { backStack.navigateTo(app.gyrolet.mpvrx.ui.preferences.PreferencesScreen) },
             onRenameClick = singleRenamable?.let { target -> { renameTarget = target.playlist } },
@@ -367,7 +370,16 @@ object PlaylistScreen : Screen {
           sortType = sortType,
           sortOrder = sortOrder,
           layoutMode = layoutMode,
-          onSortClick = { showSortDialog = true },
+          onAlphabeticalSort = {
+            if (sortType == PlaylistSortType.Name) {
+              browserPreferences.playlistSortOrder.set(
+                if (sortOrder.isAscending) SortOrder.Descending else SortOrder.Ascending,
+              )
+            } else {
+              browserPreferences.playlistSortType.set(PlaylistSortType.Name)
+              browserPreferences.playlistSortOrder.set(SortOrder.Ascending)
+            }
+          },
           onToggleLayout = {
             browserPreferences.playlistView.layoutMode.set(
               if (layoutMode == MediaLayoutMode.GRID) MediaLayoutMode.LIST else MediaLayoutMode.GRID,
@@ -429,6 +441,9 @@ object PlaylistScreen : Screen {
                   }
                 },
                 onPlaylistLongClick = { item -> selectionManager.handleLongClick(item) },
+                onPlaylistRename = { item -> renameTarget = item.playlist },
+                onPlaylistDelete = { item -> directDeleteTarget = item },
+                isPlaylistProtected = { item -> viewModel.isProtectedPlaylist(item.playlist) },
                 isInSelectionMode = selectionManager.isInSelectionMode,
               )
           }
@@ -492,6 +507,23 @@ object PlaylistScreen : Screen {
         itemNames = deletableSelection.map { it.playlist.name },
       )
     }
+
+    directDeleteTarget?.let { target ->
+      DeleteConfirmationDialog(
+        isOpen = true,
+        onDismiss = { directDeleteTarget = null },
+        onConfirm = {
+          directDeleteTarget = null
+          scope.launch {
+            viewModel.deletePlaylist(target.playlist)
+            viewModel.refresh()
+          }
+        },
+        itemCount = 1,
+        itemType = "playlist",
+        itemNames = listOf(target.playlist.name),
+      )
+    }
   }
 
   @Composable
@@ -499,41 +531,37 @@ object PlaylistScreen : Screen {
     sortType: PlaylistSortType,
     sortOrder: SortOrder,
     layoutMode: MediaLayoutMode,
-    onSortClick: () -> Unit,
+    onAlphabeticalSort: () -> Unit,
     onToggleLayout: () -> Unit,
   ) {
-    val orderLabel =
-      when {
-        sortType == PlaylistSortType.Name -> if (sortOrder.isAscending) "A-Z" else "Z-A"
-        sortOrder.isAscending -> stringResource(R.string.playlist_sort_ascending)
-        else -> stringResource(R.string.playlist_sort_descending)
-      }
+    val alphabeticalLabel =
+      if (sortType == PlaylistSortType.Name && !sortOrder.isAscending) "Z-A" else "A-Z"
+
     Row(
       modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 4.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
       Surface(
-        onClick = onSortClick,
+        onClick = onAlphabeticalSort,
         shape = CircleShape,
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.widthIn(max = 280.dp).tvFocusHighlight(CircleShape),
+        color = MaterialTheme.colorScheme.secondaryContainer,
+        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+        modifier = Modifier.tvFocusHighlight(CircleShape),
       ) {
         Row(
-          modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+          horizontalArrangement = Arrangement.spacedBy(6.dp),
           verticalAlignment = Alignment.CenterVertically,
         ) {
           Icon(
-            Icons.RoundedFilled.SwapVert,
-            contentDescription = stringResource(R.string.sort_view_options),
-            tint = MaterialTheme.colorScheme.primary,
+            Icons.RoundedFilled.SortByAlpha,
+            contentDescription = alphabeticalLabel,
             modifier = Modifier.size(18.dp),
           )
           Text(
-            text = "${stringResource(playlistSortLabelRes(sortType))} · $orderLabel",
+            text = alphabeticalLabel,
             style = MaterialTheme.typography.labelLarge,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
+            fontWeight = FontWeight.SemiBold,
           )
         }
       }
@@ -592,6 +620,9 @@ object PlaylistScreen : Screen {
     selectionManager: SelectionManager<PlaylistWithCount, Int>,
     onPlaylistClick: (PlaylistWithCount) -> Unit,
     onPlaylistLongClick: (PlaylistWithCount) -> Unit,
+    onPlaylistRename: (PlaylistWithCount) -> Unit,
+    onPlaylistDelete: (PlaylistWithCount) -> Unit,
+    isPlaylistProtected: (PlaylistWithCount) -> Boolean,
     modifier: Modifier = Modifier,
     isInSelectionMode: Boolean = false,
   ) {
@@ -640,9 +671,9 @@ object PlaylistScreen : Screen {
             columns = GridCells.Fixed(folderGridColumns),
             state = gridState,
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(start = 8.dp, end = 8.dp, bottom = bottomPadding),
-            horizontalArrangement = Arrangement.spacedBy(2.dp),
-            verticalArrangement = Arrangement.spacedBy(2.dp),
+            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 4.dp, bottom = bottomPadding),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(18.dp),
           ) {
             items(count = playlistsWithCount.size, key = { playlistsWithCount[it].playlist.id }) { index ->
               val playlistWithCount = playlistsWithCount[index]
@@ -655,6 +686,18 @@ object PlaylistScreen : Screen {
                 onLongClick = { onPlaylistLongClick(playlistWithCount) },
                 onThumbClick = { onPlaylistClick(playlistWithCount) },
                 isGridMode = true,
+                onRenameClick =
+                  if (isPlaylistProtected(playlistWithCount)) {
+                    null
+                  } else {
+                    { onPlaylistRename(playlistWithCount) }
+                  },
+                onDeleteClick =
+                  if (isPlaylistProtected(playlistWithCount)) {
+                    null
+                  } else {
+                    { onPlaylistDelete(playlistWithCount) }
+                  },
               )
             }
           }

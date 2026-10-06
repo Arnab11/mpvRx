@@ -11,6 +11,7 @@ package app.gyrolet.mpvrx.ui.browser.profile
 
 import android.app.Application
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
@@ -69,11 +70,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
@@ -85,7 +86,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.gyrolet.mpvrx.R
-import app.gyrolet.mpvrx.database.entities.PlaylistEntity
 import app.gyrolet.mpvrx.domain.framecapture.FrameCapture
 import app.gyrolet.mpvrx.domain.media.model.Video
 import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
@@ -96,12 +96,14 @@ import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.presentation.components.pullrefresh.PullRefreshBox
 import app.gyrolet.mpvrx.ui.browser.LocalNavigationBarHeight
+import app.gyrolet.mpvrx.ui.browser.cards.PlaylistCard
 import app.gyrolet.mpvrx.ui.browser.components.BrowserTopBar
 import app.gyrolet.mpvrx.ui.browser.components.rememberSwipePlaybackInfo
 import app.gyrolet.mpvrx.ui.browser.networkstreaming.NetworkStreamingScreen
 import app.gyrolet.mpvrx.ui.browser.playlist.PlaylistDetailScreen
 import app.gyrolet.mpvrx.ui.browser.playlist.PlaylistScreen
 import app.gyrolet.mpvrx.ui.browser.playlist.PlaylistViewModel
+import app.gyrolet.mpvrx.ui.browser.playlist.playlistGridColumnLimit
 import app.gyrolet.mpvrx.ui.browser.recentlyplayed.RecentlyPlayedItem
 import app.gyrolet.mpvrx.ui.browser.recentlyplayed.RecentlyPlayedScreen
 import app.gyrolet.mpvrx.ui.browser.recentlyplayed.RecentlyPlayedViewModel
@@ -152,6 +154,27 @@ object ProfileScreen : Screen {
     val profileName by appearancePreferences.profileName.collectAsState()
     val profileImagePath by appearancePreferences.profileImagePath.collectAsState()
     val showRecentThumbnails by browserPreferences.recentView.showThumbnails.collectAsState()
+    val playlistManualGrid by browserPreferences.playlistView.manualGridColumnsEnabled.collectAsState()
+    val playlistGridColumnsPortrait by browserPreferences.playlistView.gridColumnsPortrait.collectAsState()
+    val playlistGridColumnsLandscape by browserPreferences.playlistView.gridColumnsLandscape.collectAsState()
+    val configuration = LocalConfiguration.current
+    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val maxPlaylistColumns = playlistGridColumnLimit(configuration.screenWidthDp, true)
+    val requestedPlaylistColumns =
+      if (isLandscape) playlistGridColumnsLandscape else playlistGridColumnsPortrait
+    val playlistColumns =
+      if (playlistManualGrid && requestedPlaylistColumns > 0) {
+        requestedPlaylistColumns.coerceIn(1, maxPlaylistColumns)
+      } else {
+        maxPlaylistColumns
+      }
+    val profilePlaylistCardWidth =
+      remember(configuration.screenWidthDp, playlistColumns) {
+        val totalSpacing = 12 * (playlistColumns - 1)
+        ((configuration.screenWidthDp - 24 - totalSpacing).toFloat() / playlistColumns)
+          .coerceAtLeast(120f)
+          .dp
+      }
     val navigationBarHeight = LocalNavigationBarHeight.current
 
     val recentsViewModel: RecentlyPlayedViewModel = viewModel(factory = RecentlyPlayedViewModel.factory(application))
@@ -294,10 +317,14 @@ object ProfileScreen : Screen {
                       }
 
                       is RecentlyPlayedItem.PlaylistItem ->
-                        PlaylistShelfCard(
+                        PlaylistCard(
                           playlist = item.playlist,
                           itemCount = item.videoCount,
                           onClick = { backStack.navigateTo(PlaylistDetailScreen(item.playlist.id)) },
+                          onLongClick = { },
+                          onThumbClick = { backStack.navigateTo(PlaylistDetailScreen(item.playlist.id)) },
+                          modifier = Modifier.width(profilePlaylistCardWidth),
+                          isGridMode = true,
                         )
                     }
                   }
@@ -324,10 +351,14 @@ object ProfileScreen : Screen {
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
               ) {
                 items(playlists.take(SHELF_LIMIT), key = { it.playlist.id }) { entry ->
-                  PlaylistShelfCard(
+                  PlaylistCard(
                     playlist = entry.playlist,
                     itemCount = entry.itemCount,
                     onClick = { backStack.navigateTo(PlaylistDetailScreen(entry.playlist.id)) },
+                    onLongClick = { },
+                    onThumbClick = { backStack.navigateTo(PlaylistDetailScreen(entry.playlist.id)) },
+                    modifier = Modifier.width(profilePlaylistCardWidth),
+                    isGridMode = true,
                   )
                 }
               }
@@ -739,41 +770,6 @@ private fun RecentVideoCard(
         trackColor = Color.Black.copy(alpha = 0.35f),
       )
     }
-  }
-}
-
-@Composable
-private fun PlaylistShelfCard(
-  playlist: PlaylistEntity,
-  itemCount: Int,
-  onClick: () -> Unit,
-) {
-  val colors = MaterialTheme.colorScheme
-  val palettes =
-    listOf(
-      colors.primaryContainer to colors.onPrimaryContainer,
-      colors.secondaryContainer to colors.onSecondaryContainer,
-      colors.tertiaryContainer to colors.onTertiaryContainer,
-    )
-  val (background, foreground) = palettes[Math.floorMod(playlist.name.ifBlank { playlist.id.toString() }.hashCode(), palettes.size)]
-
-  ShelfCard(
-    title = playlist.name,
-    subtitle = stringResource(if (playlist.isM3uPlaylist) R.string.ui_network else R.string.ui_playlists),
-    onClick = onClick,
-  ) {
-    Box(
-      modifier = Modifier.fillMaxSize().background(Brush.linearGradient(listOf(background, background.copy(alpha = 0.6f)))),
-      contentAlignment = Alignment.Center,
-    ) {
-      Icon(
-        if (playlist.isM3uPlaylist) Icons.RoundedFilled.Language else Icons.RoundedFilled.Subscriptions,
-        contentDescription = null,
-        tint = foreground,
-        modifier = Modifier.size(36.dp),
-      )
-    }
-    if (itemCount > 0) FrameBadge(itemCount.toString(), Modifier.align(Alignment.BottomEnd))
   }
 }
 
