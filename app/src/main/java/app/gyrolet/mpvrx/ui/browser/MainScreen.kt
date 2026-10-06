@@ -903,8 +903,9 @@ internal fun ExpressivePillNavigationBar(
         }
       }) { tabRow(false) }
       Box(Modifier.matchParentSize().drawWithContent {
-        clipPath(navigationJellyPath(motion.frame, visibleTabs.size)) {
-          drawRect(selectedSurface)
+        val pillPath = navigationJellyPath(motion.frame, visibleTabs.size)
+        drawPath(pillPath, selectedSurface)
+        clipPath(pillPath) {
           drawNavigationJellyGlow(motion.frame, accentColor.copy(alpha = glowStrength))
           this@drawWithContent.drawContent()
         }
