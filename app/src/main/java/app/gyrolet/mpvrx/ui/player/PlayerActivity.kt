@@ -671,14 +671,26 @@ class PlayerActivity :
     // Derive every init option value up front on IO. Only the option writes themselves need the
     // core, so this overlaps with layout inflation and the Compose trees.
     player.prepareInitInputs()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
-      intent.action == MediaPlaybackService.ACTION_OPEN_PLAYER
-    ) {
-      val animateArtwork = PlayerArtworkTransitions.motion?.destination == PlayerArtworkDestination.FULL
-      overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, if (animateArtwork) 0 else R.anim.slide_in_up, 0)
+    val animateArtwork =
+      intent.action == MediaPlaybackService.ACTION_OPEN_PLAYER &&
+        PlayerArtworkTransitions.motion?.destination == PlayerArtworkDestination.FULL
+    val launchSource = intent.getStringExtra("launch_source")
+    val isMusicLibraryLaunch =
+      launchSource == "music_library" ||
+        launchSource == "music_play_all" ||
+        launchSource == "music_shuffle"
+    val enterAnimation =
+      when {
+        animateArtwork -> 0
+        intent.action == MediaPlaybackService.ACTION_OPEN_PLAYER || isMusicLibraryLaunch -> R.anim.slide_in_up
+        else -> android.R.anim.fade_in
+      }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+      overrideActivityTransition(OVERRIDE_TRANSITION_OPEN, enterAnimation, 0)
     } else {
       @Suppress("DEPRECATION")
-      overridePendingTransition(android.R.anim.fade_in, 0)
+      overridePendingTransition(enterAnimation, 0)
     }
     if (intent.action == MediaPlaybackService.ACTION_OPEN_PLAYER && player.userScriptsNeedReload()) {
       currentPlaybackIntentForScriptReload()?.let { playbackIntent ->
