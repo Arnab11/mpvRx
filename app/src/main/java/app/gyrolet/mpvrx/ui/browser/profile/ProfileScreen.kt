@@ -35,6 +35,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,6 +47,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -242,22 +244,17 @@ object ProfileScreen : Screen {
           contentPadding = PaddingValues(bottom = navigationBarHeight + 16.dp),
           verticalArrangement = Arrangement.spacedBy(8.dp),
         ) {
-          item(key = "profile") {
-            ProfileHeader(
+          item(key = "profile_overview") {
+            ProfileOverviewCard(
               name = profileName,
-              onEditProfile = {
-                haptics.tick()
-                showProfileDialog = true
-              },
-            )
-          }
-
-          item(key = "shortcuts") {
-            ShortcutTiles(
               recentCount = recentItems.size,
               playlistCount = playlists.size,
               snapshotCount = snapshots.size,
               showNetwork = !showNetworkTab,
+              onEditProfile = {
+                haptics.tick()
+                showProfileDialog = true
+              },
               onRecents = { backStack.navigateTo(RecentlyPlayedScreen) },
               onPlaylists = { backStack.navigateTo(PlaylistScreen) },
               onSnapshots = { backStack.navigateTo(SnapshotScreen) },
@@ -490,138 +487,211 @@ private fun rememberProfileAvatar(path: String): ImageBitmap? {
 }
 
 @Composable
-private fun ProfileHeader(
+private fun ProfileOverviewCard(
   name: String,
-  onEditProfile: () -> Unit,
-) {
-  val path by koinInject<AppearancePreferences>().profileImagePath.collectAsState()
-  val avatar = rememberProfileAvatar(path)
-  val editLabel = stringResource(R.string.profile_edit)
-  Row(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-    verticalAlignment = Alignment.CenterVertically,
-    horizontalArrangement = Arrangement.spacedBy(16.dp),
-  ) {
-    Box(contentAlignment = Alignment.BottomEnd) {
-      Surface(
-        onClick = onEditProfile,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primaryContainer,
-        modifier = Modifier.size(72.dp).tvFocusHighlight(CircleShape),
-      ) {
-        Box(contentAlignment = Alignment.Center) {
-          if (avatar != null) {
-            Image(
-              bitmap = avatar,
-              contentDescription = editLabel,
-              contentScale = ContentScale.Crop,
-              modifier = Modifier.fillMaxSize(),
-            )
-          } else {
-            Icon(
-              Icons.RoundedFilled.Person,
-              contentDescription = editLabel,
-              tint = MaterialTheme.colorScheme.onPrimaryContainer,
-              modifier = Modifier.size(40.dp),
-            )
-          }
-        }
-      }
-      Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary,
-        contentColor = MaterialTheme.colorScheme.onPrimary,
-        modifier = Modifier.size(24.dp),
-      ) {
-        Box(contentAlignment = Alignment.Center) {
-          Icon(Icons.RoundedFilled.Edit, contentDescription = null, modifier = Modifier.size(14.dp))
-        }
-      }
-    }
-
-    Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-      Text(
-        text = name.ifBlank { stringResource(R.string.ui_profile) },
-        style = MaterialTheme.typography.headlineSmall,
-        fontWeight = FontWeight.Bold,
-        color = MaterialTheme.colorScheme.onSurface,
-        maxLines = 1,
-        overflow = TextOverflow.Ellipsis,
-      )
-      Text(
-        text = editLabel,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.clip(AppShapeScale.small).clickable(onClick = onEditProfile).padding(vertical = 2.dp),
-      )
-    }
-  }
-}
-
-@Composable
-private fun ShortcutTiles(
   recentCount: Int,
   playlistCount: Int,
   snapshotCount: Int,
   showNetwork: Boolean,
+  onEditProfile: () -> Unit,
   onRecents: () -> Unit,
   onPlaylists: () -> Unit,
   onSnapshots: () -> Unit,
   onNetwork: () -> Unit,
 ) {
+  val path by koinInject<AppearancePreferences>().profileImagePath.collectAsState()
+  val avatar = rememberProfileAvatar(path)
+  val editLabel = stringResource(R.string.profile_edit)
+
   Surface(
     shape = AppShapeScale.extraLarge,
     color = MaterialTheme.colorScheme.surfaceContainerLow,
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+    tonalElevation = 1.dp,
+    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
   ) {
-    Row(modifier = Modifier.padding(8.dp)) {
-      ShortcutTile(Icons.RoundedFilled.History, stringResource(R.string.ui_recents), recentCount, onRecents)
-      ShortcutTile(Icons.RoundedFilled.Subscriptions, stringResource(R.string.ui_playlists), playlistCount, onPlaylists)
-      ShortcutTile(Icons.RoundedFilled.Image, stringResource(R.string.ui_snapshots), snapshotCount, onSnapshots)
-      if (showNetwork) {
-        ShortcutTile(Icons.RoundedFilled.BringYourOwnIp, stringResource(R.string.ui_network), null, onNetwork)
+    Column(
+      modifier = Modifier.padding(16.dp),
+      verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+      Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+      ) {
+        Box(contentAlignment = Alignment.BottomEnd) {
+          Surface(
+            onClick = onEditProfile,
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primaryContainer,
+            modifier = Modifier.size(84.dp).tvFocusHighlight(CircleShape),
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              if (avatar != null) {
+                Image(
+                  bitmap = avatar,
+                  contentDescription = editLabel,
+                  contentScale = ContentScale.Crop,
+                  modifier = Modifier.fillMaxSize(),
+                )
+              } else {
+                Icon(
+                  Icons.RoundedFilled.Person,
+                  contentDescription = editLabel,
+                  tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                  modifier = Modifier.size(46.dp),
+                )
+              }
+            }
+          }
+          Surface(
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            modifier = Modifier.size(28.dp),
+          ) {
+            Box(contentAlignment = Alignment.Center) {
+              Icon(Icons.RoundedFilled.Edit, contentDescription = null, modifier = Modifier.size(16.dp))
+            }
+          }
+        }
+
+        Column(
+          modifier = Modifier.weight(1f),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+          Text(
+            text = name.ifBlank { stringResource(R.string.ui_profile) },
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+          FilledTonalButton(
+            onClick = onEditProfile,
+            contentPadding = PaddingValues(horizontal = 14.dp, vertical = 8.dp),
+          ) {
+            Icon(Icons.RoundedFilled.Edit, contentDescription = null, modifier = Modifier.size(18.dp))
+            Spacer(Modifier.width(8.dp))
+            Text(editLabel)
+          }
+        }
+      }
+
+      HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.55f))
+
+      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+          ProfileShortcutTile(
+            icon = Icons.RoundedFilled.History,
+            label = stringResource(R.string.ui_recents),
+            count = recentCount,
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            onClick = onRecents,
+            modifier = Modifier.weight(1f),
+          )
+          ProfileShortcutTile(
+            icon = Icons.RoundedFilled.Subscriptions,
+            label = stringResource(R.string.ui_playlists),
+            count = playlistCount,
+            containerColor = MaterialTheme.colorScheme.secondaryContainer,
+            contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+            onClick = onPlaylists,
+            modifier = Modifier.weight(1f),
+          )
+        }
+        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+          ProfileShortcutTile(
+            icon = Icons.RoundedFilled.Image,
+            label = stringResource(R.string.ui_snapshots),
+            count = snapshotCount,
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+            contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+            onClick = onSnapshots,
+            modifier = Modifier.weight(1f),
+          )
+          if (showNetwork) {
+            ProfileShortcutTile(
+              icon = Icons.RoundedFilled.BringYourOwnIp,
+              label = stringResource(R.string.ui_network),
+              count = null,
+              containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+              contentColor = MaterialTheme.colorScheme.onSurface,
+              onClick = onNetwork,
+              modifier = Modifier.weight(1f),
+            )
+          } else {
+            Spacer(Modifier.weight(1f))
+          }
+        }
       }
     }
   }
 }
 
 @Composable
-private fun androidx.compose.foundation.layout.RowScope.ShortcutTile(
+private fun ProfileShortcutTile(
   icon: AppIcon,
   label: String,
   count: Int?,
+  containerColor: Color,
+  contentColor: Color,
   onClick: () -> Unit,
+  modifier: Modifier = Modifier,
 ) {
-  Column(
+  Surface(
+    onClick = onClick,
+    shape = AppShapeScale.large,
+    color = containerColor,
+    contentColor = contentColor,
     modifier =
-      Modifier
-        .weight(1f)
-        .tvFocusHighlight(AppShapeScale.large)
-        .clip(AppShapeScale.large)
-        .clickable(onClick = onClick)
-        .padding(vertical = 10.dp, horizontal = 4.dp),
-    horizontalAlignment = Alignment.CenterHorizontally,
-    verticalArrangement = Arrangement.spacedBy(4.dp),
+      modifier
+        .heightIn(min = 78.dp)
+        .tvFocusHighlight(AppShapeScale.large),
   ) {
-    Surface(shape = CircleShape, color = MaterialTheme.colorScheme.secondaryContainer, modifier = Modifier.size(44.dp)) {
-      Box(contentAlignment = Alignment.Center) {
-        Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSecondaryContainer, modifier = Modifier.size(22.dp))
+    Row(
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 12.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+      Surface(
+        shape = CircleShape,
+        color = contentColor.copy(alpha = 0.12f),
+        contentColor = contentColor,
+        modifier = Modifier.size(40.dp),
+      ) {
+        Box(contentAlignment = Alignment.Center) {
+          Icon(icon, contentDescription = null, modifier = Modifier.size(21.dp))
+        }
       }
+      Column(
+        modifier = Modifier.weight(1f),
+        verticalArrangement = Arrangement.spacedBy(1.dp),
+      ) {
+        if (count != null) {
+          Text(
+            text = count.toString(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = contentColor,
+          )
+        }
+        Text(
+          text = label,
+          style = if (count == null) MaterialTheme.typography.titleSmall else MaterialTheme.typography.labelMedium,
+          fontWeight = if (count == null) FontWeight.SemiBold else FontWeight.Medium,
+          color = contentColor,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
+      }
+      Icon(
+        Icons.RoundedFilled.ChevronRight,
+        contentDescription = null,
+        tint = contentColor.copy(alpha = 0.72f),
+        modifier = Modifier.size(18.dp),
+      )
     }
-    Text(
-      text = count?.toString() ?: " ",
-      style = MaterialTheme.typography.titleMedium,
-      fontWeight = FontWeight.Bold,
-      color = MaterialTheme.colorScheme.onSurface,
-    )
-    Text(
-      text = label,
-      style = MaterialTheme.typography.labelMedium,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      textAlign = TextAlign.Center,
-      maxLines = 1,
-      overflow = TextOverflow.Ellipsis,
-    )
   }
 }
 
