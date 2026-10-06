@@ -9,20 +9,14 @@
 
 package app.gyrolet.mpvrx
 
-import android.animation.ValueAnimator
 import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
-import android.view.animation.PathInterpolator
 import android.app.Activity
 import androidx.activity.ComponentActivity
-import androidx.compose.runtime.withFrameNanos
-import androidx.core.animation.doOnEnd
-import androidx.core.splashscreen.SplashScreen
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -72,9 +66,6 @@ import app.gyrolet.mpvrx.ui.browser.components.MiniPlayer
 import app.gyrolet.mpvrx.ui.theme.DarkMode
 import app.gyrolet.mpvrx.ui.theme.AppWallpaperHost
 import app.gyrolet.mpvrx.ui.theme.MpvrxTheme
-import app.gyrolet.mpvrx.ui.theme.SPLASH_MAX_DURATION_MS
-import app.gyrolet.mpvrx.ui.theme.SPLASH_MIN_DURATION_MS
-import app.gyrolet.mpvrx.ui.theme.SplashContent
 import app.gyrolet.mpvrx.ui.theme.rememberThemeTransitionState
 import android.view.SurfaceHolder
 import android.view.SurfaceView
@@ -103,7 +94,6 @@ import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import app.gyrolet.mpvrx.ui.update.UpdateSheet
 import app.gyrolet.mpvrx.ui.update.UpdateViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
@@ -112,13 +102,6 @@ import org.koin.android.ext.android.inject
 
 private const val RENDERER_NOTICE_PREFERENCES = "renderer_build_notice"
 private const val NON_VULKAN_NOTICE_SHOWN = "non_vulkan_notice_shown"
-
-// Shared splash exit animation; AndroidX exposes the same exit hook across supported API levels.
-private const val SPLASH_EXIT_ANIMATION_MS = 320L
-private const val SPLASH_EXIT_TRANSLATION_DP = 16f
-
-private fun Float.dpToPx(resources: android.content.res.Resources): Float =
-  this * resources.displayMetrics.density
 
 /**
  * Main entry point for the application
@@ -133,11 +116,6 @@ class MainActivity : AppCompatActivity() {
   private var pendingPipExitResolution = false
   private var isExpandingFromPip by mutableStateOf(false)
 
-  // Splash lifecycle. isSplashReady is read from the keep-on-screen condition, which runs off the
-  // composition, so it is deliberately not Compose state.
-  @Volatile private var isSplashReady = false
-  private var isSplashFinished by mutableStateOf(false)
-
   // Register the ActivityResultLauncher at class level
   private val mediaAccessLauncher =
     registerForActivityResult(
@@ -147,15 +125,9 @@ class MainActivity : AppCompatActivity() {
     }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    // installSplashScreen() must run before super.onCreate() on every Activity creation so the
-    // manifest's splash theme can reliably hand off to postSplashScreenTheme. We only *hold* and
-    // draw the branded splash once per process, which avoids replaying it on warm recreations while
-    // still covering a true process-death restore (where savedInstanceState may be non-null).
-    val showSplash = !hasCreatedMainActivityInProcess
-    hasCreatedMainActivityInProcess = true
-    val splashStartUptimeMs = SystemClock.uptimeMillis()
-    val splashScreen = installSplashScreen()
-
+    // Match REX Player's splash handoff: use only Android's system SplashScreen and hand
+    // directly into the real UI. Do not draw a second Compose logo/title layer afterwards.
+    installSplashScreen()
     super.onCreate(savedInstanceState)
 
     if (DeviceFormFactor.isTelevision(this)) {
@@ -284,27 +256,7 @@ class MainActivity : AppCompatActivity() {
         MpvrxTheme(transitionState = themeTransitionState) {
           AppWallpaperHost {
             Surface(modifier = Modifier.fillMaxSize(), color = Color.Transparent) {
-              // Reported only once a frame has actually been produced, so the splash is never lifted
-              // onto an empty window.
-              if (showSplash) {
-                LaunchedEffect(Unit) {
-                  withFrameNanos { }
-                  onSplashReady()
-
-                  // Keep the themed Compose splash mounted underneath the system splash until the
-                  // minimum hold expires. Previously it faded out immediately on the first frame,
-                  // so fast launches had no themed layer left when the system splash finally left.
-                  val remainingHoldMs =
-                    (SPLASH_MIN_DURATION_MS - (SystemClock.uptimeMillis() - splashStartUptimeMs))
-                      .coerceAtLeast(0L)
-                  if (remainingHoldMs > 0L) delay(remainingHoldMs)
-                  isSplashFinished = true
-                }
-              }
               Navigator()
-            }
-            if (showSplash) {
-              SplashContent(visible = !isSplashFinished)
             }
             if (showRendererBuildNotice) {
               val acknowledgeNotice = {
@@ -337,74 +289,6 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
-    if (showSplash) {
-      splashScreen.setKeepOnScreenCondition {
-        val elapsed = SystemClock.uptimeMillis() - splashStartUptimeMs
-        // Never flash: hold for a beat so a fast launch does not strobe, and cap the wait so a slow
-        // device cannot strand the user on the splash. Uptime is monotonic, unlike wall-clock time.
-        elapsed <= SPLASH_MIN_DURATION_MS || (!isSplashReady && elapsed <= SPLASH_MAX_DURATION_MS)
-      }
-      setSplashExitAnimation(splashScreen)
-    }
-  }
-
-  /**
-   * Called once the first Compose frame is out.
-   *
-   * This only marks the real UI as ready so the system splash may leave after its minimum hold.
-   * The themed Compose overlay is dismissed separately at the handoff boundary, preventing a blank
-   * or mismatched frame between the system splash and the app content.
-   */
-  private fun onSplashReady() {
-    if (isSplashReady) return
-    isSplashReady = true
-  }
-
-  /**
-   * Runs the same controlled handoff on every supported Android version.
-   *
-   * AndroidX exposes the exit callback for both the compat implementation and the platform
-   * SplashScreen. Keeping one path here avoids modern Android silently falling back to a different
-   * transition than older devices.
-   */
-  @Suppress("DEPRECATION")
-  private fun setSplashExitAnimation(splashScreen: SplashScreen) {
-    val root = findViewById<android.view.View>(android.R.id.content)
-    // Transparent while the splash is up so the exit does not flash the bar backgrounds back in.
-    window.statusBarColor = android.graphics.Color.TRANSPARENT
-    window.navigationBarColor = android.graphics.Color.TRANSPARENT
-
-    splashScreen.setOnExitAnimationListener { splashProvider ->
-      val contentStartTranslation = SPLASH_EXIT_TRANSLATION_DP.dpToPx(root.resources)
-
-      // Establish the first animation frame before either animator starts. Previously the content
-      // jumped from 0 -> 16dp on the first ValueAnimator tick while the splash was already fading.
-      root.translationY = contentStartTranslation
-      splashProvider.view.alpha = 1f
-      // The compat implementation can hand us an icon view with an inherited translation.
-      splashProvider.iconView.translationY = 0f
-
-      val contentAnim =
-        ValueAnimator.ofFloat(contentStartTranslation, 0f).apply {
-          interpolator = PathInterpolator(0f, 0f, 0.2f, 1f)
-          duration = SPLASH_EXIT_ANIMATION_MS
-          addUpdateListener { animator ->
-            root.translationY = animator.animatedValue as Float
-          }
-          doOnEnd { root.translationY = 0f }
-        }
-      val splashAnim =
-        ValueAnimator.ofFloat(1f, 0f).apply {
-          interpolator = PathInterpolator(0.4f, 0f, 0.2f, 1f)
-          duration = SPLASH_EXIT_ANIMATION_MS
-          addUpdateListener { animator ->
-            splashProvider.view.alpha = animator.animatedValue as Float
-          }
-          doOnEnd { splashProvider.remove() }
-        }
-      contentAnim.start()
-      splashAnim.start()
-    }
   }
 
   override fun attachBaseContext(newBase: android.content.Context?) {
@@ -647,10 +531,6 @@ class MainActivity : AppCompatActivity() {
   private companion object {
     const val SYSTEM_BAR_THEME_SWITCH_PROGRESS = 0.55f
 
-    // Process-local rather than saved-state based: a process-death restore is a cold start even
-    // though Android supplies a non-null savedInstanceState, while a warm recreation is not.
-    @Volatile
-    var hasCreatedMainActivityInProcess = false
   }
 
   /**
