@@ -79,6 +79,9 @@ class AppearancePreferences(
   val portraitPlaybackControlsPosition =
     preferenceStore.getEnum("portrait_playback_controls_position", PortraitPlaybackControlsPosition.Center)
   val showMusicTab = preferenceStore.getBoolean("show_music_tab", true)
+  val showProfileTab = preferenceStore.getBoolean("show_profile_tab", true)
+  val profileName = preferenceStore.getString("profile_name", "")
+  val profileImagePath = preferenceStore.getString("profile_image_path", "")
   val showRecentsTab = preferenceStore.getBoolean("show_recents_tab", true)
   val showPlaylistsTab = preferenceStore.getBoolean("show_playlists_tab", true)
   val showNetworkTab = preferenceStore.getBoolean("show_network_tab", false)

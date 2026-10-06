@@ -248,9 +248,11 @@ fun PlaylistCard(
     showDateModified = true,
     customIcon =
       when {
+        isFavorites && playlist.isAudio -> Icons.RoundedFilled.Favorite
         isFavorites -> Icons.RoundedFilled.Bookmarks
         playlist.isZipPlaylist -> Icons.RoundedFilled.FolderZip
         playlist.isXtreamPlaylist -> Icons.RoundedFilled.Tv
+        playlist.isAudio && !playlist.isM3uPlaylist -> Icons.RoundedFilled.QueueMusic
         else -> Icons.RoundedFilled.PlaylistPlay
       },
     modifier = modifier,

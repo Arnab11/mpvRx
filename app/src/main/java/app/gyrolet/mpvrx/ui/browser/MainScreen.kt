@@ -139,6 +139,7 @@ object MainScreen : Screen {
     NETWORK,
     JELLYFIN,
     SNAPSHOTS,
+    PROFILE,
   }
 
   /**
@@ -190,6 +191,7 @@ object MainScreen : Screen {
     val musicLibraryViewModel: MusicLibraryViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
     val localMusicTabs by musicLibraryViewModel.visibleTabs.collectAsStateWithLifecycle()
     val showMusicTab by appearancePreferences.showMusicTab.collectAsState()
+    val showProfileTab by appearancePreferences.showProfileTab.collectAsState()
     val showRecentsTab by appearancePreferences.showRecentsTab.collectAsState()
     val showPlaylistsTab by appearancePreferences.showPlaylistsTab.collectAsState()
     val showNetworkTab by appearancePreferences.showNetworkTab.collectAsState()
@@ -204,22 +206,22 @@ object MainScreen : Screen {
     val visibleTabs =
       remember(
         showMusicTab,
+        showProfileTab,
         showRecentsTab,
         showPlaylistsTab,
         showNetworkTab,
         showJellyfinTab,
         showSnapshotTab,
       ) {
-        buildList {
-          // Home is the permanent root so Back never exits directly from another tab.
-          add(MainTab.HOME)
-          if (showMusicTab) add(MainTab.MUSIC)
-          if (showRecentsTab) add(MainTab.RECENTS)
-          if (showPlaylistsTab) add(MainTab.PLAYLISTS)
-          if (showNetworkTab) add(MainTab.NETWORK)
-          if (showJellyfinTab) add(MainTab.JELLYFIN)
-          if (showSnapshotTab) add(MainTab.SNAPSHOTS)
-        }
+        mainNavigationTabs(
+          showMusic = showMusicTab,
+          showProfile = showProfileTab,
+          showRecents = showRecentsTab,
+          showPlaylists = showPlaylistsTab,
+          showNetwork = showNetworkTab,
+          showJellyfin = showJellyfinTab,
+          showSnapshots = showSnapshotTab,
+        )
       }
     val navigationTabs = visibleTabs.takeIf { it.size > 1 }.orEmpty()
 
@@ -377,6 +379,7 @@ object MainScreen : Screen {
             CompositionLocalProvider(
               LocalNavigationBarHeight provides contentBottomPadding,
               LocalMainNavigationBar provides mainNavBar,
+              LocalIsMainTabPage provides true,
             ) {
               FolderListScreen.Content()
             }
@@ -385,6 +388,7 @@ object MainScreen : Screen {
           CompositionLocalProvider(
             LocalNavigationBarHeight provides contentBottomPadding,
             LocalMainNavigationBar provides mainNavBar,
+            LocalIsMainTabPage provides true,
           ) {
             NavigationPager(
               state = pagerState,
@@ -591,6 +595,7 @@ object MainScreen : Screen {
                 MainTab.NETWORK -> NetworkStreamingScreen.Content()
                 MainTab.JELLYFIN -> app.gyrolet.mpvrx.ui.browser.jellyfin.JellyfinContent(viewModel = jellyfinViewModel)
                 MainTab.SNAPSHOTS -> app.gyrolet.mpvrx.ui.framecapture.SnapshotScreen.Content()
+                MainTab.PROFILE -> app.gyrolet.mpvrx.ui.browser.profile.ProfileScreen.Content()
               }
             }
           }
@@ -747,6 +752,7 @@ internal fun ExpressivePillNavigationBar(
       MainScreen.MainTab.NETWORK -> 106.dp
       MainScreen.MainTab.JELLYFIN -> 100.dp
       MainScreen.MainTab.SNAPSHOTS -> 100.dp
+      MainScreen.MainTab.PROFILE -> 100.dp
     }
 
   val inactiveTabWidth = 44.dp
@@ -811,6 +817,7 @@ internal fun ExpressivePillNavigationBar(
                 MainScreen.MainTab.NETWORK -> stringResource(R.string.ui_network)
                 MainScreen.MainTab.JELLYFIN -> stringResource(R.string.ui_jellyfin)
                 MainScreen.MainTab.SNAPSHOTS -> stringResource(R.string.ui_snapshots)
+                MainScreen.MainTab.PROFILE -> stringResource(R.string.ui_profile)
               }
             val contentColor =
               androidx.compose.ui.graphics.lerp(
@@ -874,6 +881,14 @@ private fun MainTabIcon(
   tint: Color,
   contentDescription: String?,
 ) {
+  if (tab == MainScreen.MainTab.PROFILE) {
+    app.gyrolet.mpvrx.ui.browser.profile.ProfileAvatar(
+      size = MainNavigationIconSize,
+      tint = tint,
+      contentDescription = contentDescription,
+    )
+    return
+  }
   val icon = when (tab) {
     MainScreen.MainTab.HOME -> Icons.RoundedFilled.Home
     MainScreen.MainTab.MUSIC -> Icons.RoundedFilled.Audiotrack
@@ -882,25 +897,55 @@ private fun MainTabIcon(
     MainScreen.MainTab.NETWORK -> Icons.RoundedFilled.BringYourOwnIp
     MainScreen.MainTab.JELLYFIN -> null
     MainScreen.MainTab.SNAPSHOTS -> Icons.RoundedFilled.Image
+    MainScreen.MainTab.PROFILE -> Icons.RoundedFilled.AccountCircle
   }
   if (icon == null) {
     androidx.compose.material3.Icon(
       painter = painterResource(R.drawable.ic_jellyfin),
       contentDescription = contentDescription,
       tint = tint,
-      modifier = Modifier.size(22.dp),
+      modifier = Modifier.size(MainNavigationIconSize),
     )
   } else {
     Icon(
       icon,
       contentDescription = contentDescription,
       tint = tint,
-      modifier = Modifier.size(22.dp),
+      modifier = Modifier.size(MainNavigationIconSize),
     )
   }
 }
 
+private val MainNavigationIconSize = 22.dp
+
+/**
+ * Bottom-navigation tab order. Home is the permanent root so Back never exits directly from another
+ * tab. The Profile tab absorbs Recents, Playlists and Snapshots, which stay reachable from inside it.
+ */
+internal fun mainNavigationTabs(
+  showMusic: Boolean,
+  showProfile: Boolean,
+  showRecents: Boolean,
+  showPlaylists: Boolean,
+  showNetwork: Boolean,
+  showJellyfin: Boolean,
+  showSnapshots: Boolean,
+): List<MainScreen.MainTab> =
+  buildList {
+    add(MainScreen.MainTab.HOME)
+    if (showMusic) add(MainScreen.MainTab.MUSIC)
+    if (!showProfile && showRecents) add(MainScreen.MainTab.RECENTS)
+    if (!showProfile && showPlaylists) add(MainScreen.MainTab.PLAYLISTS)
+    if (showNetwork) add(MainScreen.MainTab.NETWORK)
+    if (showJellyfin) add(MainScreen.MainTab.JELLYFIN)
+    if (!showProfile && showSnapshots) add(MainScreen.MainTab.SNAPSHOTS)
+    if (showProfile) add(MainScreen.MainTab.PROFILE)
+  }
+
 val LocalNavigationBarHeight = compositionLocalOf { 0.dp }
+
+// True for a screen hosted as a bottom-navigation page; false when the same screen is pushed on the back stack.
+val LocalIsMainTabPage = compositionLocalOf { false }
 
 // CompositionLocal for main navigation bar
 val LocalMainNavigationBar =

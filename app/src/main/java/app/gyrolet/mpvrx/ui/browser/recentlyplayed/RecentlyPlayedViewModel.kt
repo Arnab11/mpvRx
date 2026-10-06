@@ -96,16 +96,20 @@ class RecentlyPlayedViewModel(
 
       // Get a set of all network playlist IDs to filter them out
       val networkPlaylistIds = mutableSetOf<Int>()
+      val favoritesPlaylistIds = mutableSetOf<Int>()
       for (playlistId in allRecentEntities.mapNotNull { it.playlistId }.distinct()) {
         val playlist = playlistRepository.getPlaylistById(playlistId)
         if (playlist?.isM3uPlaylist == true) {
           networkPlaylistIds.add(playlistId)
         }
+        if (playlist != null && playlistRepository.isProtectedPlaylist(playlist)) {
+          favoritesPlaylistIds.add(playlistId)
+        }
       }
 
       for (entity in allRecentEntities) {
         // Skip videos from network playlists
-        if (entity.playlistId != null) {
+        if (entity.playlistId != null && entity.playlistId !in favoritesPlaylistIds) {
           if (entity.playlistId in networkPlaylistIds) {
             // Skip videos from network playlists
             continue
@@ -128,7 +132,7 @@ class RecentlyPlayedViewModel(
         val playlist = playlistRepository.getPlaylistById(playlistInfo.playlistId)
 
         // Skip M3U/network playlists - only include local playlists
-        if (playlist != null && !playlist.isM3uPlaylist) {
+        if (playlist != null && !playlist.isM3uPlaylist && !playlistRepository.isProtectedPlaylist(playlist)) {
           val playlistVideos = playlistMap[playlistInfo.playlistId] ?: emptyList()
           val mostRecent = playlistVideos.maxByOrNull { it.second }
           if (mostRecent != null) {
