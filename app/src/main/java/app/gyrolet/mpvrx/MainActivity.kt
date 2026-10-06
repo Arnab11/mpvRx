@@ -113,7 +113,7 @@ import org.koin.android.ext.android.inject
 private const val RENDERER_NOTICE_PREFERENCES = "renderer_build_notice"
 private const val NON_VULKAN_NOTICE_SHOWN = "non_vulkan_notice_shown"
 
-// Splash exit animation (pre-Android 12 only; see setSplashExitAnimation).
+// Shared splash exit animation; AndroidX exposes the same exit hook across supported API levels.
 private const val SPLASH_EXIT_ANIMATION_MS = 320L
 private const val SPLASH_EXIT_TRANSLATION_DP = 16f
 
@@ -361,32 +361,37 @@ class MainActivity : AppCompatActivity() {
   }
 
   /**
-   * Custom exit animation for the pre-Android 12 splash, where the platform draws its own view and
-   * hands it to us to dismiss.
+   * Runs the same controlled handoff on every supported Android version.
    *
-   * Above API 31 the system animates the splash itself and this listener never runs, so the
-   * transition is left to the platform there rather than double-animated.
+   * AndroidX exposes the exit callback for both the compat implementation and the platform
+   * SplashScreen. Keeping one path here avoids modern Android silently falling back to a different
+   * transition than older devices.
    */
   @Suppress("DEPRECATION")
   private fun setSplashExitAnimation(splashScreen: SplashScreen) {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) return
     val root = findViewById<android.view.View>(android.R.id.content)
     // Transparent while the splash is up so the exit does not flash the bar backgrounds back in.
     window.statusBarColor = android.graphics.Color.TRANSPARENT
     window.navigationBarColor = android.graphics.Color.TRANSPARENT
 
     splashScreen.setOnExitAnimationListener { splashProvider ->
-      // The compat layer mis-translates the icon on the way in, so it is reset here.
+      val contentStartTranslation = SPLASH_EXIT_TRANSLATION_DP.dpToPx(root.resources)
+
+      // Establish the first animation frame before either animator starts. Previously the content
+      // jumped from 0 -> 16dp on the first ValueAnimator tick while the splash was already fading.
+      root.translationY = contentStartTranslation
+      splashProvider.view.alpha = 1f
+      // The compat implementation can hand us an icon view with an inherited translation.
       splashProvider.iconView.translationY = 0f
 
       val contentAnim =
-        ValueAnimator.ofFloat(1f, 0f).apply {
+        ValueAnimator.ofFloat(contentStartTranslation, 0f).apply {
           interpolator = PathInterpolator(0f, 0f, 0.2f, 1f)
           duration = SPLASH_EXIT_ANIMATION_MS
           addUpdateListener { animator ->
-            val value = animator.animatedValue as Float
-            root.translationY = value * SPLASH_EXIT_TRANSLATION_DP.dpToPx(root.resources)
+            root.translationY = animator.animatedValue as Float
           }
+          doOnEnd { root.translationY = 0f }
         }
       val splashAnim =
         ValueAnimator.ofFloat(1f, 0f).apply {
