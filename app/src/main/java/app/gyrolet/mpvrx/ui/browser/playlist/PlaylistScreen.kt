@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -29,7 +28,6 @@ import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,7 +41,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -66,7 +63,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -99,7 +95,6 @@ import app.gyrolet.mpvrx.ui.components.InlineSearchBar
 import app.gyrolet.mpvrx.ui.components.themedSegmentedButtonColors
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
-import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.NavigationPager
@@ -366,27 +361,6 @@ object PlaylistScreen : Screen {
           }
         }
 
-        PlaylistToolbar(
-          sortType = sortType,
-          sortOrder = sortOrder,
-          layoutMode = layoutMode,
-          onAlphabeticalSort = {
-            if (sortType == PlaylistSortType.Name) {
-              browserPreferences.playlistSortOrder.set(
-                if (sortOrder.isAscending) SortOrder.Descending else SortOrder.Ascending,
-              )
-            } else {
-              browserPreferences.playlistSortType.set(PlaylistSortType.Name)
-              browserPreferences.playlistSortOrder.set(SortOrder.Ascending)
-            }
-          },
-          onToggleLayout = {
-            browserPreferences.playlistView.layoutMode.set(
-              if (layoutMode == MediaLayoutMode.GRID) MediaLayoutMode.LIST else MediaLayoutMode.GRID,
-            )
-          },
-        )
-
         NavigationPager(
           state = pagerState,
           modifier = Modifier.fillMaxWidth().weight(1f),
@@ -523,56 +497,6 @@ object PlaylistScreen : Screen {
         itemType = "playlist",
         itemNames = listOf(target.playlist.name),
       )
-    }
-  }
-
-  @Composable
-  private fun PlaylistToolbar(
-    sortType: PlaylistSortType,
-    sortOrder: SortOrder,
-    layoutMode: MediaLayoutMode,
-    onAlphabeticalSort: () -> Unit,
-    onToggleLayout: () -> Unit,
-  ) {
-    val alphabeticalLabel =
-      if (sortType == PlaylistSortType.Name && !sortOrder.isAscending) "Z-A" else "A-Z"
-
-    Row(
-      modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 8.dp, bottom = 4.dp),
-      verticalAlignment = Alignment.CenterVertically,
-    ) {
-      Surface(
-        onClick = onAlphabeticalSort,
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.secondaryContainer,
-        contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-        modifier = Modifier.tvFocusHighlight(CircleShape),
-      ) {
-        Row(
-          modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-          horizontalArrangement = Arrangement.spacedBy(6.dp),
-          verticalAlignment = Alignment.CenterVertically,
-        ) {
-          Icon(
-            Icons.RoundedFilled.SortByAlpha,
-            contentDescription = alphabeticalLabel,
-            modifier = Modifier.size(18.dp),
-          )
-          Text(
-            text = alphabeticalLabel,
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.SemiBold,
-          )
-        }
-      }
-      Spacer(Modifier.weight(1f))
-      IconButton(onClick = onToggleLayout) {
-        val showsList = layoutMode == MediaLayoutMode.LIST
-        Icon(
-          if (showsList) Icons.RoundedFilled.GridView else Icons.RoundedFilled.ViewList,
-          contentDescription = stringResource(if (showsList) R.string.playlist_view_grid else R.string.playlist_view_list),
-        )
-      }
     }
   }
 
