@@ -15,6 +15,7 @@ import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.animation.PathInterpolator
 import android.app.Activity
@@ -102,6 +103,7 @@ import app.gyrolet.mpvrx.utils.permission.PermissionUtils
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
 import app.gyrolet.mpvrx.ui.update.UpdateSheet
 import app.gyrolet.mpvrx.ui.update.UpdateViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
@@ -145,10 +147,14 @@ class MainActivity : AppCompatActivity() {
     }
 
   override fun onCreate(savedInstanceState: Bundle?) {
-    // Before super.onCreate(): the system splash has to be installed while the pre-splash theme is
-    // still active. Skipped on recreation so a rotation or theme change does not replay it.
-    val showSplash = savedInstanceState == null
-    val splashScreen = if (showSplash) installSplashScreen() else null
+    // installSplashScreen() must run before super.onCreate() on every Activity creation so the
+    // manifest's splash theme can reliably hand off to postSplashScreenTheme. We only *hold* and
+    // draw the branded splash once per process, which avoids replaying it on warm recreations while
+    // still covering a true process-death restore (where savedInstanceState may be non-null).
+    val showSplash = !hasCreatedMainActivityInProcess
+    hasCreatedMainActivityInProcess = true
+    val splashStartUptimeMs = SystemClock.uptimeMillis()
+    val splashScreen = installSplashScreen()
 
     super.onCreate(savedInstanceState)
 
@@ -284,6 +290,15 @@ class MainActivity : AppCompatActivity() {
                 LaunchedEffect(Unit) {
                   withFrameNanos { }
                   onSplashReady()
+
+                  // Keep the themed Compose splash mounted underneath the system splash until the
+                  // minimum hold expires. Previously it faded out immediately on the first frame,
+                  // so fast launches had no themed layer left when the system splash finally left.
+                  val remainingHoldMs =
+                    (SPLASH_MIN_DURATION_MS - (SystemClock.uptimeMillis() - splashStartUptimeMs))
+                      .coerceAtLeast(0L)
+                  if (remainingHoldMs > 0L) delay(remainingHoldMs)
+                  isSplashFinished = true
                 }
               }
               Navigator()
@@ -322,12 +337,11 @@ class MainActivity : AppCompatActivity() {
       }
     }
 
-    if (splashScreen != null) {
-      val startTime = System.currentTimeMillis()
+    if (showSplash) {
       splashScreen.setKeepOnScreenCondition {
-        val elapsed = System.currentTimeMillis() - startTime
+        val elapsed = SystemClock.uptimeMillis() - splashStartUptimeMs
         // Never flash: hold for a beat so a fast launch does not strobe, and cap the wait so a slow
-        // device cannot strand the user on the splash.
+        // device cannot strand the user on the splash. Uptime is monotonic, unlike wall-clock time.
         elapsed <= SPLASH_MIN_DURATION_MS || (!isSplashReady && elapsed <= SPLASH_MAX_DURATION_MS)
       }
       setSplashExitAnimation(splashScreen)
@@ -337,13 +351,13 @@ class MainActivity : AppCompatActivity() {
   /**
    * Called once the first Compose frame is out.
    *
-   * Releases the system splash and starts the themed overlay's fade-out. The minimum duration is
-   * enforced by the keep-on-screen condition above, so this only ever shortens the wait.
+   * This only marks the real UI as ready so the system splash may leave after its minimum hold.
+   * The themed Compose overlay is dismissed separately at the handoff boundary, preventing a blank
+   * or mismatched frame between the system splash and the app content.
    */
   private fun onSplashReady() {
     if (isSplashReady) return
     isSplashReady = true
-    isSplashFinished = true
   }
 
   /**
@@ -627,6 +641,11 @@ class MainActivity : AppCompatActivity() {
 
   private companion object {
     const val SYSTEM_BAR_THEME_SWITCH_PROGRESS = 0.55f
+
+    // Process-local rather than saved-state based: a process-death restore is a cold start even
+    // though Android supplies a non-null savedInstanceState, while a warm recreation is not.
+    @Volatile
+    var hasCreatedMainActivityInProcess = false
   }
 
   /**
