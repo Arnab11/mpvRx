@@ -270,6 +270,24 @@ data class PlaylistDetailScreen(
     var urlDialogContent by remember { mutableStateOf("") }
     var videosForAddToPlaylist by remember { mutableStateOf<List<Video>>(emptyList()) }
 
+    val selectedItems = selectionManager.getSelectedItems()
+    val isReadOnlySource = playlist?.isM3uPlaylist == true || playlist?.isZipPlaylist == true
+
+    fun openSelectedItemInfo() {
+      selectedItems.firstOrNull()?.let { item ->
+        if (playlist?.isM3uPlaylist == true) {
+          urlDialogContent = item.video.path
+          showUrlDialog = true
+        } else {
+          val intent = Intent(context, app.gyrolet.mpvrx.ui.mediainfo.MediaInfoActivity::class.java)
+          intent.action = Intent.ACTION_VIEW
+          intent.data = item.video.uri
+          context.startActivity(intent)
+        }
+        selectionManager.clear()
+      }
+    }
+
     // Predictive back: Intercept when in selection mode, reorder mode, or searching
     BackHandler(enabled = selectionManager.isInSelectionMode || isReorderMode || isSearching) {
       when {
@@ -460,14 +478,28 @@ data class PlaylistDetailScreen(
             onCancelSelection = { selectionManager.clear() },
             isSingleSelection = selectionManager.isSingleSelection,
             onSortClick = if (isReorderMode) null else ({ showSortDialog = true }),
-            useRemoveIcon = true, // Show remove icon instead of delete for playlist
-            onInfoClick = null,
-            onShareClick = null,
-            onPlayClick = null, // Don't show play icon in selection mode for playlist
+            useRemoveIcon = true, // Remove from playlist, not delete the backing media.
+            onInfoClick =
+              if (
+                selectionManager.isSingleSelection &&
+                  playlist?.isXtreamPlaylist != true &&
+                  playlist?.isZipPlaylist != true
+              ) {
+                ::openSelectedItemInfo
+              } else {
+                null
+              },
+            onShareClick =
+              if (!isReadOnlySource && selectedItems.isNotEmpty()) {
+                { MediaUtils.shareVideos(context, selectedItems.map { it.video }) }
+              } else {
+                null
+              },
+            onPlayClick = null, // Playback/queue actions stay in the bottom selection strip.
             onSelectAll = { selectionManager.selectAll() },
             onInvertSelection = { selectionManager.invertSelection() },
             onDeselectAll = { selectionManager.clear() },
-            onDeleteClick = null,
+            onDeleteClick = { deleteDialogOpen.value = true },
             additionalActions = {
               when {
                 // Show done button when in reorder mode
@@ -715,13 +747,9 @@ data class PlaylistDetailScreen(
       }
       }
 
-      val selectedItems = selectionManager.getSelectedItems()
-      val isReadOnlySource = playlist?.isM3uPlaylist == true || playlist?.isZipPlaylist == true
       val allSelectedBookmarked = selectedItems.isNotEmpty() && selectedItems.all { it.playlistItem.isFavorite }
       val bookmarkLabel =
         stringResource(if (allSelectedBookmarked) R.string.audiobook_delete_bookmark else R.string.audiobook_add_bookmark)
-      val shareLabel = stringResource(R.string.generic_share)
-      val infoLabel = stringResource(R.string.info)
       app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar(
         backdrop = bottomBarBackdrop,
         isSelectionMode = selectionManager.isInSelectionMode && !isReorderMode,
@@ -753,6 +781,7 @@ data class PlaylistDetailScreen(
         showCopy = false,
         showMove = false,
         showRename = false,
+        showDelete = false,
         showAddToPlaylist = playlist?.isZipPlaylist != true,
         extraActions =
           buildList {
@@ -776,40 +805,7 @@ data class PlaylistDetailScreen(
                 },
               ),
             )
-            if (!isReadOnlySource) {
-              add(
-                app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBarAction(
-                  icon = Icons.RoundedFilled.Share,
-                  label = shareLabel,
-                  onClick = { MediaUtils.shareVideos(context, selectedItems.map { it.video }) },
-                ),
-              )
-            }
-            if (selectionManager.isSingleSelection && playlist?.isXtreamPlaylist != true && playlist?.isZipPlaylist != true) {
-              add(
-                app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBarAction(
-                  icon = Icons.RoundedFilled.Info,
-                  label = infoLabel,
-                  onClick = {
-                    selectedItems.firstOrNull()?.let { item ->
-                      if (playlist?.isM3uPlaylist == true) {
-                        urlDialogContent = item.video.path
-                        showUrlDialog = true
-                      } else {
-                        val intent = Intent(context, app.gyrolet.mpvrx.ui.mediainfo.MediaInfoActivity::class.java)
-                        intent.action = Intent.ACTION_VIEW
-                        intent.data = item.video.uri
-                        context.startActivity(intent)
-                      }
-                      selectionManager.clear()
-                    }
-                  },
-                ),
-              )
-            }
           },
-        deleteIcon = Icons.RoundedFilled.RemoveCircle,
-        deleteLabel = stringResource(R.string.ui_remove),
         modifier = Modifier.align(Alignment.BottomCenter),
       )
       }
