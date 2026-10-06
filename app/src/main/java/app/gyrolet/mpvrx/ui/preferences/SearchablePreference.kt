@@ -1427,6 +1427,7 @@ object SearchablePreferences {
         anchorItemIndex = 7,
         SearchEntrySpec(R.string.pref_nav_music_title, listOf("music", "audio", "tab", "navigation")),
         SearchEntrySpec(R.string.pref_nav_profile_title, listOf("profile", "you", "library", "tab", "navigation")),
+        SearchEntrySpec(R.string.navbar_glow_title, listOf("glass", "glow", "navbar", "rim", "highlight", "liquid glass")),
         SearchEntrySpec(R.string.pref_nav_network_title, listOf("network", "stream", "tab", "navigation")),
         SearchEntrySpec(R.string.pref_nav_jellyfin_title, listOf("jellyfin", "server", "tab", "navigation")),
         SearchEntrySpec(R.string.pref_quick_play_fab_title, listOf("quick play", "fab", "floating button", "random")),
@@ -1743,7 +1744,7 @@ object SearchablePreferences {
         keywords =
           listOf(
             "theme dark light system dynamic amoled font names labels thumbnails frame quality position",
-            "navigation home music recents playlists network quick play fab auto scroll watched threshold",
+            "navigation home music profile network jellyfin quick play fab auto scroll",
             "grid columns list folder cards video cards chips path extension duration resolution framerate subtitle",
           ),
         category = "Appearance",

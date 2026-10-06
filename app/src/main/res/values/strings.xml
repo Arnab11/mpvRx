@@ -85,10 +85,6 @@
   <string name="pref_nav_home_summary">Show or hide Home in the bottom navigation bar</string>
   <string name="pref_nav_music_title">Show Music tab</string>
   <string name="pref_nav_music_summary">Show or hide Music in the bottom navigation bar</string>
-  <string name="pref_nav_recents_title">Show Recents tab</string>
-  <string name="pref_nav_recents_summary">Show or hide Recents in the bottom navigation bar</string>
-  <string name="pref_nav_playlists_title">Show Playlists tab</string>
-  <string name="pref_nav_playlists_summary">Show or hide Playlists in the bottom navigation bar</string>
   <string name="pref_nav_network_title">Show Network tab</string>
   <string name="pref_nav_network_summary">Show or hide Network in the bottom navigation bar</string>
   <string name="pref_nav_jellyfin_title">Show Jellyfin tab</string>
@@ -2689,12 +2685,9 @@
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Snapshots</string>
-  <string name="pref_nav_snapshots_title">Show Snapshots tab</string>
-  <string name="pref_nav_snapshots_summary">Show or hide Snapshots in the bottom navigation bar</string>
   <string name="ui_profile">Profile</string>
   <string name="pref_nav_profile_title">Show Profile tab</string>
   <string name="pref_nav_profile_summary">Combine Recents, Playlists and Snapshots into a single tab</string>
-  <string name="pref_nav_in_profile_tab_summary">Included in the Profile tab</string>
   <string name="profile_view_all">View all</string>
   <string name="profile_edit">Edit profile</string>
   <string name="profile_display_name">Display name</string>
@@ -2801,4 +2794,6 @@
   <string name="onboarding_configuration_no_backup">Folder configured. Downloads will use Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Restored settings from %1$s. Downloads will use Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">Folder setup could not be completed: %1$s</string>
+  <string name="navbar_glow_title">Glass Glow</string>
+  <string name="navbar_glow_summary">Show navbar rim lighting and touch glow in normal and Liquid Glass modes</string>
 </resources>

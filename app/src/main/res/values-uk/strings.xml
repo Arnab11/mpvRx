@@ -87,10 +87,6 @@
   <string name="pref_nav_home_summary">Показувати або приховати вкладку «Головна» на нижній панелі навігації</string>
   <string name="pref_nav_music_title">Вкладка «Музика»</string>
   <string name="pref_nav_music_summary">Показувати або приховати вкладку «Музика» на нижній панелі навігації</string>
-  <string name="pref_nav_recents_title">Вкладка «Нещодавні»</string>
-  <string name="pref_nav_recents_summary">Показувати або приховати вкладку «Нещодавні» на нижній панелі навігації</string>
-  <string name="pref_nav_playlists_title">Вкладка «Плейлісти»</string>
-  <string name="pref_nav_playlists_summary">Показувати або приховати вкладку «Плейлісти» на нижній панелі навігації</string>
   <string name="pref_nav_network_title">Вкладка «Мережа»</string>
   <string name="pref_nav_network_summary">Показувати або приховати вкладку «Мережа» на нижній панелі навігації</string>
   <string name="pref_nav_jellyfin_title">Вкладка «Jellyfin»</string>
@@ -2614,12 +2610,9 @@
   <string name="pref_background_playback_per_video_summary">Зберігати окремий вибір фонового відтворення для кожного відео. Інші відео залишаються вимкненими, доки не ввімкнете вручну.</string>
   <string name="jellyfin_technical_details">Технічні подробиці</string>
   <string name="ui_snapshots">Знімки</string>
-  <string name="pref_nav_snapshots_title">Показувати вкладку «Знімки»</string>
-  <string name="pref_nav_snapshots_summary">Показувати або приховувати «Знімки» на нижній панелі навігації</string>
   <string name="ui_profile">Профіль</string>
   <string name="pref_nav_profile_title">Показувати вкладку «Профіль»</string>
   <string name="pref_nav_profile_summary">Об\'єднати «Нещодавні», «Плейлисти» та «Знімки» в одну вкладку</string>
-  <string name="pref_nav_in_profile_tab_summary">Входить до вкладки «Профіль»</string>
   <string name="profile_view_all">Показати все</string>
   <string name="profile_edit">Редагувати профіль</string>
   <string name="profile_display_name">Відображуване ім\'я</string>
@@ -2714,4 +2707,6 @@
   <string name="onboarding_configuration_no_backup">Папку налаштовано. Завантаження використовуватимуть Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Відновлено налаштування з %1$s. Завантаження використовуватимуть Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">Не вдалося завершити налаштування папки: %1$s</string>
+  <string name="navbar_glow_title">Світіння скла</string>
+  <string name="navbar_glow_summary">Підсвічування краю та дотиків навігації у звичайному режимі й режимі Liquid Glass</string>
 </resources>

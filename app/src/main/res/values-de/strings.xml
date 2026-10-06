@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">Navigation</string>
   <string name="pref_nav_home_title">Start-Tab anzeigen</string>
   <string name="pref_nav_home_summary">Start in der unteren Navigationsleiste ein- oder ausblenden</string>
-  <string name="pref_nav_recents_title">Zuletzt-Tab anzeigen</string>
-  <string name="pref_nav_recents_summary">Zuletzt in der unteren Navigationsleiste ein- oder ausblenden</string>
-  <string name="pref_nav_playlists_title">Wiedergabelisten-Tab anzeigen</string>
-  <string name="pref_nav_playlists_summary">Wiedergabelisten in der unteren Navigationsleiste ein- oder ausblenden</string>
   <string name="pref_nav_network_title">Netzwerk-Tab anzeigen</string>
   <string name="pref_nav_network_summary">Netzwerk in der unteren Navigationsleiste ein- oder ausblenden</string>
   <string name="pref_quick_play_fab_title">Schnellwiedergabe-FAB</string>
@@ -2577,12 +2573,9 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Schnappschüsse</string>
-  <string name="pref_nav_snapshots_title">Schnappschüsse-Tab anzeigen</string>
-  <string name="pref_nav_snapshots_summary">Schnappschüsse in der unteren Navigationsleiste ein- oder ausblenden</string>
   <string name="ui_profile">Profil</string>
   <string name="pref_nav_profile_title">Profil-Tab anzeigen</string>
   <string name="pref_nav_profile_summary">Zuletzt, Playlists und Schnappschüsse in einem Tab zusammenfassen</string>
-  <string name="pref_nav_in_profile_tab_summary">Im Profil-Tab enthalten</string>
   <string name="profile_view_all">Alle anzeigen</string>
   <string name="profile_edit">Profil bearbeiten</string>
   <string name="profile_display_name">Anzeigename</string>
@@ -2684,4 +2677,6 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="onboarding_configuration_no_backup">Ordner eingerichtet. Downloads verwenden Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Einstellungen aus %1$s wiederhergestellt. Downloads verwenden Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">Ordnereinrichtung konnte nicht abgeschlossen werden: %1$s</string>
+  <string name="navbar_glow_title">Glasleuchten</string>
+  <string name="navbar_glow_summary">Randlicht und Berührungsleuchten der Navigation im normalen und Liquid-Glass-Modus anzeigen</string>
 </resources>

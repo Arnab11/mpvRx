@@ -87,25 +87,19 @@ internal fun WallpaperHomePreviewDialog(
   val browserPreferences = koinInject<BrowserPreferences>()
   val showMusicTab by appearancePreferences.showMusicTab.collectAsState()
   val showProfileTab by appearancePreferences.showProfileTab.collectAsState()
-  val showRecentsTab by appearancePreferences.showRecentsTab.collectAsState()
-  val showPlaylistsTab by appearancePreferences.showPlaylistsTab.collectAsState()
   val showNetworkTab by appearancePreferences.showNetworkTab.collectAsState()
   val showJellyfinTab by appearancePreferences.showJellyfinTab.collectAsState()
-  val showSnapshotTab by appearancePreferences.showSnapshotTab.collectAsState()
   val showQuickPlayFab by appearancePreferences.showQuickPlayFab.collectAsState()
   val layoutMode by browserPreferences.folderViewFolderLayoutMode.collectAsState()
 
   // Same tab order as MainScreen; the pill only shows with 2+ tabs.
   val navigationTabs =
-    remember(showMusicTab, showProfileTab, showRecentsTab, showPlaylistsTab, showNetworkTab, showJellyfinTab, showSnapshotTab) {
+    remember(showMusicTab, showProfileTab, showNetworkTab, showJellyfinTab) {
       mainNavigationTabs(
         showMusic = showMusicTab,
         showProfile = showProfileTab,
-        showRecents = showRecentsTab,
-        showPlaylists = showPlaylistsTab,
         showNetwork = showNetworkTab,
         showJellyfin = showJellyfinTab,
-        showSnapshots = showSnapshotTab,
       ).takeIf { it.size > 1 }.orEmpty()
     }
   val contentBottomPadding = if (navigationTabs.isEmpty()) 0.dp else 88.dp

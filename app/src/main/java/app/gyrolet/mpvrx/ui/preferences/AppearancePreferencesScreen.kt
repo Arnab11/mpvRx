@@ -830,6 +830,15 @@ object AppearancePreferencesScreen : Screen {
               val showProfileTab by preferences.showProfileTab.collectAsState()
               val showNetworkTab by preferences.showNetworkTab.collectAsState()
               val showJellyfinTab by preferences.showJellyfinTab.collectAsState()
+              val navigationBarGlow by preferences.navigationBarGlow.collectAsState()
+              SwitchPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.navbar_glow_title),
+                value = navigationBarGlow,
+                onValueChange = preferences.navigationBarGlow::set,
+                title = { Text(stringResource(R.string.navbar_glow_title)) },
+                summary = { Text(stringResource(R.string.navbar_glow_summary), color = MaterialTheme.colorScheme.outline) },
+              )
+              PreferenceDivider()
 
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_nav_music_title),

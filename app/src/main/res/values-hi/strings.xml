@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">नेविगेशन</string>
   <string name="pref_nav_home_title">होम टैब दिखाएं</string>
   <string name="pref_nav_home_summary">नीचे की नेविगेशन बार में होम दिखाएं या छुपाएं</string>
-  <string name="pref_nav_recents_title">रीसेंट्स टैब दिखाएं</string>
-  <string name="pref_nav_recents_summary">नीचे की नेविगेशन बार में रीसेंट्स दिखाएं या छुपाएं</string>
-  <string name="pref_nav_playlists_title">प्लेलिस्ट टैब दिखाएं</string>
-  <string name="pref_nav_playlists_summary">नीचे की नेविगेशन बार में प्लेलिस्ट दिखाएं या छुपाएं</string>
   <string name="pref_nav_network_title">नेटवर्क टैब दिखाएं</string>
   <string name="pref_nav_network_summary">नीचे की नेविगेशन बार में नेटवर्क दिखाएं या छुपाएं</string>
   <string name="pref_quick_play_fab_title">क्विक प्ले FAB</string>
@@ -2481,12 +2477,9 @@
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">स्नैपशॉट</string>
-  <string name="pref_nav_snapshots_title">स्नैपशॉट टैब दिखाएं</string>
-  <string name="pref_nav_snapshots_summary">निचले नेविगेशन बार में स्नैपशॉट दिखाएं या छुपाएं</string>
   <string name="ui_profile">प्रोफ़ाइल</string>
   <string name="pref_nav_profile_title">प्रोफ़ाइल टैब दिखाएं</string>
   <string name="pref_nav_profile_summary">हाल के, प्लेलिस्ट और स्नैपशॉट को एक टैब में मिलाएं</string>
-  <string name="pref_nav_in_profile_tab_summary">प्रोफ़ाइल टैब में शामिल</string>
   <string name="profile_view_all">सभी देखें</string>
   <string name="profile_edit">प्रोफ़ाइल संपादित करें</string>
   <string name="profile_display_name">प्रदर्शित नाम</string>
@@ -2588,4 +2581,6 @@
   <string name="onboarding_configuration_no_backup">फ़ोल्डर सेट हो गया। डाउनलोड Configuration/Downloads का उपयोग करेंगे।</string>
   <string name="onboarding_configuration_restored">%1$s से सेटिंग्स बहाल हुईं। डाउनलोड Configuration/Downloads का उपयोग करेंगे।</string>
   <string name="onboarding_configuration_restore_failed">फ़ोल्डर सेटअप पूरा नहीं हुआ: %1$s</string>
+  <string name="navbar_glow_title">ग्लास की चमक</string>
+  <string name="navbar_glow_summary">सामान्य और लिक्विड ग्लास मोड में नेविगेशन बार के किनारे और स्पर्श की चमक दिखाएं</string>
 </resources>

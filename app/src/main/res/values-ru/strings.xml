@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">Навигация</string>
   <string name="pref_nav_home_title">Показывать вкладку «Главная»</string>
   <string name="pref_nav_home_summary">Показывать или скрывать «Главную» на нижней панели навигации</string>
-  <string name="pref_nav_recents_title">Показывать вкладку «Недавние»</string>
-  <string name="pref_nav_recents_summary">Показывать или скрывать «Недавние» на нижней панели навигации</string>
-  <string name="pref_nav_playlists_title">Показывать вкладку «Плейлисты»</string>
-  <string name="pref_nav_playlists_summary">Показывать или скрывать «Плейлисты» на нижней панели навигации</string>
   <string name="pref_nav_network_title">Показывать вкладку «Сеть»</string>
   <string name="pref_nav_network_summary">Показывать или скрывать «Сеть» на нижней панели навигации</string>
   <string name="pref_quick_play_fab_title">Кнопка быстрого воспроизведения</string>
@@ -2591,12 +2587,9 @@
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Кадры</string>
-  <string name="pref_nav_snapshots_title">Показывать вкладку «Кадры»</string>
-  <string name="pref_nav_snapshots_summary">Показывать или скрывать «Кадры» на нижней панели навигации</string>
   <string name="ui_profile">Профиль</string>
   <string name="pref_nav_profile_title">Показывать вкладку «Профиль»</string>
   <string name="pref_nav_profile_summary">Объединить «Недавние», «Плейлисты» и «Кадры» в одну вкладку</string>
-  <string name="pref_nav_in_profile_tab_summary">Входит во вкладку «Профиль»</string>
   <string name="profile_view_all">Показать все</string>
   <string name="profile_edit">Изменить профиль</string>
   <string name="profile_display_name">Отображаемое имя</string>
@@ -2698,4 +2691,6 @@
   <string name="onboarding_configuration_no_backup">Папка настроена. Загрузки будут сохраняться в Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Настройки восстановлены из %1$s. Загрузки будут сохраняться в Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">Не удалось завершить настройку папки: %1$s</string>
+  <string name="navbar_glow_title">Свечение стекла</string>
+  <string name="navbar_glow_summary">Подсветка края и касаний навигации в обычном режиме и режиме Liquid Glass</string>
 </resources>

@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">Navigation</string>
   <string name="pref_nav_home_title">Afficher l’onglet Accueil</string>
   <string name="pref_nav_home_summary">Afficher ou masquer Accueil dans la barre de navigation inférieure</string>
-  <string name="pref_nav_recents_title">Afficher l’onglet Récents</string>
-  <string name="pref_nav_recents_summary">Afficher ou masquer Récents dans la barre de navigation inférieure</string>
-  <string name="pref_nav_playlists_title">Afficher l’onglet Listes de lecture</string>
-  <string name="pref_nav_playlists_summary">Afficher ou masquer Listes de lecture dans la barre de navigation inférieure</string>
   <string name="pref_nav_network_title">Afficher l’onglet Réseau</string>
   <string name="pref_nav_network_summary">Afficher ou masquer Réseau dans la barre de navigation inférieure</string>
   <string name="pref_quick_play_fab_title">FAB de lecture rapide</string>
@@ -2577,12 +2573,9 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Captures</string>
-  <string name="pref_nav_snapshots_title">Afficher l\'onglet Captures</string>
-  <string name="pref_nav_snapshots_summary">Afficher ou masquer Captures dans la barre de navigation inférieure</string>
   <string name="ui_profile">Profil</string>
   <string name="pref_nav_profile_title">Afficher l\'onglet Profil</string>
   <string name="pref_nav_profile_summary">Regrouper Récents, Playlists et Captures dans un seul onglet</string>
-  <string name="pref_nav_in_profile_tab_summary">Inclus dans l\'onglet Profil</string>
   <string name="profile_view_all">Tout afficher</string>
   <string name="profile_edit">Modifier le profil</string>
   <string name="profile_display_name">Nom affiché</string>
@@ -2684,4 +2677,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="onboarding_configuration_no_backup">Dossier configuré. Les téléchargements utiliseront Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Réglages restaurés depuis %1$s. Les téléchargements utiliseront Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">La configuration du dossier a échoué : %1$s</string>
+  <string name="navbar_glow_title">Éclat du verre</string>
+  <string name="navbar_glow_summary">Afficher les reflets du bord et au toucher en modes normal et Liquid Glass</string>
 </resources>

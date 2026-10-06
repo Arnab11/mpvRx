@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">Navegação</string>
   <string name="pref_nav_home_title">Mostrar aba Início</string>
   <string name="pref_nav_home_summary">Mostrar ou ocultar Início na barra de navegação inferior</string>
-  <string name="pref_nav_recents_title">Mostrar aba Recentes</string>
-  <string name="pref_nav_recents_summary">Mostrar ou ocultar Recentes na barra de navegação inferior</string>
-  <string name="pref_nav_playlists_title">Mostrar aba Playlists</string>
-  <string name="pref_nav_playlists_summary">Mostrar ou ocultar Playlists na barra de navegação inferior</string>
   <string name="pref_nav_network_title">Mostrar aba Rede</string>
   <string name="pref_nav_network_summary">Mostrar ou ocultar Rede na barra de navegação inferior</string>
   <string name="pref_quick_play_fab_title">FAB de reprodução rápida</string>
@@ -2577,12 +2573,9 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Capturas</string>
-  <string name="pref_nav_snapshots_title">Mostrar aba de capturas</string>
-  <string name="pref_nav_snapshots_summary">Mostrar ou ocultar Capturas na barra de navegação inferior</string>
   <string name="ui_profile">Perfil</string>
   <string name="pref_nav_profile_title">Mostrar aba Perfil</string>
   <string name="pref_nav_profile_summary">Combinar Recentes, Playlists e Capturas em uma única aba</string>
-  <string name="pref_nav_in_profile_tab_summary">Incluído na aba Perfil</string>
   <string name="profile_view_all">Ver tudo</string>
   <string name="profile_edit">Editar perfil</string>
   <string name="profile_display_name">Nome de exibição</string>
@@ -2684,4 +2677,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="onboarding_configuration_no_backup">Pasta configurada. Os downloads usarão Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Ajustes restaurados de %1$s. Os downloads usarão Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">Não foi possível concluir a configuração da pasta: %1$s</string>
+  <string name="navbar_glow_title">Brilho do vidro</string>
+  <string name="navbar_glow_summary">Mostrar iluminação da borda e brilho ao tocar nos modos normal e Liquid Glass</string>
 </resources>

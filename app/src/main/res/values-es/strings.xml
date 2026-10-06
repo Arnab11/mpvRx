@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">Navegación</string>
   <string name="pref_nav_home_title">Mostrar pestaña Inicio</string>
   <string name="pref_nav_home_summary">Mostrar u ocultar Inicio en la barra de navegación inferior</string>
-  <string name="pref_nav_recents_title">Mostrar pestaña Recientes</string>
-  <string name="pref_nav_recents_summary">Mostrar u ocultar Recientes en la barra de navegación inferior</string>
-  <string name="pref_nav_playlists_title">Mostrar pestaña Listas</string>
-  <string name="pref_nav_playlists_summary">Mostrar u ocultar Listas en la barra de navegación inferior</string>
   <string name="pref_nav_network_title">Mostrar pestaña Red</string>
   <string name="pref_nav_network_summary">Mostrar u ocultar Red en la barra de navegación inferior</string>
   <string name="pref_quick_play_fab_title">FAB de reproducción rápida</string>
@@ -2577,12 +2573,9 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">Capturas</string>
-  <string name="pref_nav_snapshots_title">Mostrar pestaña de capturas</string>
-  <string name="pref_nav_snapshots_summary">Mostrar u ocultar Capturas en la barra de navegación inferior</string>
   <string name="ui_profile">Perfil</string>
   <string name="pref_nav_profile_title">Mostrar pestaña Perfil</string>
   <string name="pref_nav_profile_summary">Combinar Recientes, Listas y Capturas en una sola pestaña</string>
-  <string name="pref_nav_in_profile_tab_summary">Incluido en la pestaña Perfil</string>
   <string name="profile_view_all">Ver todo</string>
   <string name="profile_edit">Editar perfil</string>
   <string name="profile_display_name">Nombre visible</string>
@@ -2684,4 +2677,6 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="onboarding_configuration_no_backup">Carpeta configurada. Las descargas usarán Configuration/Downloads.</string>
   <string name="onboarding_configuration_restored">Ajustes restaurados desde %1$s. Las descargas usarán Configuration/Downloads.</string>
   <string name="onboarding_configuration_restore_failed">No se pudo completar la configuración de la carpeta: %1$s</string>
+  <string name="navbar_glow_title">Brillo del cristal</string>
+  <string name="navbar_glow_summary">Mostrar luz del borde y brillo al tocar la barra en los modos normal y Liquid Glass</string>
 </resources>

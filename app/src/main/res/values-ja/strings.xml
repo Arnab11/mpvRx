@@ -78,10 +78,6 @@
   <string name="pref_appearance_category_navigation">ナビゲーション</string>
   <string name="pref_nav_home_title">ホームタブを表示</string>
   <string name="pref_nav_home_summary">下部ナビゲーションバーのホームを表示または非表示にします</string>
-  <string name="pref_nav_recents_title">最近使った項目タブを表示</string>
-  <string name="pref_nav_recents_summary">下部ナビゲーションバーの最近使った項目を表示または非表示にします</string>
-  <string name="pref_nav_playlists_title">プレイリストタブを表示</string>
-  <string name="pref_nav_playlists_summary">下部ナビゲーションバーのプレイリストを表示または非表示にします</string>
   <string name="pref_nav_network_title">ネットワークタブを表示</string>
   <string name="pref_nav_network_summary">下部ナビゲーションバーのネットワークを表示または非表示にします</string>
   <string name="pref_quick_play_fab_title">クイック再生FAB</string>
@@ -2570,12 +2566,9 @@
 
   <!-- Snapshots (frame capture) -->
   <string name="ui_snapshots">スナップショット</string>
-  <string name="pref_nav_snapshots_title">スナップショットタブを表示</string>
-  <string name="pref_nav_snapshots_summary">下部ナビゲーションバーにスナップショットを表示または非表示</string>
   <string name="ui_profile">プロフィール</string>
   <string name="pref_nav_profile_title">プロフィールタブを表示</string>
   <string name="pref_nav_profile_summary">履歴、プレイリスト、スナップショットを1つのタブにまとめる</string>
-  <string name="pref_nav_in_profile_tab_summary">プロフィールタブに含まれています</string>
   <string name="profile_view_all">すべて表示</string>
   <string name="profile_edit">プロフィールを編集</string>
   <string name="profile_display_name">表示名</string>
@@ -2677,4 +2670,6 @@
   <string name="onboarding_configuration_no_backup">フォルダーを設定しました。ダウンロードは Configuration/Downloads を使用します。</string>
   <string name="onboarding_configuration_restored">%1$s から設定を復元しました。ダウンロードは Configuration/Downloads を使用します。</string>
   <string name="onboarding_configuration_restore_failed">フォルダーの設定を完了できませんでした: %1$s</string>
+  <string name="navbar_glow_title">ガラスの輝き</string>
+  <string name="navbar_glow_summary">通常とLiquid Glassの両モードでナビゲーションの縁とタッチ時の光を表示</string>
 </resources>

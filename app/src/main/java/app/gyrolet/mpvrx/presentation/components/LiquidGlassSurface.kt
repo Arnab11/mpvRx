@@ -76,6 +76,7 @@ fun LiquidGlassSurface(
   fallbackColor: Color,
   contentColor: Color = MaterialTheme.colorScheme.onSurface,
   backdrop: LiquidGlassBackdrop? = LocalLiquidGlassBackdrop.current,
+  glowStrength: Float = 1f,
   content: @Composable BoxScope.() -> Unit,
 ) {
   val reducedMotion = AppMotion.shouldReduceMotion()
@@ -86,7 +87,7 @@ fun LiquidGlassSurface(
   val roundedShape = shape as? RoundedCornerShape
 
   val glassStyle =
-    remember(roundedShape, style, glassColor, fallbackColor, reducedMotion) {
+    remember(roundedShape, style, glassColor, fallbackColor, reducedMotion, glowStrength) {
       roundedShape?.let { resolvedShape ->
         GlassStyle {
           shape(resolvedShape)
@@ -105,11 +106,11 @@ fun LiquidGlassSurface(
           // Replaces Backdrop's vibrancy/highlight/rim treatment.
           chromaMultiplier(1.08f)
           contrast(0.04f)
-          specularIntensity(if (reducedMotion) 0.28f else 0.52f)
-          ambientResponse(0.36f)
+          specularIntensity((if (reducedMotion) 0.28f else 0.52f) * glowStrength)
+          ambientResponse(0.36f * glowStrength)
           edgeSoftness(1.dp)
-          edgeShadow(Color.Black.copy(alpha = 0.16f))
-          chromaticAberrationStrength(if (reducedMotion) 0f else 0.12f)
+          edgeShadow(Color.Black.copy(alpha = 0.16f * glowStrength))
+          chromaticAberrationStrength(if (reducedMotion) 0f else 0.12f * glowStrength)
         }
       }
     }
