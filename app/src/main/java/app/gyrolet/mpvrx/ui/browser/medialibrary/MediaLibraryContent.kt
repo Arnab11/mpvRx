@@ -190,10 +190,7 @@ fun MediaLibraryContent(forceAudio: Boolean = false) {
     rememberSelectionManager(
       items = filteredVideosWithInfo.map { it.video },
       getId = { it.path.hashCode().toLong() },
-      onDeleteItems = { items, _ ->
-        coroutineScope.launch { viewModel.deleteVideos(items) }
-        Pair(items.size, 0)
-      },
+      onDeleteItems = { items, _ -> viewModel.deleteVideos(items) },
       onRenameItem = { video, newName ->
         coroutineScope.launch { viewModel.renameVideo(video, newName) }
         Result.success(Unit)

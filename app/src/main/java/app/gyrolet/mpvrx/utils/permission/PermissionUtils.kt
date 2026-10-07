@@ -262,12 +262,13 @@ object PermissionUtils {
     suspend fun deleteVideos(
       context: Context,
       videos: List<Video>,
+      onDeleted: (Video) -> Unit = {},
     ): Pair<Int, Int> =
       withContext(Dispatchers.IO) {
         if (!BuildConfig.SCOPED_STORAGE_ONLY || hasManageStoragePermission()) {
-          deleteVideosDirectly(context, videos)
+          deleteVideosDirectly(context, videos, onDeleted)
         } else {
-          deleteVideosScoped(context, videos)
+          deleteVideosScoped(context, videos, onDeleted)
         }
       }
 
@@ -277,6 +278,7 @@ object PermissionUtils {
     private suspend fun deleteVideosDirectly(
       context: Context,
       videos: List<Video>,
+      onDeleted: (Video) -> Unit,
     ): Pair<Int, Int> =
       withContext(Dispatchers.IO) {
         var deleted = 0
@@ -289,6 +291,7 @@ object PermissionUtils {
             if (file.exists() && file.delete()) {
               deleted++
               deletedPaths += video.path
+              onDeleted(video)
               RecentlyPlayedOps.onVideoDeleted(video.path)
               PlaybackStateOps.onVideoDeleted(video.path)
               Log.d(TAG, "✓ Deleted: ${video.displayName}")
@@ -317,6 +320,7 @@ object PermissionUtils {
     private suspend fun deleteVideosScoped(
       context: Context,
       videos: List<Video>,
+      onDeleted: (Video) -> Unit,
     ): Pair<Int, Int> =
       withContext(Dispatchers.IO) {
         var deleted = 0
@@ -331,6 +335,7 @@ object PermissionUtils {
           if (granted) {
             contentVideos.forEach { video ->
               deleted++
+              onDeleted(video)
               RecentlyPlayedOps.onVideoDeleted(video.path)
               PlaybackStateOps.onVideoDeleted(video.path)
               Log.d(TAG, "✓ Deleted (scoped request): ${video.displayName}")
@@ -345,6 +350,7 @@ object PermissionUtils {
               val rows = context.contentResolver.delete(video.uri, null, null)
               if (rows > 0) {
                 deleted++
+                onDeleted(video)
                 RecentlyPlayedOps.onVideoDeleted(video.path)
                 PlaybackStateOps.onVideoDeleted(video.path)
                 Log.d(TAG, "✓ Deleted (scoped): ${video.displayName}")
@@ -365,6 +371,7 @@ object PermissionUtils {
             if (!file.exists() || file.delete()) {
               deleted++
               deletedFilePaths += video.path
+              onDeleted(video)
               RecentlyPlayedOps.onVideoDeleted(video.path)
               PlaybackStateOps.onVideoDeleted(video.path)
               Log.d(TAG, "✓ Deleted (file fallback): ${video.displayName}")

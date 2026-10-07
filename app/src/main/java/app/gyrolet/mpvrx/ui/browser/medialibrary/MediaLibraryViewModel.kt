@@ -29,10 +29,16 @@ import app.gyrolet.mpvrx.utils.media.PlaybackStateOps
 import app.gyrolet.mpvrx.utils.storage.MediaStoreGenerationGuard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
 
@@ -44,11 +50,21 @@ class MediaLibraryViewModel(
   private val browserPreferences: BrowserPreferences by inject()
   private val playbackStateRepository: PlaybackStateRepository by inject()
 
+  private enum class DeletionState { Pending, Confirmed }
+
+  private val hiddenVideoPaths = MutableStateFlow<Map<String, DeletionState>>(emptyMap())
+  private val scanMutex = Mutex()
   private val _videos = MutableStateFlow<List<Video>>(emptyList())
-  val videos: StateFlow<List<Video>> = _videos.asStateFlow()
+  val videos: StateFlow<List<Video>> =
+    combine(_videos, hiddenVideoPaths) { items, hidden ->
+      if (hidden.isEmpty()) items else items.filterNot { it.path in hidden }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   private val _videosWithPlaybackInfo = MutableStateFlow<List<VideoWithPlaybackInfo>>(emptyList())
-  val videosWithPlaybackInfo: StateFlow<List<VideoWithPlaybackInfo>> = _videosWithPlaybackInfo.asStateFlow()
+  val videosWithPlaybackInfo: StateFlow<List<VideoWithPlaybackInfo>> =
+    combine(_videosWithPlaybackInfo, hiddenVideoPaths) { items, hidden ->
+      if (hidden.isEmpty()) items else items.filterNot { it.video.path in hidden }
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
   private val _isLoading = MutableStateFlow(false)
   val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -110,38 +126,63 @@ class MediaLibraryViewModel(
     }
 
     viewModelScope.launch(Dispatchers.IO) {
-      try {
-        // Read before scanning: recording the generation afterwards would bless a MediaStore newer
-        // than the data, and the next cold boot would keep a stale list.
-        val observedGeneration = MediaStoreGenerationGuard.currentToken(getApplication())
+      scanMutex.withLock {
+        try {
+          // Read before scanning: recording the generation afterwards would bless a MediaStore newer
+          // than the data, and the next cold boot would keep a stale list.
+          val observedGeneration = MediaStoreGenerationGuard.currentToken(getApplication())
 
-        if (_videos.value.isEmpty()) {
-          _isLoading.value = true
-        }
-        var videoList =
-          MediaFileRepository.getAllVideos(
-            context = getApplication(),
-            includeAudioOverride = true,
-          )
-
-        if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
-          videoList =
-            MetadataRetrieval.enrichVideosIfNeeded(
+          if (_videos.value.isEmpty()) {
+            _isLoading.value = true
+          }
+          var videoList =
+            MediaFileRepository.getAllVideos(
               context = getApplication(),
-              videos = videoList,
-              browserPreferences = browserPreferences,
-              metadataCache = metadataCache,
+              includeAudioOverride = true,
             )
-        }
 
-        _videos.value = videoList
-        MediaLibraryCache.save(getApplication(), videoList)
-        MediaStoreGenerationGuard.remember(getApplication(), observedGeneration)
-        loadPlaybackInfo(videoList)
-      } catch (e: Exception) {
-        Log.e(tag, "Error loading media library videos", e)
-      } finally {
-        _isLoading.value = false
+          if (MetadataRetrieval.isVideoMetadataNeeded(browserPreferences)) {
+            videoList =
+              MetadataRetrieval.enrichVideosIfNeeded(
+                context = getApplication(),
+                videos = videoList,
+                browserPreferences = browserPreferences,
+                metadataCache = metadataCache,
+              )
+          }
+
+          _videos.value = videoList
+          val scannedPaths = videoList.mapTo(hashSetOf()) { it.path }
+          hiddenVideoPaths.update { states ->
+            states.filter { (path, state) -> state == DeletionState.Pending || path in scannedPaths }
+          }
+          MediaLibraryCache.save(
+            getApplication(),
+            videoList.filterNot { hiddenVideoPaths.value[it.path] == DeletionState.Confirmed },
+          )
+          MediaStoreGenerationGuard.remember(getApplication(), observedGeneration)
+          loadPlaybackInfo(videoList)
+        } catch (e: Exception) {
+          Log.e(tag, "Error loading media library videos", e)
+        } finally {
+          _isLoading.value = false
+        }
+      }
+    }
+  }
+
+  override suspend fun deleteVideos(videos: List<Video>): Pair<Int, Int> {
+    val targets = videos.distinctBy { it.path }.filterNot { it.path in hiddenVideoPaths.value }
+    if (targets.isEmpty()) return 0 to 0
+    val paths = targets.mapTo(hashSetOf()) { it.path }
+    hiddenVideoPaths.update { it + paths.associateWith { DeletionState.Pending } }
+    return try {
+      super.deleteVideos(targets) { video ->
+        hiddenVideoPaths.update { it + (video.path to DeletionState.Confirmed) }
+      }
+    } finally {
+      hiddenVideoPaths.update { states ->
+        states.filterNot { (path, state) -> path in paths && state == DeletionState.Pending }
       }
     }
   }
