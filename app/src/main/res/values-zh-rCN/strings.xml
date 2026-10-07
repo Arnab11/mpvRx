@@ -2702,4 +2702,8 @@
   <string name="pref_liquid_glass_shadow_radius">阴影柔和度</string>
   <string name="pref_liquid_glass_inner_shadow_strength">内阴影强度</string>
   <string name="pref_liquid_glass_inner_shadow_radius">内阴影柔和度</string>
+  <string name="debug_logs_save_to_config">将日志保存到配置文件夹</string>
+  <string name="debug_logs_config_required">请先在高级设置中选择配置文件夹。</string>
+  <string name="debug_logs_config_saved">日志已保存到配置文件夹中的 %1$s。</string>
+  <string name="debug_logs_config_save_failed">无法保存日志。请检查配置文件夹的访问权限或重新选择该文件夹。</string>
 </resources>

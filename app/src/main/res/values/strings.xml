@@ -2821,4 +2821,8 @@
   <string name="navbar_glow_title">Glass Glow</string>
   <string name="navbar_glow_summary">Show navbar rim lighting and touch glow in normal and Liquid Glass modes</string>
   <string name="pref_seekbar_preview_skip_markers">Skip markers</string>
+  <string name="debug_logs_save_to_config">Save logs to config folder</string>
+  <string name="debug_logs_config_required">Select a configuration folder in Advanced Settings first.</string>
+  <string name="debug_logs_config_saved">Logs saved to %1$s in your configuration folder.</string>
+  <string name="debug_logs_config_save_failed">Could not save logs. Check access to your configuration folder or select it again.</string>
 </resources>
