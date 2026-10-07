@@ -2680,4 +2680,27 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="navbar_glow_title">Brilho do vidro</string>
   <string name="navbar_glow_summary">Mostrar iluminação da borda e brilho ao tocar nos modos normal e Liquid Glass</string>
   <string name="pref_seekbar_preview_skip_markers">Marcadores de salto</string>
+  <string name="pref_liquid_glass_optics">Óptica</string>
+  <string name="pref_liquid_glass_opacity">Opacidade do fundo</string>
+  <string name="pref_liquid_glass_blur">Intensidade do desfoque</string>
+  <string name="pref_liquid_glass_refraction_height">Largura da borda de refração</string>
+  <string name="pref_liquid_glass_refraction_amount">Intensidade da refração</string>
+  <string name="pref_liquid_glass_depth">Efeito de profundidade</string>
+  <string name="pref_liquid_glass_chromatic">Aberração cromática</string>
+  <string name="pref_liquid_glass_lens_unavailable">A refração requer Android 13 ou mais recente</string>
+  <string name="pref_liquid_glass_colors">Cor</string>
+  <string name="pref_liquid_glass_vibrancy">Vivacidade</string>
+  <string name="pref_liquid_glass_highlights">Reflexos</string>
+  <string name="pref_liquid_glass_highlight_style">Estilo dos reflexos</string>
+  <string name="pref_liquid_glass_component_default">Padrão do componente</string>
+  <string name="pref_liquid_glass_highlight_ambient">Ambiente</string>
+  <string name="pref_liquid_glass_highlight_plain">Simples</string>
+  <string name="pref_liquid_glass_highlight_strength">Intensidade dos reflexos</string>
+  <string name="pref_liquid_glass_highlight_width">Largura dos reflexos</string>
+  <string name="pref_liquid_glass_highlight_blur">Suavidade dos reflexos</string>
+  <string name="pref_liquid_glass_shadows">Sombras</string>
+  <string name="pref_liquid_glass_shadow_strength">Intensidade da sombra</string>
+  <string name="pref_liquid_glass_shadow_radius">Suavidade da sombra</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">Intensidade da sombra interna</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">Suavidade da sombra interna</string>
 </resources>

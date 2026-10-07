@@ -2694,4 +2694,27 @@
   <string name="navbar_glow_title">Свечение стекла</string>
   <string name="navbar_glow_summary">Подсветка края и касаний навигации в обычном режиме и режиме Liquid Glass</string>
   <string name="pref_seekbar_preview_skip_markers">Метки пропуска</string>
+  <string name="pref_liquid_glass_optics">Оптика</string>
+  <string name="pref_liquid_glass_opacity">Непрозрачность фона</string>
+  <string name="pref_liquid_glass_blur">Сила размытия</string>
+  <string name="pref_liquid_glass_refraction_height">Ширина края преломления</string>
+  <string name="pref_liquid_glass_refraction_amount">Сила преломления</string>
+  <string name="pref_liquid_glass_depth">Эффект глубины</string>
+  <string name="pref_liquid_glass_chromatic">Хроматическая аберрация</string>
+  <string name="pref_liquid_glass_lens_unavailable">Для преломления требуется Android 13 или новее</string>
+  <string name="pref_liquid_glass_colors">Цвет</string>
+  <string name="pref_liquid_glass_vibrancy">Сочность цветов</string>
+  <string name="pref_liquid_glass_highlights">Блики</string>
+  <string name="pref_liquid_glass_highlight_style">Стиль бликов</string>
+  <string name="pref_liquid_glass_component_default">По умолчанию для компонента</string>
+  <string name="pref_liquid_glass_highlight_ambient">Рассеянный</string>
+  <string name="pref_liquid_glass_highlight_plain">Простой</string>
+  <string name="pref_liquid_glass_highlight_strength">Сила бликов</string>
+  <string name="pref_liquid_glass_highlight_width">Ширина бликов</string>
+  <string name="pref_liquid_glass_highlight_blur">Мягкость бликов</string>
+  <string name="pref_liquid_glass_shadows">Тени</string>
+  <string name="pref_liquid_glass_shadow_strength">Сила тени</string>
+  <string name="pref_liquid_glass_shadow_radius">Мягкость тени</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">Сила внутренней тени</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">Мягкость внутренней тени</string>
 </resources>

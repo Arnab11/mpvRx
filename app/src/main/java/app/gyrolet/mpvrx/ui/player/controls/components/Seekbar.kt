@@ -90,13 +90,13 @@ import androidx.compose.ui.util.lerp
 import androidx.compose.ui.graphics.drawscope.scale
 import app.gyrolet.mpvrx.ui.liquidglass.DampedDragAnimation
 import app.gyrolet.mpvrx.ui.liquidglass.LocalKyantPlayerBackdrop
+import app.gyrolet.mpvrx.ui.liquidglass.liquidGlassEffects
+import app.gyrolet.mpvrx.ui.liquidglass.rememberLiquidGlassSettings
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberBackdrop
 import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -1639,6 +1639,7 @@ private fun LiquidSeekbar(
   bufferDuration: Float? = null,
   modifier: Modifier = Modifier,
 ) {
+  val glassSettings = rememberLiquidGlassSettings()
   val accentColor = MaterialTheme.colorScheme.primary
   val (readAheadAlpha, emptyAlpha) = rememberSeekbarTrackAlphas()
   val isPressed by interactionSource.collectIsPressedAsState()
@@ -1801,33 +1802,33 @@ private fun LiquidSeekbar(
           shape = { Capsule() },
           effects = {
             val progress = dampedDragAnimation.pressProgress
-            blur(with(density) { 8.dp.toPx() * (1f - progress) })
-            lens(
+            liquidGlassEffects(
+              glassSettings,
+              with(density) { 8.dp.toPx() * (1f - progress) },
               with(density) { 10.dp.toPx() * progress },
               with(density) { 14.dp.toPx() * progress },
-              chromaticAberration = true,
             )
           },
           highlight = {
             val progress = dampedDragAnimation.pressProgress
-            Highlight.Ambient.copy(
+            glassSettings.highlight(Highlight.Ambient.copy(
               width = Highlight.Ambient.width / 1.5f,
               blurRadius = Highlight.Ambient.blurRadius / 1.5f,
               alpha = progress,
-            )
+            ))
           },
           shadow = {
-            Shadow(
+            glassSettings.shadow(Shadow(
               radius = 4.dp,
               color = Color.Black.copy(alpha = 0.05f),
-            )
+            ))
           },
           innerShadow = {
             val progress = dampedDragAnimation.pressProgress
-            InnerShadow(
+            glassSettings.innerShadow(InnerShadow(
               radius = 4.dp * progress,
               alpha = progress,
-            )
+            ))
           },
           layerBlock = {
             scaleX = dampedDragAnimation.scaleX

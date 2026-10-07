@@ -2680,4 +2680,27 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="navbar_glow_title">Glasleuchten</string>
   <string name="navbar_glow_summary">Randlicht und Berührungsleuchten der Navigation im normalen und Liquid-Glass-Modus anzeigen</string>
   <string name="pref_seekbar_preview_skip_markers">Sprungmarkierungen</string>
+  <string name="pref_liquid_glass_optics">Optik</string>
+  <string name="pref_liquid_glass_opacity">Deckkraft des Hintergrunds</string>
+  <string name="pref_liquid_glass_blur">Unschärfestärke</string>
+  <string name="pref_liquid_glass_refraction_height">Breite der Brechungskante</string>
+  <string name="pref_liquid_glass_refraction_amount">Brechungsstärke</string>
+  <string name="pref_liquid_glass_depth">Tiefeneffekt</string>
+  <string name="pref_liquid_glass_chromatic">Chromatische Aberration</string>
+  <string name="pref_liquid_glass_lens_unavailable">Lichtbrechung erfordert Android 13 oder neuer</string>
+  <string name="pref_liquid_glass_colors">Farbe</string>
+  <string name="pref_liquid_glass_vibrancy">Farbbrillanz</string>
+  <string name="pref_liquid_glass_highlights">Glanzlichter</string>
+  <string name="pref_liquid_glass_highlight_style">Glanzlichtstil</string>
+  <string name="pref_liquid_glass_component_default">Komponentenstandard</string>
+  <string name="pref_liquid_glass_highlight_ambient">Umgebungslicht</string>
+  <string name="pref_liquid_glass_highlight_plain">Schlicht</string>
+  <string name="pref_liquid_glass_highlight_strength">Glanzlichtstärke</string>
+  <string name="pref_liquid_glass_highlight_width">Glanzlichtbreite</string>
+  <string name="pref_liquid_glass_highlight_blur">Glanzlichtweichheit</string>
+  <string name="pref_liquid_glass_shadows">Schatten</string>
+  <string name="pref_liquid_glass_shadow_strength">Schattenstärke</string>
+  <string name="pref_liquid_glass_shadow_radius">Schattenweichheit</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">Stärke des inneren Schattens</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">Weichheit des inneren Schattens</string>
 </resources>

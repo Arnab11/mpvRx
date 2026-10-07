@@ -2680,4 +2680,27 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="navbar_glow_title">Éclat du verre</string>
   <string name="navbar_glow_summary">Afficher les reflets du bord et au toucher en modes normal et Liquid Glass</string>
   <string name="pref_seekbar_preview_skip_markers">Marqueurs de saut</string>
+  <string name="pref_liquid_glass_optics">Optique</string>
+  <string name="pref_liquid_glass_opacity">Opacité du fond</string>
+  <string name="pref_liquid_glass_blur">Intensité du flou</string>
+  <string name="pref_liquid_glass_refraction_height">Largeur du bord de réfraction</string>
+  <string name="pref_liquid_glass_refraction_amount">Intensité de la réfraction</string>
+  <string name="pref_liquid_glass_depth">Effet de profondeur</string>
+  <string name="pref_liquid_glass_chromatic">Aberration chromatique</string>
+  <string name="pref_liquid_glass_lens_unavailable">La réfraction nécessite Android 13 ou une version ultérieure</string>
+  <string name="pref_liquid_glass_colors">Couleur</string>
+  <string name="pref_liquid_glass_vibrancy">Éclat des couleurs</string>
+  <string name="pref_liquid_glass_highlights">Reflets</string>
+  <string name="pref_liquid_glass_highlight_style">Style des reflets</string>
+  <string name="pref_liquid_glass_component_default">Valeur par défaut du composant</string>
+  <string name="pref_liquid_glass_highlight_ambient">Ambiant</string>
+  <string name="pref_liquid_glass_highlight_plain">Simple</string>
+  <string name="pref_liquid_glass_highlight_strength">Intensité des reflets</string>
+  <string name="pref_liquid_glass_highlight_width">Largeur des reflets</string>
+  <string name="pref_liquid_glass_highlight_blur">Douceur des reflets</string>
+  <string name="pref_liquid_glass_shadows">Ombres</string>
+  <string name="pref_liquid_glass_shadow_strength">Intensité de l\'ombre</string>
+  <string name="pref_liquid_glass_shadow_radius">Douceur de l\'ombre</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">Intensité de l\'ombre intérieure</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">Douceur de l\'ombre intérieure</string>
 </resources>

@@ -62,6 +62,7 @@ import app.gyrolet.mpvrx.ui.player.ControlsAnimationStyle
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.player.VideoOpenAnimation
 import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
+import app.gyrolet.mpvrx.ui.preferences.components.LiquidGlassPreferences
 import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.preferences.components.ThemePicker
 import app.gyrolet.mpvrx.ui.theme.DarkMode
@@ -478,6 +479,8 @@ object AppearancePreferencesScreen : Screen {
                 },
                 enabled = liquidGlassSupported,
               )
+              PreferenceDivider()
+              LiquidGlassPreferences(preferences, enabled = liquidGlassEnabled && liquidGlassSupported)
             }
           }
 

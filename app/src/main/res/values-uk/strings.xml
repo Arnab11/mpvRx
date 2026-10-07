@@ -2710,4 +2710,27 @@
   <string name="navbar_glow_title">Світіння скла</string>
   <string name="navbar_glow_summary">Підсвічування краю та дотиків навігації у звичайному режимі й режимі Liquid Glass</string>
   <string name="pref_seekbar_preview_skip_markers">Позначки пропуску</string>
+  <string name="pref_liquid_glass_optics">Оптика</string>
+  <string name="pref_liquid_glass_opacity">Непрозорість тла</string>
+  <string name="pref_liquid_glass_blur">Сила розмиття</string>
+  <string name="pref_liquid_glass_refraction_height">Ширина краю заломлення</string>
+  <string name="pref_liquid_glass_refraction_amount">Сила заломлення</string>
+  <string name="pref_liquid_glass_depth">Ефект глибини</string>
+  <string name="pref_liquid_glass_chromatic">Хроматична аберація</string>
+  <string name="pref_liquid_glass_lens_unavailable">Для заломлення потрібен Android 13 або новіший</string>
+  <string name="pref_liquid_glass_colors">Колір</string>
+  <string name="pref_liquid_glass_vibrancy">Соковитість кольорів</string>
+  <string name="pref_liquid_glass_highlights">Відблиски</string>
+  <string name="pref_liquid_glass_highlight_style">Стиль відблисків</string>
+  <string name="pref_liquid_glass_component_default">Типове значення компонента</string>
+  <string name="pref_liquid_glass_highlight_ambient">Розсіяний</string>
+  <string name="pref_liquid_glass_highlight_plain">Простий</string>
+  <string name="pref_liquid_glass_highlight_strength">Сила відблисків</string>
+  <string name="pref_liquid_glass_highlight_width">Ширина відблисків</string>
+  <string name="pref_liquid_glass_highlight_blur">М\'якість відблисків</string>
+  <string name="pref_liquid_glass_shadows">Тіні</string>
+  <string name="pref_liquid_glass_shadow_strength">Сила тіні</string>
+  <string name="pref_liquid_glass_shadow_radius">М\'якість тіні</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">Сила внутрішньої тіні</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">М\'якість внутрішньої тіні</string>
 </resources>

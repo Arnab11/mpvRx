@@ -2679,4 +2679,27 @@
   <string name="navbar_glow_title">玻璃辉光</string>
   <string name="navbar_glow_summary">在普通和液态玻璃模式中显示导航栏边缘光照和触摸辉光</string>
   <string name="pref_seekbar_preview_skip_markers">跳过标记</string>
+  <string name="pref_liquid_glass_optics">光学效果</string>
+  <string name="pref_liquid_glass_opacity">背景不透明度</string>
+  <string name="pref_liquid_glass_blur">模糊强度</string>
+  <string name="pref_liquid_glass_refraction_height">折射边缘宽度</string>
+  <string name="pref_liquid_glass_refraction_amount">折射强度</string>
+  <string name="pref_liquid_glass_depth">深度效果</string>
+  <string name="pref_liquid_glass_chromatic">色差</string>
+  <string name="pref_liquid_glass_lens_unavailable">折射效果需要 Android 13 或更高版本</string>
+  <string name="pref_liquid_glass_colors">颜色</string>
+  <string name="pref_liquid_glass_vibrancy">鲜艳度</string>
+  <string name="pref_liquid_glass_highlights">高光</string>
+  <string name="pref_liquid_glass_highlight_style">高光样式</string>
+  <string name="pref_liquid_glass_component_default">组件默认值</string>
+  <string name="pref_liquid_glass_highlight_ambient">环境光</string>
+  <string name="pref_liquid_glass_highlight_plain">简洁</string>
+  <string name="pref_liquid_glass_highlight_strength">高光强度</string>
+  <string name="pref_liquid_glass_highlight_width">高光宽度</string>
+  <string name="pref_liquid_glass_highlight_blur">高光柔和度</string>
+  <string name="pref_liquid_glass_shadows">阴影</string>
+  <string name="pref_liquid_glass_shadow_strength">阴影强度</string>
+  <string name="pref_liquid_glass_shadow_radius">阴影柔和度</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">内阴影强度</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">内阴影柔和度</string>
 </resources>

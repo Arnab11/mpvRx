@@ -2706,4 +2706,27 @@
   <string name="navbar_glow_title">توهج الزجاج</string>
   <string name="navbar_glow_summary">إظهار إضاءة حافة شريط التنقل وتوهج اللمس في الوضع العادي ووضع الزجاج السائل</string>
   <string name="pref_seekbar_preview_skip_markers">علامات التخطي</string>
+  <string name="pref_liquid_glass_optics">البصريات</string>
+  <string name="pref_liquid_glass_opacity">عتامة الخلفية</string>
+  <string name="pref_liquid_glass_blur">شدة التمويه</string>
+  <string name="pref_liquid_glass_refraction_height">عرض حافة الانكسار</string>
+  <string name="pref_liquid_glass_refraction_amount">شدة الانكسار</string>
+  <string name="pref_liquid_glass_depth">تأثير العمق</string>
+  <string name="pref_liquid_glass_chromatic">الزيغ اللوني</string>
+  <string name="pref_liquid_glass_lens_unavailable">يتطلب الانكسار Android 13 أو أحدث</string>
+  <string name="pref_liquid_glass_colors">اللون</string>
+  <string name="pref_liquid_glass_vibrancy">حيوية الألوان</string>
+  <string name="pref_liquid_glass_highlights">الإضاءات</string>
+  <string name="pref_liquid_glass_highlight_style">نمط الإضاءة</string>
+  <string name="pref_liquid_glass_component_default">الإعداد الافتراضي للمكوّن</string>
+  <string name="pref_liquid_glass_highlight_ambient">محيطي</string>
+  <string name="pref_liquid_glass_highlight_plain">بسيط</string>
+  <string name="pref_liquid_glass_highlight_strength">شدة الإضاءة</string>
+  <string name="pref_liquid_glass_highlight_width">عرض الإضاءة</string>
+  <string name="pref_liquid_glass_highlight_blur">نعومة الإضاءة</string>
+  <string name="pref_liquid_glass_shadows">الظلال</string>
+  <string name="pref_liquid_glass_shadow_strength">شدة الظل</string>
+  <string name="pref_liquid_glass_shadow_radius">نعومة الظل</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">شدة الظل الداخلي</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">نعومة الظل الداخلي</string>
 </resources>

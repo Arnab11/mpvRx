@@ -11,6 +11,8 @@ import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
@@ -24,8 +26,22 @@ import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
 import androidx.compose.ui.unit.IntSize
+import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.util.fastCoerceIn
 import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.BackdropEffectScope
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.colorControls
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.opacity
+import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
+import com.kyant.backdrop.shadow.Shadow
+import app.gyrolet.mpvrx.preferences.AppearancePreferences
+import app.gyrolet.mpvrx.preferences.LiquidGlassHighlightStyle
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import org.koin.compose.koinInject
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.flow.filter
@@ -34,6 +50,108 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 
 val LocalKyantPlayerBackdrop = staticCompositionLocalOf<Backdrop?> { null }
+
+data class LiquidGlassSettings(
+    val opacity: Float,
+    val blur: Float,
+    val refractionHeight: Float,
+    val refractionAmount: Float,
+    val depthEffect: Boolean,
+    val chromaticAberration: Boolean,
+    val vibrancy: Boolean,
+    val saturation: Float,
+    val brightness: Float,
+    val contrast: Float,
+    val highlightStyle: LiquidGlassHighlightStyle,
+    val highlightStrength: Float,
+    val highlightWidth: Float,
+    val highlightBlur: Float,
+    val shadowStrength: Float,
+    val shadowRadius: Float,
+    val innerShadowStrength: Float,
+    val innerShadowRadius: Float,
+) {
+    fun highlight(base: Highlight): Highlight = base.copy(
+        style = when (highlightStyle) {
+            LiquidGlassHighlightStyle.Component -> base.style
+            LiquidGlassHighlightStyle.Default -> Highlight.Default.style
+            LiquidGlassHighlightStyle.Ambient -> Highlight.Ambient.style
+            LiquidGlassHighlightStyle.Plain -> Highlight.Plain.style
+        },
+        alpha = (base.alpha * highlightStrength).coerceIn(0f, 1f),
+        width = base.width * highlightWidth,
+        blurRadius = base.blurRadius * highlightBlur,
+    )
+
+    fun shadow(base: Shadow): Shadow = base.copy(
+        color = base.color.copy(alpha = (base.color.alpha * shadowStrength).coerceIn(0f, 1f)),
+        radius = base.radius * shadowRadius,
+        offset = DpOffset(base.offset.x * shadowRadius, base.offset.y * shadowRadius),
+    )
+
+    fun innerShadow(base: InnerShadow): InnerShadow = base.copy(
+        color = base.color.copy(alpha = (base.color.alpha * innerShadowStrength).coerceIn(0f, 1f)),
+        radius = base.radius * innerShadowRadius,
+        offset = DpOffset(base.offset.x * innerShadowRadius, base.offset.y * innerShadowRadius),
+    )
+}
+
+@Composable
+fun rememberLiquidGlassSettings(): LiquidGlassSettings {
+    val preferences = koinInject<AppearancePreferences>()
+    val opacity by preferences.liquidGlassOpacity.collectAsState()
+    val blur by preferences.liquidGlassBlur.collectAsState()
+    val refractionHeight by preferences.liquidGlassRefractionHeight.collectAsState()
+    val refractionAmount by preferences.liquidGlassRefractionAmount.collectAsState()
+    val depthEffect by preferences.liquidGlassDepthEffect.collectAsState()
+    val chromaticAberration by preferences.liquidGlassChromaticAberration.collectAsState()
+    val vibrancy by preferences.liquidGlassVibrancy.collectAsState()
+    val saturation by preferences.liquidGlassSaturation.collectAsState()
+    val brightness by preferences.liquidGlassBrightness.collectAsState()
+    val contrast by preferences.liquidGlassContrast.collectAsState()
+    val highlightStyle by preferences.liquidGlassHighlightStyle.collectAsState()
+    val highlightStrength by preferences.liquidGlassHighlightStrength.collectAsState()
+    val highlightWidth by preferences.liquidGlassHighlightWidth.collectAsState()
+    val highlightBlur by preferences.liquidGlassHighlightBlur.collectAsState()
+    val shadowStrength by preferences.liquidGlassShadowStrength.collectAsState()
+    val shadowRadius by preferences.liquidGlassShadowRadius.collectAsState()
+    val innerShadowStrength by preferences.liquidGlassInnerShadowStrength.collectAsState()
+    val innerShadowRadius by preferences.liquidGlassInnerShadowRadius.collectAsState()
+    fun Float.bounded(default: Float, range: ClosedFloatingPointRange<Float> = 0f..2f): Float =
+        if (isFinite()) coerceIn(range) else default
+
+    return LiquidGlassSettings(
+        opacity.bounded(1f, 0f..1f), blur.bounded(1f),
+        refractionHeight.bounded(1f), refractionAmount.bounded(1f),
+        depthEffect, chromaticAberration, vibrancy,
+        saturation.bounded(1f), brightness.bounded(0f, -1f..1f), contrast.bounded(1f),
+        highlightStyle, highlightStrength.bounded(1f), highlightWidth.bounded(1f), highlightBlur.bounded(1f),
+        shadowStrength.bounded(1f), shadowRadius.bounded(1f),
+        innerShadowStrength.bounded(1f), innerShadowRadius.bounded(1f),
+    )
+}
+
+fun BackdropEffectScope.liquidGlassEffects(
+    settings: LiquidGlassSettings,
+    blurRadius: Float,
+    refractionHeight: Float,
+    refractionAmount: Float,
+    vibrant: Boolean = false,
+    refractionEnabled: Boolean = true,
+) {
+    if (vibrant && settings.vibrancy) vibrancy()
+    colorControls(settings.brightness, settings.contrast, settings.saturation)
+    if (settings.blur > 0f) blur(blurRadius * settings.blur)
+    if (refractionEnabled) {
+        lens(
+            refractionHeight * settings.refractionHeight,
+            refractionAmount * settings.refractionAmount,
+            depthEffect = settings.depthEffect,
+            chromaticAberration = settings.chromaticAberration,
+        )
+    }
+    if (settings.opacity < 1f) opacity(settings.opacity)
+}
 
 suspend fun PointerInputScope.inspectDragGestures(
     onDragStart: (PointerInputChange) -> Unit = {},

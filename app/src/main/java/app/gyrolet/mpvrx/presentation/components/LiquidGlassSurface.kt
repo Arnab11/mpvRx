@@ -20,13 +20,12 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.ui.theme.AppMotion
+import app.gyrolet.mpvrx.ui.liquidglass.liquidGlassEffects
+import app.gyrolet.mpvrx.ui.liquidglass.rememberLiquidGlassSettings
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -76,6 +75,7 @@ fun LiquidGlassSurface(
   cornerRadius: Dp? = null,
   content: @Composable BoxScope.() -> Unit,
 ) {
+  val glassSettings = rememberLiquidGlassSettings()
   val reducedMotion = AppMotion.shouldReduceMotion()
   val blurRadius = if (style == LiquidGlassStyle.MiniPlayer) 12.dp else 8.dp
   val refractionHeight = if (style == LiquidGlassStyle.MiniPlayer) 18.dp else 14.dp
@@ -85,7 +85,12 @@ fun LiquidGlassSurface(
   val surfaceModifier =
     if (backdrop != null) {
       modifier
-        .shadow(shadowElevation, shape)
+        .shadow(
+          if (glassSettings.shadowStrength > 0f) shadowElevation * glassSettings.shadowRadius else 0.dp,
+          shape,
+          ambientColor = Color.Black.copy(alpha = glassSettings.shadowStrength.coerceAtMost(1f)),
+          spotColor = Color.Black.copy(alpha = glassSettings.shadowStrength.coerceAtMost(1f)),
+        )
         .clip(shape)
         .drawBackdrop(
           backdrop = backdrop,
@@ -97,30 +102,26 @@ fun LiquidGlassSurface(
             }
           },
           effects = {
-            vibrancy()
-            blur(blurRadius.toPx())
-            if (!reducedMotion) {
-              lens(
-                refractionHeight.toPx(),
-                refractionAmount.toPx(),
-                chromaticAberration = true,
-              )
-            }
+            liquidGlassEffects(
+              glassSettings, blurRadius.toPx(), refractionHeight.toPx(), refractionAmount.toPx(),
+              vibrant = true,
+              refractionEnabled = !reducedMotion,
+            )
           },
           highlight = {
-            Highlight.Ambient.copy(alpha = (if (reducedMotion) 0.28f else 0.52f) * glowStrength)
+            glassSettings.highlight(Highlight.Ambient.copy(alpha = (if (reducedMotion) 0.28f else 0.52f) * glowStrength))
           },
           shadow = {
-            Shadow(
+            glassSettings.shadow(Shadow(
               radius = shadowElevation,
               color = Color.Black.copy(alpha = 0.16f * glowStrength),
-            )
+            ))
           },
           innerShadow = {
-            InnerShadow(
+            glassSettings.innerShadow(InnerShadow(
               radius = 2.dp,
               color = Color.White.copy(alpha = 0.14f * glowStrength),
-            )
+            ))
           },
           onDrawSurface = {
             drawRect(fallbackColor.copy(alpha = 0.08f))

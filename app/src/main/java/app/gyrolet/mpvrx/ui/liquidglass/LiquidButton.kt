@@ -27,9 +27,8 @@ import androidx.compose.ui.util.fastCoerceAtMost
 import androidx.compose.ui.util.lerp
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.Capsule
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -58,6 +57,7 @@ fun LiquidButton(
   spacing: Dp = 8.dp,
   content: @Composable RowScope.() -> Unit,
 ) {
+  val glassSettings = rememberLiquidGlassSettings()
   val animationScope = rememberCoroutineScope()
   val interactiveHighlight =
     remember(animationScope) {
@@ -71,10 +71,10 @@ fun LiquidButton(
           backdrop = backdrop,
           shape = { Capsule() },
           effects = {
-            vibrancy()
-            blur(2.dp.toPx())
-            lens(12.dp.toPx(), 24.dp.toPx())
+            liquidGlassEffects(glassSettings, 2.dp.toPx(), 12.dp.toPx(), 24.dp.toPx(), vibrant = true)
           },
+          highlight = { glassSettings.highlight(Highlight.Default) },
+          shadow = { glassSettings.shadow(Shadow.Default) },
           layerBlock =
             if (enabled) {
               {

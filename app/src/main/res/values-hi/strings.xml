@@ -2584,4 +2584,27 @@
   <string name="navbar_glow_title">ग्लास की चमक</string>
   <string name="navbar_glow_summary">सामान्य और लिक्विड ग्लास मोड में नेविगेशन बार के किनारे और स्पर्श की चमक दिखाएं</string>
   <string name="pref_seekbar_preview_skip_markers">स्किप चिह्न</string>
+  <string name="pref_liquid_glass_optics">प्रकाशिकी</string>
+  <string name="pref_liquid_glass_opacity">पृष्ठभूमि की अपारदर्शिता</string>
+  <string name="pref_liquid_glass_blur">धुंधलेपन की तीव्रता</string>
+  <string name="pref_liquid_glass_refraction_height">अपवर्तन किनारे की चौड़ाई</string>
+  <string name="pref_liquid_glass_refraction_amount">अपवर्तन की तीव्रता</string>
+  <string name="pref_liquid_glass_depth">गहराई का प्रभाव</string>
+  <string name="pref_liquid_glass_chromatic">वर्ण विपथन</string>
+  <string name="pref_liquid_glass_lens_unavailable">अपवर्तन के लिए Android 13 या नया संस्करण आवश्यक है</string>
+  <string name="pref_liquid_glass_colors">रंग</string>
+  <string name="pref_liquid_glass_vibrancy">रंगों की जीवंतता</string>
+  <string name="pref_liquid_glass_highlights">चमक</string>
+  <string name="pref_liquid_glass_highlight_style">चमक की शैली</string>
+  <string name="pref_liquid_glass_component_default">घटक का डिफ़ॉल्ट</string>
+  <string name="pref_liquid_glass_highlight_ambient">परिवेशी</string>
+  <string name="pref_liquid_glass_highlight_plain">सादा</string>
+  <string name="pref_liquid_glass_highlight_strength">चमक की तीव्रता</string>
+  <string name="pref_liquid_glass_highlight_width">चमक की चौड़ाई</string>
+  <string name="pref_liquid_glass_highlight_blur">चमक की कोमलता</string>
+  <string name="pref_liquid_glass_shadows">छायाएँ</string>
+  <string name="pref_liquid_glass_shadow_strength">छाया की तीव्रता</string>
+  <string name="pref_liquid_glass_shadow_radius">छाया की कोमलता</string>
+  <string name="pref_liquid_glass_inner_shadow_strength">अंदरूनी छाया की तीव्रता</string>
+  <string name="pref_liquid_glass_inner_shadow_radius">अंदरूनी छाया की कोमलता</string>
 </resources>

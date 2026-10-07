@@ -36,8 +36,6 @@ import com.kyant.backdrop.backdrops.rememberBackdrop
 import com.kyant.backdrop.backdrops.rememberCombinedBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
@@ -55,6 +53,7 @@ fun LiquidToggle(
     enabled: Boolean = true,
     isInteractive: Boolean = true,
 ) {
+    val glassSettings = rememberLiquidGlassSettings()
     val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.2f)
 
     val density = LocalDensity.current
@@ -157,33 +156,33 @@ fun LiquidToggle(
                     shape = { Capsule() },
                     effects = {
                         val progress = dampedDragAnimation.pressProgress
-                        blur(8f.dp.toPx() * (1f - progress))
-                        lens(
+                        liquidGlassEffects(
+                            glassSettings,
+                            8f.dp.toPx() * (1f - progress),
                             5f.dp.toPx() * progress,
                             10f.dp.toPx() * progress,
-                            chromaticAberration = true
                         )
                     },
                     highlight = {
                         val progress = dampedDragAnimation.pressProgress
-                        Highlight.Ambient.copy(
+                        glassSettings.highlight(Highlight.Ambient.copy(
                             width = Highlight.Ambient.width / 1.5f,
                             blurRadius = Highlight.Ambient.blurRadius / 1.5f,
                             alpha = progress
-                        )
+                        ))
                     },
                     shadow = {
-                        Shadow(
+                        glassSettings.shadow(Shadow(
                             radius = 4f.dp,
                             color = Color.Black.copy(alpha = 0.05f)
-                        )
+                        ))
                     },
                     innerShadow = {
                         val progress = dampedDragAnimation.pressProgress
-                        InnerShadow(
+                        glassSettings.innerShadow(InnerShadow(
                             radius = 4f.dp * progress,
                             alpha = progress
-                        )
+                        ))
                     },
                     layerBlock = {
                         scaleX = dampedDragAnimation.scaleX

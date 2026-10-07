@@ -140,9 +140,8 @@ import app.gyrolet.mpvrx.ui.theme.AppMotion
 import app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.drawBackdrop
-import com.kyant.backdrop.effects.blur
-import com.kyant.backdrop.effects.lens
-import com.kyant.backdrop.effects.vibrancy
+import app.gyrolet.mpvrx.ui.liquidglass.liquidGlassEffects
+import app.gyrolet.mpvrx.ui.liquidglass.rememberLiquidGlassSettings
 import com.kyant.backdrop.highlight.Highlight
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.Capsule
@@ -720,6 +719,7 @@ internal fun ExpressivePillNavigationBar(
 ) {
   if (visibleTabs.isEmpty()) return
 
+  val glassSettings = rememberLiquidGlassSettings()
   val initialFocusRequester = rememberTvInitialFocusRequester(visibleTabs.isNotEmpty())
   val isRtl = LocalLayoutDirection.current == LayoutDirection.Rtl
   val selectedIndex = pagerState?.targetPage?.takeIf { it in visibleTabs.indices }
@@ -898,23 +898,21 @@ internal fun ExpressivePillNavigationBar(
                 backdrop = kyantBackdrop,
                 shape = { Capsule() },
                 effects = {
-                  vibrancy()
-                  blur(8.dp.toPx())
-                  lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = true)
+                  liquidGlassEffects(glassSettings, 8.dp.toPx(), 24.dp.toPx(), 24.dp.toPx(), vibrant = true)
                 },
                 highlight = {
-                  Highlight.Ambient.copy(alpha = 0.58f * glowStrength)
+                  glassSettings.highlight(Highlight.Ambient.copy(alpha = 0.58f * glowStrength))
                 },
                 shadow = {
-                  Shadow(
+                  glassSettings.shadow(Shadow(
                     radius = 8.dp,
                     color = Color.Black.copy(alpha = 0.14f * glowStrength),
-                  )
+                  ))
                 },
                 onDrawSurface = {
                   drawRect(surfaceColor.copy(alpha = 0.34f))
                 },
-              ).navigationGlassRim(glowStrength)
+              ).navigationGlassRim(glowStrength * glassSettings.highlightStrength.coerceAtMost(1f))
               .drawWithContent {
                 drawContent()
                 drawNavigationJellyGlow(motion.frame, accentColor.copy(alpha = glowStrength))
