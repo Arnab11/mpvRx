@@ -2583,4 +2583,5 @@
   <string name="onboarding_configuration_restore_failed">फ़ोल्डर सेटअप पूरा नहीं हुआ: %1$s</string>
   <string name="navbar_glow_title">ग्लास की चमक</string>
   <string name="navbar_glow_summary">सामान्य और लिक्विड ग्लास मोड में नेविगेशन बार के किनारे और स्पर्श की चमक दिखाएं</string>
+  <string name="pref_seekbar_preview_skip_markers">स्किप चिह्न</string>
 </resources>

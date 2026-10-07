@@ -2693,4 +2693,5 @@
   <string name="onboarding_configuration_restore_failed">Не удалось завершить настройку папки: %1$s</string>
   <string name="navbar_glow_title">Свечение стекла</string>
   <string name="navbar_glow_summary">Подсветка края и касаний навигации в обычном режиме и режиме Liquid Glass</string>
+  <string name="pref_seekbar_preview_skip_markers">Метки пропуска</string>
 </resources>

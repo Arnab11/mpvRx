@@ -48,7 +48,6 @@ import app.gyrolet.mpvrx.domain.thumbnail.ThumbnailRepository
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
-import app.gyrolet.mpvrx.preferences.LiquidBottomBarStyle
 import app.gyrolet.mpvrx.preferences.MultiChoiceSegmentedButton
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.ThumbnailMode
@@ -456,7 +455,6 @@ object AppearancePreferencesScreen : Screen {
 
           item {
             val liquidGlassEnabled by preferences.liquidGlassEnabled.collectAsState()
-            val liquidBottomBarStyle by preferences.liquidBottomBarStyle.collectAsState()
 
             PreferenceCard {
               SwitchPreference(
@@ -479,40 +477,6 @@ object AppearancePreferencesScreen : Screen {
                   )
                 },
                 enabled = liquidGlassSupported,
-              )
-
-              PreferenceDivider()
-
-              ListPreference(
-                value = liquidBottomBarStyle,
-                onValueChange = preferences.liquidBottomBarStyle::set,
-                values = LiquidBottomBarStyle.entries,
-                valueToText = { style ->
-                  AnnotatedString(
-                    stringResource(
-                      when (style) {
-                        LiquidBottomBarStyle.ExpressivePill -> R.string.pref_liquid_nav_expressive_pill
-                        LiquidBottomBarStyle.FloatingTabs -> R.string.pref_liquid_nav_floating_tabs
-                      },
-                    ),
-                  )
-                },
-                title = {
-                  Text(stringResource(R.string.pref_liquid_nav_variant_title))
-                },
-                summary = {
-                  Text(
-                    text =
-                      stringResource(
-                        when (liquidBottomBarStyle) {
-                          LiquidBottomBarStyle.ExpressivePill -> R.string.pref_liquid_nav_expressive_pill
-                          LiquidBottomBarStyle.FloatingTabs -> R.string.pref_liquid_nav_floating_tabs
-                        },
-                      ),
-                    color = MaterialTheme.colorScheme.outline,
-                  )
-                },
-                enabled = liquidGlassEnabled && liquidGlassSupported,
               )
             }
           }

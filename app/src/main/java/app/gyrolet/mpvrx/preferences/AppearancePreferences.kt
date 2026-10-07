@@ -66,8 +66,6 @@ class AppearancePreferences(
   val customWallpaperUseColors = preferenceStore.getBoolean("custom_wallpaper_use_colors", false)
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val liquidGlassEnabled = preferenceStore.getBoolean("liquid_glass_enabled", true)
-  val liquidBottomBarStyle =
-    preferenceStore.getEnum("liquid_bottom_bar_style", LiquidBottomBarStyle.ExpressivePill)
   val navigationBarGlow = preferenceStore.getBoolean("navigation_bar_glow", true)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
   val googleFontFamily = preferenceStore.getString("google_font_family", "")
@@ -259,9 +257,4 @@ fun MultiChoiceSegmentedButton(
       }
     }
   }
-}
-
-enum class LiquidBottomBarStyle {
-  ExpressivePill,
-  FloatingTabs,
 }

@@ -2705,4 +2705,5 @@
   <string name="onboarding_configuration_restore_failed">تعذر إكمال إعداد المجلد: %1$s</string>
   <string name="navbar_glow_title">توهج الزجاج</string>
   <string name="navbar_glow_summary">إظهار إضاءة حافة شريط التنقل وتوهج اللمس في الوضع العادي ووضع الزجاج السائل</string>
+  <string name="pref_seekbar_preview_skip_markers">علامات التخطي</string>
 </resources>

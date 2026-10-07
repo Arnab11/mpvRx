@@ -2679,4 +2679,5 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="onboarding_configuration_restore_failed">Não foi possível concluir a configuração da pasta: %1$s</string>
   <string name="navbar_glow_title">Brilho do vidro</string>
   <string name="navbar_glow_summary">Mostrar iluminação da borda e brilho ao tocar nos modos normal e Liquid Glass</string>
+  <string name="pref_seekbar_preview_skip_markers">Marcadores de salto</string>
 </resources>

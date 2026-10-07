@@ -2709,4 +2709,5 @@
   <string name="onboarding_configuration_restore_failed">Не вдалося завершити налаштування папки: %1$s</string>
   <string name="navbar_glow_title">Світіння скла</string>
   <string name="navbar_glow_summary">Підсвічування краю та дотиків навігації у звичайному режимі й режимі Liquid Glass</string>
+  <string name="pref_seekbar_preview_skip_markers">Позначки пропуску</string>
 </resources>

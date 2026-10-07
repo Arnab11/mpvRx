@@ -2678,4 +2678,5 @@
   <string name="onboarding_configuration_restore_failed">无法完成文件夹设置：%1$s</string>
   <string name="navbar_glow_title">玻璃辉光</string>
   <string name="navbar_glow_summary">在普通和液态玻璃模式中显示导航栏边缘光照和触摸辉光</string>
+  <string name="pref_seekbar_preview_skip_markers">跳过标记</string>
 </resources>

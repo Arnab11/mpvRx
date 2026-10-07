@@ -2679,4 +2679,5 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="onboarding_configuration_restore_failed">Ordnereinrichtung konnte nicht abgeschlossen werden: %1$s</string>
   <string name="navbar_glow_title">Glasleuchten</string>
   <string name="navbar_glow_summary">Randlicht und Berührungsleuchten der Navigation im normalen und Liquid-Glass-Modus anzeigen</string>
+  <string name="pref_seekbar_preview_skip_markers">Sprungmarkierungen</string>
 </resources>

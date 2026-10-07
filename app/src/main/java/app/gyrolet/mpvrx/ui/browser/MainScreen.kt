@@ -27,7 +27,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -108,12 +107,9 @@ import kotlin.math.roundToInt
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.MediaServerPreferences
-import app.gyrolet.mpvrx.preferences.LiquidBottomBarStyle
 import app.gyrolet.mpvrx.preferences.MusicSourceProvider
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
-import app.gyrolet.mpvrx.ui.liquidglass.LiquidBottomTabs
-import app.gyrolet.mpvrx.ui.liquidglass.LocalLiquidBottomTabScale
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.backdrops.layerBackdrop
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -217,7 +213,6 @@ object MainScreen : Screen {
     val showNetworkTab by appearancePreferences.showNetworkTab.collectAsState()
     val showJellyfinTab by appearancePreferences.showJellyfinTab.collectAsState()
     val liquidGlassEnabled by appearancePreferences.liquidGlassEnabled.collectAsState()
-    val liquidBottomBarStyle by appearancePreferences.liquidBottomBarStyle.collectAsState()
     val liquidLayerBackdrop = rememberLayerBackdrop()
     val hideNavigationBar = NavigationBarState.shouldHideNavigationBar
     val isPermissionDenied = NavigationBarState.isPermissionDenied
@@ -694,94 +689,16 @@ object MainScreen : Screen {
                     (containerWidth * centerFraction.value - width / 2).coerceAtLeast(horizontalMargin)
                 }
 
-              if (liquidGlassEnabled && liquidBottomBarStyle == LiquidBottomBarStyle.FloatingTabs) {
-                val selectedTabIndex = navigationTabs.indexOf(selectedTab).coerceAtLeast(0)
-                val labels = navigationTabs.map { tab ->
-                  stringResource(when (tab) {
-                    MainScreen.MainTab.HOME -> R.string.ui_home
-                    MainScreen.MainTab.MUSIC -> R.string.ui_music
-                    MainScreen.MainTab.NETWORK -> R.string.ui_network
-                    MainScreen.MainTab.JELLYFIN -> R.string.ui_jellyfin
-                    MainScreen.MainTab.PROFILE -> R.string.ui_profile
-                  })
-                }
-                val compactIcons = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
-                val iconSize = if (compactIcons) 24.dp else MainNavigationIconSize
-                val labelFraction by animateFloatAsState(
-                  targetValue = if (compactIcons) 0f else NavigationBarState.navLabelVisibility,
-                  animationSpec = tween(300, easing = NavigationBarEasing),
-                  label = "navigation_labels",
-                )
-                val accentColor = MaterialTheme.colorScheme.primary
-                val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
-
-                LiquidBottomTabs(
-                  selectedTabIndex = selectedTabIndex,
-                  onTabSelected = { index -> navigationTabs.getOrNull(index)?.let { onTabSelected(it) } },
-                  backdrop = liquidLayerBackdrop,
-                  tabsCount = navigationTabs.size,
-                  modifier = navModifier,
-                ) {
-                  navigationTabs.forEachIndexed { index, tab ->
-                    val isSelected = tab == selectedTab
-                    val tabScale = LocalLiquidBottomTabScale.current()
-                    val label = labels[index]
-                    val contentColor = if (isSelected) accentColor else mutedColor
-                    Box(
-                      modifier = Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .clickable(
-                          interactionSource = remember { MutableInteractionSource() },
-                          indication = null,
-                        ) { onTabSelected(tab) },
-                      contentAlignment = Alignment.Center,
-                    ) {
-                      Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center,
-                        modifier = Modifier.graphicsLayer {
-                          scaleX = tabScale
-                          scaleY = tabScale
-                        },
-                      ) {
-                        MainTabIcon(
-                          tab = tab,
-                          tint = contentColor,
-                          contentDescription = label,
-                          iconSize = iconSize,
-                        )
-                        if (!compactIcons && labelFraction > 0.05f) {
-                          Text(
-                            text = label,
-                            style = MaterialTheme.typography.labelSmall.copy(
-                              fontSize = if (compactIcons) 12.sp else 13.sp,
-                              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            ),
-                            color = contentColor,
-                            maxLines = 1,
-                            softWrap = false,
-                            overflow = TextOverflow.Ellipsis,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.graphicsLayer { alpha = labelFraction },
-                          )
-                        }
-                      }
-                    }
-                  }
-                }
-              } else {
-                ExpressivePillNavigationBar(
-                  visibleTabs = navigationTabs,
-                  selectedTab = selectedTab,
-                  onTabSelected = onTabSelected,
-                  pagerState = pagerState,
-                  hazeBackdrop = navigationBackdrop,
-                  kyantBackdrop = liquidLayerBackdrop,
-                  liquidGlassEnabled = liquidGlassEnabled,
-                  modifier = navModifier,
-                )
-              }
+              ExpressivePillNavigationBar(
+                visibleTabs = navigationTabs,
+                selectedTab = selectedTab,
+                onTabSelected = onTabSelected,
+                pagerState = pagerState,
+                hazeBackdrop = navigationBackdrop,
+                kyantBackdrop = liquidLayerBackdrop,
+                liquidGlassEnabled = liquidGlassEnabled,
+                modifier = navModifier,
+              )
             }
           }
         }

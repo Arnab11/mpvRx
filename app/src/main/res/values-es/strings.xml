@@ -2679,4 +2679,5 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="onboarding_configuration_restore_failed">No se pudo completar la configuración de la carpeta: %1$s</string>
   <string name="navbar_glow_title">Brillo del cristal</string>
   <string name="navbar_glow_summary">Mostrar luz del borde y brillo al tocar la barra en los modos normal y Liquid Glass</string>
+  <string name="pref_seekbar_preview_skip_markers">Marcadores de omisión</string>
 </resources>

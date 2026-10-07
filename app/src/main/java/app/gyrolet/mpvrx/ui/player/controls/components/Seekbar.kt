@@ -53,7 +53,8 @@ import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.utils.device.DeviceFormFactor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -2080,6 +2081,7 @@ fun SeekbarStyleLivePreview(
   var position by rememberSaveable { mutableFloatStateOf(38f) }
   var paused by rememberSaveable { mutableStateOf(reducedMotion) }
   var showChapters by rememberSaveable { mutableStateOf(true) }
+  var showSkipMarkers by rememberSaveable { mutableStateOf(true) }
   var showLoop by rememberSaveable { mutableStateOf(false) }
   var isUserInteracting by remember { mutableStateOf(false) }
   val interactionSource = remember { MutableInteractionSource() }
@@ -2119,34 +2121,41 @@ fun SeekbarStyleLivePreview(
     }
   }
 
-  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(12.dp)) {
     Row(
       modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Column(modifier = Modifier.weight(1f)) {
+      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+          text = style.name,
+          style = MaterialTheme.typography.titleMedium,
+          color = MaterialTheme.colorScheme.primary,
+        )
         Text(
           text = "${Utils.prettyTime(position.toInt(), false)} / ${Utils.prettyTime(duration.toInt(), false)}",
-          style = MaterialTheme.typography.labelLarge,
+          style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
         )
-        if (showChapters) {
-          Text(
-            text = chapters.lastOrNull { it.start <= position }?.name.orEmpty(),
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
-            overflow = TextOverflow.Ellipsis,
-          )
-        }
+        Text(
+          text = if (showChapters) chapters.lastOrNull { it.start <= position }?.name.orEmpty() else "",
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          minLines = 1,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+        )
       }
-      IconButton(onClick = { position = 0f }) {
+      FilledTonalIconButton(onClick = { position = 0f }, modifier = Modifier.size(40.dp)) {
         Icon(Icons.RoundedFilled.Refresh, contentDescription = stringResource(R.string.player_restart_action))
       }
-      IconButton(onClick = { paused = !paused }) {
+      FilledIconButton(onClick = { paused = !paused }, modifier = Modifier.size(56.dp)) {
         Icon(
           if (paused) Icons.RoundedFilled.PlayArrow else Icons.RoundedFilled.Pause,
           contentDescription = stringResource(if (paused) R.string.ui_play else R.string.audiobook_pause),
+          modifier = Modifier.size(28.dp),
         )
       }
     }
@@ -2155,7 +2164,7 @@ fun SeekbarStyleLivePreview(
       committedPosition = position,
       duration = duration,
       chapters = if (showChapters) chapters else persistentListOf(),
-      skipSegments = skipMarkers,
+      skipSegments = if (showSkipMarkers) skipMarkers else persistentListOf(),
       paused = paused,
       isPortrait = false,
       isUserInteracting = isUserInteracting,
@@ -2174,16 +2183,45 @@ fun SeekbarStyleLivePreview(
       showClipRange = false,
       modifier = Modifier.fillMaxWidth().height(64.dp),
     )
-    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+    FlowRow(
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
       FilterChip(
         selected = showChapters,
         onClick = { showChapters = !showChapters },
         label = { Text(stringResource(R.string.media_info_tab_chapters)) },
+        leadingIcon = {
+          Icon(
+            Icons.RoundedFilled.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp).graphicsLayer { alpha = if (showChapters) 1f else 0f },
+          )
+        },
+      )
+      FilterChip(
+        selected = showSkipMarkers,
+        onClick = { showSkipMarkers = !showSkipMarkers },
+        label = { Text(stringResource(R.string.pref_seekbar_preview_skip_markers)) },
+        leadingIcon = {
+          Icon(
+            Icons.RoundedFilled.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp).graphicsLayer { alpha = if (showSkipMarkers) 1f else 0f },
+          )
+        },
       )
       FilterChip(
         selected = showLoop,
         onClick = { showLoop = !showLoop },
         label = { Text(stringResource(R.string.btn_label_ab_loop)) },
+        leadingIcon = {
+          Icon(
+            Icons.RoundedFilled.Check,
+            contentDescription = null,
+            modifier = Modifier.size(18.dp).graphicsLayer { alpha = if (showLoop) 1f else 0f },
+          )
+        },
       )
     }
   }
