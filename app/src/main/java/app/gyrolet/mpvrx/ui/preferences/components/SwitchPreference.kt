@@ -51,8 +51,7 @@ fun SwitchPreference(
             onValueChange(checked)
             haptics.selection(checked)
           }
-        }
-        .padding(horizontal = 16.dp, vertical = 12.dp),
+        }.padding(horizontal = 16.dp, vertical = 12.dp),
     verticalAlignment = Alignment.CenterVertically,
   ) {
     if (icon != null) {
@@ -82,7 +81,12 @@ fun SwitchPreference(
 
     IconSwitch(
       checked = value,
-      onCheckedChange = null,
+      onCheckedChange = { checked ->
+        if (checked != value) {
+          onValueChange(checked)
+          haptics.selection(checked)
+        }
+      },
       enabled = enabled,
       modifier = switchModifier,
     )

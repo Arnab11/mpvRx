@@ -66,6 +66,8 @@ class AppearancePreferences(
   val customWallpaperUseColors = preferenceStore.getBoolean("custom_wallpaper_use_colors", false)
   val amoledMode = preferenceStore.getBoolean("amoled_mode", false)
   val liquidGlassEnabled = preferenceStore.getBoolean("liquid_glass_enabled", true)
+  val liquidBottomBarStyle =
+    preferenceStore.getEnum("liquid_bottom_bar_style", LiquidBottomBarStyle.ExpressivePill)
   val navigationBarGlow = preferenceStore.getBoolean("navigation_bar_glow", true)
   val useSystemFont = preferenceStore.getBoolean("use_system_font", false)
   val googleFontFamily = preferenceStore.getString("google_font_family", "")
@@ -125,8 +127,8 @@ class AppearancePreferences(
     preferenceStore.getBoolean("clip_button_migration_complete", false)
 
   init {
-    // Haze Glass relies on Android 12+ rendering primitives. A restored/legacy preference must
-    // never re-enable the expensive glass path on Android 11 or below.
+    // The advanced Liquid Glass optics rely on modern Android rendering primitives. A restored
+    // preference must not re-enable the expensive glass path on Android 11 or below.
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S && liquidGlassEnabled.get()) {
       liquidGlassEnabled.set(false)
     }
@@ -257,4 +259,9 @@ fun MultiChoiceSegmentedButton(
       }
     }
   }
+}
+
+enum class LiquidBottomBarStyle {
+  ExpressivePill,
+  FloatingTabs,
 }

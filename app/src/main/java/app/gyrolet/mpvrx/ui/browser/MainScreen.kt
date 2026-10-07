@@ -27,6 +27,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -107,16 +108,17 @@ import kotlin.math.roundToInt
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.MediaServerPreferences
+import app.gyrolet.mpvrx.preferences.LiquidBottomBarStyle
 import app.gyrolet.mpvrx.preferences.MusicSourceProvider
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.ui.liquidglass.LiquidBottomTabs
+import app.gyrolet.mpvrx.ui.liquidglass.LocalLiquidBottomTabScale
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+import com.kyant.backdrop.backdrops.layerBackdrop
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import app.gyrolet.mpvrx.presentation.Screen
 import app.gyrolet.mpvrx.presentation.components.ProvideLiquidGlassBackdrop
-import app.gyrolet.mpvrx.presentation.components.LiquidGlassStyle
-import app.gyrolet.mpvrx.presentation.components.LiquidGlassSurface
-import app.gyrolet.mpvrx.presentation.components.captureLiquidGlassBackdrop
-import app.gyrolet.mpvrx.presentation.components.rememberLiquidGlassBackdrop
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.navigateTo
 import app.gyrolet.mpvrx.ui.browser.folderlist.FolderListScreen
@@ -133,11 +135,21 @@ import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.utils.navigationDurationMillis
 import app.gyrolet.mpvrx.ui.utils.navigationTabAnimationSpec
 import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
+import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import app.gyrolet.mpvrx.ui.theme.AppMotion
 import app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor
+import com.kyant.backdrop.Backdrop
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
+import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.Shadow
+import com.kyant.shapes.Capsule
 import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 
@@ -205,6 +217,8 @@ object MainScreen : Screen {
     val showNetworkTab by appearancePreferences.showNetworkTab.collectAsState()
     val showJellyfinTab by appearancePreferences.showJellyfinTab.collectAsState()
     val liquidGlassEnabled by appearancePreferences.liquidGlassEnabled.collectAsState()
+    val liquidBottomBarStyle by appearancePreferences.liquidBottomBarStyle.collectAsState()
+    val liquidLayerBackdrop = rememberLayerBackdrop()
     val hideNavigationBar = NavigationBarState.shouldHideNavigationBar
     val isPermissionDenied = NavigationBarState.isPermissionDenied
     val isDualPaneFolderSelected = NavigationBarState.isDualPaneFolderSelected
@@ -324,9 +338,9 @@ object MainScreen : Screen {
       onTabSelected(MainTab.HOME)
     }
 
-    // One captured backdrop drives both modes: plain Haze when Liquid Glass is off and
-    // Haze Glass when it is on. This keeps the effect local to the floating capsule.
-    val navigationBackdrop = rememberLiquidGlassBackdrop()
+    // Keep the app's established Haze path for the normal navigation bar. Liquid Glass uses the
+    // separate Kyant layer backdrop declared with the screen state above.
+    val navigationBackdrop = rememberHazeState()
 
     val mainNavBar = @Composable { modifier: Modifier ->
       ExpressivePillNavigationBar(
@@ -335,6 +349,7 @@ object MainScreen : Screen {
         onTabSelected = onTabSelected,
         pagerState = pagerState,
         hazeBackdrop = navigationBackdrop,
+        kyantBackdrop = liquidLayerBackdrop,
         liquidGlassEnabled = liquidGlassEnabled,
         modifier = modifier,
       )
@@ -376,7 +391,8 @@ object MainScreen : Screen {
             modifier =
               Modifier
                 .fillMaxSize()
-                .captureLiquidGlassBackdrop(navigationBackdrop, navigationTabs.isNotEmpty()),
+                .layerBackdrop(liquidLayerBackdrop)
+                .hazeSource(navigationBackdrop),
           ) {
             CompositionLocalProvider(
               LocalNavigationBarHeight provides contentBottomPadding,
@@ -399,7 +415,8 @@ object MainScreen : Screen {
                   .fillMaxSize()
                   .clipToBounds()
                   .nestedScroll(NavigationBarState.navScrollConnection)
-                  .captureLiquidGlassBackdrop(navigationBackdrop, navigationTabs.isNotEmpty()),
+                  .layerBackdrop(liquidLayerBackdrop)
+                  .hazeSource(navigationBackdrop),
               key = { page -> visibleTabs[page].name },
               beyondViewportPageCount = 1,
               userScrollEnabled = !isPermissionDenied,
@@ -602,7 +619,7 @@ object MainScreen : Screen {
 
         // Animated bottom navigation bar with slide animations
         ProvideLiquidGlassBackdrop(
-          backdrop = navigationBackdrop,
+          backdrop = liquidLayerBackdrop,
           enabled = liquidGlassEnabled,
         ) {
           AnimatedVisibility(
@@ -646,44 +663,125 @@ object MainScreen : Screen {
                 label = "pill_alignment",
               )
 
-              ExpressivePillNavigationBar(
-                visibleTabs = navigationTabs,
-                selectedTab = selectedTab,
-                onTabSelected = onTabSelected,
-                pagerState = pagerState,
-                hazeBackdrop = navigationBackdrop,
-                liquidGlassEnabled = liquidGlassEnabled,
-                modifier = Modifier
-                  .layout { measurable, constraints ->
-                    val margin = horizontalMargin.roundToPx()
-                    val paneWidth =
-                      if (isDualPaneFolderSelected && selectedTab == MainTab.HOME) {
-                        (constraints.maxWidth * 0.4f).roundToInt()
-                      } else {
-                        constraints.maxWidth
+              val navModifier = Modifier
+                .layout { measurable, constraints ->
+                  val margin = horizontalMargin.roundToPx()
+                  val paneWidth =
+                    if (isDualPaneFolderSelected && selectedTab == MainTab.HOME) {
+                      (constraints.maxWidth * 0.4f).roundToInt()
+                    } else {
+                      constraints.maxWidth
+                    }
+                  val availableWidth = (paneWidth - margin * 2).coerceAtLeast(0)
+                  val maxNuvioWidth = minOf(400.dp.roundToPx(), availableWidth)
+                  val placeable =
+                    measurable.measure(
+                      constraints.copy(minWidth = 0, maxWidth = maxNuvioWidth),
+                    )
+                  layout(constraints.maxWidth, placeable.height) {
+                    val desired =
+                      (constraints.maxWidth * centerFraction.value - placeable.width / 2f)
+                        .roundToInt()
+                    val maxStart = (paneWidth - margin - placeable.width).coerceAtLeast(margin)
+                    val start = desired.coerceIn(margin, maxStart)
+                    placeable.placeRelative(start, 0)
+                  }
+                }
+                .onGloballyPositioned { coords ->
+                  val width = with(density) { coords.size.width.toDp() }
+                  NavigationBarState.navbarWidth = width
+                  NavigationBarState.navbarLeftOffset =
+                    (containerWidth * centerFraction.value - width / 2).coerceAtLeast(horizontalMargin)
+                }
+
+              if (liquidGlassEnabled && liquidBottomBarStyle == LiquidBottomBarStyle.FloatingTabs) {
+                val selectedTabIndex = navigationTabs.indexOf(selectedTab).coerceAtLeast(0)
+                val labels = navigationTabs.map { tab ->
+                  stringResource(when (tab) {
+                    MainScreen.MainTab.HOME -> R.string.ui_home
+                    MainScreen.MainTab.MUSIC -> R.string.ui_music
+                    MainScreen.MainTab.NETWORK -> R.string.ui_network
+                    MainScreen.MainTab.JELLYFIN -> R.string.ui_jellyfin
+                    MainScreen.MainTab.PROFILE -> R.string.ui_profile
+                  })
+                }
+                val compactIcons = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
+                val iconSize = if (compactIcons) 24.dp else MainNavigationIconSize
+                val labelFraction by animateFloatAsState(
+                  targetValue = if (compactIcons) 0f else NavigationBarState.navLabelVisibility,
+                  animationSpec = tween(300, easing = NavigationBarEasing),
+                  label = "navigation_labels",
+                )
+                val accentColor = MaterialTheme.colorScheme.primary
+                val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
+
+                LiquidBottomTabs(
+                  selectedTabIndex = selectedTabIndex,
+                  onTabSelected = { index -> navigationTabs.getOrNull(index)?.let { onTabSelected(it) } },
+                  backdrop = liquidLayerBackdrop,
+                  tabsCount = navigationTabs.size,
+                  modifier = navModifier,
+                ) {
+                  navigationTabs.forEachIndexed { index, tab ->
+                    val isSelected = tab == selectedTab
+                    val tabScale = LocalLiquidBottomTabScale.current()
+                    val label = labels[index]
+                    val contentColor = if (isSelected) accentColor else mutedColor
+                    Box(
+                      modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .clickable(
+                          interactionSource = remember { MutableInteractionSource() },
+                          indication = null,
+                        ) { onTabSelected(tab) },
+                      contentAlignment = Alignment.Center,
+                    ) {
+                      Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier.graphicsLayer {
+                          scaleX = tabScale
+                          scaleY = tabScale
+                        },
+                      ) {
+                        MainTabIcon(
+                          tab = tab,
+                          tint = contentColor,
+                          contentDescription = label,
+                          iconSize = iconSize,
+                        )
+                        if (!compactIcons && labelFraction > 0.05f) {
+                          Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                              fontSize = if (compactIcons) 12.sp else 13.sp,
+                              fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                            ),
+                            color = contentColor,
+                            maxLines = 1,
+                            softWrap = false,
+                            overflow = TextOverflow.Ellipsis,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.graphicsLayer { alpha = labelFraction },
+                          )
+                        }
                       }
-                    val availableWidth = (paneWidth - margin * 2).coerceAtLeast(0)
-                    val maxNuvioWidth = minOf(400.dp.roundToPx(), availableWidth)
-                    val placeable =
-                      measurable.measure(
-                        constraints.copy(minWidth = 0, maxWidth = maxNuvioWidth),
-                      )
-                    layout(constraints.maxWidth, placeable.height) {
-                      val desired =
-                        (constraints.maxWidth * centerFraction.value - placeable.width / 2f)
-                          .roundToInt()
-                      val maxStart = (paneWidth - margin - placeable.width).coerceAtLeast(margin)
-                      val start = desired.coerceIn(margin, maxStart)
-                      placeable.placeRelative(start, 0)
                     }
                   }
-                  .onGloballyPositioned { coords ->
-                    val width = with(density) { coords.size.width.toDp() }
-                    NavigationBarState.navbarWidth = width
-                    NavigationBarState.navbarLeftOffset =
-                      (containerWidth * centerFraction.value - width / 2).coerceAtLeast(horizontalMargin)
-                  },
-              )
+                }
+              } else {
+                ExpressivePillNavigationBar(
+                  visibleTabs = navigationTabs,
+                  selectedTab = selectedTab,
+                  onTabSelected = onTabSelected,
+                  pagerState = pagerState,
+                  hazeBackdrop = navigationBackdrop,
+                  kyantBackdrop = liquidLayerBackdrop,
+                  liquidGlassEnabled = liquidGlassEnabled,
+                  modifier = navModifier,
+                )
+              }
             }
           }
         }
@@ -700,6 +798,7 @@ internal fun ExpressivePillNavigationBar(
   modifier: Modifier = Modifier,
   pagerState: PagerState? = null,
   hazeBackdrop: HazeState? = null,
+  kyantBackdrop: Backdrop? = null,
   liquidGlassEnabled: Boolean = false,
 ) {
   if (visibleTabs.isEmpty()) return
@@ -873,21 +972,37 @@ internal fun ExpressivePillNavigationBar(
         translationX = motion.frame.panelOffset * density.density
       },
     ) {
-      if (liquidGlassEnabled) {
-        LiquidGlassSurface(
-          modifier = Modifier.matchParentSize(),
-          shape = CircleShape,
-          style = LiquidGlassStyle.Navigation,
-          glassColor = surfaceColor.copy(alpha = 0.24f),
-          fallbackColor = surfaceColor.copy(alpha = 0.82f),
-          contentColor = MaterialTheme.colorScheme.onSurface,
-          glowStrength = glowStrength,
-        ) {
-          Box(Modifier.matchParentSize().navigationGlassRim(glowStrength).drawWithContent {
-            drawContent()
-            drawNavigationJellyGlow(motion.frame, accentColor.copy(alpha = glowStrength))
-          })
-        }
+      if (liquidGlassEnabled && kyantBackdrop != null) {
+        Box(
+          modifier =
+            Modifier
+              .matchParentSize()
+              .drawBackdrop(
+                backdrop = kyantBackdrop,
+                shape = { Capsule() },
+                effects = {
+                  vibrancy()
+                  blur(8.dp.toPx())
+                  lens(24.dp.toPx(), 24.dp.toPx(), chromaticAberration = true)
+                },
+                highlight = {
+                  Highlight.Ambient.copy(alpha = 0.58f * glowStrength)
+                },
+                shadow = {
+                  Shadow(
+                    radius = 8.dp,
+                    color = Color.Black.copy(alpha = 0.14f * glowStrength),
+                  )
+                },
+                onDrawSurface = {
+                  drawRect(surfaceColor.copy(alpha = 0.34f))
+                },
+              ).navigationGlassRim(glowStrength)
+              .drawWithContent {
+                drawContent()
+                drawNavigationJellyGlow(motion.frame, accentColor.copy(alpha = glowStrength))
+              },
+        )
       } else {
         Box(
           modifier = Modifier.matchParentSize()
