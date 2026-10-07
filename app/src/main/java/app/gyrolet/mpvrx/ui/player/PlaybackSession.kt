@@ -27,6 +27,10 @@ import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import `is`.xyz.mpv.MPVLib
 import `is`.xyz.mpv.MPVNode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -104,6 +108,39 @@ class PlaybackProperty<T> internal constructor(
 @Suppress("TooManyFunctions")
 object PlaybackSession : MPVLib.EventObserver {
   private const val TAG = "PlaybackSession"
+  private val nativeEvents = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
+  private var nativeObserver: NativeEventObserver? = null
+
+  private class NativeEventObserver : MPVLib.EventObserver {
+    private fun enqueue(action: () -> Unit) {
+      nativeEvents.launch {
+        nativeLock.withLock {
+          if (nativeObserver === this@NativeEventObserver) action()
+        }
+      }
+    }
+
+    override fun eventProperty(property: String) = enqueue { PlaybackSession.eventProperty(property) }
+
+    override fun eventProperty(property: String, value: Long) = enqueue { PlaybackSession.eventProperty(property, value) }
+
+    override fun eventProperty(property: String, value: Boolean) = enqueue { PlaybackSession.eventProperty(property, value) }
+
+    override fun eventProperty(property: String, value: String) = enqueue { PlaybackSession.eventProperty(property, value) }
+
+    override fun eventProperty(property: String, value: Double) = enqueue { PlaybackSession.eventProperty(property, value) }
+
+    override fun eventProperty(property: String, value: MPVNode) = enqueue { PlaybackSession.eventProperty(property, value) }
+
+    override fun event(eventId: Int, data: MPVNode) = enqueue { PlaybackSession.event(eventId, data) }
+  }
+
+  private fun unregisterNativeObserver() {
+    val observer = nativeObserver ?: return
+    nativeObserver = null
+    MPVLib.removeObserver(observer)
+  }
+
   private const val SEEK_AUDIO_RESTORE_DELAY_MS = 60L
   private const val SEEK_AUDIO_FALLBACK_RESTORE_MS = 750L
   private const val PLAYBACK_TRANSITION_AUDIO_RESTORE_DELAY_MS = 180L
@@ -396,7 +433,10 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
           MPVLib.setPropertyString("vo", "null")
           MPVLib.setOptionString("force-window", "no")
           MPVLib.setOptionString("idle", "yes")
-          MPVLib.addObserver(this)
+          NativeEventObserver().also { observer ->
+            nativeObserver = observer
+            MPVLib.addObserver(observer)
+          }
           reobserveTrackedProperties()
           observeProperties()
           initialized = true
@@ -405,7 +445,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
           updateState { it.copy(phase = PlaybackPhase.IDLE, paused = true, error = null) }
           true
         } catch (error: Throwable) {
-          runCatching { MPVLib.removeObserver(this) }
+          runCatching { unregisterNativeObserver() }
           runCatching { MPVLib.destroy() }
           initialized = false
           nativeCoreReady = false
@@ -712,7 +752,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     runCatching { MPVLib.setPropertyString("vo", "null") }
     runCatching { MPVLib.detachSurface() }
     attachedSurfaceOwner = null
-    runCatching { MPVLib.removeObserver(this) }
+    runCatching { unregisterNativeObserver() }
     runCatching { MPVLib.destroy() }
       .onFailure { error -> Log.e(TAG, "Failed to destroy libmpv", error) }
     releaseActiveNetworkStreamLocked()
