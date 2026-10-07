@@ -7463,15 +7463,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           newFile.delete()
           return@synchronized
         }
-        ambientShaderFile?.let { oldFile ->
-          runCatching { PlaybackSession.command("change-list", "glsl-shaders", "remove", oldFile.absolutePath) }
-          oldFile.delete()
-        }
         PlaybackSession.setPropertyDouble("video-scale-x", scaleX)
         PlaybackSession.setPropertyDouble("video-scale-y", scaleY)
         val blendMode = if (subtitlesPreferences.blendSubtitlesWithVideo.get()) "video" else "no"
         PlaybackSession.setPropertyString("blend-subtitles", blendMode)
         PlaybackSession.command("change-list", "glsl-shaders", "append", newFile.absolutePath)
+        ambientShaderFile?.delete()
         lastAmbientScaleX = scaleX
         lastAmbientScaleY = scaleY
         ambientShaderFile = newFile

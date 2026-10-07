@@ -1266,11 +1266,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       when (property) {
         "video-scale-x" -> {
           desiredAmbientScaleX = value
-          MPVLib.setPropertyDouble(property, value)
         }
         "video-scale-y" -> {
           desiredAmbientScaleY = value
-          MPVLib.setPropertyDouble(property, value)
         }
         "time-pos" -> {
           rememberEofSeekLocked(value, listOf("absolute"))
@@ -1499,8 +1497,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       // Some shader-stack managers replace the whole list instead of using change-list/remove.
       // If that replacement drops Ambient, restore the base video scale before the next frame.
       if (property == "glsl-shaders" && activeAmbientShaderPaths.isNotEmpty() && !value.contains(AMBIENT_SHADER_PREFIX)) {
-        resetActiveAmbientScaleLocked()
+        applyAmbientRenderStateLocked(listOf("glsl-shaders" to value))
         activeAmbientShaderPaths.clear()
+        return@withCore
       }
       MPVLib.setPropertyString(property, value)
     }
@@ -1957,9 +1956,12 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
 
     val action = command[2]
     if (action == "clr") {
-      if (activeAmbientShaderPaths.isNotEmpty()) resetActiveAmbientScaleLocked()
+      if (activeAmbientShaderPaths.isEmpty()) {
+        MPVLib.command(*command)
+      } else {
+        applyAmbientRenderStateLocked(listOf("glsl-shaders-clr" to ""))
+      }
       activeAmbientShaderPaths.clear()
-      MPVLib.command(*command)
       return true
     }
 
@@ -1967,20 +1969,20 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     val isAmbient = isAmbientShaderPath(path)
 
     if (action == "set" && !isAmbient && activeAmbientShaderPaths.isNotEmpty()) {
-      resetActiveAmbientScaleLocked()
+      applyAmbientRenderStateLocked(listOf("glsl-shaders" to path))
       activeAmbientShaderPaths.clear()
-      MPVLib.command(*command)
       return true
     }
     if (!isAmbient) return false
 
     when (action) {
       "remove" -> {
-        // Reset first so there is never a rendered frame with Ambient's expanded source quad but
-        // without the remapping shader that restores the original picture in the centre.
-        resetActiveAmbientScaleLocked()
+        if (path !in activeAmbientShaderPaths) {
+          MPVLib.command(*command)
+          return true
+        }
+        applyAmbientRenderStateLocked(listOf("glsl-shaders-remove" to path))
         activeAmbientShaderPaths.remove(path)
-        MPVLib.command(*command)
       }
       "append", "add", "pre", "set" -> {
         // A cancelled/debounced Ambient coroutine may finish its file write after Ambient was turned
@@ -1988,17 +1990,18 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         // resurrect itself. This is especially important for Flow because SCALE_X/Y are baked into
         // the GLSL and can crop the centre picture even after the real video scale was reset.
         if (ambientScaleIsIdentityLocked()) {
-          activeAmbientShaderPaths.remove(path)
-          resetActiveAmbientScaleLocked()
+          clearAmbientShadersLocked(resetDesired = false)
           Log.w(TAG, "Ignored stale Ambient shader install while scale is identity: $path")
           return true
         }
 
-        // Install the shader first. Only then expose the staged scale values to the renderer.
-        MPVLib.command(*command)
-        if (action == "set") activeAmbientShaderPaths.clear()
+        val shaderOptions = buildList {
+          activeAmbientShaderPaths.forEach { oldPath -> add("glsl-shaders-remove" to oldPath) }
+          add((if (action == "set") "glsl-shaders" else "glsl-shaders-$action") to path)
+        }
+        applyAmbientRenderStateLocked(shaderOptions, desiredAmbientScaleX, desiredAmbientScaleY)
+        activeAmbientShaderPaths.clear()
         activeAmbientShaderPaths += path
-        applyDesiredAmbientScaleLocked()
       }
       else -> return false
     }
@@ -2015,18 +2018,10 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       kotlin.math.abs(desiredAmbientScaleY - 1.0) <= AMBIENT_SCALE_EPSILON
 
   private fun clearAmbientShadersLocked(resetDesired: Boolean) {
-    // Reset the real video quad before removing OUTPUT remappers. This avoids exposing a single
-    // expanded/cropped frame during teardown.
-    resetActiveAmbientScaleLocked()
-
-    val stalePaths = activeAmbientShaderPaths.toList()
+    runCatching {
+      applyAmbientRenderStateLocked(activeAmbientShaderPaths.map { path -> "glsl-shaders-remove" to path })
+    }.onFailure { error -> Log.w(TAG, "Failed to clear Ambient render state", error) }
     activeAmbientShaderPaths.clear()
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("glsl-shaders")) {
-      stalePaths.forEach { path ->
-        runCatching { MPVLib.command("change-list", "glsl-shaders", "remove", path) }
-          .onFailure { error -> Log.w(TAG, "Failed to remove stale Ambient shader $path", error) }
-      }
-    }
 
     if (resetDesired) {
       desiredAmbientScaleX = 1.0
@@ -2034,24 +2029,23 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     }
   }
 
-  private fun applyDesiredAmbientScaleLocked() {
-    // Bypass the interceptor — we already hold the staged values and need them applied
-    // to the renderer immediately after the ambient shader has been installed.
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-x")) {
-      MPVLib.setPropertyDouble("video-scale-x", desiredAmbientScaleX)
+  private fun applyAmbientRenderStateLocked(
+    shaderOptions: List<Pair<String, String>>,
+    scaleX: Double = 1.0,
+    scaleY: Double = 1.0,
+  ) {
+    val options = buildList {
+      if (!MpvConfigOverridePolicy.isOwnedByMpvConf("glsl-shaders")) addAll(shaderOptions)
+      if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-x")) add("video-scale-x" to scaleX.toString())
+      if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-y")) add("video-scale-y" to scaleY.toString())
     }
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-y")) {
-      MPVLib.setPropertyDouble("video-scale-y", desiredAmbientScaleY)
-    }
-  }
+    if (options.isEmpty()) return
 
-  private fun resetActiveAmbientScaleLocked() {
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-x")) {
-      runCatching { MPVLib.setPropertyDouble("video-scale-x", 1.0) }
+    val config = options.joinToString("\n") { (name, value) ->
+      require(value.none { it == '\n' || it == '\r' || it == '\u0000' })
+      "$name=%${value.toByteArray(Charsets.UTF_8).size}%$value"
     }
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("video-scale-y")) {
-      runCatching { MPVLib.setPropertyDouble("video-scale-y", 1.0) }
-    }
+    MPVLib.command("load-config-file", "memory://$config")
   }
 
   private fun resetAmbientShaderTrackingLocked() {
