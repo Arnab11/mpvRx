@@ -36,6 +36,15 @@ internal fun NavigationGlassSurface(
   glowStrength: Float,
   modifier: Modifier = Modifier,
 ) {
+  if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+    Box(
+      modifier
+        .background(surfaceColor.copy(alpha = 1f))
+        .navigationGlassRim(glowStrength),
+    )
+    return
+  }
+
   val blurStyle = remember(surfaceColor) {
     HazeBlurStyle {
       blurRadius(24.dp)
