@@ -10,7 +10,6 @@
 package app.gyrolet.mpvrx.ui.preferences
 
 import android.app.Activity
-import android.os.Build
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
@@ -62,7 +61,6 @@ import app.gyrolet.mpvrx.ui.player.ControlsAnimationStyle
 import app.gyrolet.mpvrx.ui.player.NavigationAnimStyle
 import app.gyrolet.mpvrx.ui.player.VideoOpenAnimation
 import app.gyrolet.mpvrx.ui.preferences.components.SwitchPreference
-import app.gyrolet.mpvrx.ui.preferences.components.LiquidGlassPreferences
 import app.gyrolet.mpvrx.ui.preferences.components.RestartRequiredDialog
 import app.gyrolet.mpvrx.ui.preferences.components.ThemePicker
 import app.gyrolet.mpvrx.ui.theme.DarkMode
@@ -102,7 +100,6 @@ object AppearancePreferencesScreen : Screen {
     val scope = rememberCoroutineScope()
     val systemDarkTheme = isSystemInDarkTheme()
     val themeTransition = LocalThemeTransitionState.current
-    val liquidGlassSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
     val darkMode by preferences.darkMode.collectAsState()
     val appTheme by preferences.appTheme.collectAsState()
@@ -444,43 +441,6 @@ object AppearancePreferencesScreen : Screen {
                   )
                 }
               }
-            }
-          }
-
-          item {
-            PreferenceSectionHeader(
-              title = stringResource(R.string.pref_appearance_category_liquid_glass),
-              modifier = Modifier.settingsSearchTarget(R.string.pref_appearance_liquid_glass_title),
-            )
-          }
-
-          item {
-            val liquidGlassEnabled by preferences.liquidGlassEnabled.collectAsState()
-
-            PreferenceCard {
-              SwitchPreference(
-                value = liquidGlassEnabled && liquidGlassSupported,
-                onValueChange = preferences.liquidGlassEnabled::set,
-                title = {
-                  Text(text = stringResource(R.string.pref_appearance_liquid_glass_title))
-                },
-                summary = {
-                  Text(
-                    text =
-                      stringResource(
-                        if (liquidGlassSupported) {
-                          R.string.pref_appearance_liquid_glass_summary
-                        } else {
-                          R.string.pref_appearance_liquid_glass_summary_unavailable
-                        },
-                      ),
-                    color = MaterialTheme.colorScheme.outline,
-                  )
-                },
-                enabled = liquidGlassSupported,
-              )
-              PreferenceDivider()
-              LiquidGlassPreferences(preferences, enabled = liquidGlassEnabled && liquidGlassSupported)
             }
           }
 

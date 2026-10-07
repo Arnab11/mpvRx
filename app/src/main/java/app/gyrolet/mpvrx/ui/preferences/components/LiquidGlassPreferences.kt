@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,99 +27,152 @@ import app.gyrolet.mpvrx.preferences.preference.Preference
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.preferences.PreferenceCard
 import app.gyrolet.mpvrx.ui.preferences.PreferenceDivider
+import app.gyrolet.mpvrx.ui.preferences.PreferenceSectionHeader
 import app.gyrolet.mpvrx.ui.preferences.settingsSearchTarget
-import java.text.NumberFormat
-import java.util.Locale
 import me.zhanghai.compose.preference.ListPreference
 import me.zhanghai.compose.preference.SliderPreference
+import java.text.NumberFormat
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun LiquidGlassPreferences(preferences: AppearancePreferences, enabled: Boolean) {
-  val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
-  val refractionHeight by preferences.liquidGlassRefractionHeight.collectAsState()
-  val refractionAmount by preferences.liquidGlassRefractionAmount.collectAsState()
-  val lensEnabled = enabled && lensSupported
-  val lensActive = lensEnabled && refractionHeight > 0f && refractionAmount > 0f
-
-  LiquidGlassGroupTitle(R.string.pref_liquid_glass_optics)
-  LiquidGlassSlider(preferences.liquidGlassOpacity, R.string.pref_liquid_glass_opacity, enabled, 0f..1f)
-  LiquidGlassSlider(preferences.liquidGlassBlur, R.string.pref_liquid_glass_blur, enabled)
-  LiquidGlassSlider(preferences.liquidGlassRefractionHeight, R.string.pref_liquid_glass_refraction_height, lensEnabled)
-  LiquidGlassSlider(preferences.liquidGlassRefractionAmount, R.string.pref_liquid_glass_refraction_amount, lensEnabled)
-  LiquidGlassSwitch(preferences.liquidGlassDepthEffect, R.string.pref_liquid_glass_depth, lensActive)
-  LiquidGlassSwitch(preferences.liquidGlassChromaticAberration, R.string.pref_liquid_glass_chromatic, lensActive)
-  if (!lensSupported) {
-    Text(
-      stringResource(R.string.pref_liquid_glass_lens_unavailable),
-      style = MaterialTheme.typography.bodySmall,
-      color = MaterialTheme.colorScheme.onSurfaceVariant,
-      modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-    )
+fun LazyListScope.liquidGlassPreferences(
+  preferences: AppearancePreferences,
+  enabled: Boolean,
+) {
+  item {
+    PreferenceSectionHeader(title = stringResource(R.string.pref_liquid_glass_optics))
+  }
+  item {
+    val lensSupported = Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
+    val refractionHeight by preferences.liquidGlassRefractionHeight.collectAsState()
+    val refractionAmount by preferences.liquidGlassRefractionAmount.collectAsState()
+    val lensEnabled = enabled && lensSupported
+    val lensActive = lensEnabled && refractionHeight > 0f && refractionAmount > 0f
+    PreferenceCard {
+      LiquidGlassSlider(preferences.liquidGlassOpacity, R.string.pref_liquid_glass_opacity, enabled, 0f..1f)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassBlur, R.string.pref_liquid_glass_blur, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(
+        preferences.liquidGlassRefractionHeight,
+        R.string.pref_liquid_glass_refraction_height,
+        lensEnabled,
+      )
+      PreferenceDivider()
+      LiquidGlassSlider(
+        preferences.liquidGlassRefractionAmount,
+        R.string.pref_liquid_glass_refraction_amount,
+        lensEnabled,
+      )
+      PreferenceDivider()
+      LiquidGlassSwitch(preferences.liquidGlassDepthEffect, R.string.pref_liquid_glass_depth, lensActive)
+      PreferenceDivider()
+      LiquidGlassSwitch(preferences.liquidGlassChromaticAberration, R.string.pref_liquid_glass_chromatic, lensActive)
+      if (!lensSupported) {
+        Text(
+          stringResource(R.string.pref_liquid_glass_lens_unavailable),
+          style = MaterialTheme.typography.bodySmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+        )
+      }
+    }
   }
 
-  PreferenceDivider()
-  LiquidGlassGroupTitle(R.string.pref_liquid_glass_colors)
-  LiquidGlassSwitch(preferences.liquidGlassVibrancy, R.string.pref_liquid_glass_vibrancy, enabled)
-  LiquidGlassSlider(preferences.liquidGlassSaturation, R.string.player_sheets_filters_Saturation, enabled)
-  LiquidGlassSlider(preferences.liquidGlassBrightness, R.string.player_sheets_filters_brightness, enabled, -1f..1f)
-  LiquidGlassSlider(preferences.liquidGlassContrast, R.string.player_sheets_filters_contrast, enabled)
+  item {
+    PreferenceSectionHeader(title = stringResource(R.string.pref_liquid_glass_colors))
+  }
+  item {
+    PreferenceCard {
+      LiquidGlassSwitch(preferences.liquidGlassVibrancy, R.string.pref_liquid_glass_vibrancy, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassSaturation, R.string.player_sheets_filters_Saturation, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassBrightness, R.string.player_sheets_filters_brightness, enabled, -1f..1f)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassContrast, R.string.player_sheets_filters_contrast, enabled)
+    }
+  }
 
-  PreferenceDivider()
-  LiquidGlassGroupTitle(R.string.pref_liquid_glass_highlights)
-  val highlightStyle by preferences.liquidGlassHighlightStyle.collectAsState()
-  val highlightLabels = mapOf(
-    LiquidGlassHighlightStyle.Component to stringResource(R.string.pref_liquid_glass_component_default),
-    LiquidGlassHighlightStyle.Default to stringResource(R.string.theme_default),
-    LiquidGlassHighlightStyle.Ambient to stringResource(R.string.pref_liquid_glass_highlight_ambient),
-    LiquidGlassHighlightStyle.Plain to stringResource(R.string.pref_liquid_glass_highlight_plain),
-  )
-  ListPreference(
-    value = highlightStyle,
-    onValueChange = preferences.liquidGlassHighlightStyle::set,
-    values = LiquidGlassHighlightStyle.entries,
-    valueToText = { AnnotatedString(highlightLabels.getValue(it)) },
-    title = { Text(stringResource(R.string.pref_liquid_glass_highlight_style)) },
-    summary = { Text(highlightLabels.getValue(highlightStyle), color = MaterialTheme.colorScheme.outline) },
-    enabled = enabled,
-    modifier = Modifier.settingsSearchTarget(R.string.pref_liquid_glass_highlight_style),
-  )
-  LiquidGlassSlider(preferences.liquidGlassHighlightStrength, R.string.pref_liquid_glass_highlight_strength, enabled)
-  LiquidGlassSlider(preferences.liquidGlassHighlightWidth, R.string.pref_liquid_glass_highlight_width, enabled)
-  LiquidGlassSlider(preferences.liquidGlassHighlightBlur, R.string.pref_liquid_glass_highlight_blur, enabled)
+  item {
+    PreferenceSectionHeader(title = stringResource(R.string.pref_liquid_glass_highlights))
+  }
+  item {
+    val highlightStyle by preferences.liquidGlassHighlightStyle.collectAsState()
+    val highlightLabels =
+      mapOf(
+        LiquidGlassHighlightStyle.Component to stringResource(R.string.pref_liquid_glass_component_default),
+        LiquidGlassHighlightStyle.Default to stringResource(R.string.theme_default),
+        LiquidGlassHighlightStyle.Ambient to stringResource(R.string.pref_liquid_glass_highlight_ambient),
+        LiquidGlassHighlightStyle.Plain to stringResource(R.string.pref_liquid_glass_highlight_plain),
+      )
+    PreferenceCard {
+      ListPreference(
+        value = highlightStyle,
+        onValueChange = preferences.liquidGlassHighlightStyle::set,
+        values = LiquidGlassHighlightStyle.entries,
+        valueToText = { AnnotatedString(highlightLabels.getValue(it)) },
+        title = { Text(stringResource(R.string.pref_liquid_glass_highlight_style)) },
+        summary = { Text(highlightLabels.getValue(highlightStyle), color = MaterialTheme.colorScheme.outline) },
+        enabled = enabled,
+        modifier = Modifier.settingsSearchTarget(R.string.pref_liquid_glass_highlight_style),
+      )
+      PreferenceDivider()
+      LiquidGlassSlider(
+        preferences.liquidGlassHighlightStrength,
+        R.string.pref_liquid_glass_highlight_strength,
+        enabled,
+      )
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassHighlightWidth, R.string.pref_liquid_glass_highlight_width, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassHighlightBlur, R.string.pref_liquid_glass_highlight_blur, enabled)
+    }
+  }
 
-  PreferenceDivider()
-  LiquidGlassGroupTitle(R.string.pref_liquid_glass_shadows)
-  LiquidGlassSlider(preferences.liquidGlassShadowStrength, R.string.pref_liquid_glass_shadow_strength, enabled)
-  LiquidGlassSlider(preferences.liquidGlassShadowRadius, R.string.pref_liquid_glass_shadow_radius, enabled)
-  LiquidGlassSlider(preferences.liquidGlassInnerShadowStrength, R.string.pref_liquid_glass_inner_shadow_strength, enabled)
-  LiquidGlassSlider(preferences.liquidGlassInnerShadowRadius, R.string.pref_liquid_glass_inner_shadow_radius, enabled)
-
-  PreferenceDivider()
-  TextButton(
-    onClick = preferences::resetLiquidGlassOptions,
-    enabled = enabled,
-    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-  ) {
-    Icon(Icons.RoundedFilled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
-    Spacer(Modifier.width(8.dp))
-    Text(stringResource(R.string.pref_layout_reset_default))
+  item {
+    PreferenceSectionHeader(title = stringResource(R.string.pref_liquid_glass_shadows))
+  }
+  item {
+    PreferenceCard {
+      LiquidGlassSlider(preferences.liquidGlassShadowStrength, R.string.pref_liquid_glass_shadow_strength, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(preferences.liquidGlassShadowRadius, R.string.pref_liquid_glass_shadow_radius, enabled)
+      PreferenceDivider()
+      LiquidGlassSlider(
+        preferences.liquidGlassInnerShadowStrength,
+        R.string.pref_liquid_glass_inner_shadow_strength,
+        enabled,
+      )
+      PreferenceDivider()
+      LiquidGlassSlider(
+        preferences.liquidGlassInnerShadowRadius,
+        R.string.pref_liquid_glass_inner_shadow_radius,
+        enabled,
+      )
+    }
+  }
+  item {
+    TextButton(
+      onClick = preferences::resetLiquidGlassOptions,
+      enabled = enabled,
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+    ) {
+      Icon(Icons.RoundedFilled.Refresh, contentDescription = null, modifier = Modifier.size(18.dp))
+      Spacer(Modifier.width(8.dp))
+      Text(stringResource(R.string.pref_layout_reset_default))
+    }
   }
 }
 
 @Composable
-private fun LiquidGlassGroupTitle(@StringRes title: Int) {
-  Text(
-    stringResource(title),
-    style = MaterialTheme.typography.titleSmall,
-    color = MaterialTheme.colorScheme.primary,
-    modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 20.dp, bottom = 8.dp),
-  )
-}
-
-@Composable
-private fun LiquidGlassSwitch(preference: Preference<Boolean>, @StringRes title: Int, enabled: Boolean) {
+private fun LiquidGlassSwitch(
+  preference: Preference<Boolean>,
+  @StringRes title: Int,
+  enabled: Boolean,
+) {
   val value by preference.collectAsState()
   SwitchPreference(
     value = value,
@@ -147,7 +201,12 @@ private fun LiquidGlassSlider(
     valueRange = range,
     valueSteps = 19,
     title = { Text(stringResource(title)) },
-    summary = { Text(NumberFormat.getPercentInstance(locale).format(value), color = MaterialTheme.colorScheme.outline) },
+    summary = {
+      Text(
+        NumberFormat.getPercentInstance(locale).format(value),
+        color = MaterialTheme.colorScheme.outline,
+      )
+    },
     enabled = enabled,
     modifier = Modifier.settingsSearchTarget(title),
   )

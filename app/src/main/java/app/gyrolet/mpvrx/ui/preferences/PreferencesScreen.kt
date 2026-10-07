@@ -27,7 +27,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -225,6 +224,18 @@ object PreferencesScreen : Screen {
               summary = stringResource(R.string.pref_appearance_summary),
               icon = Icons.RoundedFilled.Palette,
               screen = AppearancePreferencesScreen,
+            ),
+            SettingsDestination(
+              title = stringResource(R.string.pref_appearance_category_liquid_glass),
+              summary =
+                listOf(
+                  stringResource(R.string.pref_liquid_glass_optics),
+                  stringResource(R.string.pref_liquid_glass_colors),
+                  stringResource(R.string.pref_liquid_glass_highlights),
+                  stringResource(R.string.pref_liquid_glass_shadows),
+                ).joinToString(", "),
+              icon = Icons.RoundedFilled.BlurOn,
+              screen = LiquidGlassPreferencesScreen,
             ),
           ),
       ),
@@ -492,10 +503,7 @@ private fun SettingsDestinationGroup(
           onClick = { onItemClick(item) },
         )
         if (index < section.items.lastIndex) {
-          HorizontalDivider(
-            modifier = Modifier.padding(start = 14.dp, end = 18.dp),
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.45f),
-          )
+          PreferenceDivider()
         }
       }
     }

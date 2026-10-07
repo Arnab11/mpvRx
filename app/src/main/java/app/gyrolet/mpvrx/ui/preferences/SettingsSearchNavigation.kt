@@ -70,6 +70,28 @@ private val settingsSearchListAnchors: Map<Screen, List<SettingsSearchListAnchor
         SettingsSearchListAnchor(titleRes = R.string.pref_gesture_tap_thumbnail_to_select_title, itemIndex = 5),
         SettingsSearchListAnchor(titleRes = R.string.pref_appearance_show_network_thumbnails_title, itemIndex = 5),
       ),
+    LiquidGlassPreferencesScreen to
+      listOf(
+        SettingsSearchListAnchor(titleRes = R.string.pref_appearance_liquid_glass_title, itemIndex = 3),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_opacity, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_blur, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_refraction_height, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_refraction_amount, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_depth, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_chromatic, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_vibrancy, itemIndex = 7),
+        SettingsSearchListAnchor(titleRes = R.string.player_sheets_filters_Saturation, itemIndex = 7),
+        SettingsSearchListAnchor(titleRes = R.string.player_sheets_filters_brightness, itemIndex = 7),
+        SettingsSearchListAnchor(titleRes = R.string.player_sheets_filters_contrast, itemIndex = 7),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_highlight_style, itemIndex = 9),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_highlight_strength, itemIndex = 9),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_highlight_width, itemIndex = 9),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_highlight_blur, itemIndex = 9),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_shadow_strength, itemIndex = 11),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_shadow_radius, itemIndex = 11),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_inner_shadow_strength, itemIndex = 11),
+        SettingsSearchListAnchor(titleRes = R.string.pref_liquid_glass_inner_shadow_radius, itemIndex = 11),
+      ),
     PlayerControlsPreferencesScreen to
       listOf(
         SettingsSearchListAnchor(titleRes = R.string.pref_layout_title, itemIndex = 0),
