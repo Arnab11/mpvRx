@@ -225,14 +225,15 @@ object PlayerControlsPreferencesScreen : Screen {
             val seekbarStyle by appearancePrefs.seekbarStyle.collectAsState()
             val useWavySeekbar by playerPrefs.useWavySeekbar.collectAsState()
 
-            PreferenceCard {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
               Column(
-                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
               ) {
                 Text(
                   text = stringResource(R.string.pref_layout_preview),
-                  style = MaterialTheme.typography.titleMedium,
+                  style = MaterialTheme.typography.labelLarge,
+                  color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
                 SeekbarStyleLivePreview(
                   style = seekbarStyle,
@@ -240,32 +241,33 @@ object PlayerControlsPreferencesScreen : Screen {
                   modifier = Modifier.fillMaxWidth(),
                 )
               }
-              PreferenceDivider()
-              SeekbarStyle.entries.forEachIndexed { index, style ->
-                ListItem(
-                  content = {
-                    Text(text = style.name)
-                  },
-                  trailingContent = {
-                    RadioButton(
-                      selected = seekbarStyle == style,
-                      onClick = null,
-                    )
-                  },
-                  colors =
-                    androidx.compose.material3.ListItemDefaults.colors(
-                      containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    ),
-                  modifier =
-                    Modifier
-                      .selectable(
+              PreferenceCard {
+                SeekbarStyle.entries.forEachIndexed { index, style ->
+                  ListItem(
+                    content = {
+                      Text(text = style.name)
+                    },
+                    trailingContent = {
+                      RadioButton(
                         selected = seekbarStyle == style,
-                        role = Role.RadioButton,
-                        onClick = { appearancePrefs.seekbarStyle.set(style) },
+                        onClick = null,
+                      )
+                    },
+                    colors =
+                      androidx.compose.material3.ListItemDefaults.colors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainer,
                       ),
-                )
-                if (index < SeekbarStyle.entries.size - 1) {
-                  PreferenceDivider()
+                    modifier =
+                      Modifier
+                        .selectable(
+                          selected = seekbarStyle == style,
+                          role = Role.RadioButton,
+                          onClick = { appearancePrefs.seekbarStyle.set(style) },
+                        ),
+                  )
+                  if (index < SeekbarStyle.entries.size - 1) {
+                    PreferenceDivider()
+                  }
                 }
               }
             }

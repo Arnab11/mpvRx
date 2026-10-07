@@ -53,6 +53,7 @@ import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.utils.device.DeviceFormFactor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Surface
@@ -152,6 +153,8 @@ private data class SkipSegmentOverlay(
 
 private const val READ_AHEAD_TRACK_ALPHA = 0.40f
 private const val EMPTY_TRACK_ALPHA = 0.24f
+
+private fun liquidSeekbarTrackHeight(paused: Boolean): Dp = if (paused) 8.dp else 6.dp
 
 @Composable
 private fun rememberSeekbarTrackAlphas(): Pair<Float, Float> {
@@ -568,12 +571,7 @@ private fun SeekbarContent(
       SeekbarStyle.Thick -> if (paused || isVisuallyInteracting) 11.2.dp else 16.dp
       SeekbarStyle.Standard -> if (paused || isVisuallyInteracting) 5.6.dp else 8.dp
       SeekbarStyle.Wavy -> 8.dp
-      SeekbarStyle.Liquid ->
-        when {
-          isVisuallyInteracting -> 16.dp
-          paused -> 8.dp
-          else -> 10.dp
-        }
+      SeekbarStyle.Liquid -> liquidSeekbarTrackHeight(paused)
     },
     animationSpec = spring(
       dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
@@ -1642,29 +1640,25 @@ private fun LiquidSeekbar(
   modifier: Modifier = Modifier,
 ) {
   val accentColor = MaterialTheme.colorScheme.primary
-  val trackColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.24f)
+  val (readAheadAlpha, emptyAlpha) = rememberSeekbarTrackAlphas()
   val isPressed by interactionSource.collectIsPressedAsState()
   val isDragged by interactionSource.collectIsDraggedAsState()
   val isThumbInteracting = isPressed || isDragged || isScrubbing
   val trackHeight by animateDpAsState(
-    targetValue = when {
-      isThumbInteracting -> 16.dp
-      isPaused -> 8.dp
-      else -> 10.dp
-    },
+    targetValue = liquidSeekbarTrackHeight(isPaused),
     animationSpec = spring(
       dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
       stiffness = AppMotion.Spatial.Expressive.stiffness,
     ),
     label = "liquid_seekbar_height",
   )
-  val thumbHeightDp by animateDpAsState(
-    targetValue = if (isPaused && !isThumbInteracting) 20.dp else 24.dp,
+  val chapterGapHalfDp by animateDpAsState(
+    targetValue = if (isThumbInteracting) 2.dp else 1.5.dp,
     animationSpec = spring(
-      dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
-      stiffness = AppMotion.Spatial.Expressive.stiffness,
+      dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
+      stiffness = AppMotion.Spatial.Standard.stiffness,
     ),
-    label = "liquid_seekbar_thumb_height",
+    label = "liquid_seekbar_chapter_gap",
   )
 
   val chapterStarts = remember(chapters) { chapters.map(Segment::start) }
@@ -1739,56 +1733,19 @@ private fun LiquidSeekbar(
           chapterStarts = chapterStarts,
           duration = safeDuration,
           trackWidth = size.width,
-          chapterGapHalf = 1.5.dp.toPx(),
+          chapterGapHalf = chapterGapHalfDp.toPx(),
         )
 
-        segments.forEach { segment ->
-          val segStart = segment.start
-          val segEnd = segment.end
-          val segWidth = segEnd - segStart
-          if (segWidth > 0f) {
-            drawRoundRect(
-              color = trackColor,
-              topLeft = Offset(segStart, centerY - radiusPx),
-              size = Size(segWidth, heightPx),
-              cornerRadius = CornerRadius(radiusPx),
-            )
-          }
-        }
-
-        // Draw buffered track
-        if (bufferPx > 0f) {
-          segments.forEach { segment ->
-            val segStart = segment.start
-            val segEnd = segment.end.coerceAtMost(bufferPx)
-            val segWidth = segEnd - segStart
-            if (segWidth > 0f) {
-              drawRoundRect(
-                color = accentColor.copy(alpha = 0.32f),
-                topLeft = Offset(segStart, centerY - radiusPx),
-                size = Size(segWidth, heightPx),
-                cornerRadius = CornerRadius(radiusPx),
-              )
-            }
-          }
-        }
-
-        // Draw the played track with the app theme accent, matching Kyant's component.
-        if (playedPx > 0f) {
-          segments.forEach { segment ->
-            val segStart = segment.start
-            val segEnd = segment.end.coerceAtMost(playedPx)
-            val segWidth = segEnd - segStart
-            if (segWidth > 0f) {
-              drawRoundRect(
-                color = accentColor,
-                topLeft = Offset(segStart, centerY - radiusPx),
-                size = Size(segWidth, heightPx),
-                cornerRadius = CornerRadius(radiusPx),
-              )
-            }
-          }
-        }
+        drawSeekbarTrackSegments(
+          segments = segments,
+          playedPx = playedPx,
+          bufferedPx = bufferPx,
+          centerY = centerY,
+          trackHeight = heightPx,
+          playedColor = accentColor,
+          bufferedColor = accentColor.copy(alpha = readAheadAlpha),
+          unplayedColor = accentColor.copy(alpha = emptyAlpha),
+        )
 
         // Loop markers
         if ((loopStart != null || loopEnd != null) && safeDuration > 0f) {
@@ -1884,7 +1841,7 @@ private fun LiquidSeekbar(
             drawRect(Color.White.copy(alpha = 1f - progress))
           },
         )
-        .size(thumbWidthDp, thumbHeightDp),
+        .size(thumbWidthDp, 24.dp),
     )
   }
 }
@@ -2127,35 +2084,22 @@ fun SeekbarStyleLivePreview(
       horizontalArrangement = Arrangement.spacedBy(8.dp),
       verticalAlignment = Alignment.CenterVertically,
     ) {
-      Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text(
-          text = style.name,
-          style = MaterialTheme.typography.titleMedium,
-          color = MaterialTheme.colorScheme.primary,
-        )
-        Text(
-          text = "${Utils.prettyTime(position.toInt(), false)} / ${Utils.prettyTime(duration.toInt(), false)}",
-          style = MaterialTheme.typography.bodyMedium.copy(fontFeatureSettings = "tnum"),
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-        )
-        Text(
-          text = if (showChapters) chapters.lastOrNull { it.start <= position }?.name.orEmpty() else "",
-          style = MaterialTheme.typography.bodySmall,
-          color = MaterialTheme.colorScheme.onSurfaceVariant,
-          minLines = 1,
-          maxLines = 1,
-          overflow = TextOverflow.Ellipsis,
-        )
-      }
-      FilledTonalIconButton(onClick = { position = 0f }, modifier = Modifier.size(40.dp)) {
+      Text(
+        text = style.name,
+        style = MaterialTheme.typography.titleMedium,
+        color = MaterialTheme.colorScheme.onSurface,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.weight(1f),
+      )
+      FilledTonalIconButton(onClick = { position = 0f }, modifier = Modifier.size(48.dp)) {
         Icon(Icons.RoundedFilled.Refresh, contentDescription = stringResource(R.string.player_restart_action))
       }
-      FilledIconButton(onClick = { paused = !paused }, modifier = Modifier.size(56.dp)) {
+      FilledIconButton(onClick = { paused = !paused }, modifier = Modifier.size(48.dp)) {
         Icon(
           if (paused) Icons.RoundedFilled.PlayArrow else Icons.RoundedFilled.Pause,
           contentDescription = stringResource(if (paused) R.string.ui_play else R.string.audiobook_pause),
-          modifier = Modifier.size(28.dp),
+          modifier = Modifier.size(24.dp),
         )
       }
     }
@@ -2181,16 +2125,54 @@ fun SeekbarStyleLivePreview(
       animatedPosition = animatedPosition,
       interactionSource = interactionSource,
       showClipRange = false,
-      modifier = Modifier.fillMaxWidth().height(64.dp),
+      modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp).height(56.dp),
+    )
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Text(
+        text = Utils.prettyTime(position.toInt(), false),
+        style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        modifier = Modifier.width(48.dp),
+      )
+      Text(
+        text = if (showChapters) chapters.lastOrNull { it.start <= position }?.name.orEmpty() else "",
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center,
+        minLines = 1,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.weight(1f),
+      )
+      Text(
+        text = Utils.prettyTime(duration.toInt(), false),
+        style = MaterialTheme.typography.labelMedium.copy(fontFeatureSettings = "tnum"),
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.End,
+        maxLines = 1,
+        modifier = Modifier.width(48.dp),
+      )
+    }
+    val previewChipColors = FilterChipDefaults.filterChipColors(
+      selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+      selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer,
+      selectedLeadingIconColor = MaterialTheme.colorScheme.onSecondaryContainer,
     )
     FlowRow(
+      modifier = Modifier.fillMaxWidth(),
       horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalArrangement = Arrangement.spacedBy(4.dp),
+      verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
       FilterChip(
         selected = showChapters,
         onClick = { showChapters = !showChapters },
         label = { Text(stringResource(R.string.media_info_tab_chapters)) },
+        colors = previewChipColors,
         leadingIcon = {
           Icon(
             Icons.RoundedFilled.Check,
@@ -2203,6 +2185,7 @@ fun SeekbarStyleLivePreview(
         selected = showSkipMarkers,
         onClick = { showSkipMarkers = !showSkipMarkers },
         label = { Text(stringResource(R.string.pref_seekbar_preview_skip_markers)) },
+        colors = previewChipColors,
         leadingIcon = {
           Icon(
             Icons.RoundedFilled.Check,
@@ -2215,6 +2198,7 @@ fun SeekbarStyleLivePreview(
         selected = showLoop,
         onClick = { showLoop = !showLoop },
         label = { Text(stringResource(R.string.btn_label_ab_loop)) },
+        colors = previewChipColors,
         leadingIcon = {
           Icon(
             Icons.RoundedFilled.Check,
