@@ -737,14 +737,14 @@ object FileFilterUtils {
     options: MediaScanOptions = MediaScanOptions(),
     noMediaPathFilter: NoMediaPathFilter = NoMediaPathFilter(options),
   ): Boolean {
+    if (noMediaPathFilter.shouldExcludeDirectory(folder)) {
+      return true
+    }
+
     if (isAndroidDataAccessiblePath(folder)) {
       // Allow navigation/scanning into Android/data so app-specific video folders
       // can appear in both the folder list and filesystem browser.
       return folder.name.startsWith(".") && !options.includeNoMediaFolders
-    }
-
-    if (noMediaPathFilter.shouldExcludeDirectory(folder)) {
-      return true
     }
 
     val name = folder.name.lowercase()
