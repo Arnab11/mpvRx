@@ -446,14 +446,14 @@ private fun YouTubePlaylistGridCard(
           onClick = onClick,
           onLongClick = onLongClick,
         )
-        .padding(horizontal = 4.dp, vertical = 4.dp),
+        .padding(horizontal = 2.dp, vertical = 2.dp),
   ) {
     // YouTube's playlist tiles read as a small stack instead of a single flat thumbnail.
     Box(
       modifier =
         Modifier
           .fillMaxWidth()
-          .padding(top = 8.dp),
+          .padding(top = if (itemCount > 1) 4.dp else 0.dp),
       contentAlignment = Alignment.TopCenter,
     ) {
       if (itemCount > 1) {
@@ -461,7 +461,7 @@ private fun YouTubePlaylistGridCard(
           modifier =
             Modifier
               .align(Alignment.TopCenter)
-              .offset(y = (-6).dp)
+              .offset(y = (-4).dp)
               .fillMaxWidth(0.90f)
               .aspectRatio(16f / 9f)
               .clip(AppShapeScale.medium)
@@ -549,7 +549,7 @@ private fun YouTubePlaylistGridCard(
       }
     }
 
-    Spacer(Modifier.height(8.dp))
+    Spacer(Modifier.height(4.dp))
 
     Row(
       modifier = Modifier.fillMaxWidth(),
@@ -559,7 +559,7 @@ private fun YouTubePlaylistGridCard(
         modifier =
           Modifier
             .weight(1f)
-            .padding(start = 2.dp, top = 1.dp, bottom = 6.dp),
+            .padding(start = 2.dp, top = 0.dp, bottom = 2.dp),
       ) {
         Text(
           text = displayName,
@@ -582,7 +582,7 @@ private fun YouTubePlaylistGridCard(
       Box {
         IconButton(
           onClick = { menuExpanded = true },
-          modifier = Modifier.size(36.dp),
+          modifier = Modifier.size(32.dp),
         ) {
           Icon(
             imageVector = Icons.RoundedFilled.MoreVert,

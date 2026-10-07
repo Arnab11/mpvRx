@@ -86,12 +86,14 @@ internal fun ProfileWatchStatistics() {
   var confirmReset by rememberSaveable { mutableStateOf(false) }
   var mediaFilter by rememberSaveable { mutableStateOf(0) }
 
+  val horizontalPadding = if (isTablet) 24.dp else 16.dp
+
   Column(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = if (isTablet) 24.dp else 16.dp, vertical = 4.dp),
-    verticalArrangement = Arrangement.spacedBy(14.dp),
+    modifier = Modifier.fillMaxWidth().padding(horizontal = horizontalPadding),
+    verticalArrangement = Arrangement.spacedBy(8.dp),
   ) {
     Row(
-      modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 4.dp),
+      modifier = Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 2.dp),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.SpaceBetween,
     ) {

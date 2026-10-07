@@ -336,8 +336,8 @@ object ProfileScreen : Screen {
         LazyColumn(
           state = listState,
           modifier = Modifier.fillMaxSize(),
-          contentPadding = PaddingValues(top = 4.dp, bottom = navigationBarHeight + 24.dp),
-          verticalArrangement = Arrangement.spacedBy(6.dp),
+          contentPadding = PaddingValues(top = 0.dp, bottom = navigationBarHeight + 16.dp),
+          verticalArrangement = Arrangement.spacedBy(0.dp),
         ) {
           item(key = "profile_overview") {
             ProfileOverviewCard(
@@ -654,14 +654,16 @@ private fun ProfileOverviewCard(
   val avatarScale = 1f - 0.25f * collapseProgress
   val avatarAlpha = (1f - collapseProgress * 1.5f).coerceIn(0f, 1f)
 
+  val horizontalPadding = if (isTablet) 24.dp else 16.dp
+
   Column(
-    modifier = Modifier.fillMaxWidth().padding(horizontal = if (isTablet) 24.dp else 16.dp, vertical = 8.dp),
-    verticalArrangement = Arrangement.spacedBy(20.dp),
+    modifier = Modifier.fillMaxWidth().padding(start = horizontalPadding, end = horizontalPadding, top = 2.dp, bottom = 0.dp),
+    verticalArrangement = Arrangement.spacedBy(10.dp),
   ) {
     Column(
-      modifier = Modifier.fillMaxWidth().padding(top = 16.dp, bottom = 6.dp),
+      modifier = Modifier.fillMaxWidth().padding(top = 2.dp, bottom = 0.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(12.dp),
+      verticalArrangement = Arrangement.spacedBy(6.dp),
     ) {
       Box(
         contentAlignment = Alignment.BottomEnd,
@@ -701,7 +703,7 @@ private fun ProfileOverviewCard(
 
       Column(
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(4.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
       ) {
         Text(
           text = name.ifBlank { stringResource(R.string.ui_profile) },
@@ -718,7 +720,7 @@ private fun ProfileOverviewCard(
             text = if (totalItems > 0) "$totalItems items in hub" else stringResource(R.string.ui_profile),
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 3.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp),
           )
         }
       }
@@ -728,7 +730,7 @@ private fun ProfileOverviewCard(
     if (isTablet || (isLandscape && configuration.screenWidthDp >= 720)) {
       Row(
         modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
       ) {
         ProfileShortcutTile(
           icon = Icons.RoundedFilled.History,
@@ -770,8 +772,8 @@ private fun ProfileOverviewCard(
         }
       }
     } else {
-      Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+      Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           ProfileShortcutTile(
             icon = Icons.RoundedFilled.History,
             label = stringResource(R.string.ui_recents),
@@ -791,7 +793,7 @@ private fun ProfileOverviewCard(
             modifier = Modifier.weight(1f),
           )
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
           ProfileShortcutTile(
             icon = Icons.RoundedFilled.Image,
             label = stringResource(R.string.ui_snapshots),
@@ -832,19 +834,19 @@ private fun ProfileShortcutTile(
 ) {
   Surface(
     onClick = onClick,
-    shape = RoundedCornerShape(18.dp),
+    shape = RoundedCornerShape(16.dp),
     color = containerColor,
     contentColor = contentColor,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f)),
     modifier =
       modifier
-        .heightIn(min = 74.dp)
-        .tvFocusHighlight(RoundedCornerShape(18.dp)),
+        .heightIn(min = 64.dp)
+        .tvFocusHighlight(RoundedCornerShape(16.dp)),
   ) {
     Row(
-      modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+      modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(12.dp),
+      horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
       Surface(
         shape = CircleShape,
@@ -896,7 +898,7 @@ private fun SectionHeader(
   val configuration = LocalConfiguration.current
   val isTablet = configuration.smallestScreenWidthDp >= 600
   Row(
-    modifier = Modifier.fillMaxWidth().padding(start = if (isTablet) 24.dp else 16.dp, end = if (isTablet) 16.dp else 8.dp, top = 20.dp, bottom = 6.dp),
+    modifier = Modifier.fillMaxWidth().padding(start = if (isTablet) 24.dp else 16.dp, end = if (isTablet) 16.dp else 8.dp, top = 12.dp, bottom = 2.dp),
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.SpaceBetween,
   ) {
@@ -928,15 +930,15 @@ private fun SectionHeader(
     }
     TextButton(
       onClick = onViewAll,
-      contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+      contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
       shape = CircleShape,
     ) {
       Text(
         stringResource(R.string.profile_view_all),
-        style = MaterialTheme.typography.labelLarge,
+        style = MaterialTheme.typography.labelMedium,
         fontWeight = FontWeight.SemiBold,
       )
-      Spacer(Modifier.width(4.dp))
+      Spacer(Modifier.width(2.dp))
       Icon(Icons.RoundedFilled.ChevronRight, contentDescription = null, modifier = Modifier.size(16.dp))
     }
   }
@@ -954,20 +956,20 @@ private fun ShelfEmptyCard(
     shape = AppShapeScale.large,
     color = MaterialTheme.colorScheme.surfaceContainerLow,
     border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.25f)),
-    modifier = Modifier.fillMaxWidth().padding(horizontal = if (isTablet) 24.dp else 16.dp),
+    modifier = Modifier.fillMaxWidth().padding(horizontal = if (isTablet) 24.dp else 16.dp, vertical = 2.dp),
   ) {
     Row(
-      modifier = Modifier.padding(16.dp),
+      modifier = Modifier.padding(12.dp),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(16.dp),
+      horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
       Surface(
         shape = CircleShape,
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        modifier = Modifier.size(46.dp),
+        modifier = Modifier.size(40.dp),
       ) {
         Box(contentAlignment = Alignment.Center) {
-          Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
+          Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
         }
       }
       Column(
@@ -1015,8 +1017,8 @@ private fun ShelfCard(
       content = frame,
     )
     Column(
-      modifier = Modifier.height(48.dp).padding(horizontal = 4.dp, vertical = 4.dp),
-      verticalArrangement = Arrangement.spacedBy(2.dp),
+      modifier = Modifier.padding(horizontal = 4.dp, vertical = 3.dp),
+      verticalArrangement = Arrangement.spacedBy(1.dp),
     ) {
       Text(
         text = title,
