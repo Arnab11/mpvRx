@@ -11,16 +11,10 @@ package app.gyrolet.mpvrx.ui.player.controls.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
@@ -35,6 +29,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -56,6 +52,8 @@ import androidx.compose.ui.input.key.type
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
 import app.gyrolet.mpvrx.utils.device.DeviceFormFactor
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -68,11 +66,13 @@ import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.flow.collect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
@@ -114,7 +114,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.preferences.SeekbarStyle
+import app.gyrolet.mpvrx.R
+import app.gyrolet.mpvrx.ui.icons.Icon
+import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.SkipSegment
+import app.gyrolet.mpvrx.ui.player.SkipSegmentType
 import app.gyrolet.mpvrx.ui.player.clip.ClipEditorUiState
 import app.gyrolet.mpvrx.ui.player.controls.LocalPlayerButtonsClickEvent
 import app.gyrolet.mpvrx.ui.player.visualizer.AudioFeatures
@@ -126,6 +130,9 @@ import dev.vivvvek.seeker.Seeker
 import dev.vivvvek.seeker.SeekerDefaults
 import dev.vivvvek.seeker.Segment
 import dev.vivvvek.seeker.rememberSeekerState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import `is`.xyz.mpv.Utils
 import kotlinx.collections.immutable.ImmutableList
 import kotlinx.collections.immutable.persistentListOf
@@ -520,11 +527,13 @@ private fun SeekbarContent(
   onValueChangeFinished: (Float) -> Unit,
   scope: kotlinx.coroutines.CoroutineScope,
   animatedPosition: Animatable<Float, *>,
+  interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
+  showClipRange: Boolean = true,
   modifier: Modifier = Modifier,
 ) {
   val touchAreaHeight = if (isPortrait) 64.dp else 52.dp
   val seekerState = rememberSeekerState()
-  val seekerInteractionSource = remember { MutableInteractionSource() }
+  val seekerInteractionSource = interactionSource
   val isSeekerPressed by seekerInteractionSource.collectIsPressedAsState()
   val isSeekerDragged by seekerInteractionSource.collectIsDraggedAsState()
   val isVisuallyInteracting = isUserInteracting || isSeekerPressed || isSeekerDragged
@@ -546,17 +555,17 @@ private fun SeekbarContent(
     remember(chapters, safeDuration) {
       normalizeSeekerSegments(chapters, safeDuration)
     }
-  val overlayTrackHeight =
-    when (seekbarStyle) {
-      SeekbarStyle.Normal -> 4.dp
+  val overlayTrackHeight by animateDpAsState(
+    targetValue = when (seekbarStyle) {
+      SeekbarStyle.Normal -> if (isVisuallyInteracting) 6.dp else 4.dp
       SeekbarStyle.Slim ->
         when {
           isVisuallyInteracting -> 15.dp
           paused -> 6.dp
           else -> 8.dp
         }
-      SeekbarStyle.Thick -> 16.dp
-      SeekbarStyle.Standard -> 8.dp
+      SeekbarStyle.Thick -> if (paused || isVisuallyInteracting) 11.2.dp else 16.dp
+      SeekbarStyle.Standard -> if (paused || isVisuallyInteracting) 5.6.dp else 8.dp
       SeekbarStyle.Wavy -> 8.dp
       SeekbarStyle.Liquid ->
         when {
@@ -564,7 +573,13 @@ private fun SeekbarContent(
           paused -> 8.dp
           else -> 10.dp
         }
-    }
+    },
+    animationSpec = spring(
+      dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+      stiffness = AppMotion.Spatial.Expressive.stiffness,
+    ),
+    label = "seekbar_marker_height",
+  )
   var latestInteractionPosition by remember { mutableFloatStateOf(currentPos) }
 
   LaunchedEffect(currentPos, isUserInteracting) {
@@ -752,6 +767,7 @@ private fun SeekbarContent(
             positionProvider = positionProvider,
             duration = duration,
             chapters = chapters,
+            isPaused = paused,
             isScrubbing = isVisuallyInteracting,
             interactionSource = seekerInteractionSource,
             loopStart = loopStart,
@@ -802,7 +818,7 @@ private fun SeekbarContent(
 
     }
 
-    val activeClip = clipRange
+    val activeClip = clipRange.takeIf { showClipRange }
     val clipEnd = activeClip?.endSeconds
     if (activeClip != null && clipEnd != null && safeDuration > 0f && clipEnd > activeClip.startSeconds) {
       ClipRangeSelection(
@@ -1616,6 +1632,7 @@ private fun LiquidSeekbar(
   positionProvider: () -> Float,
   duration: Float,
   chapters: ImmutableList<Segment>,
+  isPaused: Boolean,
   isScrubbing: Boolean,
   interactionSource: MutableInteractionSource = remember { MutableInteractionSource() },
   loopStart: Float? = null,
@@ -1628,6 +1645,26 @@ private fun LiquidSeekbar(
   val isPressed by interactionSource.collectIsPressedAsState()
   val isDragged by interactionSource.collectIsDraggedAsState()
   val isThumbInteracting = isPressed || isDragged || isScrubbing
+  val trackHeight by animateDpAsState(
+    targetValue = when {
+      isThumbInteracting -> 16.dp
+      isPaused -> 8.dp
+      else -> 10.dp
+    },
+    animationSpec = spring(
+      dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+      stiffness = AppMotion.Spatial.Expressive.stiffness,
+    ),
+    label = "liquid_seekbar_height",
+  )
+  val thumbHeightDp by animateDpAsState(
+    targetValue = if (isPaused && !isThumbInteracting) 20.dp else 24.dp,
+    animationSpec = spring(
+      dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+      stiffness = AppMotion.Spatial.Expressive.stiffness,
+    ),
+    label = "liquid_seekbar_thumb_height",
+  )
 
   val chapterStarts = remember(chapters) { chapters.map(Segment::start) }
   val playerBackdrop = LocalKyantPlayerBackdrop.current ?: rememberLayerBackdrop()
@@ -1694,7 +1731,7 @@ private fun LiquidSeekbar(
         val playedPx = size.width * playedFraction
         val bufferPx = bufferedEndPx(bufferDuration, safeDuration, size.width, playedPx)
         val centerY = size.height / 2f
-        val heightPx = 6.dp.toPx()
+        val heightPx = trackHeight.toPx()
         val radiusPx = heightPx / 2f
 
         val segments = seekbarTrackSegments(
@@ -1704,7 +1741,6 @@ private fun LiquidSeekbar(
           chapterGapHalf = 1.5.dp.toPx(),
         )
 
-        // Kyant's slider uses a restrained six-dp capsule track.
         segments.forEach { segment ->
           val segStart = segment.start
           val segEnd = segment.end
@@ -1783,7 +1819,6 @@ private fun LiquidSeekbar(
 
     // Kyant's liquid thumb, driven by the existing Seeker interaction layer.
     val thumbWidthDp = 40.dp
-    val thumbHeightDp = 24.dp
     Box(
       modifier = Modifier
         .align(Alignment.CenterStart)
@@ -1884,6 +1919,7 @@ fun SeekbarStylePreview(
       positionProvider = { previewProgress * 100f },
       duration = 100f,
       chapters = persistentListOf(),
+      isPaused = false,
       isScrubbing = false,
       modifier = modifier,
     )
@@ -2032,30 +2068,125 @@ fun SeekbarStylePreview(
   }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun SeekbarStyleLivePreview(
   style: SeekbarStyle,
   useWavySeekbar: Boolean = true,
   modifier: Modifier = Modifier,
 ) {
-  val infiniteTransition = rememberInfiniteTransition(label = "seekbar_live_preview")
-  val animatedProgress by infiniteTransition.animateFloat(
-    initialValue = 0f,
-    targetValue = 1f,
-    animationSpec =
-      infiniteRepeatable(
-        animation = tween(4000, easing = LinearEasing),
-        repeatMode = RepeatMode.Reverse,
-      ),
-    label = "live_preview_progress",
-  )
+  val duration = 120f
+  val reducedMotion = AppMotion.shouldReduceMotion()
+  var position by rememberSaveable { mutableFloatStateOf(38f) }
+  var paused by rememberSaveable { mutableStateOf(reducedMotion) }
+  var showChapters by rememberSaveable { mutableStateOf(true) }
+  var showLoop by rememberSaveable { mutableStateOf(false) }
+  var isUserInteracting by remember { mutableStateOf(false) }
+  val interactionSource = remember { MutableInteractionSource() }
+  val isPressed by interactionSource.collectIsPressedAsState()
+  val isDragged by interactionSource.collectIsDraggedAsState()
+  val isInteracting = isUserInteracting || isPressed || isDragged
+  val scope = rememberCoroutineScope()
+  val animatedPosition = remember { Animatable(position) }
+  val lifecycleOwner = LocalLifecycleOwner.current
+  val chapterTitles = (1..4).map { stringResource(R.string.audiobook_chapter_number, it) }
+  val chapters = remember(chapterTitles) {
+    persistentListOf(
+      Segment(chapterTitles[0], 0f),
+      Segment(chapterTitles[1], 30f),
+      Segment(chapterTitles[2], 60f),
+      Segment(chapterTitles[3], 90f),
+    )
+  }
+  val skipMarkers = remember {
+    persistentListOf(
+      SkipSegment(SkipSegmentType.INTRO, 4.0, 14.0, "preview"),
+      SkipSegment(SkipSegmentType.RECAP, 24.0, 29.0, "preview"),
+      SkipSegment(SkipSegmentType.OUTRO, 92.0, 101.0, "preview"),
+      SkipSegment(SkipSegmentType.CREDITS, 106.0, 113.0, "preview"),
+      SkipSegment(SkipSegmentType.PREVIEW, 116.0, 120.0, "preview"),
+    )
+  }
+  LaunchedEffect(paused, isInteracting, lifecycleOwner, reducedMotion) {
+    if (paused || isInteracting || reducedMotion) return@LaunchedEffect
+    lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+      var previousFrame = withFrameMillis { it }
+      while (isActive) {
+        val frame = withFrameMillis { it }
+        position = (position + (frame - previousFrame).coerceAtMost(100L) / 1000f * 4f) % duration
+        previousFrame = frame
+      }
+    }
+  }
 
-  SeekbarStylePreview(
-    style = style,
-    progress = animatedProgress,
-    useWavySeekbar = useWavySeekbar,
-    modifier = modifier,
-  )
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(4.dp)) {
+    Row(
+      modifier = Modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.spacedBy(8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+    ) {
+      Column(modifier = Modifier.weight(1f)) {
+        Text(
+          text = "${Utils.prettyTime(position.toInt(), false)} / ${Utils.prettyTime(duration.toInt(), false)}",
+          style = MaterialTheme.typography.labelLarge,
+        )
+        if (showChapters) {
+          Text(
+            text = chapters.lastOrNull { it.start <= position }?.name.orEmpty(),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+          )
+        }
+      }
+      IconButton(onClick = { position = 0f }) {
+        Icon(Icons.RoundedFilled.Refresh, contentDescription = stringResource(R.string.player_restart_action))
+      }
+      IconButton(onClick = { paused = !paused }) {
+        Icon(
+          if (paused) Icons.RoundedFilled.PlayArrow else Icons.RoundedFilled.Pause,
+          contentDescription = stringResource(if (paused) R.string.ui_play else R.string.audiobook_pause),
+        )
+      }
+    }
+    SeekbarContent(
+      positionProvider = { position },
+      committedPosition = position,
+      duration = duration,
+      chapters = if (showChapters) chapters else persistentListOf(),
+      skipSegments = skipMarkers,
+      paused = paused,
+      isPortrait = false,
+      isUserInteracting = isUserInteracting,
+      seekbarStyle = style,
+      useWavySeekbar = useWavySeekbar,
+      loopStart = if (showLoop) 44f else null,
+      loopEnd = if (showLoop) 76f else null,
+      bufferDuration = (position + 28f).coerceAtMost(duration),
+      onUserInteractionChange = { isUserInteracting = it },
+      onUserPositionChange = { position = it },
+      onValueChange = { position = it },
+      onValueChangeFinished = { position = it },
+      scope = scope,
+      animatedPosition = animatedPosition,
+      interactionSource = interactionSource,
+      showClipRange = false,
+      modifier = Modifier.fillMaxWidth().height(64.dp),
+    )
+    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+      FilterChip(
+        selected = showChapters,
+        onClick = { showChapters = !showChapters },
+        label = { Text(stringResource(R.string.media_info_tab_chapters)) },
+      )
+      FilterChip(
+        selected = showLoop,
+        onClick = { showLoop = !showLoop },
+        label = { Text(stringResource(R.string.btn_label_ab_loop)) },
+      )
+    }
+  }
 }
 
 @Composable
