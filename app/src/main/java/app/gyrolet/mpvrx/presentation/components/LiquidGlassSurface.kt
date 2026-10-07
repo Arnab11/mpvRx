@@ -95,10 +95,10 @@ fun LiquidGlassSurface(
         .drawBackdrop(
           backdrop = backdrop,
           shape = {
-            if (cornerRadius == null) {
-              Capsule()
-            } else {
-              RoundedRectangle(cornerRadius)
+            when {
+              cornerRadius != null -> RoundedRectangle(cornerRadius)
+              style == LiquidGlassStyle.MiniPlayer -> shape
+              else -> Capsule()
             }
           },
           effects = {
