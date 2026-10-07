@@ -473,18 +473,18 @@ fun PlayerControls(
   val playerActivity = LocalActivity.current as PlayerActivity
   val configuration = LocalConfiguration.current
   val hdrScreenMode by viewModel.hdrScreenMode.collectAsState()
+  val canCapturePlayerGlass =
+    enableLiquidGlass &&
+      !isAudioOnly &&
+      playbackSessionState.surfaceAttached &&
+      (playbackSessionState.phase == PlaybackPhase.READY ||
+        playbackSessionState.phase == PlaybackPhase.BACKGROUND)
   val playerGlassFrame =
     if (videoSurface != null) {
       rememberVideoAmbientFrame(
         surfaceView = videoSurface,
-        active =
-          enableLiquidGlass &&
-            controlsShown &&
-            !areControlsLocked &&
-            !isAudioOnly &&
-            playbackSessionState.surfaceAttached &&
-            (playbackSessionState.phase == PlaybackPhase.READY ||
-              playbackSessionState.phase == PlaybackPhase.BACKGROUND),
+        active = canCapturePlayerGlass && controlsShown && !areControlsLocked,
+        retainFrameWhenInactive = canCapturePlayerGlass,
         playbackGeneration = playbackSessionState.generation,
         hdrScreenMode = hdrScreenMode,
         orientation = configuration.orientation,
@@ -700,7 +700,7 @@ fun PlayerControls(
               .fillMaxSize()
               .alpha(0f)
               .layerBackdrop(playerKyantBackdrop)
-              .background(Color.Black),
+              .background(MaterialTheme.colorScheme.surfaceContainerHigh),
         )
       }
       Box(
