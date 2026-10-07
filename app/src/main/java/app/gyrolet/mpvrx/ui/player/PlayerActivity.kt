@@ -1184,6 +1184,7 @@ class PlayerActivity :
               PlayerControls(
                 viewModel = viewModel,
                 onBackPress = ::handleBackPress,
+                videoSurface = binding.player,
                 modifier = Modifier,
               )
             }
