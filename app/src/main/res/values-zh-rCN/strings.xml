@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="generic_expand">展开</string>
+  <string name="generic_collapse">收起</string>
+  <string name="generic_clear">清除</string>
+  <string name="generic_increase">增加</string>
+  <string name="generic_decrease">减少</string>
+  <string name="generic_remove_from_favorites">从收藏夹移除</string>
   <string name="generic_reset">重置</string>
   <string name="generic_share">分享</string>
   <string name="generic_confirm">确认</string>

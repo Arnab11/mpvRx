@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="generic_expand">Développer</string>
+  <string name="generic_collapse">Réduire</string>
+  <string name="generic_clear">Effacer</string>
+  <string name="generic_increase">Augmenter</string>
+  <string name="generic_decrease">Diminuer</string>
+  <string name="generic_remove_from_favorites">Retirer des favoris</string>
   <string name="generic_reset">Réinitialiser</string>
   <string name="generic_share">Partager</string>
   <string name="generic_confirm">Confirmer</string>

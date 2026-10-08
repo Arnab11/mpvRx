@@ -1,4 +1,7 @@
 <resources>
+  <string name="generic_increase">Increase</string>
+  <string name="generic_decrease">Decrease</string>
+  <string name="generic_remove_from_favorites">Remove from favorites</string>
   <string name="app_name" translatable="false">mpvRx</string>
   <string name="generic_reset">Reset</string>
   <string name="generic_back">Back</string>

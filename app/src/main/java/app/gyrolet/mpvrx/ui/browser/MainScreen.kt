@@ -52,6 +52,7 @@ import app.gyrolet.mpvrx.ui.utils.NavigationPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -754,6 +755,7 @@ object MainScreen : Screen {
   }
 }
 
+@OptIn(ExperimentalMaterial3ExpressiveApi::class)
 @Composable
 internal fun ExpressivePillNavigationBar(
   visibleTabs: List<MainScreen.MainTab>,
@@ -798,7 +800,10 @@ internal fun ExpressivePillNavigationBar(
   )
   val compactIcons = androidx.compose.ui.platform.LocalConfiguration.current.smallestScreenWidthDp >= 600
   val iconSize = if (compactIcons) 24.dp else MainNavigationIconSize
-  val labelHeight = if (compactIcons) 14.dp else 16.dp
+  val labelStyle = if (compactIcons) MaterialTheme.typography.labelSmall else MaterialTheme.typography.labelMedium
+  val activeLabelStyle =
+    if (compactIcons) MaterialTheme.typography.labelSmallEmphasized else MaterialTheme.typography.labelMediumEmphasized
+  val labelHeight = with(density) { labelStyle.lineHeight.toDp() }
   val labelFraction by animateFloatAsState(
     targetValue = NavigationBarState.navLabelVisibility,
     animationSpec = if (reducedMotion) snap() else tween(300, easing = NavigationBarEasing),
@@ -821,8 +826,9 @@ internal fun ExpressivePillNavigationBar(
 
   val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
   val accentColor = MaterialTheme.colorScheme.primary
-  val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.78f)
-  val selectedSurface = accentColor.copy(alpha = 0.15f)
+  val mutedColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (liquidGlassEnabled) 0.78f else 1f)
+  val selectedSurface = if (liquidGlassEnabled) accentColor.copy(alpha = 0.15f) else MaterialTheme.colorScheme.secondaryContainer
+  val selectedContent = if (liquidGlassEnabled) accentColor else MaterialTheme.colorScheme.onSecondaryContainer
   val accentBrush = Brush.linearGradient(listOf(accentColor, MaterialTheme.colorScheme.secondary))
 
   val tabRow: @Composable (Boolean) -> Unit = { active ->
@@ -833,7 +839,7 @@ internal fun ExpressivePillNavigationBar(
         visibleTabs.forEachIndexed { index, tab ->
           key(tab) {
             val label = labels[index]
-            val contentColor = if (active) accentColor else mutedColor
+            val contentColor = if (active) selectedContent else mutedColor
 
             Box(
               modifier =
@@ -852,18 +858,13 @@ internal fun ExpressivePillNavigationBar(
                 verticalArrangement = Arrangement.Center,
               ) {
                 Box(Modifier.size(iconSize).graphicsLayer { translationY = 2.dp.toPx() * labelFraction }
-                  .then(if (active && tab != MainScreen.MainTab.PROFILE) Modifier.navigationAccentMask(accentBrush) else Modifier)) {
-                  MainTabIcon(tab, if (active && tab != MainScreen.MainTab.PROFILE) Color.White else contentColor, null, iconSize)
+                  .then(if (liquidGlassEnabled && active && tab != MainScreen.MainTab.PROFILE) Modifier.navigationAccentMask(accentBrush) else Modifier)) {
+                  MainTabIcon(tab, if (liquidGlassEnabled && active && tab != MainScreen.MainTab.PROFILE) Color.White else contentColor, null, iconSize)
                 }
                 Box(Modifier.height(labelHeight * labelFraction).fillMaxWidth().clipToBounds().graphicsLayer { alpha = labelFraction }) {
                 Text(
                   text = label,
-                  style =
-                    MaterialTheme.typography.labelSmall.copy(
-                      fontSize = if (compactIcons) 12.sp else 13.sp,
-                      lineHeight = if (compactIcons) 14.sp else 16.sp,
-                      fontWeight = if (active) FontWeight.Bold else FontWeight.Normal,
-                    ),
+                  style = if (active) activeLabelStyle else labelStyle,
                   color = contentColor,
                   maxLines = 1,
                   softWrap = false,
@@ -883,7 +884,7 @@ internal fun ExpressivePillNavigationBar(
     modifier
       .widthIn(max = 400.dp)
       .fillMaxWidth()
-      .height(48.dp + (if (compactIcons) 8.dp else 16.dp) * labelFraction)
+      .height(48.dp + labelHeight * labelFraction)
       .onSizeChanged { motion.resize(it.width / density.density, it.height / density.density) }
       .then(
         if (reducedMotion) Modifier else Modifier.pointerInput(motion, density, isRtl) {

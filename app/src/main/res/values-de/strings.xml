@@ -1,5 +1,11 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <resources>
+  <string name="generic_expand">Erweitern</string>
+  <string name="generic_collapse">Einklappen</string>
+  <string name="generic_clear">Leeren</string>
+  <string name="generic_increase">Erhöhen</string>
+  <string name="generic_decrease">Verringern</string>
+  <string name="generic_remove_from_favorites">Aus Favoriten entfernen</string>
   <string name="generic_reset">Zurücksetzen</string>
   <string name="generic_share">Teilen</string>
   <string name="generic_confirm">Bestätigen</string>

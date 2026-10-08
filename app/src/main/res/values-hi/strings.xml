@@ -1,4 +1,10 @@
 <resources>
+  <string name="generic_expand">विस्तृत करें</string>
+  <string name="generic_collapse">संकुचित करें</string>
+  <string name="generic_clear">साफ़ करें</string>
+  <string name="generic_increase">बढ़ाएं</string>
+  <string name="generic_decrease">घटाएं</string>
+  <string name="generic_remove_from_favorites">पसंदीदा से हटाएं</string>
   <string name="app_name">mpvRx</string>
   <string name="generic_reset">रीसेट करें</string>
   <string name="generic_share">शेयर करें</string>
