@@ -72,6 +72,8 @@ class MPVView(
   var forceOpenGlFallback = false
   var isSurfaceReady = false
     private set
+  var surfaceAttachmentGeneration = 0L
+    private set
   var onSurfaceReady: (() -> Unit)? = null
   var surfaceBindingEnabled = true
     set(value) {
@@ -514,6 +516,7 @@ class MPVView(
     if (!surfaceBindingEnabled) return
     isSurfaceReady =
       PlaybackSession.bindSurface(holder.surface, width, height, this, ownerIsActive = { surfaceBindingEnabled })
+    if (isSurfaceReady) surfaceAttachmentGeneration++
     applyFrameRate()
     post {
       if (isSurfaceReady && holder.surface.isValid) {
