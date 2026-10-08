@@ -2737,8 +2737,4 @@
   <string name="debug_logs_config_save_failed">Не удалось сохранить журналы. Проверьте доступ к папке конфигурации или выберите её снова.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Показывать полосу перемотки при скрытых элементах управления</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">При горизонтальном свайпе показывать полосу перемотки, даже если элементы управления плеером скрыты. Индикатор времени не изменяется.</string>
-  <string name="ambient_style_mirror">Зеркало</string>
-  <string name="ambient_mirror_hint">Отражает изображение в полосах с нарастающим размытием и плавным затуханием до чёрного. Использует общие настройки эффекта со Свечением.</string>
-  <string name="ambient_intensity">Интенсивность</string>
-  <string name="ambient_sampling_quality">Качество выборки</string>
 </resources>

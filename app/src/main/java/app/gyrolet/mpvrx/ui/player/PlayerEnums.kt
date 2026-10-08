@@ -106,16 +106,12 @@ enum class Debanding(
 /** Visual style of the ambient area around the video. */
 enum class AmbientStyle(
   @StringRes val titleRes: Int,
-  val usesShader: Boolean,
 ) {
   /** Edge-sampled glow bleeding outward from the video borders. */
-  Glow(R.string.ambient_glow, usesShader = true),
+  Glow(R.string.ambient_glow),
 
   /** Soft blurred projection of the whole frame, like YouTube's Ambient Mode. */
-  YouTube(R.string.ambient_style_youtube, usesShader = false),
-
-  /** Reflected picture edges that soften and fade to black with distance. */
-  Mirror(R.string.ambient_style_mirror, usesShader = true),
+  YouTube(R.string.ambient_style_youtube),
 }
 
 enum class MPVProfile(

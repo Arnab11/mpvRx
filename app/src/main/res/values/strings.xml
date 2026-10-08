@@ -2838,8 +2838,4 @@
   <string name="debug_logs_config_save_failed">Could not save logs. Check access to your configuration folder or select it again.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Show seekbar when controls are hidden</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">During horizontal seeking, show the seekbar even when player controls are hidden. The time indicator is unaffected.</string>
-  <string name="ambient_style_mirror">Mirror</string>
-  <string name="ambient_mirror_hint">Reflects the picture into the bars, with increasing blur and a soft fade to black. Shares the effect controls with Glow.</string>
-  <string name="ambient_intensity">Intensity</string>
-  <string name="ambient_sampling_quality">Sampling quality</string>
 </resources>

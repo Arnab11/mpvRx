@@ -2722,8 +2722,4 @@
   <string name="debug_logs_config_save_failed">无法保存日志。请检查配置文件夹的访问权限或重新选择该文件夹。</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">控制栏隐藏时显示进度条</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">水平滑动快进或快退时，即使播放器控制栏已隐藏也显示进度条。时间提示不受影响.</string>
-  <string name="ambient_style_mirror">镜像</string>
-  <string name="ambient_mirror_hint">将画面反射到黑边中，逐渐模糊并柔和地淡出至黑色。与辉光模式共用效果设置。</string>
-  <string name="ambient_intensity">强度</string>
-  <string name="ambient_sampling_quality">采样质量</string>
 </resources>

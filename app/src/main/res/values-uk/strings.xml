@@ -2750,8 +2750,4 @@
   <string name="debug_logs_config_save_failed">Не вдалося зберегти журнали. Перевірте доступ до папки конфігурації або виберіть її знову.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Показувати смугу перемотування за прихованих елементів керування</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Під час горизонтального свайпу показувати смугу перемотування, навіть якщо елементи керування програвачем приховані. Індикатор часу не змінюється.</string>
-  <string name="ambient_style_mirror">Дзеркало</string>
-  <string name="ambient_mirror_hint">Віддзеркалює зображення у смугах із поступовим розмиттям і плавним згасанням до чорного. Використовує спільні налаштування ефекту зі Світінням.</string>
-  <string name="ambient_intensity">Інтенсивність</string>
-  <string name="ambient_sampling_quality">Якість вибірки</string>
 </resources>

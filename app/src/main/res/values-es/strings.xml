@@ -2723,8 +2723,4 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="debug_logs_config_save_failed">No se pudieron guardar los registros. Comprueba el acceso a tu carpeta de configuración o selecciónala de nuevo.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Mostrar la barra de progreso con los controles ocultos</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Al deslizar horizontalmente para avanzar o retroceder, muestra la barra de progreso aunque los controles del reproductor estén ocultos. El indicador de tiempo no cambia.</string>
-  <string name="ambient_style_mirror">Espejo</string>
-  <string name="ambient_mirror_hint">Refleja la imagen en las bandas con desenfoque progresivo y un suave fundido a negro. Comparte los controles del efecto con Resplandor.</string>
-  <string name="ambient_intensity">Intensidad</string>
-  <string name="ambient_sampling_quality">Calidad de muestreo</string>
 </resources>

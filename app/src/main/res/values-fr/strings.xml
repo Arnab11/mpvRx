@@ -2723,8 +2723,4 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="debug_logs_config_save_failed">Impossible d\'enregistrer les journaux. Vérifiez l\'accès au dossier de configuration ou sélectionnez-le à nouveau.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Afficher la barre de lecture quand les commandes sont masquées</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Pendant la recherche par balayage horizontal, afficher la barre de lecture même si les commandes du lecteur sont masquées. La pastille de temps reste inchangée.</string>
-  <string name="ambient_style_mirror">Miroir</string>
-  <string name="ambient_mirror_hint">Reflète l’image dans les bandes avec un flou progressif et un fondu doux vers le noir. Partage les réglages de l’effet avec Lueur.</string>
-  <string name="ambient_intensity">Intensité</string>
-  <string name="ambient_sampling_quality">Qualité d’échantillonnage</string>
 </resources>

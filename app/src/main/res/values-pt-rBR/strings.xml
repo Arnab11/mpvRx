@@ -2723,8 +2723,4 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="debug_logs_config_save_failed">Não foi possível salvar os registros. Verifique o acesso à pasta de configuração ou selecione-a novamente.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Mostrar barra de busca com controles ocultos</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Ao deslizar horizontalmente para avançar ou retroceder, mostra a barra de busca mesmo com os controles do player ocultos. O indicador de tempo não muda.</string>
-  <string name="ambient_style_mirror">Espelho</string>
-  <string name="ambient_mirror_hint">Reflete a imagem nas barras com desfoque progressivo e uma transição suave para o preto. Compartilha os controles de efeito com Brilho.</string>
-  <string name="ambient_intensity">Intensidade</string>
-  <string name="ambient_sampling_quality">Qualidade de amostragem</string>
 </resources>
