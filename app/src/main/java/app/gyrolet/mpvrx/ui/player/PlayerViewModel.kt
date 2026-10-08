@@ -2165,6 +2165,10 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     MutableStateFlow(playerPreferences.ambientGlowEdgeBlend.get().takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f)
   val ambientGlowEdgeBlend: StateFlow<Float> = _ambientGlowEdgeBlend.asStateFlow()
 
+  private val _ambientMirrorEdgeBlend =
+    MutableStateFlow(playerPreferences.ambientMirrorEdgeBlend.get().takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f)
+  val ambientMirrorEdgeBlend: StateFlow<Float> = _ambientMirrorEdgeBlend.asStateFlow()
+
   private val _ambientYouTubeEdgeBlend =
     MutableStateFlow(playerPreferences.ambientYouTubeEdgeBlend.get().takeIf { it.isFinite() }?.coerceIn(0f, 0.1f) ?: 0f)
   val ambientYouTubeEdgeBlend: StateFlow<Float> = _ambientYouTubeEdgeBlend.asStateFlow()
@@ -2182,19 +2186,19 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   @Volatile private var ambientShaderFile: java.io.File? = null
 
   /**
-  * Caches the [AmbientGlowShaderSpec] that was last compiled into a GLSL file.
+   * Caches the [AmbientShaderSpec] that was last compiled into a GLSL file.
    * When [updateAmbientStretch] is called but every parameter is identical to
    * the previously compiled spec, the expensive string-build + file-write +
    * MPV shader-reload cycle is skipped entirely.
    *
    * Using the spec data class (instead of the raw GLSL String) as the cache
    * key avoids allocating the multi-KB shader string and running
-   * buildSpiralTapTable trig math before the early-return guard fires.
+   * pyramid/tap generation before the early-return guard fires.
    *
    * @Volatile: written on renderPrepDispatcher (background), read and nulled on
    * the main thread in disableAmbientShader() / restartAmbientIfActive().
    */
-  @Volatile private var lastCompiledSpec: AmbientGlowShaderSpec? = null
+  @Volatile private var lastCompiledSpec: AmbientShaderSpec? = null
 
   /**
    * Latest device thermal headroom reading ([0f] = at thermal limit, [1f] = cool).
@@ -2570,7 +2574,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         } else {
           playlistMetadataJob?.cancel()
         }
-        if (_isAmbientEnabled.value && _ambientStyle.value == AmbientStyle.Glow) {
+        if (_isAmbientEnabled.value && _ambientStyle.value.usesShader) {
           scheduleAmbientUpdate(100)
         }
       }
@@ -7146,15 +7150,15 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       _isAmbientEnabled.value &&
       !MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.AMBIENT)
 
-  private fun isAmbientGlowRuntimeActive(): Boolean =
-    isAmbientRuntimeActive() && _ambientStyle.value == AmbientStyle.Glow
+  private fun isAmbientShaderRuntimeActive(): Boolean =
+    isAmbientRuntimeActive() && _ambientStyle.value.usesShader
 
   fun toggleAmbientMode() {
     if (MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.AMBIENT)) return
     _isAmbientEnabled.value = !_isAmbientEnabled.value
     playerPreferences.isAmbientEnabled.set(_isAmbientEnabled.value)
     if (_isAmbientEnabled.value) {
-      if (_ambientStyle.value == AmbientStyle.Glow) {
+      if (_ambientStyle.value.usesShader) {
         lastAmbientScaleX = -1.0
         scheduleAmbientUpdate(0)
       }
@@ -7165,7 +7169,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     }
   }
 
-  /** Switches between the shader-backed Glow and frame-captured YouTube styles. */
+  /** Switches between shader-backed FX styles and the frame-captured YouTube style. */
   fun setAmbientStyle(style: AmbientStyle) {
     if (MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.AMBIENT)) return
     if (_ambientStyle.value == style) return
@@ -7175,7 +7179,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       PlayerUpdates.ShowText(
         appContext.getString(R.string.ambient_style_update, appContext.getString(style.titleRes)),
       )
-    if (style == AmbientStyle.Glow) {
+    if (style.usesShader) {
       lastAmbientScaleX = -1.0
       scheduleAmbientUpdate(0)
     } else {
@@ -7221,9 +7225,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     }
   }
 
-  /** Called when the device orientation changes. Refreshes Glow for the new output dimensions. */
+  /** Called when the device orientation changes. Refreshes the FX shader for the new output dimensions. */
   fun onOrientationChanged() {
-    if (!isAmbientGlowRuntimeActive()) return
+    if (!isAmbientShaderRuntimeActive()) return
 
     // The output dimensions are part of the compiled spec. Keep the cache intact here so a
     // redundant orientation callback cannot recompile the same Vulkan shader.
@@ -7245,7 +7249,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
    * Called after shader-stack changes so ambient stays as the last OUTPUT pass.
    */
   fun restartAmbientIfActive() {
-    if (!isAmbientGlowRuntimeActive()) return
+    if (!isAmbientShaderRuntimeActive()) return
 
     // Move the existing Ambient program back to the final OUTPUT pass without invalidating the
     // compiled-spec cache. Rebuilding an identical file was forcing avoidable SPIR-V/pipeline work.
@@ -7265,6 +7269,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       AmbientStyle.Glow -> {
         _ambientGlowEdgeBlend.value = clamped
         playerPreferences.ambientGlowEdgeBlend.set(clamped)
+        scheduleAmbientUpdate()
+      }
+      AmbientStyle.Mirror -> {
+        _ambientMirrorEdgeBlend.value = clamped
+        playerPreferences.ambientMirrorEdgeBlend.set(clamped)
         scheduleAmbientUpdate()
       }
       AmbientStyle.YouTube -> {
@@ -7333,7 +7342,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   private fun scheduleAmbientUpdate(delayMs: Long = 275L) {
     synchronized(ambientScheduleLock) {
-      if (!isAmbientGlowRuntimeActive()) return
+      if (!isAmbientShaderRuntimeActive()) return
 
       val generation = ambientUpdateGeneration.incrementAndGet()
       ambientDebounceJob?.cancel()
@@ -7447,7 +7456,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private suspend fun updateAmbientStretch(generation: Long) {
-    if (!isAmbientGlowRuntimeActive() || generation != ambientUpdateGeneration.get()) return
+    if (!isAmbientShaderRuntimeActive() || generation != ambientUpdateGeneration.get()) return
 
     runCatching {
       val osdW = PlaybackSession.getPropertyInt("osd-width") ?: 1920
@@ -7482,7 +7491,9 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       val warmth = _ambientWarmth.value
       val curve = _ambientFadeCurve.value
       val opacity = _ambientOpacity.value
-      val edgeBlend = _ambientGlowEdgeBlend.value
+      val style = _ambientStyle.value
+      val edgeBlend =
+        if (style == AmbientStyle.Mirror) _ambientMirrorEdgeBlend.value else _ambientGlowEdgeBlend.value
 
       // ── Generate GLSL shader ───────────────────────────────────────────────
       val spec =
@@ -7498,12 +7509,13 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           fadeCurve = curve,
           opacity = opacity,
           edgeBlend = edgeBlend,
+          style = style,
         )
 
       // ── Shader parameter cache ──────────────────────────────────────────────────────
-      // Compare the AmbientGlowShaderSpec data class (cheap equality) before building
+      // Compare the AmbientShaderSpec data class (cheap equality) before building
       // the GLSL string. This avoids allocating the multi-KB shader string and
-      // running buildSpiralTapTable trig math on no-op refreshes (e.g. thermal
+      // generating pyramid passes and taps on no-op refreshes (e.g. thermal
       // monitor ticks that don't change the effective sample budget, orientation
       // callbacks that fire with unchanged video dimensions).
       val shaderIsCurrent =
@@ -7532,7 +7544,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       currentCoroutineContext().ensureActive()
 
       synchronized(ambientRenderLock) {
-        if (!isAmbientGlowRuntimeActive() || generation != ambientUpdateGeneration.get()) {
+        if (!isAmbientShaderRuntimeActive() || generation != ambientUpdateGeneration.get()) {
           newFile.delete()
           return@synchronized
         }
@@ -7546,8 +7558,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         if (lastAmbientBlendMode != blendMode) {
           PlaybackSession.setPropertyString("blend-subtitles", blendMode)
         }
-        PlaybackSession.command("change-list", "glsl-shaders", "append", newFile.absolutePath)
-        ambientShaderFile?.delete()
+        val previousFile = ambientShaderFile
+        val shaderPaths =
+          PlaybackSession.getPropertyString("glsl-shaders")
+            .orEmpty().split(":").filter { it.isNotEmpty() && it != previousFile?.absolutePath }
+        PlaybackSession.setPropertyString("glsl-shaders", (shaderPaths + newFile.absolutePath).joinToString(":"))
+        previousFile?.delete()
         lastAmbientScaleX = scaleX
         lastAmbientScaleY = scaleY
         lastAmbientBlendMode = blendMode
@@ -7564,7 +7580,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   /**
-  * Builds an [AmbientGlowShaderSpec] from the current ambient parameter values.
+   * Builds an [AmbientShaderSpec] from the current ambient parameter values.
    * The spec is a lightweight data class that captures all shader inputs;
    * [AmbientShaderBuilder.build] converts it to a GLSL string only when the
    * spec has actually changed from the last compiled version.
@@ -7581,17 +7597,17 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     fadeCurve: Float,
     opacity: Float,
     edgeBlend: Float,
-  ): AmbientGlowShaderSpec {
+    style: AmbientStyle,
+  ): AmbientShaderSpec {
     val context = AmbientRenderContext(scaleX = sx, scaleY = sy)
     val shared =
       AmbientSharedShaderConfig(
-        bezelDepth = 0f,
         vignetteStrength = vignetteStrength,
         opacity = opacity,
         edgeBlend = edgeBlend,
       )
 
-    return AmbientGlowShaderSpec(
+    return AmbientShaderSpec(
       context = context,
       shared = shared,
       blurSamples = blurSamples,
@@ -7600,6 +7616,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       satBoost = satBoost,
       warmth = warmth,
       fadeCurve = fadeCurve,
+      style = style,
     )
   }
 

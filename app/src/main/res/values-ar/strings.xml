@@ -2749,4 +2749,8 @@
   <string name="debug_logs_config_save_failed">تعذر حفظ السجلات. تحقق من الوصول إلى مجلد الإعدادات أو اختره مرة أخرى.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">إظهار شريط التقدم عند إخفاء عناصر التحكم</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">أثناء السحب أفقيًا للتقديم أو الإرجاع، أظهر شريط التقدم حتى عند إخفاء عناصر تحكم المشغّل. لا يتأثر مؤشر الوقت.</string>
+  <string name="ambient_style_mirror">مرآة</string>
+  <string name="ambient_mirror_hint">يعكس الصورة في الأشرطة مع تمويه متزايد وتلاشٍ ناعم إلى الأسود. يشارك عناصر التحكم في التأثير مع التوهج.</string>
+  <string name="ambient_intensity">الشدة</string>
+  <string name="ambient_sampling_quality">جودة أخذ العينات</string>
 </resources>
