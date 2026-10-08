@@ -1411,7 +1411,11 @@ fun GestureHandler(
                       if (claimGesture(GestureOwner.HORIZONTAL_SEEK)) {
                         gestureType = "horizontal_seek"
                         hasStartedSeeking = true
-                        initialVideoPosition = position?.toFloat() ?: 0f
+                        // Follow the same high precision clock that drives the seekbar.
+                        initialVideoPosition = viewModel.precisePosition.value
+                          .takeIf { it.isFinite() && it >= 0f }
+                          ?: position?.toFloat()
+                          ?: 0f
                         pendingSeekPosition = initialVideoPosition
 
                         // Pause before seeking to prevent decoder stalls

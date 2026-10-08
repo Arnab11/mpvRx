@@ -333,6 +333,7 @@ internal fun SeekbarWithTimers(
   duration: Float,
   remaining: Float,
   committedPosition: Float = position,
+  externalScrubbing: Boolean = false,
   onValueChange: (Float) -> Unit,
   onValueChangeFinished: (Float) -> Unit,
   timersInverted: Pair<Boolean, Boolean>,
@@ -364,13 +365,14 @@ internal fun SeekbarWithTimers(
   val animatedPosition = remember { Animatable(position) }
   val scope = rememberCoroutineScope()
 
-  LaunchedEffect(position, isUserInteracting) {
+  LaunchedEffect(position, isUserInteracting, externalScrubbing) {
     if (!isUserInteracting && position != animatedPosition.value) {
       // Run the animation directly in this LaunchedEffect body (not via scope.launch).
       // When `position` changes on the next poll, the effect is cancelled and relaunched,
       // which retargets the same Animatable smoothly instead of stacking independent
       // spring coroutines that fight each other and leak work every ~50ms.
-      if (position == 0f) {
+      if (externalScrubbing || position == 0f) {
+        // Gesture preview already updates at pointer-event frequency; no delayed spring.
         animatedPosition.snapTo(position)
       } else {
         animatedPosition.animateTo(
@@ -394,7 +396,9 @@ internal fun SeekbarWithTimers(
       verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
       SeekbarContent(
-        positionProvider = { if (isUserInteracting) userPosition else animatedPosition.value },
+        positionProvider = {
+          if (isUserInteracting) userPosition else if (externalScrubbing) position else animatedPosition.value
+        },
         committedPosition = committedPosition,
         duration = duration,
         chapters = chapters,
@@ -466,7 +470,9 @@ internal fun SeekbarWithTimers(
       )
 
       SeekbarContent(
-        positionProvider = { if (isUserInteracting) userPosition else animatedPosition.value },
+        positionProvider = {
+          if (isUserInteracting) userPosition else if (externalScrubbing) position else animatedPosition.value
+        },
         committedPosition = committedPosition,
         duration = duration,
         chapters = chapters,

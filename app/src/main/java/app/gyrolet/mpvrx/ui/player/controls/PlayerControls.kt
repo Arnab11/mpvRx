@@ -1870,7 +1870,8 @@ is PlayerUpdates.FrameInfo -> {
 
           AnimatedVisibility(
             visible =
-              (controlsShown || (!isPortrait && seekBarShown && !isHorizontalSeekActive)) &&
+              // Show the seekbar even with hidden controls during screen-wide horizontal seeking.
+              (controlsShown || seekBarShown || isHorizontalSeekActive) &&
                 !areControlsLocked,
             enter = buildControlsEnterV(controlsAnimStyle, reduceMotion, enterMs) { it },
             exit = buildControlsExitV(controlsAnimStyle, reduceMotion, exitMs) { it },
@@ -1922,6 +1923,7 @@ is PlayerUpdates.FrameInfo -> {
             SeekbarWithTimers(
               position = displayedSeekbarPosition,
               committedPosition = precisePosition,
+              externalScrubbing = isHorizontalSeekActive,
               duration = seekbarDuration,
               remaining = effectiveRemaining,
               onValueChange = {

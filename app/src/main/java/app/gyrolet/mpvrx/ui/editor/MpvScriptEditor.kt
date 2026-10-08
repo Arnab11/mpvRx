@@ -15,7 +15,6 @@ import android.graphics.Typeface
 import android.os.Bundle
 import android.util.Log
 import android.view.ViewTreeObserver
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,6 +47,7 @@ import kotlinx.coroutines.delay
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -84,7 +84,8 @@ fun MpvScriptEditor(
   val context = LocalContext.current
   val colors = androidx.compose.material3.MaterialTheme.colorScheme
   val selectionColors = LocalTextSelectionColors.current
-  val isDarkTheme = isSystemInDarkTheme()
+  // Match the in-app theme even when it differs from the system's light/dark setting.
+  val isDarkTheme = colors.background.luminance() < 0.5f
   val latestOnContentChange by rememberUpdatedState(onContentChange)
   var applyingExternalText by remember { mutableStateOf(false) }
   var textSize by rememberSaveable { mutableStateOf(14f) }
