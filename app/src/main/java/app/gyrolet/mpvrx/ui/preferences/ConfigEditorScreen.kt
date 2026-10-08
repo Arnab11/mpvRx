@@ -38,6 +38,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.documentfile.provider.DocumentFile
@@ -256,17 +257,21 @@ data class ConfigEditorScreen(
           Column {
             Text(
               text = screenTitle,
-              style = MaterialTheme.typography.headlineSmall,
-              fontWeight = FontWeight.ExtraBold,
+              style = MaterialTheme.typography.titleLarge,
+              fontWeight = FontWeight.Bold,
               color = MaterialTheme.colorScheme.primary,
+              maxLines = 1,
+              overflow = TextOverflow.Ellipsis,
             )
             if (hasUnsavedChanges) {
               Text(
                 text =
                   androidx.compose.ui.res
                     .stringResource(app.gyrolet.mpvrx.R.string.ui_unsaved_changes),
-                style = MaterialTheme.typography.bodySmall,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.secondary,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
               )
             }
           }
@@ -315,7 +320,7 @@ data class ConfigEditorScreen(
           IconButton(
             onClick = { saveConfig() },
             enabled = hasUnsavedChanges,
-            modifier = Modifier.padding(horizontal = 12.dp).size(40.dp),
+            modifier = Modifier.padding(horizontal = 6.dp).size(40.dp),
             colors =
               IconButtonDefaults.iconButtonColors(
                 containerColor =

@@ -116,6 +116,10 @@ fun MpvScriptEditor(
         typefaceText = Typeface.MONOSPACE
         typefaceLineNumber = Typeface.MONOSPACE
         setPinLineNumber(true)
+        // Sora's native scrollbars remain inside the editor viewport, not underneath the
+        // keyboard toolbar. The horizontal track is only useful if wrapping is disabled.
+        setScrollBarEnabled(true)
+        setHorizontalScrollBarEnabled(!wordWrap)
         editable = true
         colorScheme = createEditorColorScheme(isDarkTheme)
         colorScheme.applyMpvColors(
@@ -140,6 +144,7 @@ fun MpvScriptEditor(
 
   LaunchedEffect(wordWrap) {
     editor.setWordwrap(wordWrap)
+    editor.setHorizontalScrollBarEnabled(!wordWrap)
   }
 
   LaunchedEffect(textSize) {
@@ -512,9 +517,9 @@ private fun EditorColorScheme.applyMpvColors(
   setColor(EditorColorScheme.SELECTED_TEXT_BACKGROUND, selectionBackground)
   setColor(EditorColorScheme.SELECTION_INSERT, colors.primary.toArgb())
   setColor(EditorColorScheme.SELECTION_HANDLE, colors.primary.toArgb())
-  setColor(EditorColorScheme.SCROLL_BAR_THUMB, colors.primary.copy(alpha = 0.42f).toArgb())
+  setColor(EditorColorScheme.SCROLL_BAR_THUMB, colors.primary.copy(alpha = 0.72f).toArgb())
   setColor(EditorColorScheme.SCROLL_BAR_THUMB_PRESSED, colors.primary.toArgb())
-  setColor(EditorColorScheme.SCROLL_BAR_TRACK, colors.surfaceVariant.copy(alpha = 0.35f).toArgb())
+  setColor(EditorColorScheme.SCROLL_BAR_TRACK, colors.surfaceVariant.copy(alpha = 0.18f).toArgb())
   setColor(EditorColorScheme.COMPLETION_WND_BACKGROUND, colors.surfaceContainerHigh.toArgb())
   setColor(EditorColorScheme.COMPLETION_WND_ITEM_CURRENT, colors.primaryContainer.toArgb())
   setColor(EditorColorScheme.COMPLETION_WND_TEXT_PRIMARY, colors.onSurface.toArgb())
