@@ -259,6 +259,8 @@ object PlaybackSession : MPVLib.EventObserver {
   private var activeCoreConfigurationKey: String? = null
   private var activeUserScriptsKey: String? = null
   private var attachedSurfaceOwner: Any? = null
+  private var attachedSurfaceWidth = 0
+  private var attachedSurfaceHeight = 0
   private var activeNetworkStream: NetworkStreamRegistration? = null
   private val auxiliaryNetworkStreams = linkedMapOf<String, NetworkStreamRegistration>()
   private var suspendedVideoTrack: SuspendedVideoTrack? = null
@@ -494,9 +496,13 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         detachRendererSurfaceLocked()
       }
       MPVLib.attachSurface(surface)
+      attachedSurfaceWidth = 0
+      attachedSurfaceHeight = 0
       width?.takeIf { it > 0 }?.let { resolvedWidth ->
         height?.takeIf { it > 0 }?.let { resolvedHeight ->
           MPVLib.setPropertyString("android-surface-size", "${resolvedWidth}x$resolvedHeight")
+          attachedSurfaceWidth = resolvedWidth
+          attachedSurfaceHeight = resolvedHeight
         }
       }
       MPVLib.setOptionString("force-window", "yes")
@@ -520,7 +526,10 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       if (width <= 0 || height <= 0 || attachedSurfaceOwner !== owner || !_state.value.surfaceAttached) {
         return@withCore false
       }
+      if (width == attachedSurfaceWidth && height == attachedSurfaceHeight) return@withCore true
       MPVLib.setPropertyString("android-surface-size", "${width}x$height")
+      attachedSurfaceWidth = width
+      attachedSurfaceHeight = height
       true
     }
 
@@ -545,6 +554,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     runCatching { MPVLib.setOptionString("force-window", "no") }
     runCatching { MPVLib.detachSurface() }
     attachedSurfaceOwner = null
+    attachedSurfaceWidth = 0
+    attachedSurfaceHeight = 0
     updateState { it.copy(surfaceAttached = false) }
   }
 
@@ -752,6 +763,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     runCatching { MPVLib.setPropertyString("vo", "null") }
     runCatching { MPVLib.detachSurface() }
     attachedSurfaceOwner = null
+    attachedSurfaceWidth = 0
+    attachedSurfaceHeight = 0
     runCatching { unregisterNativeObserver() }
     runCatching { MPVLib.destroy() }
       .onFailure { error -> Log.e(TAG, "Failed to destroy libmpv", error) }

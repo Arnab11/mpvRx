@@ -454,6 +454,8 @@ class PlayerActivity :
   private var viewModelHostAttached = false
   private var torrentPickerHandoff = false
   private var savePlaybackStateJob: Job? = null // Track ongoing save job
+  private var lastImmediatePlaybackStateSnapshot: PlaybackStateSnapshot? = null
+  private var backgroundPlaybackShutdownIssued = false
   private var wasPlayingBeforePause = false // Track if video was playing before pause
   private var resumeAfterUnlockJob: Job? = null
   private var jellyfinSessionReporter: JellyfinSessionReporter? = null
@@ -1265,7 +1267,11 @@ class PlayerActivity :
             }
           },
         )
-      val presentationActive = active && ambientFrame.supported && ambientFrame.frame != null
+      // Keep the player Surface geometry stable for the entire Ambient presentation. A captured
+      // frame can be temporarily unavailable while ImageReader swaps buffers; treating that as an
+      // Ambient-off transition made the Surface bounce between fitted and MATCH_PARENT sizes,
+      // forcing BLAST/libmpv reconfiguration and visible black flashes.
+      val presentationActive = active && ambientFrame.supported
 
       // Auto-crop changes after playback becomes ready. Refreshing on the property itself keeps
       // YouTube Ambient's SurfaceView aligned with the newly cropped content rectangle.
@@ -1274,7 +1280,7 @@ class PlayerActivity :
       }
 
       MpvrxTheme {
-        if (presentationActive) {
+        if (presentationActive && ambientFrame.frame != null) {
           VideoAmbientBackground(
             frame = ambientFrame.frame,
             baseColor = ambientFrame.base,
@@ -1733,6 +1739,9 @@ class PlayerActivity :
     player.isExiting = true
     mpvInitialized = false
     player.onSurfaceReady = null
+    // Cancel seek and shader workers before the Android Surface disappears. Otherwise a pending
+    // native command can restart MediaCodec after its output surface has already been detached.
+    viewModel.prepareForPlayerTeardown()
     intentSubtitleJob?.cancel()
     videoParamRefreshJob?.cancel()
     backgroundServiceSyncJob?.cancel()
@@ -1748,15 +1757,16 @@ class PlayerActivity :
     runCatching { PlaybackSession.removeObserver(playerObserver) }
       .onFailure { e -> Log.e(TAG, "Error removing MPV observer", e) }
 
-    runCatching { player.releaseSurface() }
-      .onFailure { e -> Log.e(TAG, "Error releasing MPV surface", e) }
-
     if (!ownsPlaybackSession) {
+      runCatching { player.releaseSurface() }
+        .onFailure { e -> Log.e(TAG, "Error releasing MPV surface", e) }
       Log.d(TAG, "Skipping shared MPV teardown from a superseded PlayerActivity")
       return
     }
 
     if (!keepBackgroundPlaybackAlive) {
+      // Start the terminal stop while the Surface is still valid. This closes the window where a
+      // late seek/video-reconfig could construct MediaCodec with a null native window.
       viewModel.onMpvCoreStopping()
       MediaPlaybackService.prepareForMpvShutdown()
       if (!pipDismissalCommitted) {
@@ -1766,6 +1776,9 @@ class PlayerActivity :
     } else {
       PlaybackSession.markBackground()
     }
+
+    runCatching { player.releaseSurface() }
+      .onFailure { e -> Log.e(TAG, "Error releasing MPV surface", e) }
   }
 
   private fun observePlaybackSessionQueue() {
@@ -4412,20 +4425,9 @@ class PlayerActivity :
       }
       "container-fps" -> {
         if (!mpvInitialized || player.isExiting || isFinishing) return
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R && value > 0.0) {
-          try {
-            val surface = player.holder?.surface
-            if (surface != null && surface.isValid) {
-              surface.setFrameRate(
-                value.toFloat(),
-                android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-              )
-              android.util.Log.i(TAG, "Set display refresh rate to ${value}Hz")
-            }
-          } catch (e: Exception) {
-            android.util.Log.e(TAG, "Failed to set frame rate", e)
-          }
-        }
+        // MPVView owns display-rate negotiation so a Surface callback and the property event cannot
+        // submit the same frame-rate request twice.
+        player.updateFrameRate(value)
       }
       "sub-scale" -> {
         if (isSecondarySubtitleActive()) {
@@ -4957,11 +4959,12 @@ class PlayerActivity :
         "no"
       }
 
-    // blend-subtitles is also written by the ambient enable/disable path, so it stays a forced
-    // write. Everything below is already applied as an init OPTION by MPVView.initOptions and is
-    // only re-issued here when the preference value actually changed, so mpv does not redo its
-    // OSD/style reconfiguration on the frame the player becomes ready for every load.
-    PlaybackSession.setPropertyString("blend-subtitles", blendMode)
+    // Ambient Mode can change this property independently of subtitle preferences. Check the
+    // effective mpv value instead of forcing a write on every preference refresh: that keeps the
+    // ambient transition correct without repeatedly reconfiguring subtitle blending.
+    if (PlaybackSession.getPropertyString("blend-subtitles") != blendMode) {
+      PlaybackSession.setPropertyString("blend-subtitles", blendMode)
+    }
 
     setMpvStyleIntIfChanged("sub-font-size", fontSize)
     // Official mpv only has secondary-sub-delay/scale/pos/ass-override; secondary inherits primary style.
@@ -5052,6 +5055,11 @@ class PlayerActivity :
     immediate: Boolean = false,
   ) {
     val snapshot = capturePlaybackStateSnapshot(mediaTitle) ?: return
+    if (immediate && snapshot == lastImmediatePlaybackStateSnapshot) {
+      Log.d(TAG, "Skipping duplicate immediate playback-state save for: ${snapshot.mediaTitle}")
+      return
+    }
+    if (immediate) lastImmediatePlaybackStateSnapshot = snapshot
 
     // Cancel any previous pending save operation
     savePlaybackStateJob?.cancel()
@@ -5075,6 +5083,9 @@ class PlayerActivity :
         playbackStateRepository.upsert(playbackState)
         PlaybackStateEvents.notifyChanged(snapshot.mediaIdentifier)
       }.onFailure { e ->
+        if (immediate && lastImmediatePlaybackStateSnapshot == snapshot) {
+          lastImmediatePlaybackStateSnapshot = null
+        }
         Log.e(TAG, "Error saving playback state", e)
       }
     }
@@ -7151,6 +7162,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }
 
     Log.d(TAG, "Starting background playback for: $fileName")
+    backgroundPlaybackShutdownIssued = false
 
     // Ensure notification channel exists
     MediaPlaybackService.createNotificationChannel(this)
@@ -7251,6 +7263,11 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
    * Called when the activity is destroyed to remove the notification.
    */
   private fun endBackgroundPlayback(handoffToActivity: Boolean = true) {
+    if (backgroundPlaybackShutdownIssued) {
+      Log.d(TAG, "Background playback service stop already requested")
+      return
+    }
+    backgroundPlaybackShutdownIssued = true
     Log.d(TAG, "Ending background playback service")
     backgroundHandoffJob?.cancel()
     backgroundHandoffJob = null

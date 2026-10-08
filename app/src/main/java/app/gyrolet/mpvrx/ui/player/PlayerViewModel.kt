@@ -1816,8 +1816,16 @@ class PlayerViewModel : ViewModel(),
         else -> if (channelsInt > 0) "$channelsInt Channels" else "Unknown"
       }
 
-    val bitrateInt = PlaybackSession.getPropertyInt("audio-bitrate") ?: 0
-    val bitrateStr = if (bitrateInt > 0) "${bitrateInt / 1000} kbps" else "Variable / Unknown"
+    // Prefer the selected track's demux metadata. mpv's top-level audio-bitrate is optional
+    // and can be unavailable during seeks/reconfigures, which needlessly logged E/mpv entries.
+    val bitrateBitsPerSecond =
+      audioTracks.value
+        .firstOrNull(TrackNode::isSelected)
+        ?.demuxBitrate
+        ?.takeIf { it > 0L }
+        ?: 0L
+    val bitrateStr =
+      if (bitrateBitsPerSecond > 0L) "${bitrateBitsPerSecond / 1000} kbps" else "Variable / Unknown"
 
     val path = PlaybackSession.getPropertyString("path") ?: PlaybackSession.getPropertyString("stream-open-filename") ?: ""
     val fileSizeStr =
@@ -2163,6 +2171,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
 
   @Volatile private var lastAmbientScaleX = -1.0
   @Volatile private var lastAmbientScaleY = -1.0
+  @Volatile private var lastAmbientBlendMode: String? = null
   private var ambientDebounceJob: kotlinx.coroutines.Job? = null
   private val ambientScheduleLock = Any()
   private val ambientRenderLock = Any()
@@ -2737,6 +2746,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun onVideoLoadStarted() {
     cancelSeekPreview()
     cancelFrameSeek()
+    seekCommitJob?.cancel()
+    seekCommitJob = null
     seekCoalesceJob?.cancel()
     seekCoalesceJob = null
     pendingSeekOffset = 0
@@ -3255,6 +3266,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private var seekPreviewJob: Job? = null
+  private var seekCommitJob: Job? = null
   private var frameSeekJob: Job? = null
 
   private companion object {
@@ -3280,7 +3292,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     const val ABSOLUTE_SEEK_FEEDBACK_HOLD_MS = 3000L
     const val RELATIVE_SEEK_EOF_GUARD_SECONDS = 0.25
     const val SEEK_TARGET_TOLERANCE_SECONDS = 0.05
-    const val PREVIEW_SEEK_INTERVAL_MS = 100L
+    // The thumb updates immediately; decoder previews only need a modest cadence.
+    const val PREVIEW_SEEK_INTERVAL_MS = 200L
     const val FRAME_SEEK_POLL_INTERVAL_MS = 10L
     const val FRAME_SEEK_MIN_SETTLE_POLLS = 8
     const val FRAME_SEEK_MAX_SETTLE_POLLS = 75
@@ -4981,6 +4994,30 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
 
+  /**
+   * Cancels UI-originated native work before PlayerActivity releases its Surface.
+   */
+  fun prepareForPlayerTeardown() {
+    cancelSeekPreview()
+    cancelFrameSeek()
+    seekCommitJob?.cancel()
+    seekCommitJob = null
+    seekCoalesceJob?.cancel()
+    seekCoalesceJob = null
+    pendingSeekOffset = 0
+
+    synchronized(ambientScheduleLock) {
+      ambientUpdateGeneration.incrementAndGet()
+      ambientDebounceJob?.cancel()
+      ambientDebounceJob = null
+    }
+    synchronized(ppScheduleLock) {
+      ppUpdateGeneration.incrementAndGet()
+      ppDebounceJob?.cancel()
+      ppDebounceJob = null
+    }
+  }
+
   fun lockControls() {
     _areControlsLocked.value = true
   }
@@ -5014,6 +5051,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   private suspend fun runSeekPreviewLoop(generation: Long) {
+    var lastSentPosition: Float? = null
     while (kotlinx.coroutines.currentCoroutineContext().isActive) {
       val target =
         synchronized(seekPreviewLock) {
@@ -5023,7 +5061,12 @@ val isBrightnessSliderShown = MutableStateFlow(false)
               return
             }
         }
+      // Repeated pointer events at effectively the same time position should not cause another
+      // MediaCodec flush. A final exact seek still runs when the user releases the thumb.
+      val previous = lastSentPosition
+      if (previous != null && kotlin.math.abs(target - previous) < 0.5f) continue
       if (!PlaybackSession.commandForGeneration(generation, "seek", target.toString(), "absolute+keyframes")) return
+      lastSentPosition = target
       delay(PREVIEW_SEEK_INTERVAL_MS)
     }
   }
@@ -5043,7 +5086,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     cancelFrameSeek()
     cancelSeekPreview()
     val generation = PlaybackSession.state.value.generation
-    viewModelScope.launch(Dispatchers.IO) {
+    seekCommitJob?.cancel()
+    seekCommitJob = viewModelScope.launch(Dispatchers.IO) {
       if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
       val maxDuration =
         (PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt())
@@ -7013,7 +7057,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     val pipelineReady = refreshHdrScreenOutputPipelineState()
     runCatching {
       val boostSdr = decoderPreferences.boostSdrToHdr.get()
-      applyHdrScreenOutputOptions(mode, pipelineReady, boostSdr)
+      // Init-time options are already applied by MPVView. Runtime transitions only need properties.
       applyHdrScreenOutputProperties(mode, pipelineReady, boostSdr)
       applyHdrToysMode(mode, pipelineReady)
     }.onFailure { e ->
@@ -7171,13 +7215,20 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       // Reset the shader cache and scale tracking so a subsequent enable always
       // compiles a fresh shader and recalculates the correct video-scale offsets.
       lastCompiledSpec = null
-      lastAmbientScaleX = -1.0
-      lastAmbientScaleY = -1.0
       runCatching {
-        PlaybackSession.setPropertyDouble("video-scale-x", 1.0)
-        PlaybackSession.setPropertyDouble("video-scale-y", 1.0)
-        PlaybackSession.setPropertyString("blend-subtitles", "no")
+        if (kotlin.math.abs(lastAmbientScaleX - 1.0) > 0.000001) {
+          PlaybackSession.setPropertyDouble("video-scale-x", 1.0)
+        }
+        if (kotlin.math.abs(lastAmbientScaleY - 1.0) > 0.000001) {
+          PlaybackSession.setPropertyDouble("video-scale-y", 1.0)
+        }
+        if (lastAmbientBlendMode != "no") {
+          PlaybackSession.setPropertyString("blend-subtitles", "no")
+        }
       }
+      lastAmbientScaleX = 1.0
+      lastAmbientScaleY = 1.0
+      lastAmbientBlendMode = "no"
     }
   }
 
@@ -7185,8 +7236,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun onOrientationChanged() {
     if (!isAmbientGlowRuntimeActive()) return
 
-    // The compiled spec is the cache key; scale sentinels alone do not force a rebuild.
-    lastCompiledSpec = null
+    // The output dimensions are part of the compiled spec. Keep the cache intact here so a
+    // redundant orientation callback cannot recompile the same Vulkan shader.
     lastAmbientScaleX = -1.0
     lastAmbientScaleY = -1.0
     scheduleAmbientUpdate(200)
@@ -7206,8 +7257,16 @@ val isBrightnessSliderShown = MutableStateFlow(false)
    */
   fun restartAmbientIfActive() {
     if (!isAmbientGlowRuntimeActive()) return
-    disableAmbientShader()
-    // Small delay to let Anime4K shaders settle.
+
+    // Move the existing Ambient program back to the final OUTPUT pass without invalidating the
+    // compiled-spec cache. Rebuilding an identical file was forcing avoidable SPIR-V/pipeline work.
+    synchronized(ambientRenderLock) {
+      ambientShaderFile
+        ?.takeIf { it.exists() }
+        ?.let { file ->
+          PlaybackSession.command("change-list", "glsl-shaders", "append", file.absolutePath)
+        }
+    }
     scheduleAmbientUpdate(200)
   }
 
@@ -7236,29 +7295,54 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     fadeCurve: Float = _ambientFadeCurve.value,
     opacity: Float = _ambientOpacity.value,
   ) {
-    _ambientBlurSamples.value = blurSamples
-    _ambientMaxRadius.value = maxRadius
-    _ambientGlowIntensity.value = glowIntensity
-    _ambientSatBoost.value = satBoost
-    _ambientVignetteStrength.value = vignetteStrength
-    _ambientWarmth.value = warmth
-    _ambientFadeCurve.value = fadeCurve
-    _ambientOpacity.value = opacity
+    // Slider updates are frequent. Persist only actual changes: writing eight preferences for
+    // a single moving slider forced unnecessary flows/disk work alongside shader compilation.
+    var changed = false
+    if (_ambientBlurSamples.value != blurSamples) {
+      _ambientBlurSamples.value = blurSamples
+      playerPreferences.ambientBlurSamples.set(blurSamples)
+      changed = true
+    }
+    if (_ambientMaxRadius.value != maxRadius) {
+      _ambientMaxRadius.value = maxRadius
+      playerPreferences.ambientMaxRadius.set(maxRadius)
+      changed = true
+    }
+    if (_ambientGlowIntensity.value != glowIntensity) {
+      _ambientGlowIntensity.value = glowIntensity
+      playerPreferences.ambientGlowIntensity.set(glowIntensity)
+      changed = true
+    }
+    if (_ambientSatBoost.value != satBoost) {
+      _ambientSatBoost.value = satBoost
+      playerPreferences.ambientSatBoost.set(satBoost)
+      changed = true
+    }
+    if (_ambientVignetteStrength.value != vignetteStrength) {
+      _ambientVignetteStrength.value = vignetteStrength
+      playerPreferences.ambientVignetteStrength.set(vignetteStrength)
+      changed = true
+    }
+    if (_ambientWarmth.value != warmth) {
+      _ambientWarmth.value = warmth
+      playerPreferences.ambientWarmth.set(warmth)
+      changed = true
+    }
+    if (_ambientFadeCurve.value != fadeCurve) {
+      _ambientFadeCurve.value = fadeCurve
+      playerPreferences.ambientFadeCurve.set(fadeCurve)
+      changed = true
+    }
+    if (_ambientOpacity.value != opacity) {
+      _ambientOpacity.value = opacity
+      playerPreferences.ambientOpacity.set(opacity)
+      changed = true
+    }
 
-    // Persist to preferences
-    playerPreferences.ambientBlurSamples.set(blurSamples)
-    playerPreferences.ambientMaxRadius.set(maxRadius)
-    playerPreferences.ambientGlowIntensity.set(glowIntensity)
-    playerPreferences.ambientSatBoost.set(satBoost)
-    playerPreferences.ambientVignetteStrength.set(vignetteStrength)
-    playerPreferences.ambientWarmth.set(warmth)
-    playerPreferences.ambientFadeCurve.set(fadeCurve)
-    playerPreferences.ambientOpacity.set(opacity)
-
-    scheduleAmbientUpdate()
+    if (changed) scheduleAmbientUpdate()
   }
 
-  private fun scheduleAmbientUpdate(delayMs: Long = 150L) {
+  private fun scheduleAmbientUpdate(delayMs: Long = 275L) {
     synchronized(ambientScheduleLock) {
       if (!isAmbientGlowRuntimeActive()) return
 
@@ -7463,14 +7547,21 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           newFile.delete()
           return@synchronized
         }
-        PlaybackSession.setPropertyDouble("video-scale-x", scaleX)
-        PlaybackSession.setPropertyDouble("video-scale-y", scaleY)
+        if (kotlin.math.abs(lastAmbientScaleX - scaleX) > 0.000001) {
+          PlaybackSession.setPropertyDouble("video-scale-x", scaleX)
+        }
+        if (kotlin.math.abs(lastAmbientScaleY - scaleY) > 0.000001) {
+          PlaybackSession.setPropertyDouble("video-scale-y", scaleY)
+        }
         val blendMode = if (subtitlesPreferences.blendSubtitlesWithVideo.get()) "video" else "no"
-        PlaybackSession.setPropertyString("blend-subtitles", blendMode)
+        if (lastAmbientBlendMode != blendMode) {
+          PlaybackSession.setPropertyString("blend-subtitles", blendMode)
+        }
         PlaybackSession.command("change-list", "glsl-shaders", "append", newFile.absolutePath)
         ambientShaderFile?.delete()
         lastAmbientScaleX = scaleX
         lastAmbientScaleY = scaleY
+        lastAmbientBlendMode = blendMode
         ambientShaderFile = newFile
         lastCompiledSpec = spec
       }

@@ -412,14 +412,14 @@ class FolderListViewModel(
   }
 
   override fun refresh() {
-    Log.d(TAG, "Hard refreshing folder list")
+    Log.d(TAG, "Refreshing folder list and MediaStore snapshot")
 
     // Set loading state
     _isLoading.value = true
 
-    // Clear all caches to force fresh data from filesystem
-    MediaFileRepository.clearCache()
-    FolderViewScanner.clearCache()
+    // Invalidate folder results without destroying TreeView/.nomedia fingerprints. The previous
+    // path cleared every scanner cache and then cleared FolderViewScanner a second time.
+    MediaFileRepository.invalidateFolderCache()
     // A user-driven refresh must never be satisfied by the cold-boot fast path.
     MediaStoreGenerationGuard.invalidate(getApplication())
 

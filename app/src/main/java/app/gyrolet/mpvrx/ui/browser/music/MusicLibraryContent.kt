@@ -1283,7 +1283,28 @@ fun LocalAlbumArtImage(
           // MediaStore album art is normally the cheapest and most authoritative audio cover.
           // Fall back to embedded/sidecar extraction for files whose indexed cover is unavailable.
           val mediaStoreArtwork = uri?.let { source ->
-            context.contentResolver.openInputStream(source)?.use { stream -> BitmapFactory.decodeStream(stream) }
+            // MediaStore/embedded cover art can be several megapixels even in a 48dp song row.
+            // Decode at the requested UI size instead of allocating a full-size JPEG on every
+            // navigation/scroll, while preserving the repository fallback for missing artwork.
+            val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+            context.contentResolver.openInputStream(source)?.use { stream ->
+              BitmapFactory.decodeStream(stream, null, bounds)
+            }
+            if (bounds.outWidth > 0 && bounds.outHeight > 0) {
+              var sampleSize = 1
+              while (
+                bounds.outWidth / sampleSize > widthPx * 2 ||
+                bounds.outHeight / sampleSize > heightPx * 2
+              ) {
+                sampleSize *= 2
+              }
+              val options = BitmapFactory.Options().apply { inSampleSize = sampleSize }
+              context.contentResolver.openInputStream(source)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, options)
+              }
+            } else {
+              null
+            }
           }
           (mediaStoreArtwork ?: video?.let { thumbnailRepository.getThumbnail(it, widthPx, heightPx) })?.asImageBitmap()
         } catch (error: kotlinx.coroutines.CancellationException) {

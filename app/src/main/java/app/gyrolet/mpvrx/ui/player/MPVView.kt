@@ -46,6 +46,7 @@ import `is`.xyz.mpv.KeyMapping
 import `is`.xyz.mpv.MPVLib
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
+import kotlin.math.abs
 import kotlin.reflect.KProperty
 
 private fun String.toMpvLanguageList(): String =
@@ -67,6 +68,7 @@ class MPVView(
   private val hdrToysManager: HdrToysManager by inject()
 
   var isExiting = false
+  private var lastRequestedFrameRate = Float.NaN
   var forceOpenGlFallback = false
   var isSurfaceReady = false
     private set
@@ -144,6 +146,7 @@ class MPVView(
 
   fun releaseSurface() {
     holder.removeCallback(this)
+    lastRequestedFrameRate = Float.NaN
     if (isSurfaceReady || PlaybackSession.state.value.surfaceAttached) {
       isSurfaceReady = false
       PlaybackSession.unbindSurface(this)
@@ -521,24 +524,41 @@ class MPVView(
 
   override fun surfaceDestroyed(holder: android.view.SurfaceHolder) {
     isSurfaceReady = false
+    lastRequestedFrameRate = Float.NaN
     PlaybackSession.unbindSurface(this)
   }
 
-  private fun applyFrameRate() {
-    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
-      val fps = PlaybackSession.getPropertyDouble("container-fps") ?: 0.0
-      if (fps > 0.0 && holder?.surface?.isValid == true) {
-        try {
-          holder.surface.setFrameRate(
-            fps.toFloat(),
-            android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
-          )
-        } catch (e: Exception) {
-          Log.e(TAG, "Failed to set frame rate on surface", e)
-        }
-      }
+  /**
+   * Applies the content FPS once per effective value. Both Surface callbacks and mpv's
+   * container-fps observer converge here, avoiding duplicate vendor display-mode requests.
+   */
+  internal fun updateFrameRate(fps: Double? = null) {
+    if (
+      android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R || isExiting ||
+      !surfaceBindingEnabled || !isSurfaceReady || !PlaybackSession.state.value.surfaceAttached
+    ) return
+    val resolved = fps ?: PlaybackSession.getPropertyDouble("container-fps") ?: return
+    if (!resolved.isFinite() || resolved <= 0.0 || resolved > 1000.0) return
+
+    val surface = holder.surface
+    if (!surface.isValid) return
+
+    val requested = resolved.toFloat()
+    if (lastRequestedFrameRate.isFinite() && abs(lastRequestedFrameRate - requested) < 0.01f) return
+
+    try {
+      surface.setFrameRate(
+        requested,
+        android.view.Surface.FRAME_RATE_COMPATIBILITY_FIXED_SOURCE,
+      )
+      lastRequestedFrameRate = requested
+      Log.d(TAG, "Requested content frame rate ${"%.3f".format(requested)} Hz")
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to set frame rate on surface", e)
     }
   }
+
+  private fun applyFrameRate() = updateFrameRate()
 
   private val observedProps =
     mapOf(

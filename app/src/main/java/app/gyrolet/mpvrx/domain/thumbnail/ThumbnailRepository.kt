@@ -1437,9 +1437,9 @@ class ThumbnailRepository(
     val processorCount = Runtime.getRuntime().availableProcessors().coerceAtLeast(1)
     return when {
       activityManager?.isLowRamDevice == true || processorCount <= 2 -> 1
-      processorCount <= 4 -> 2
-      processorCount <= 6 -> 3
-      else -> 4
+      // Bound decode pressure on larger mobile SoCs so returning to the library cannot launch
+      // four simultaneous thumbnail decoders beside UI image work.
+      else -> 2
     }
   }
 

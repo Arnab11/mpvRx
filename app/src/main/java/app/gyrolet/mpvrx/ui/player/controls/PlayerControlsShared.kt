@@ -1923,12 +1923,8 @@ private fun readNetworkBytesPerSecond(): Double {
 
   if (directBytesPerSecond != null) return directBytesPerSecond
 
-  val bitratesBitsPerSecond =
-    listOf("video-bitrate", "audio-bitrate")
-      .asSequence()
-      .mapNotNull { name -> runCatching { PlaybackSession.getPropertyDouble(name) }.getOrNull() }
-      .filter { it > 0.0 }
-      .sum()
-
-  return if (bitratesBitsPerSecond > 0.0) bitratesBitsPerSecond / 8.0 else 0.0
+  // Do not fall back to video-bitrate/audio-bitrate here. Those properties are optional and
+  // routinely become unavailable during seeks/reconfigures; querying them once per second only
+  // creates native error spam and the sum is not a reliable measurement of network throughput.
+  return 0.0
 }
