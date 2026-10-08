@@ -522,7 +522,7 @@ Suivant : NEXT</string>
   <string name="crash_screen_logs_title">Journaux de plantage :</string>
   <string name="crash_screen_share">Partager les journaux de plantage</string>
   <string name="crash_screen_restart">Redémarrer l’application</string>
-  <string name="crash_screen_fix_crash">Corriger le plantage (supprimer la base de données)</string>
+  <string name="crash_screen_reset_database">Réinitialiser la base de données</string>
   <string name="crash_screen_database_deleted">Base de données supprimée. Veuillez redémarrer l’application.</string>
   <string name="crash_screen_database_hint">Ce plantage semble lié à la base de données. Essayez de supprimer la base de données pour le corriger.</string>
   <string name="crash_screen_report_preparing">Préparation du rapport de plantage complet...</string>

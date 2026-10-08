@@ -6166,6 +6166,15 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         // direct-media loads so a prior web item cannot leak an extractor probe into this load.
         PlaybackSession.setIntegrationOptionString("ytdl", "no")
       }
+      // Preserve the v2.7.2 foreground order: attach the Android Surface before loading video.
+      // Loading with vid=no and reselecting during demuxer startup can wedge libmpv on MediaTek.
+      // Audio and intentional background playback do not require this Activity's Surface.
+      if (item.videoSelection() == PlaybackVideoSelection.IMMEDIATE && player.surfaceBindingEnabled) {
+        if (!player.awaitSurfaceReady()) {
+          throw IllegalStateException("Timed out waiting for the video Surface")
+        }
+        ensureCurrentMediaRequest(requestGeneration)
+      }
       val loadGeneration =
         PlaybackSession.load(
           item = item,

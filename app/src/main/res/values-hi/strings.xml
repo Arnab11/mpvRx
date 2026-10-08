@@ -520,7 +520,7 @@
   <string name="crash_screen_logs_title">क्रैश लॉग:</string>
   <string name="crash_screen_share">क्रैश लॉग शेयर करें</string>
   <string name="crash_screen_restart">ऐप रीस्टार्ट करें</string>
-  <string name="crash_screen_fix_crash">क्रैश ठीक करें (डेटाबेस डिलीट करें)</string>
+  <string name="crash_screen_reset_database">डेटाबेस रीसेट करें</string>
   <string name="crash_screen_database_deleted">डेटाबेस सफलतापूर्वक डिलीट हो गया। कृपया ऐप रीस्टार्ट करें।</string>
   <string name="crash_screen_database_hint">यह क्रैश डेटाबेस से जुड़ा लगता है। इसे ठीक करने के लिए डेटाबेस डिलीट करने की कोशिश करें।</string>
   <string name="crash_screen_report_preparing">पूरी क्रैश रिपोर्ट तैयार हो रही है...</string>

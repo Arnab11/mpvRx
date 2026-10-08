@@ -522,7 +522,7 @@
   <string name="crash_screen_logs_title">崩溃日志：</string>
   <string name="crash_screen_share">分享崩溃日志</string>
   <string name="crash_screen_restart">重启应用</string>
-  <string name="crash_screen_fix_crash">修复崩溃（删除数据库）</string>
+  <string name="crash_screen_reset_database">重置数据库</string>
   <string name="crash_screen_database_deleted">数据库已成功删除。请重启应用。</string>
   <string name="crash_screen_database_hint">此次崩溃似乎与数据库有关。请尝试删除数据库进行修复。</string>
   <string name="crash_screen_report_preparing">正在准备完整的崩溃报告...</string>

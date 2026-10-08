@@ -522,7 +522,7 @@
   <string name="crash_screen_logs_title">Журналы сбоя:</string>
   <string name="crash_screen_share">Поделиться журналами сбоя</string>
   <string name="crash_screen_restart">Перезапустить приложение</string>
-  <string name="crash_screen_fix_crash">Исправить сбой (удалить базу данных)</string>
+  <string name="crash_screen_reset_database">Сбросить базу данных</string>
   <string name="crash_screen_database_deleted">База данных успешно удалена. Перезапустите приложение.</string>
   <string name="crash_screen_database_hint">Этот сбой, вероятно, связан с базой данных. Попробуйте удалить её.</string>
   <string name="crash_screen_report_preparing">Подготовка полного отчёта о сбое...</string>

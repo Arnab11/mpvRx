@@ -522,7 +522,7 @@ Siguiente: NEXT</string>
   <string name="crash_screen_logs_title">Registros del fallo:</string>
   <string name="crash_screen_share">Compartir registros del fallo</string>
   <string name="crash_screen_restart">Reiniciar la aplicación</string>
-  <string name="crash_screen_fix_crash">Corregir fallo (eliminar base de datos)</string>
+  <string name="crash_screen_reset_database">Restablecer base de datos</string>
   <string name="crash_screen_database_deleted">Base de datos eliminada correctamente. Reinicia la aplicación.</string>
   <string name="crash_screen_database_hint">Este fallo parece estar relacionado con la base de datos. Prueba a eliminarla para corregirlo.</string>
   <string name="crash_screen_report_preparing">Preparando el informe completo del fallo...</string>

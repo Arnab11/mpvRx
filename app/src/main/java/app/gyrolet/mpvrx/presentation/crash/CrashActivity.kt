@@ -130,8 +130,11 @@ class CrashActivity : AppCompatActivity() {
     }
   }
 
-  private fun deleteDatabase(): Boolean =
-    runCatching { deleteDatabase("mpvrx.db") }.getOrDefault(false)
+  private fun resetDatabase(): Boolean =
+    runCatching {
+      deleteDatabase("mpvrx.db")
+      !getDatabasePath("mpvrx.db").exists()
+    }.getOrDefault(false)
 
   private fun copyReport() {
     val report = reportFile ?: return
@@ -377,25 +380,25 @@ class CrashActivity : AppCompatActivity() {
             }
           }
 
-          if (isDatabaseRelated || databaseDeleted || resetFailed) {
-            Surface(
-              modifier = Modifier.fillMaxWidth(),
-              shape = MaterialTheme.shapes.large,
-              color = if (databaseDeleted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
-            ) {
-              Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(
-                  when {
-                    databaseDeleted -> stringResource(R.string.crash_screen_database_deleted)
-                    resetFailed -> stringResource(R.string.crash_screen_reset_failed)
-                    else -> stringResource(R.string.crash_screen_database_hint)
-                  },
-                  color = if (databaseDeleted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
-                )
-                if (isDatabaseRelated && !databaseDeleted) {
-                  TextButton(onClick = { confirmReset = true }, enabled = !resetting) {
-                    Text(stringResource(R.string.crash_screen_fix_crash), color = MaterialTheme.colorScheme.error)
-                  }
+          Surface(
+            modifier = Modifier.fillMaxWidth(),
+            shape = MaterialTheme.shapes.large,
+            color = if (databaseDeleted) MaterialTheme.colorScheme.primaryContainer else MaterialTheme.colorScheme.errorContainer,
+          ) {
+            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+              Text(
+                when {
+                  databaseDeleted -> stringResource(R.string.crash_screen_database_deleted)
+                  resetFailed -> stringResource(R.string.crash_screen_reset_failed)
+                  isDatabaseRelated -> stringResource(R.string.crash_screen_database_hint)
+                  else -> stringResource(R.string.crash_screen_reset_confirm)
+                },
+                color = if (databaseDeleted) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onErrorContainer,
+              )
+              if (resetting) LinearProgressIndicator(Modifier.fillMaxWidth())
+              if (!databaseDeleted) {
+                TextButton(onClick = { confirmReset = true }, enabled = !resetting) {
+                  Text(stringResource(R.string.crash_screen_reset_database), color = MaterialTheme.colorScheme.error)
                 }
               }
             }
@@ -407,7 +410,7 @@ class CrashActivity : AppCompatActivity() {
       AlertDialog(
         onDismissRequest = { confirmReset = false },
         icon = { Icon(Icons.RoundedFilled.Warning, null) },
-        title = { Text(stringResource(R.string.crash_screen_fix_crash)) },
+        title = { Text(stringResource(R.string.crash_screen_reset_database)) },
         text = { Text(stringResource(R.string.crash_screen_reset_confirm)) },
         confirmButton = {
           TextButton(
@@ -416,7 +419,7 @@ class CrashActivity : AppCompatActivity() {
               resetting = true
               scope.launch {
                 try {
-                  databaseDeleted = withContext(Dispatchers.IO) { deleteDatabase() }
+                  databaseDeleted = withContext(Dispatchers.IO) { resetDatabase() }
                   resetFailed = !databaseDeleted
                 } finally {
                   resetting = false
