@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -52,6 +54,7 @@ import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.navigateTo
 import app.gyrolet.mpvrx.ui.utils.popSafely
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -83,11 +86,6 @@ data class ConfigEditorScreen(
       keyboardController?.hide()
     }
 
-    BackHandler {
-      dismissKeyboard()
-      backStack.popSafely()
-    }
-
     val (fileName, initialValue) =
       when (configType) {
         ConfigType.MPV_CONF -> "mpv.conf" to preferences.mpvConf.get()
@@ -104,8 +102,49 @@ data class ConfigEditorScreen(
         ConfigType.INPUT_CONF -> "input.conf"
       }
 
-    var configText by remember { mutableStateOf(initialValue) }
-    var hasUnsavedChanges by remember { mutableStateOf(false) }
+    val drafts = remember { context.getSharedPreferences("sora_editor_drafts", android.content.Context.MODE_PRIVATE) }
+    val draftKey = "config:$fileName"
+    val initialDraft = remember(fileName) { drafts.getString(draftKey, null) }
+    var configText by remember(fileName) { mutableStateOf(initialDraft ?: initialValue) }
+    var hasUnsavedChanges by remember(fileName) { mutableStateOf(initialDraft != null) }
+    var showDiscardPrompt by remember { mutableStateOf(false) }
+
+    fun requestClose() {
+      if (hasUnsavedChanges) {
+        showDiscardPrompt = true
+      } else {
+        dismissKeyboard()
+        backStack.popSafely()
+      }
+    }
+
+    BackHandler { requestClose() }
+
+    LaunchedEffect(configText, hasUnsavedChanges) {
+      if (hasUnsavedChanges) {
+        delay(800)
+        drafts.edit().putString(draftKey, configText).apply()
+      }
+    }
+
+    if (showDiscardPrompt) {
+      AlertDialog(
+        onDismissRequest = { showDiscardPrompt = false },
+        title = { Text("Discard unsaved changes?") },
+        text = { Text("Your edits have not been saved to $fileName.") },
+        confirmButton = {
+          TextButton(onClick = {
+            drafts.edit().remove(draftKey).apply()
+            showDiscardPrompt = false
+            dismissKeyboard()
+            backStack.popSafely()
+          }) { Text("Discard") }
+        },
+        dismissButton = {
+          TextButton(onClick = { showDiscardPrompt = false }) { Text("Keep editing") }
+        },
+      )
+    }
     val mpvConfStorageLocation by preferences.mpvConfStorageUri.collectAsState()
 
     // Load from external storage if a folder is configured
@@ -121,7 +160,10 @@ data class ConfigEditorScreen(
                 reader.readText()
               }
             if (content != null) {
-              withContext(Dispatchers.Main) { configText = content }
+              withContext(Dispatchers.Main) {
+                // Never let a slow SAF read overwrite edits made while it was loading.
+                if (!hasUnsavedChanges) configText = content
+              }
             }
           }
         }
@@ -179,9 +221,15 @@ data class ConfigEditorScreen(
           }
 
           withContext(Dispatchers.Main) {
-            hasUnsavedChanges = false
-            Toast.makeText(context, "$fileName saved", Toast.LENGTH_SHORT).show()
-            backStack.popSafely()
+            if (configText == contentToSave) {
+              hasUnsavedChanges = false
+              drafts.edit().remove(draftKey).apply()
+              Toast.makeText(context, "$fileName saved", Toast.LENGTH_SHORT).show()
+              backStack.popSafely()
+            } else {
+              // User kept editing during asynchronous storage save: preserve new edits.
+              Toast.makeText(context, "$fileName saved; newer edits remain unsaved", Toast.LENGTH_SHORT).show()
+            }
           }
         } catch (e: Exception) {
           withContext(Dispatchers.Main) {
@@ -226,8 +274,7 @@ data class ConfigEditorScreen(
         navigationIcon = {
           IconButton(
             onClick = {
-              dismissKeyboard()
-              backStack.popSafely()
+              requestClose()
             },
           ) {
             Icon(

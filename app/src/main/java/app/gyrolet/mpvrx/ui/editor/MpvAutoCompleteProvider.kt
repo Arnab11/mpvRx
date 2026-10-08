@@ -38,12 +38,21 @@ object MpvAutoCompleteProvider {
     prefix: String,
     mode: MpvCompletionMode,
     publisher: CompletionPublisher,
+    inputKeyPosition: Boolean = false,
+    optionName: String? = null,
+    optionValuePrefix: String = "",
   ) {
-    val query = prefix.trimStart('-')
-    if (query.isEmpty()) return
+    val completingValue = mode == MpvCompletionMode.MPV_CONF && optionName != null
+    val query = if (completingValue) optionValuePrefix else prefix.trimStart('-')
+    if (query.isEmpty() && !completingValue) return
 
+    val choices = when {
+      completingValue -> valuesForOption(requireNotNull(optionName))
+      mode == MpvCompletionMode.INPUT_CONF && inputKeyPosition -> inputKeyCompletions
+      else -> completionsFor(mode)
+    }
     val suggestions =
-      completionsFor(mode)
+      choices
         .asSequence()
         .distinctBy { it.label }
         .filter { it.matchRank(query) < Int.MAX_VALUE }
@@ -54,7 +63,12 @@ object MpvAutoCompleteProvider {
         ).take(MAX_COMPLETIONS)
         .map { def ->
           val commitText = def.label + def.commitSuffix
-          SimpleCompletionItem(def.label, def.desc, prefix.length, commitText).apply {
+          SimpleCompletionItem(
+            def.label,
+            def.desc,
+            if (completingValue) optionValuePrefix.length else prefix.length,
+            commitText,
+          ).apply {
             kind(def.kind)
             def.detailText()?.let { detail = it }
           }
@@ -77,6 +91,63 @@ object MpvAutoCompleteProvider {
       MpvCompletionMode.MPV_CONF -> mpvConfigCompletions
       MpvCompletionMode.INPUT_CONF -> inputConfCompletions
     }
+
+  private val optionEnum = Regex("""<([^<>]+)>""")
+  private val literalValue = Regex("""[a-zA-Z][a-zA-Z0-9_.+-]*""")
+
+  // Parse the enum tokens from the official option signature, not a second manual catalog.
+  // For free-form language lists, show clearly labeled *examples*, never a false exhaustive enum.
+  private fun valuesForOption(name: String): List<CompletionDef> {
+    val documentation = MpvDocumentationRepository.state.value.entries
+      .firstOrNull { it.kind == HelpEntryKind.OPTION && it.name.equals(name, ignoreCase = true) }
+      ?: return emptyList()
+    if (name.equals("slang", true) || name.equals("alang", true) || name.equals("vlang", true)) {
+      return listOf(
+        "eng" to "English",
+        "jpn" to "Japanese",
+        "hin" to "Hindi",
+        "spa" to "Spanish",
+        "fra" to "French",
+        "deu" to "German",
+      ).map { (code, label) ->
+        createDef(
+          code,
+          code,
+          "$label (common language-code example, not a complete list). " + documentation.description.take(100),
+          CompletionItemKind.Keyword,
+        )
+      }
+    }
+    val signatureValues = documentation.signature.substringAfter('=', "")
+    if (signatureValues.isBlank()) return emptyList()
+    val literals = optionEnum.findAll(signatureValues)
+      .flatMap { it.groupValues[1].split('|').asSequence() }
+      .map { it.trim() }
+      .filter { literalValue.matches(it) }
+      .filterNot { it.lowercase() in setOf(
+        "id", "n", "value", "number", "file", "filename", "name", "time",
+        "path", "languagecode", "integer", "string",
+      ) }
+      .distinct()
+      .take(24)
+      .toList()
+    if (literals.size < 2) return emptyList()
+    return literals.map { value ->
+      val meaning = when (value.lowercase()) {
+        "yes" -> "Enable"
+        "no" -> "Disable"
+        "auto" -> "Automatic selection"
+        "default" -> "Use mpv default"
+        else -> "Documented value"
+      }
+      createDef(
+        value,
+        value,
+        "$meaning for " + documentation.name + ". " + documentation.description.take(140),
+        CompletionItemKind.Keyword,
+      )
+    }
+  }
 
   private fun CompletionDef.matchRank(query: String): Int {
     val label = this.label.lowercase()
@@ -157,7 +228,7 @@ object MpvAutoCompleteProvider {
     get() = documentedCompletions().config
 
   private val inputConfCompletions: List<CompletionDef>
-    get() = inputKeyCompletions + documentedCompletions().commands
+    get() = documentedCompletions().commands
 
   private val inputKeyCompletions =
     listOf(

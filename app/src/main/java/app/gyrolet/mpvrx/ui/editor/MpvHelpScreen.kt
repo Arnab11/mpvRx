@@ -181,29 +181,27 @@ data class MpvHelpScreen(
             .fillMaxSize()
             .padding(padding),
       ) {
-        Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 6.dp)) {
-          val sourceLabel =
-            if (documentation.lastCheckedMillis > 0) {
-              val date = remember(documentation.lastCheckedMillis) {
-                DateFormat.getDateInstance(DateFormat.MEDIUM)
-                  .format(Date(documentation.lastCheckedMillis))
-              }
-              "Official mpv master • updated $date"
-            } else {
-              "Official mpv snapshot • available offline"
+        val sourceLabel =
+          if (documentation.isRefreshing) {
+            "Checking official mpv documentation…"
+          } else if (documentation.lastCheckedMillis > 0L) {
+            val date = remember(documentation.lastCheckedMillis) {
+              DateFormat.getDateInstance(DateFormat.MEDIUM)
+                .format(Date(documentation.lastCheckedMillis))
             }
-          Text(
-            text = if (documentation.isRefreshing) "$sourceLabel • checking updates…" else sourceLabel,
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
-          Text(
-            text = documentation.error
-              ?: "Checked every 10 days. Latest mpv options may differ from this APK's bundled libmpv. Tap to expand; long-press to copy.",
-            style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.outline,
-          )
-        }
+            "Official mpv • $date"
+          } else {
+            "Official mpv • offline snapshot"
+          }
+        Text(
+          text = documentation.error ?: sourceLabel,
+          style = MaterialTheme.typography.labelSmall,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          maxLines = 1,
+          overflow = TextOverflow.Ellipsis,
+          modifier = Modifier.fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 2.dp),
+        )
         app.gyrolet.mpvrx.ui.components.InlineSearchBar(
           query = searchQuery,
           onQueryChange = { searchQuery = it },
