@@ -3,17 +3,13 @@ package app.gyrolet.mpvrx.ui.preferences.components
 import android.os.Build
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -29,7 +25,6 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.LiquidGlassHighlightStyle
 import app.gyrolet.mpvrx.preferences.LiquidGlassMaterialStyle
-import app.gyrolet.mpvrx.preferences.LiquidGlassProfile
 import app.gyrolet.mpvrx.preferences.NavigationBarStyle
 import app.gyrolet.mpvrx.preferences.preference.Preference
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
@@ -76,30 +71,6 @@ fun LazyListScope.liquidGlassPreferences(
         enabled,
         0f..1f,
       )
-    }
-  }
-  item {
-    PreferenceSectionHeader(title = stringResource(R.string.pref_liquid_glass_profile))
-  }
-  item {
-    FlowRow(
-      modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-      horizontalArrangement = Arrangement.spacedBy(8.dp),
-      verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-      LiquidGlassProfile.entries.forEach { profile ->
-        FilledTonalButton(
-          onClick = { preferences.applyLiquidGlassProfile(profile) },
-          enabled = enabled,
-          shapes = ButtonDefaults.shapes(),
-        ) {
-          Text(stringResource(when (profile) {
-            LiquidGlassProfile.Performance -> R.string.pref_liquid_glass_profile_performance
-            LiquidGlassProfile.Balanced -> R.string.pref_liquid_glass_profile_balanced
-            LiquidGlassProfile.Quality -> R.string.pref_liquid_glass_profile_quality
-          }))
-        }
-      }
     }
   }
   item {
