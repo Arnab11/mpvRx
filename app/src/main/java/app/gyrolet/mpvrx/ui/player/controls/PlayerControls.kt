@@ -440,7 +440,7 @@ fun PlayerControls(
           chapters.getOrNull(it)?.let(viewModel::seekToPlaybackChapter)
         },
         decoder = decoder,
-        onUpdateDecoder = { PlaybackSession.setHardwareDecoder(it.value) },
+        onUpdateDecoder = { PlaybackSession.setPropertyString("hwdec", it.value) },
         speed = playbackSpeed ?: playerPreferences.defaultSpeed.get(),
         onSpeedChange = {
           if (currentPlaybackItem?.audiobook != null) app.gyrolet.mpvrx.ui.player.AudiobookPlayback.setSpeed(it.toFixed(2))
@@ -2231,7 +2231,7 @@ is PlayerUpdates.FrameInfo -> {
         chapters.getOrNull(it)?.let(viewModel::seekToPlaybackChapter)
       },
       decoder = decoder,
-      onUpdateDecoder = { PlaybackSession.setHardwareDecoder(it.value) },
+      onUpdateDecoder = { PlaybackSession.setPropertyString("hwdec", it.value) },
       speed = playbackSpeed ?: playerPreferences.defaultSpeed.get(),
       onSpeedChange = { PlaybackSession.setPropertyFloat("speed", it.toFixed(2)) },
       onMakeDefaultSpeed = { playerPreferences.defaultSpeed.set(it.toFixed(2)) },

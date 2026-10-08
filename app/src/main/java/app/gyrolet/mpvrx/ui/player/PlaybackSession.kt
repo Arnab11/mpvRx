@@ -78,9 +78,7 @@ class PlaybackProperty<T> internal constructor(
     val state = existing ?: candidate
     if (existing == null) {
       PlaybackSession.observeProperty(property, format)
-      // time-pos arrives through the native observer. A synchronous read during a seek or
-      // decoder reconfiguration can wait indefinitely for libmpv while holding nativeLock.
-      if (property != "time-pos") state.value = reader(property)
+      state.value = reader(property)
     }
     return state.asStateFlow()
   }
@@ -95,11 +93,9 @@ class PlaybackProperty<T> internal constructor(
   internal fun reobserve() {
     states.forEach { (property, state) ->
       PlaybackSession.observeProperty(property, format)
-      if (property != "time-pos") state.value = reader(property)
+      state.value = reader(property)
     }
   }
-
-  internal fun currentValue(property: String): T? = states[property]?.value
 }
 
 /**
@@ -113,7 +109,6 @@ class PlaybackProperty<T> internal constructor(
 object PlaybackSession : MPVLib.EventObserver {
   private const val TAG = "PlaybackSession"
   private val nativeEvents = CoroutineScope(SupervisorJob() + Dispatchers.Default.limitedParallelism(1))
-  @Volatile
   private var nativeObserver: NativeEventObserver? = null
 
   private class NativeEventObserver : MPVLib.EventObserver {
@@ -445,8 +440,6 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
             MPVLib.addObserver(observer)
           }
           reobserveTrackedProperties()
-          // Register before loading so UI/timeline reads never need a synchronous JNI query.
-          propDouble["time-pos"]
           observeProperties()
           initialized = true
           activeCoreConfigurationKey = coreConfigurationKey
@@ -517,11 +510,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       attachedSurfaceOwner = owner
       updateState { it.copy(surfaceAttached = true) }
       restoreSuspendedVideoTrackLocked()
-      if (deferredVideoSelectionGeneration == _state.value.generation &&
-        _state.value.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND)
-      ) {
-        // FILE_LOADED handles a Surface that arrives while the demuxer is still opening.
-        // Never change track selection in the middle of that initialization.
+      if (deferredVideoSelectionGeneration == _state.value.generation) {
         MPVLib.setPropertyString("vid", "auto")
         deferredVideoSelectionGeneration = null
       }
@@ -870,11 +859,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     }
   }
 
-  // StateFlow holds an immutable queue snapshot. Compose must not wait for a native operation
-  // merely to decide whether to show the next/previous controls.
-  fun hasNext(): Boolean = PlaybackQueueReducer.hasNext(_queue.value)
+  fun hasNext(): Boolean = nativeLock.withLock { PlaybackQueueReducer.hasNext(_queue.value) }
 
-  fun hasPrevious(): Boolean = PlaybackQueueReducer.hasPrevious(_queue.value)
+  fun hasPrevious(): Boolean = nativeLock.withLock { PlaybackQueueReducer.hasPrevious(_queue.value) }
 
   fun selectNext(): PlaybackItem? =
     nativeLock.withLock {
@@ -1281,10 +1268,6 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     }
   }
 
-  /** Latest native position event, for UI polling that must not wait behind a seek or decoder. */
-  val observedPlaybackPosition: Double?
-    get() = propDouble.currentValue("time-pos")
-
   fun getPropertyDouble(property: String): Double? = withReadyCore(null) { MPVLib.getPropertyDouble(property) }
 
   fun setPropertyDouble(
@@ -1502,29 +1485,6 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   }
 
   fun getPropertyNode(property: String): MPVNode? = withReadyCore(null) { MPVLib.getPropertyNode(property) }
-
-  /** Decoder reconfiguration may block in libmpv; never perform it on the UI thread or mid-load. */
-  fun setHardwareDecoder(value: String) {
-    if (MpvConfigOverridePolicy.isOwnedByMpvConf("hwdec")) return
-    val observer = nativeObserver ?: return
-    val generation = _state.value.generation
-    nativeEvents.launch {
-      val settled = withTimeoutOrNull(10_000L) {
-        state.first {
-          it.generation != generation || it.phase !in setOf(PlaybackPhase.LOADING, PlaybackPhase.INITIALIZING)
-        }
-      } ?: return@launch
-      if (settled.generation != generation) return@launch
-      nativeLock.withLock {
-        val current = _state.value
-        if (nativeObserver !== observer || !initialized || current.generation != generation ||
-          current.phase !in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND) ||
-          MpvConfigOverridePolicy.isOwnedByMpvConf("hwdec")
-        ) return@withLock
-        MPVLib.setPropertyString("hwdec", value)
-      }
-    }
-  }
 
   fun setPropertyString(
     property: String,

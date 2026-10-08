@@ -518,7 +518,7 @@
   <string name="crash_screen_logs_title">クラッシュログ：</string>
   <string name="crash_screen_share">クラッシュログを共有</string>
   <string name="crash_screen_restart">アプリを再起動</string>
-  <string name="crash_screen_reset_database">データベースをリセット</string>
+  <string name="crash_screen_fix_crash">クラッシュを修復（データベースを削除）</string>
   <string name="crash_screen_database_deleted">データベースを削除しました。アプリを再起動してください。</string>
   <string name="crash_screen_database_hint">このクラッシュはデータベースに関連しているようです。データベースを削除して修復してください。</string>
   <string name="crash_screen_report_preparing">完全なクラッシュレポートを準備しています...</string>

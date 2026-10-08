@@ -39,11 +39,8 @@ import app.gyrolet.mpvrx.utils.media.VideoCodecSupportInspector
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withTimeoutOrNull
 import `is`.xyz.mpv.BaseMPVView
 import `is`.xyz.mpv.KeyMapping
 import `is`.xyz.mpv.MPVLib
@@ -73,26 +70,14 @@ class MPVView(
   var isExiting = false
   private var lastRequestedFrameRate = Float.NaN
   var forceOpenGlFallback = false
-  private val surfaceReadiness = MutableStateFlow(false)
-  var isSurfaceReady: Boolean
-    get() = surfaceReadiness.value
-    private set(value) {
-      surfaceReadiness.value = value
-    }
+  var isSurfaceReady = false
+    private set
   var onSurfaceReady: (() -> Unit)? = null
-  @Volatile
   var surfaceBindingEnabled = true
     set(value) {
       field = value
       if (!value) isSurfaceReady = false
     }
-
-  /** Waits without blocking Android's Surface callbacks or libmpv's native lock. */
-  internal suspend fun awaitSurfaceReady(): Boolean =
-    withTimeoutOrNull(5_000L) {
-      surfaceReadiness.first { it }
-      true
-    } ?: false
 
   /**
    * Configures the process-wide player and binds this view as its current rendering surface.

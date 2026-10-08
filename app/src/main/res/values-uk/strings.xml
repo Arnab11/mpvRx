@@ -606,7 +606,7 @@
   <string name="crash_screen_logs_title">Журнал збою:</string>
   <string name="crash_screen_share">Поділитися журналом збою</string>
   <string name="crash_screen_restart">Перезапустити додаток</string>
-  <string name="crash_screen_reset_database">Скинути базу даних</string>
+  <string name="crash_screen_fix_crash">Виправити збій (Видалити базу даних)</string>
   <string name="crash_screen_database_deleted">Базу даних успішно видалено. Будь ласка, перезапустіть додаток.</string>
   <string name="crash_screen_database_hint">Цей збій, схоже, пов\'язаний із базою даних. Спробуйте видалити її для виправлення.</string>
   <string name="crash_screen_report_preparing">Підготовка повного звіту про збій…</string>

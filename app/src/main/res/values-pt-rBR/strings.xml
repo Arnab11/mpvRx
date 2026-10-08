@@ -518,7 +518,7 @@ Próximo: NEXT</string>
   <string name="crash_screen_logs_title">Logs de falha:</string>
   <string name="crash_screen_share">Compartilhar logs de falha</string>
   <string name="crash_screen_restart">Reiniciar o aplicativo</string>
-  <string name="crash_screen_reset_database">Redefinir banco de dados</string>
+  <string name="crash_screen_fix_crash">Corrigir falha (excluir banco de dados)</string>
   <string name="crash_screen_database_deleted">Banco de dados excluído com sucesso. Reinicie o aplicativo.</string>
   <string name="crash_screen_database_hint">Esta falha parece estar relacionada ao banco de dados. Tente excluí-lo para corrigir.</string>
   <string name="crash_screen_report_preparing">Preparando o relatório completo da falha...</string>

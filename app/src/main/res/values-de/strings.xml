@@ -518,7 +518,7 @@ Weiter: NEXT</string>
   <string name="crash_screen_logs_title">Absturzprotokolle:</string>
   <string name="crash_screen_share">Absturzprotokolle teilen</string>
   <string name="crash_screen_restart">App neu starten</string>
-  <string name="crash_screen_reset_database">Datenbank zurücksetzen</string>
+  <string name="crash_screen_fix_crash">Absturz beheben (Datenbank löschen)</string>
   <string name="crash_screen_database_deleted">Datenbank erfolgreich gelöscht. Bitte starten Sie die App neu.</string>
   <string name="crash_screen_database_hint">Dieser Absturz scheint mit der Datenbank zusammenzuhängen. Löschen Sie die Datenbank, um ihn zu beheben.</string>
   <string name="crash_screen_report_preparing">Vollständiger Absturzbericht wird vorbereitet...</string>

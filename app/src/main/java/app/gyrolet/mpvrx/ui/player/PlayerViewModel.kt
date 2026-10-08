@@ -2333,9 +2333,19 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         }
     }
 
-    // Sample double-precision native position events at the UI's adaptive cadence. Polling
-    // mpv_get_property here can hold nativeLock while libmpv is seeking/reconfiguring, blocking
-    // Compose and Surface callbacks. Exact position captures still use the synchronous getter.
+    // Single adaptive polling loop for playback position.
+    //  1. An event-driven collect on PlaybackSession.propInt["time-pos"]
+    //  2. This polling loop via PlaybackSession.getPropertyDouble("time-pos")
+    // Having both caused redundant StateFlow emissions and double recompositions of the
+    // seek bar on every MPV property event.  The polling loop alone is sufficient:
+    //  - It provides Double precision (vs integer from the observer)
+    //  - It drives maybeAutoSkipIntro() which needs sub-second accuracy
+    //  - The adaptive interval keeps CPU cost proportional to actual UI demand
+    //
+    // Intervals:
+    //   50 ms  – seek bar / controls visible (smooth scrubbing)
+    //   500 ms – uninterrupted playback (halved from original 250 ms to cut idle overhead)
+    //   500 ms – paused
     viewModelScope.launch(playbackStateDispatcher) {
       while (isActive) {
         val playbackPhase = PlaybackSession.state.value.phase
@@ -2345,7 +2355,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           continue
         }
         runCatching {
-          val time = PlaybackSession.observedPlaybackPosition
+          val time = PlaybackSession.getPropertyDouble("time-pos")
           if (time != null) {
             val posFloat = time.toFloat()
             // While a seek is in flight, the player's reported time-pos is still the pre-seek
@@ -2364,7 +2374,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         val intervalMs =
           when {
             paused == true -> 1000L // Reduce polling frequency when paused to conserve CPU/battery
-            // Keep position/lyrics recompositions proportional to visible UI demand.
+            // 100 ms is below the threshold where seek-bar motion reads as stepped, while halving
+            // the JNI reads and state emissions a 50 ms loop caused while controls are visible.
             seekBarVisibleForPolling || controlsVisibleForPolling -> 100L
             else -> 500L
           }

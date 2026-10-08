@@ -518,7 +518,7 @@
   <string name="crash_screen_logs_title">سجلات التعطل:</string>
   <string name="crash_screen_share">مشاركة سجلات التعطل</string>
   <string name="crash_screen_restart">إعادة تشغيل التطبيق</string>
-  <string name="crash_screen_reset_database">إعادة ضبط قاعدة البيانات</string>
+  <string name="crash_screen_fix_crash">إصلاح التعطل (حذف قاعدة البيانات)</string>
   <string name="crash_screen_database_deleted">تم حذف قاعدة البيانات بنجاح. يرجى إعادة تشغيل التطبيق.</string>
   <string name="crash_screen_database_hint">يبدو أن هذا التعطل مرتبط بقاعدة البيانات. جرّب حذف قاعدة البيانات لإصلاحه.</string>
   <string name="crash_screen_report_preparing">جارٍ إعداد تقرير التعطل الكامل...</string>
