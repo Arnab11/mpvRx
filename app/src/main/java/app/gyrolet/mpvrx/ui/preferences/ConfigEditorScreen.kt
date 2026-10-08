@@ -242,7 +242,15 @@ data class ConfigEditorScreen(
         actions = {
           IconButton(
             onClick = {
-              backStack.navigateTo(MpvHelpScreen())
+              backStack.navigateTo(
+                MpvHelpScreen(
+                  initialFilter = if (configType == ConfigEditorScreen.ConfigType.MPV_CONF) {
+                    app.gyrolet.mpvrx.ui.editor.HelpEntryKind.OPTION
+                  } else {
+                    app.gyrolet.mpvrx.ui.editor.HelpEntryKind.COMMAND
+                  },
+                ),
+              )
             },
             modifier = Modifier.padding(end = 4.dp).size(40.dp),
             colors =

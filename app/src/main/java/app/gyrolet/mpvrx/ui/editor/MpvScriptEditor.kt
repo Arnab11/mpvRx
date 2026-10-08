@@ -68,6 +68,8 @@ fun MpvScriptEditor(
   val textSize = 14.sp
 
   LaunchedEffect(Unit) {
+    // Lazy, offline-first manual loading: no network work on the video startup path.
+    MpvDocumentationRepository.ensureLoaded(context)
     ScriptEditorTextMate.ensureInitialized(context)
   }
 
