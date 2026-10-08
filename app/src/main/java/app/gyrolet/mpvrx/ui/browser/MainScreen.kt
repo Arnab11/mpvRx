@@ -15,6 +15,7 @@ import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.snap
@@ -103,6 +104,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.unit.LayoutDirection
+import kotlin.math.abs
 import kotlin.math.roundToInt
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
@@ -259,6 +261,8 @@ object MainScreen : Screen {
         pageCount = { visibleTabs.size },
       )
     var tabNavigationJob by remember { mutableStateOf<Job?>(null) }
+    val tabContentAlpha = remember { Animatable(1f) }
+    var isDirectTabJumpInProgress by remember { mutableStateOf(false) }
 
     LaunchedEffect(pagerState, visibleTabs) {
       tabNavigationJob?.cancelAndJoin()
@@ -304,21 +308,64 @@ object MainScreen : Screen {
           pagerState.settledPage == targetIndex &&
           !pagerState.isScrollInProgress &&
           pagerState.currentPageOffsetFraction == 0f
-      if (targetIndex >= 0) {
-        tabNavigationJob?.cancel()
-        if (!isAlreadySettled) {
-          tabNavigationJob =
-            coroutineScope.launch {
-              if (navStyle == NavigationAnimStyle.None || reduceMotion) {
+      if (targetIndex >= 0 && !isAlreadySettled) {
+        // Bottom-nav taps are destination changes, not a request to visibly traverse every
+        // intermediate tab. Keep the native pager animation for adjacent destinations, but
+        // fade through long jumps so heavyweight Music/Network pages are never animated across.
+        val previousJob = tabNavigationJob
+        previousJob?.cancel()
+        tabNavigationJob =
+          coroutineScope.launch {
+            previousJob?.join()
+
+            val currentIndex = pagerState.currentPage.coerceIn(0, (visibleTabs.size - 1).coerceAtLeast(0))
+            val isLongJump = abs(targetIndex - currentIndex) > 1
+
+            tabContentAlpha.stop()
+            tabContentAlpha.snapTo(1f)
+
+            if (navStyle == NavigationAnimStyle.None || reduceMotion) {
+              isDirectTabJumpInProgress = true
+              try {
                 pagerState.scrollToPage(targetIndex)
-              } else {
-                pagerState.animateScrollToPage(
-                  page = targetIndex,
-                  animationSpec = navigationTabAnimationSpec(navStyle, animSpeed),
+              } finally {
+                tabContentAlpha.snapTo(1f)
+                isDirectTabJumpInProgress = false
+              }
+            } else if (!isLongJump) {
+              pagerState.animateScrollToPage(
+                page = targetIndex,
+                animationSpec = navigationTabAnimationSpec(navStyle, animSpeed),
+              )
+            } else {
+              isDirectTabJumpInProgress = true
+              try {
+                // Fade the current destination out first. The actual pager jump happens while
+                // content is hidden, then the destination fades in after it has been composed.
+                tabContentAlpha.animateTo(
+                  targetValue = 0f,
+                  animationSpec =
+                    tween(
+                      durationMillis = navigationDurationMillis(animSpeed, 85),
+                      easing = FastOutSlowInEasing,
+                    ),
                 )
+                pagerState.scrollToPage(targetIndex)
+                withFrameNanos { }
+                tabContentAlpha.animateTo(
+                  targetValue = 1f,
+                  animationSpec =
+                    tween(
+                      durationMillis = navigationDurationMillis(animSpeed, 145),
+                      easing = FastOutSlowInEasing,
+                    ),
+                )
+              } finally {
+                tabContentAlpha.snapTo(1f)
+                isDirectTabJumpInProgress = false
               }
             }
-        }
+          }
       }
     }
 
@@ -408,12 +455,13 @@ object MainScreen : Screen {
                 Modifier
                   .fillMaxSize()
                   .clipToBounds()
+                  .graphicsLayer { alpha = tabContentAlpha.value }
                   .nestedScroll(NavigationBarState.navScrollConnection)
                   .layerBackdrop(liquidLayerBackdrop)
                   .hazeSource(navigationBackdrop),
               key = { page -> visibleTabs[page].name },
               beyondViewportPageCount = 1,
-              userScrollEnabled = !isPermissionDenied,
+              userScrollEnabled = !isPermissionDenied && !isDirectTabJumpInProgress,
             ) { page ->
               val tab = visibleTabs.getOrNull(page) ?: return@NavigationPager
               when (tab) {
