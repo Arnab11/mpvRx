@@ -2706,4 +2706,6 @@
   <string name="debug_logs_config_required">请先在高级设置中选择配置文件夹。</string>
   <string name="debug_logs_config_saved">日志已保存到配置文件夹中的 %1$s。</string>
   <string name="debug_logs_config_save_failed">无法保存日志。请检查配置文件夹的访问权限或重新选择该文件夹。</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">控制栏隐藏时显示进度条</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">水平滑动快进或快退时，即使播放器控制栏已隐藏也显示进度条。时间提示不受影响.</string>
 </resources>

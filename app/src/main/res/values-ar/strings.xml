@@ -2733,4 +2733,6 @@
   <string name="debug_logs_config_required">اختر مجلد الإعدادات في الإعدادات المتقدمة أولاً.</string>
   <string name="debug_logs_config_saved">تم حفظ السجلات في %1$s داخل مجلد الإعدادات.</string>
   <string name="debug_logs_config_save_failed">تعذر حفظ السجلات. تحقق من الوصول إلى مجلد الإعدادات أو اختره مرة أخرى.</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">إظهار شريط التقدم عند إخفاء عناصر التحكم</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">أثناء السحب أفقيًا للتقديم أو الإرجاع، أظهر شريط التقدم حتى عند إخفاء عناصر تحكم المشغّل. لا يتأثر مؤشر الوقت.</string>
 </resources>

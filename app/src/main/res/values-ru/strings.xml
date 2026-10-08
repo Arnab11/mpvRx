@@ -2721,4 +2721,6 @@
   <string name="debug_logs_config_required">Сначала выберите папку конфигурации в расширенных настройках.</string>
   <string name="debug_logs_config_saved">Журналы сохранены в %1$s в вашей папке конфигурации.</string>
   <string name="debug_logs_config_save_failed">Не удалось сохранить журналы. Проверьте доступ к папке конфигурации или выберите её снова.</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">Показывать полосу перемотки при скрытых элементах управления</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">При горизонтальном свайпе показывать полосу перемотки, даже если элементы управления плеером скрыты. Индикатор времени не изменяется.</string>
 </resources>

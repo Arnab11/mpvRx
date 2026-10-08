@@ -2700,4 +2700,6 @@
   <string name="debug_logs_config_required">先に詳細設定で設定フォルダを選択してください。</string>
   <string name="debug_logs_config_saved">設定フォルダ内の %1$s にログを保存しました。</string>
   <string name="debug_logs_config_save_failed">ログを保存できませんでした。設定フォルダへのアクセスを確認するか、再選択してください。</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">操作ボタンが非表示でもシークバーを表示</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">左右にスワイプしてシークするとき、プレーヤーの操作ボタンが非表示でもシークバーを表示します。時間表示には影響しません。</string>
 </resources>

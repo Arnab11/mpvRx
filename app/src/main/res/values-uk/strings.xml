@@ -2737,4 +2737,6 @@
   <string name="debug_logs_config_required">Спочатку виберіть папку конфігурації в розширених налаштуваннях.</string>
   <string name="debug_logs_config_saved">Журнали збережено в %1$s у вашій папці конфігурації.</string>
   <string name="debug_logs_config_save_failed">Не вдалося зберегти журнали. Перевірте доступ до папки конфігурації або виберіть її знову.</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">Показувати смугу перемотування за прихованих елементів керування</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">Під час горизонтального свайпу показувати смугу перемотування, навіть якщо елементи керування програвачем приховані. Індикатор часу не змінюється.</string>
 </resources>

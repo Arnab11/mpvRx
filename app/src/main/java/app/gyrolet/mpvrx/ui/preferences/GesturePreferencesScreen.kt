@@ -233,6 +233,19 @@ object GesturePreferencesScreen : Screen {
 
               PreferenceDivider()
 
+              val showSeekbarDuringHorizontalSeeking by
+                preferences.showSeekbarDuringHorizontalSeeking.collectAsState()
+              SwitchPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_gesture_show_seekbar_horizontal_title),
+                value = showSeekbarDuringHorizontalSeeking,
+                onValueChange = preferences.showSeekbarDuringHorizontalSeeking::set,
+                title = { Text(stringResource(R.string.pref_gesture_show_seekbar_horizontal_title)) },
+                summary = { Text(stringResource(R.string.pref_gesture_show_seekbar_horizontal_summary)) },
+                enabled = horizontalSwipeToSeek,
+              )
+
+              PreferenceDivider()
+
               val enableCenterSwipeUpGesture by preferences.enableCenterSwipeUpGesture.collectAsState()
               SwitchPreference(
                 modifier = Modifier.settingsSearchTarget(R.string.pref_player_gestures_enable_center_swipe_up_gesture),

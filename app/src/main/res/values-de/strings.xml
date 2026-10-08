@@ -2707,4 +2707,6 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="debug_logs_config_required">Wähle zuerst einen Konfigurationsordner in den erweiterten Einstellungen.</string>
   <string name="debug_logs_config_saved">Protokolle unter %1$s im Konfigurationsordner gespeichert.</string>
   <string name="debug_logs_config_save_failed">Protokolle konnten nicht gespeichert werden. Prüfe den Zugriff auf den Konfigurationsordner oder wähle ihn erneut.</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">Suchleiste bei ausgeblendeten Bedienelementen anzeigen</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">Beim horizontalen Wischen die Suchleiste auch dann anzeigen, wenn die Player-Bedienelemente ausgeblendet sind. Die Zeitanzeige bleibt unverändert.</string>
 </resources>

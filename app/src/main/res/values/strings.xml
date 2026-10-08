@@ -2825,4 +2825,6 @@
   <string name="debug_logs_config_required">Select a configuration folder in Advanced Settings first.</string>
   <string name="debug_logs_config_saved">Logs saved to %1$s in your configuration folder.</string>
   <string name="debug_logs_config_save_failed">Could not save logs. Check access to your configuration folder or select it again.</string>
+  <string name="pref_gesture_show_seekbar_horizontal_title">Show seekbar when controls are hidden</string>
+  <string name="pref_gesture_show_seekbar_horizontal_summary">During horizontal seeking, show the seekbar even when player controls are hidden. The time indicator is unaffected.</string>
 </resources>
