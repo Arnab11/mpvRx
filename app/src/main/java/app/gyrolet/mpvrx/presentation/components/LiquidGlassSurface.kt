@@ -38,7 +38,7 @@ import com.kyant.shapes.RoundedRectangle
 
 typealias LiquidGlassBackdrop = LayerBackdrop
 
-private val LocalLiquidGlassBackdrop = staticCompositionLocalOf<LiquidGlassBackdrop?> { null }
+internal val LocalLiquidGlassBackdrop = staticCompositionLocalOf<LiquidGlassBackdrop?> { null }
 
 @Composable
 fun rememberLiquidGlassBackdrop(): LiquidGlassBackdrop = rememberLayerBackdrop()

@@ -25,7 +25,6 @@ import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AppearancePreferences
 import app.gyrolet.mpvrx.preferences.LiquidGlassHighlightStyle
 import app.gyrolet.mpvrx.preferences.LiquidGlassMaterialStyle
-import app.gyrolet.mpvrx.preferences.NavigationBarStyle
 import app.gyrolet.mpvrx.preferences.preference.Preference
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.ui.icons.Icon
@@ -70,23 +69,6 @@ fun LazyListScope.liquidGlassPreferences(
         R.string.pref_liquid_glass_surface_opacity,
         enabled,
         0f..1f,
-      )
-    }
-  }
-  item {
-    val navigationStyle by preferences.navigationBarStyle.collectAsState()
-    val labels = mapOf(
-      NavigationBarStyle.LiquidGlass to stringResource(R.string.pref_appearance_category_liquid_glass),
-      NavigationBarStyle.Normal to stringResource(R.string.pref_navigation_style_normal),
-    )
-    PreferenceCard {
-      ListPreference(
-        value = navigationStyle,
-        onValueChange = preferences.navigationBarStyle::set,
-        values = NavigationBarStyle.entries,
-        valueToText = { AnnotatedString(labels.getValue(it)) },
-        title = { Text(stringResource(R.string.pref_navigation_style)) },
-        summary = { Text(labels.getValue(navigationStyle)) },
       )
     }
   }

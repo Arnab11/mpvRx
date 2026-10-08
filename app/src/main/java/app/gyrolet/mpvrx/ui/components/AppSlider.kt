@@ -16,6 +16,7 @@ import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.SliderState
 import androidx.compose.material3.RangeSliderState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -74,7 +75,7 @@ fun AppSlider(
   }
 
   val sliderState = remember(steps, valueRange) { SliderState(value, steps, valueRange) }
-  sliderState.value = value
+  SideEffect { sliderState.value = value }
   val surfaceColor = MaterialTheme.colorScheme.surfaceContainerHigh
   val canvasBackdrop = rememberCanvasBackdrop { drawRect(surfaceColor) }
   val backdrop = LocalKyantPlayerBackdrop.current ?: canvasBackdrop
@@ -88,6 +89,7 @@ fun AppSlider(
     value = { sliderState.value },
     onValueChange = updateValue,
     valueRange = valueRange,
+    steps = steps,
     visibilityThreshold = if (steps > 0) span / (steps + 1) / 100f else span / 1000f,
     backdrop = backdrop,
     modifier = modifier
@@ -129,8 +131,16 @@ private fun GlassSliderThumb(
   val canvasBackdrop = rememberCanvasBackdrop { drawRect(surfaceColor) }
   val backgroundBackdrop = LocalKyantPlayerBackdrop.current ?: canvasBackdrop
   val backdrop = rememberCombinedBackdrop(backgroundBackdrop, trackBackdrop)
-  val baseTint = if (enabled) colors.thumbColor else colors.disabledThumbColor
-  val tint = baseTint.copy(alpha = baseTint.alpha * if (interacting) 0.22f else 0.72f)
+  // Only the idle range-slider thumbs are white; interacting retains its themed film.
+  val tint = if (interacting) {
+    androidx.compose.ui.graphics.lerp(
+      MaterialTheme.colorScheme.surfaceContainerHigh,
+      colors.activeTrackColor,
+      0.18f,
+    ).copy(alpha = 0.4f)
+  } else {
+    androidx.compose.ui.graphics.Color.White
+  }
   val materialModifier =
     if (settings.transparent) {
       Modifier.clip(CircleShape).background(settings.surfaceColor(tint))
@@ -184,8 +194,10 @@ fun AppRangeSlider(
     return
   }
   val state = remember(steps, valueRange) { RangeSliderState(value.start, value.endInclusive, steps, valueRange) }
-  state.startValue = value.start
-  state.endValue = value.endInclusive
+  SideEffect {
+    state.startValue = value.start
+    state.endValue = value.endInclusive
+  }
   val startInteraction = remember { MutableInteractionSource() }
   val endInteraction = remember { MutableInteractionSource() }
   val trackBackdrop = rememberLayerBackdrop()

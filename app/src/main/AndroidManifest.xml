@@ -517,12 +517,7 @@
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTask"
-            android:theme="@style/Theme.mpvrx">
-            <intent-filter>
-                <action android:name="com.developer.crashx.ERROR" />
-                <category android:name="android.intent.category.DEFAULT" />
-            </intent-filter>
-        </activity>
+            android:theme="@style/Theme.mpvrx" />
         <activity
             android:name=".presentation.crash.DebugLogsActivity"
             android:exported="false"

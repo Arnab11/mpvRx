@@ -6,6 +6,7 @@
 
 package app.gyrolet.mpvrx.ui.liquidglass
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
@@ -59,6 +61,7 @@ fun LiquidSlider(
   modifier: Modifier = Modifier,
   accentColor: Color,
   trackColor: Color,
+  steps: Int = 0,
   enabled: Boolean = true,
   onValueChangeFinished: (() -> Unit)? = null,
 ) {
@@ -152,6 +155,23 @@ fun LiquidSlider(
             layout(width, placeable.height) { placeable.placeRelative(0, 0) }
           },
       )
+      if (steps > 0) {
+        Canvas(Modifier.fillMaxWidth().height(6.dp)) {
+          val intervalCount = steps.toLong() + 1L
+          val tickSpacing = size.width / intervalCount
+          if (tickSpacing >= 4.dp.toPx()) {
+            for (tickIndex in 0..intervalCount.toInt()) {
+              val fraction = tickIndex.toFloat() / intervalCount
+              val horizontalPosition = if (isLtr) size.width * fraction else size.width * (1f - fraction)
+              drawCircle(
+                color = if (fraction <= animation.progress) Color.White.copy(alpha = 0.7f) else accentColor.copy(alpha = 0.7f),
+                radius = 1.dp.toPx(),
+                center = androidx.compose.ui.geometry.Offset(horizontalPosition, size.height / 2f),
+              )
+            }
+          }
+        }
+      }
     }
 
     val combinedBackdrop = rememberCombinedBackdrop(
@@ -161,10 +181,21 @@ fun LiquidSlider(
         scale(lerp(2f / 3f, 1f, progress), lerp(0f, 1f, progress)) { drawTrack() }
       },
     )
-    val film = Color.White.copy(alpha = 1f - animation.pressProgress)
+    // A translucent themed film keeps both the accent and the refracted content visible.
+    val film = androidx.compose.ui.graphics.lerp(
+      MaterialTheme.colorScheme.surfaceContainerHigh,
+      accentColor,
+      0.18f,
+    ).copy(alpha = if (enabled) 0.72f - 0.28f * animation.pressProgress else 0.32f)
+    // The idle thumb stays white; pressing it reveals the existing themed glass film.
+    val thumbFilm = androidx.compose.ui.graphics.lerp(
+      Color.White,
+      film,
+      animation.pressProgress.coerceIn(0f, 1f),
+    )
     val thumbModifier =
       if (settings.transparent) {
-        Modifier.clip(Capsule()).background(settings.surfaceColor(film))
+        Modifier.clip(Capsule()).background(settings.surfaceColor(thumbFilm))
       } else {
         Modifier.drawBackdrop(
           backdrop = combinedBackdrop,
@@ -199,7 +230,7 @@ fun LiquidSlider(
             scaleX /= 1f - (velocity * 0.75f).fastCoerceIn(-0.2f, 0.2f)
             scaleY *= 1f - (velocity * 0.25f).fastCoerceIn(-0.2f, 0.2f)
           },
-          onDrawSurface = { drawRect(settings.surfaceColor(film)) },
+          onDrawSurface = { drawRect(settings.surfaceColor(thumbFilm)) },
         )
       }
     Box(
