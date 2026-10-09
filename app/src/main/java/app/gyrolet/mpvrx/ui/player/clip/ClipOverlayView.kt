@@ -566,7 +566,6 @@ class ClipOverlayView @JvmOverloads constructor(
 
   private fun mediaDurationSeconds(): Double =
     PlaybackSession.getPropertyDouble("duration")
-      ?: PlaybackSession.getPropertyInt("duration")?.toDouble()
       ?: 0.0
 
   private fun currentPosition(): Double? = PlaybackSession.getPropertyDouble("time-pos")
