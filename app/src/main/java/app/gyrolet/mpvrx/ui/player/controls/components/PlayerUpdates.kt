@@ -70,8 +70,14 @@ private val compactSpeedIndicatorWidth = 32.dp
 /** Equal-width digits where the font supports them. */
 fun TextStyle.withTabularDigits(): TextStyle = copy(fontFeatureSettings = "tnum")
 
-/** Wording without numbers: "Zoom: 95%" and "Zoom: -100%" share a key, a different message does not. */
-private fun numericWidthKey(text: String): String = text.filterNot { it.isDigit() || it in "+-.," }
+// Signs and separators that locale-formatted numbers may use: ASCII/Unicode minus, plus, Arabic separators.
+private const val NUMERIC_PUNCTUATION = "+-\u2212.,\u066B\u066C"
+
+/** Wording without numbers: "Zoom: 95%" and "Zoom: −100%" share a key, a different message does not. */
+private fun numericWidthKey(text: String): String =
+  text.filterNot {
+    it.isDigit() || it in NUMERIC_PUNCTUATION || Character.getType(it) == Character.FORMAT.toInt()
+  }
 
 /**
  * Shared anti-jitter sizing for every live-number indicator on the player. While the wording of [text]
