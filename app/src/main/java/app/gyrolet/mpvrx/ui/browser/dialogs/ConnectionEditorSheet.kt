@@ -278,12 +278,12 @@ internal fun ConnectionEditorSheet(
       OutlinedTextField(
         value = path,
         onValueChange = { path = it },
-        label = { FieldLabel(if (protocol == NetworkProtocol.SMB) R.string.network_smb_share_folder else R.string.ui_path) },
+        label = { FieldLabel(if (effectiveProtocol == NetworkProtocol.SMB) R.string.network_smb_share_folder else R.string.ui_path) },
         modifier = Modifier.fillMaxWidth().focusRequester(pathFocusRequester),
         singleLine = true,
-        placeholder = { Text(if (protocol == NetworkProtocol.SMB) "/Media/Movies" else "/", maxLines = 1) },
+        placeholder = { Text(if (effectiveProtocol == NetworkProtocol.SMB) "/Media/Movies" else "/", maxLines = 1) },
         isError = !isPathValid,
-        supportingText = if (protocol == NetworkProtocol.SMB) {
+        supportingText = if (effectiveProtocol == NetworkProtocol.SMB) {
           { Text(stringResource(R.string.network_smb_share_hint)) }
         } else null,
         keyboardOptions = KeyboardOptions(imeAction = if (isAnonymous) ImeAction.Done else ImeAction.Next),

@@ -2705,4 +2705,6 @@
   <string name="pref_gesture_show_seekbar_horizontal_summary">水平滑动快进或快退时，即使播放器控制栏已隐藏也显示进度条。时间提示不受影响.</string>
   <string name="player_zoom_overlays_follow">播放器 OSD 和字幕随视频缩放</string>
   <string name="player_zoom_overlays_follow_summary">字幕和统计页面 1–6 随视频缩放。关闭时保持固定大小。</string>
+  <string name="network_smb_share_folder">共享 / 文件夹（可选）</string>
+  <string name="network_smb_share_hint">留空或输入 / 可浏览所有共享文件夹。输入 /Media 或 /Media/Movies 可打开指定文件夹。</string>
 </resources>

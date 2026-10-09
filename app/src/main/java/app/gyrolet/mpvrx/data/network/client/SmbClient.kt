@@ -27,6 +27,7 @@ import com.hierynomus.mssmb2.SMBApiException
 import com.hierynomus.smbj.connection.Connection
 import com.hierynomus.smbj.session.Session
 import com.hierynomus.smbj.share.DiskShare
+import com.hierynomus.smbj.share.PipeShare
 import com.hierynomus.smbj.transport.tcp.async.AsyncDirectTcpTransportFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +87,6 @@ class SmbClient(
   private var smbClient: SMBClient? = null
   private var smbConnection: Connection? = null
   private var session: Session? = null
-  private var shareName: String = ""
   private val connectionMutex = Mutex()
 
   /**
@@ -160,10 +160,18 @@ class SmbClient(
                 val newClient = newClient().also { candidateClient = it }
                 val newConnection = newClient.connect(connection.host, connection.port).also { candidateConnection = it }
                 val newSession = newConnection.authenticate(authContext).also { candidateSession = it }
-                val diskShare = newSession.connectShare(configuredShare) as? DiskShare
-                  ?: throw IOException("Configured SMB share is not a disk share")
-                // Keep the session-cached tree alive after validating the configured directory.
-                diskShare.list(sharePath.directory.relative)
+                if (configuredShare == null) {
+                  // Validate server browsing without enumerating every share again when a
+                  // playback/thumbnail client connects. Keep this session-cached tree alive.
+                  if (newSession.connectShare("IPC$") !is PipeShare) {
+                    throw IOException("SMB server does not support shared-folder browsing")
+                  }
+                } else {
+                  val diskShare = newSession.connectShare(configuredShare) as? DiskShare
+                    ?: throw IOException("Configured SMB share is not a disk share")
+                  // Keep the session-cached tree alive after validating the configured directory.
+                  diskShare.list(sharePath.directory.relative)
+                }
                 break
               } catch (error: SMBApiException) {
                 // Guest and anonymous are distinct SMB logons. Only try both when the user
@@ -179,7 +187,6 @@ class SmbClient(
         }
         coroutineContext.ensureActive()
 
-        shareName = configuredShare
         smbClient = candidateClient
         smbConnection = candidateConnection
         session = candidateSession
@@ -207,7 +214,6 @@ class SmbClient(
       session = null
       smbConnection = null
       smbClient = null
-      shareName = ""
       closeResources(oldSession, oldConnection, oldClient)
     }
   }
@@ -221,9 +227,15 @@ class SmbClient(
           executeWithRetry {
             val sess = session ?: throw java.net.SocketException("Not connected")
             val directory = parseNetworkPath(path)
+            if (sharePath.isServerRoot && directory.isRoot) {
+              return@executeWithRetry withTimeout(15_000) {
+                runInterruptible(Dispatchers.IO) { SmbShareDiscovery.listShares(sess) }
+              }
+            }
+            val target = sharePath.resolve(directory)
 
             val diskShare =
-              sess.connectShare(shareName) as? DiskShare
+              sess.connectShare(target.shareName) as? DiskShare
                 ?: throw IOException("Configured SMB share is not a disk share")
 
             // The DiskShare returned by Session.connectShare() is cached and shared by
@@ -231,7 +243,9 @@ class SmbClient(
             // closing it here would disconnect the tree out from under active streams.
             val rawFiles: List<FileIdBothDirectoryInformation> =
               try {
-                withTimeout(15_000) { diskShare.list(sharePath.resolve(directory).relative) }
+                withTimeout(15_000) {
+                  runInterruptible(Dispatchers.IO) { diskShare.list(target.path.relative) }
+                }
               } catch (_: TimeoutCancellationException) {
                 throw IOException("SMB directory listing timed out")
               }
@@ -253,10 +267,12 @@ class SmbClient(
             }
           }
         Result.success(result)
+      } catch (_: TimeoutCancellationException) {
+        Result.failure(IOException("SMB directory listing timed out"))
       } catch (cancellation: CancellationException) {
         throw cancellation
       } catch (error: Exception) {
-        Result.failure(error)
+        Result.failure(connectionError(error))
       }
     }
 
@@ -270,16 +286,16 @@ class SmbClient(
         val result =
           executeWithRetry {
             val sess = session ?: throw java.net.SocketException("Not connected")
-            val relativePath = sharePath.resolve(parseNetworkPath(path)).relative
+            val target = sharePath.resolve(parseNetworkPath(path))
 
             val diskShare =
-              sess.connectShare(shareName) as? DiskShare
+              sess.connectShare(target.shareName) as? DiskShare
                 ?: throw IOException("Configured SMB share is not a disk share")
 
             try {
               val file =
                 diskShare.openFile(
-                  relativePath,
+                  target.path.relative,
                   EnumSet.of(AccessMask.GENERIC_READ),
                   null,
                   EnumSet.of(SMB2ShareAccess.FILE_SHARE_READ),
@@ -375,14 +391,15 @@ class SmbClient(
         val result =
           executeWithRetry {
             val sess = session ?: throw java.net.SocketException("Not connected")
+            val target = sharePath.resolve(parseNetworkPath(path))
             val diskShare =
-              sess.connectShare(shareName) as? DiskShare
+              sess.connectShare(target.shareName) as? DiskShare
                 ?: throw IOException("Configured SMB share is not a disk share")
 
             try {
               val file =
                 diskShare.openFile(
-                  sharePath.resolve(parseNetworkPath(path)).relative,
+                  target.path.relative,
                   EnumSet.of(AccessMask.GENERIC_READ),
                   null,
                   EnumSet.of(SMB2ShareAccess.FILE_SHARE_READ),
@@ -409,8 +426,8 @@ class SmbClient(
     withContext(Dispatchers.IO) {
       try {
         val host = connection.host.trim().removePrefix("[").removeSuffix("]")
-        val networkPath = sharePath.resolve(parseNetworkPath(path))
-        val uriPath = "/${configuredShareName()}${if (networkPath.isRoot) "" else networkPath.value}"
+        val target = sharePath.resolve(parseNetworkPath(path))
+        val uriPath = "/${target.shareName}${if (target.path.isRoot) "" else target.path.value}"
         val uri = URI("smb", null, host, connection.port, uriPath, null, null)
         Result.success(Uri.parse(uri.toASCIIString()))
       } catch (cancellation: CancellationException) {
@@ -423,16 +440,15 @@ class SmbClient(
   private fun parseNetworkPath(path: String): NetworkPath {
     if (!path.startsWith("smb://", ignoreCase = true)) return NetworkPath.from(path)
 
-    val decodedPath = NetworkPath.from(URI(path).path)
-    val legacyShare = decodedPath.segments.firstOrNull().orEmpty()
-    val expectedShare = shareName.takeIf(String::isNotEmpty) ?: configuredShareName()
-    require(legacyShare.equals(expectedShare, ignoreCase = true)) {
-      "SMB path is outside the configured share"
+    val uri = URI(path)
+    val address = app.gyrolet.mpvrx.domain.network.NetworkAddress.parse(path, connection.protocol)
+    require(address.host.equals(connection.host, ignoreCase = true) &&
+      (address.port ?: 445) == connection.port
+    ) {
+      "SMB path belongs to a different server"
     }
-    return sharePath.fromShareRelative(NetworkPath.from(decodedPath.segments.drop(1).joinToString("/")))
+    return sharePath.fromServerPath(NetworkPath.from(uri.path.orEmpty()))
   }
-
-  private fun configuredShareName(): String = sharePath.shareName
 
   private fun connectionError(error: Exception): Exception = when {
     error is SMBApiException && error.statusCode in LOGON_FAILURE_CODES ->

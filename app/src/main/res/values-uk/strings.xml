@@ -2733,4 +2733,6 @@
   <string name="pref_gesture_show_seekbar_horizontal_summary">Під час горизонтального свайпу показувати смугу перемотування, навіть якщо елементи керування програвачем приховані. Індикатор часу не змінюється.</string>
   <string name="player_zoom_overlays_follow">Масштабувати OSD і субтитри з відео</string>
   <string name="player_zoom_overlays_follow_summary">Субтитри та сторінки статистики 1–6 масштабуються разом із відео. Якщо вимкнено, розмір залишається сталим.</string>
+  <string name="network_smb_share_folder">Спільний ресурс / папка (необов’язково)</string>
+  <string name="network_smb_share_hint">Залиште поле порожнім або введіть /, щоб переглянути всі спільні папки. Введіть /Media або /Media/Movies, щоб відкрити певну папку.</string>
 </resources>

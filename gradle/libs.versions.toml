@@ -2,6 +2,8 @@
 agp = "9.4.1"
 commonsNet = "3.13.0"
 smbj = "0.15.0"
+dcerpc = "0.12.13"
+guava = "33.4.0-android"
 jsch = "2.28.7"
 kotlin = "2.4.20"
 ksp = "2.3.12"
@@ -61,6 +63,8 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 commons-net = { module = "commons-net:commons-net", version.ref = "commonsNet" }
 smbj = { module = "com.hierynomus:smbj", version.ref = "smbj" }
+dcerpc = { module = "com.rapid7.client:dcerpc", version.ref = "dcerpc" }
+guava = { module = "com.google.guava:guava", version.ref = "guava" }
 jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
 nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 sardine-android = { module = "com.github.thegrizzlylabs:sardine-android", version.ref = "sardineAndroid" }

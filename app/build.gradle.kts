@@ -299,6 +299,13 @@ dependencies {
 
   // Network protocol libraries
   implementation(libs.smbj)
+  implementation(libs.dcerpc) {
+    // Reuse the existing SMBJ/crypto stack and use Android's Guava flavor.
+    exclude(group = "com.hierynomus", module = "smbj")
+    exclude(group = "org.bouncycastle", module = "bcprov-jdk18on")
+    exclude(group = "com.google.guava", module = "guava")
+  }
+  implementation(libs.guava)
   implementation(libs.commons.net)
   implementation(libs.jsch)
   implementation(libs.sardine.android) {

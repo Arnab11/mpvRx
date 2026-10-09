@@ -2706,4 +2706,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Ao deslizar horizontalmente para avançar ou retroceder, mostra a barra de busca mesmo com os controles do player ocultos. O indicador de tempo não muda.</string>
   <string name="player_zoom_overlays_follow">Ampliar OSD e legendas com o vídeo</string>
   <string name="player_zoom_overlays_follow_summary">As legendas e as páginas de estatísticas 1–6 acompanham o zoom do vídeo. Desativado, mantêm um tamanho fixo.</string>
+  <string name="network_smb_share_folder">Compartilhamento / pasta (opcional)</string>
+  <string name="network_smb_share_hint">Deixe em branco ou use / para explorar todas as pastas compartilhadas. Digite /Media ou /Media/Movies para abrir uma pasta específica.</string>
 </resources>

@@ -82,20 +82,30 @@ fun NetworkConnection.normalizedAddress(): NetworkConnection {
   )
 }
 
-/** Separates the SMB tree (share) from a directory within that tree. */
+/** An optional SMB root: blank or / browses the server, /Share[/Folder] pins a folder. */
 class SmbSharePath(rawPath: String) {
   private val configured = NetworkPath.from(rawPath.trim().replace('\\', '/'))
-  val shareName: String = configured.segments.firstOrNull()
-    ?: throw IllegalArgumentException("Enter an SMB share, for example /Media or /Media/Movies")
+  val shareName: String? = configured.segments.firstOrNull()
+  val isServerRoot: Boolean = configured.isRoot
   val directory: NetworkPath = NetworkPath.from(configured.segments.drop(1).joinToString("/"))
 
-  fun resolve(path: NetworkPath): NetworkPath = NetworkPath.from("${directory.value}/${path.relative}")
+  data class Target(val shareName: String, val path: NetworkPath)
 
-  fun fromShareRelative(path: NetworkPath): NetworkPath {
-    require(path.segments.take(directory.segments.size) == directory.segments) {
+  /** Resolve each request independently so concurrent streams can use different shares. */
+  fun resolve(path: NetworkPath): Target {
+    val fullPath = NetworkPath.from("${configured.value}/${path.relative}")
+    val share = fullPath.segments.firstOrNull()
+      ?: throw IllegalArgumentException("Select an SMB shared folder first")
+    return Target(share, NetworkPath.from(fullPath.segments.drop(1).joinToString("/")))
+  }
+
+  fun fromServerPath(path: NetworkPath): NetworkPath {
+    require(configured.segments.indices.all { index ->
+      path.segments.getOrNull(index)?.equals(configured.segments[index], ignoreCase = true) == true
+    }) {
       "SMB path is outside the configured folder"
     }
-    return NetworkPath.from(path.segments.drop(directory.segments.size).joinToString("/"))
+    return NetworkPath.from(path.segments.drop(configured.segments.size).joinToString("/"))
   }
 }
 

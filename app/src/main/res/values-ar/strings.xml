@@ -2732,4 +2732,6 @@
   <string name="pref_gesture_show_seekbar_horizontal_summary">أثناء السحب أفقيًا للتقديم أو الإرجاع، أظهر شريط التقدم حتى عند إخفاء عناصر تحكم المشغّل. لا يتأثر مؤشر الوقت.</string>
   <string name="player_zoom_overlays_follow">تكبير واجهة المشغل والترجمة مع الفيديو</string>
   <string name="player_zoom_overlays_follow_summary">تتغير الترجمة وصفحات الإحصاءات 1–6 مع تكبير الفيديو. عند إيقافه يبقى حجمها ثابتاً.</string>
+  <string name="network_smb_share_folder">المشاركة / المجلد (اختياري)</string>
+  <string name="network_smb_share_hint">اتركه فارغًا أو استخدم / لتصفح جميع المجلدات المشتركة. أدخل /Media أو /Media/Movies لفتح مجلد محدد.</string>
 </resources>

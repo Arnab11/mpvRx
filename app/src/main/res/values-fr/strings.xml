@@ -2706,4 +2706,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="pref_gesture_show_seekbar_horizontal_summary">Pendant la recherche par balayage horizontal, afficher la barre de lecture même si les commandes du lecteur sont masquées. La pastille de temps reste inchangée.</string>
   <string name="player_zoom_overlays_follow">Zoomer OSD et sous-titres avec la vidéo</string>
   <string name="player_zoom_overlays_follow_summary">Les sous-titres et les pages de statistiques 1 à 6 suivent le zoom vidéo. Désactivé, leur taille reste fixe.</string>
+  <string name="network_smb_share_folder">Partage / dossier (facultatif)</string>
+  <string name="network_smb_share_hint">Laissez vide ou utilisez / pour parcourir tous les dossiers partagés. Saisissez /Media ou /Media/Movies pour ouvrir un dossier précis.</string>
 </resources>
