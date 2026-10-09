@@ -333,7 +333,15 @@ object PlaylistScreen : Screen {
             },
             icon = { Icon(Icons.RoundedFilled.Add, contentDescription = null) },
             text = { Text(stringResource(R.string.ui_create_playlist)) },
-            modifier = Modifier.padding(bottom = (bottomOverlayClearance - 16.dp).coerceAtLeast(0.dp)),
+            modifier =
+              Modifier.padding(
+                bottom =
+                  if (NavigationBarState.isMiniPlayerVisible) {
+                    bottomOverlayClearance
+                  } else {
+                    (navigationBarHeight - 16.dp).coerceAtLeast(0.dp)
+                  },
+              ),
           )
         }
       },
