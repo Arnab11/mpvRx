@@ -1523,13 +1523,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_enable_ass_override">Activer le remplacement ASS</string>
   <string name="ui_filter_presets">Préréglages de filtres</string>
   <string name="ui_yt_dlp_manager">Gestionnaire yt-dlp</string>
-  <string name="ui_quick_quality_selection">Sélection rapide de la qualité</string>
-  <string name="ui_codec_preset">Préréglage de codec</string>
-  <string name="ui_quick_subtitle_config">Configuration rapide des sous-titres</string>
-  <string name="ui_download_subtitles">Télécharger les sous-titres</string>
-  <string name="ui_fetch_subs_from_stream_sources">Récupérer les sous-titres depuis les sources de flux</string>
-  <string name="ui_auto_generated_captions">Sous-titres générés automatiquement</string>
-  <string name="ui_include_auto_captions_transcripts">Inclure les sous-titres automatiques/transcriptions</string>
   <string name="ui_install_core">Installer le noyau</string>
   <string name="ui_update_core">Mettre à jour le noyau</string>
   <string name="ui_aspect_ratio">Format d’image</string>
@@ -1627,7 +1620,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_drag_disabled">Glisser-déposer désactivé</string>
   <string name="ui_buttons_exported_successfully">Boutons exportés avec succès</string>
   <string name="ui_anime4k_shaders_options">Options des shaders Anime4K</string>
-  <string name="ui_base_storage_folder">Dossier de stockage de base</string>
   <string name="ui_script_name">Nom du script</string>
   <string name="ui_please_enter_a_file_name">Veuillez saisir un nom de fichier</string>
   <string name="ui_failed_to_open_output_stream">Impossible d’ouvrir le flux de sortie</string>
@@ -1711,7 +1703,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="oss_fsaf_description">Utilitaires du Storage Access Framework pour les opérations sur fichiers et arborescences.</string>
   <string name="oss_truetype_parser_description">Lit les métadonnées des polices pour la gestion des polices de sous-titres.</string>
   <string name="oss_compose_preference_description">Composants d’interface de préférences utilisés dans les écrans de paramètres.</string>
-  <string name="oss_lazycolumnscrollbar_description">Composant de barre de défilement pour les longues listes Compose.</string>
   <string name="oss_reorderable_description">Réorganisation des listes par glisser-déposer pour les interfaces Compose.</string>
   <string name="oss_seeker_description">Composant de barre de progression personnalisable pour Jetpack Compose.</string>
   <string name="oss_sora_editor_description">Éditeur de code Android puissant et efficace avec coloration TextMate.</string>
@@ -1723,7 +1714,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="oss_androidx_documentfile_description">Couche d’abstraction pour l’accès au stockage de documents.</string>
   <string name="oss_androidx_media_description">API Android de session multimédia et de lecture.</string>
   <string name="oss_androidx_palette_description">Extrait les palettes de couleurs dominantes et vibrantes des images.</string>
-  <string name="oss_androidx_preference_description">Interface et stockage pour les écrans de préférences de l’application.</string>
   <string name="oss_androidx_profile_installer_description">Précharge les classes et méthodes pour accélérer le démarrage de l’application.</string>
   <string name="oss_google_material_description">Composants Material Design et bibliothèque de thèmes.</string>
   <string name="oss_google_cast_description">Framework Chromecast pour la diffusion de médias.</string>
@@ -1963,7 +1953,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="pref_audio_drc_title">Compression de la plage dynamique (DRC)</string>
   <string name="pref_audio_drc_summary">Comprimer la plage dynamique de l\'audio pour renforcer les dialogues faibles et atténuer les sons forts</string>
   <string name="pref_audio_effects">Traitement audio</string>
-  <string name="toast_file_not_found">Le fichier n\'existe plus</string>
   <string name="pref_audio_visualizer_style_particle">Particules</string>
   <string name="pref_section_p2p_streaming">Streaming P2P</string>
   <string name="pref_network_summary">Streaming P2P et gestionnaire yt-dlp</string>
@@ -2157,7 +2146,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="ui_switch_to_nightly">Passer à la version Nightly</string>
   <string name="ui_playback_defaults">Paramètres de lecture par défaut</string>
   <string name="ui_maximum_quality">Qualité maximale</string>
-  <string name="ui_automatic">Automatique</string>
   <string name="ui_checking_yt_dlp">Vérification de yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp n’est pas installé</string>
   <string name="ui_yt_dlp_stable_release">Version stable</string>
@@ -2717,8 +2705,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="debug_logs_config_save_failed">Impossible d\'enregistrer les journaux. Vérifiez l\'accès au dossier de configuration ou sélectionnez-le à nouveau.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Afficher la barre de lecture quand les commandes sont masquées</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Pendant la recherche par balayage horizontal, afficher la barre de lecture même si les commandes du lecteur sont masquées. La pastille de temps reste inchangée.</string>
-  <string name="player_zoom_subtitles_follow">Zoomer les sous-titres avec la vidéo</string>
-  <string name="player_zoom_subtitles_follow_summary">Désactivé, la taille des sous-titres reste indépendante du zoom vidéo.</string>
-  <string name="player_zoom_stats_follow">Zoomer les statistiques avec la vidéo</string>
-  <string name="player_zoom_stats_follow_summary">Concerne les pages 1 à 6. Désactivé, les statistiques gardent une taille fixe.</string>
+  <string name="player_zoom_overlays_follow">Zoomer OSD et sous-titres avec la vidéo</string>
+  <string name="player_zoom_overlays_follow_summary">Les sous-titres et les pages de statistiques 1 à 6 suivent le zoom vidéo. Désactivé, leur taille reste fixe.</string>
 </resources>

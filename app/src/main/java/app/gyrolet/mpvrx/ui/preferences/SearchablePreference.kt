@@ -1900,13 +1900,6 @@ object SearchablePreferences {
       ),
     )
 
-  fun positionOnScreen(preference: SearchablePreference): Pair<Int, Int> {
-    val screenPreferences = staticPreferences.filter { it.screen == preference.screen }
-    if (screenPreferences.isEmpty()) return 0 to 1
-    val ordinal = screenPreferences.indexOf(preference).coerceAtLeast(0)
-    return ordinal to screenPreferences.size
-  }
-
   private data class SearchField(
     val value: String,
     val weight: Int,

@@ -368,7 +368,6 @@
   <string name="pref_audio_drc_title">Стиснення динамічного діапазону (DRC)</string>
   <string name="pref_audio_drc_summary">Стискати динамічний діапазон, щоб підсилити тихі діалоги та приглушити гучні звуки</string>
   <string name="pref_audio_effects">Обробка аудіо</string>
-  <string name="toast_file_not_found">Файл більше не існує</string>
   <string name="pref_music_tabs_title">Вкладки музичної бібліотеки</string>
   <string name="pref_music_visualizer_title">Музичний візуалізатор</string>
   <string name="pref_music_visualizer_summary">Показувати візуалізатор, який реагує на музику під час відтворення</string>
@@ -1759,13 +1758,6 @@
   <string name="ui_enable_ass_override">Увімкнути перевизначення ASS</string>
   <string name="ui_filter_presets">Пресети фільтрів</string>
   <string name="ui_yt_dlp_manager">Менеджер yt-dlp</string>
-  <string name="ui_quick_quality_selection">Швидкий вибір якості</string>
-  <string name="ui_codec_preset">Пресет кодека</string>
-  <string name="ui_quick_subtitle_config">Швидке налаштування субтитрів</string>
-  <string name="ui_download_subtitles">Завантажити субтитри</string>
-  <string name="ui_fetch_subs_from_stream_sources">Отримувати субтитри з потокових джерел</string>
-  <string name="ui_auto_generated_captions">Автоматично згенеровані субтитри</string>
-  <string name="ui_include_auto_captions_transcripts">Включати автосубтитри/транскрипти</string>
   <string name="ui_install_core">Встановити ядро</string>
   <string name="ui_update_core">Оновити ядро</string>
   <string name="ui_aspect_ratio">Співвідношення сторін</string>
@@ -1877,7 +1869,6 @@
   <string name="ui_drag_disabled">Перетягування вимкнено</string>
   <string name="ui_buttons_exported_successfully">Кнопки успішно експортовано</string>
   <string name="ui_anime4k_shaders_options">Параметри шейдерів Anime4K</string>
-  <string name="ui_base_storage_folder">Основна папка сховища</string>
   <string name="ui_script_name">Назва скрипта</string>
   <string name="ui_please_enter_a_file_name">Будь ласка, введіть назву файлу</string>
   <string name="ui_failed_to_open_output_stream">Не вдалося відкрити потік виводу</string>
@@ -1921,7 +1912,6 @@
   <string name="ui_switch_to_nightly">Перейти на Nightly</string>
   <string name="ui_playback_defaults">Стандартні параметри відтворення</string>
   <string name="ui_maximum_quality">Максимальна якість</string>
-  <string name="ui_automatic">Автоматично</string>
   <string name="ui_checking_yt_dlp">Перевірка yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp не встановлено</string>
   <string name="ui_yt_dlp_stable_release">Стабільний випуск</string>
@@ -1995,7 +1985,6 @@
   <string name="oss_fsaf_description">Полегшена робота зі Storage Access Framework для файлів та дерева каталогів.</string>
   <string name="oss_truetype_parser_description">Читання метаданих шрифтів для коректного відображення субтитрів.</string>
   <string name="oss_compose_preference_description">Компоненти налаштувань на екранах параметрів Compose.</string>
-  <string name="oss_lazycolumnscrollbar_description">Смуга прокручування для довгих списків LazyColumn.</string>
   <string name="oss_reorderable_description">Перетягування та зміна порядку елементів у списках Compose.</string>
   <string name="oss_seeker_description">Налаштовуваний повзунок панелі пошуку для Jetpack Compose.</string>
   <string name="oss_sora_editor_description">Швидкий та потужний редактор коду для Android із підсвічуванням TextMate.</string>
@@ -2007,7 +1996,6 @@
   <string name="oss_androidx_documentfile_description">Шар абстракції для доступу до документів у сховищі.</string>
   <string name="oss_androidx_media_description">API медіасеансів та взаємодії з відтворенням в Android.</string>
   <string name="oss_androidx_palette_description">Вилучення палітри кольорів із зображень.</string>
-  <string name="oss_androidx_preference_description">Інтерфейс і сховище для екранів налаштувань.</string>
   <string name="oss_androidx_profile_installer_description">Попередня компіляція для швидшого запуску додатку.</string>
   <string name="oss_google_material_description">Бібліотека компонентів та тем Material Design.</string>
   <string name="oss_google_cast_description">Платформа Google Cast для трансляції медіа.</string>
@@ -2744,8 +2732,6 @@
   <string name="debug_logs_config_save_failed">Не вдалося зберегти журнали. Перевірте доступ до папки конфігурації або виберіть її знову.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Показувати смугу перемотування за прихованих елементів керування</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Під час горизонтального свайпу показувати смугу перемотування, навіть якщо елементи керування програвачем приховані. Індикатор часу не змінюється.</string>
-  <string name="player_zoom_subtitles_follow">Масштабувати субтитри з відео</string>
-  <string name="player_zoom_subtitles_follow_summary">Якщо вимкнено, розмір субтитрів не залежить від масштабу відео.</string>
-  <string name="player_zoom_stats_follow">Масштабувати статистику з відео</string>
-  <string name="player_zoom_stats_follow_summary">Для сторінок статистики 1–6. Якщо вимкнено, розмір статистики залишається сталим.</string>
+  <string name="player_zoom_overlays_follow">Масштабувати OSD і субтитри з відео</string>
+  <string name="player_zoom_overlays_follow_summary">Субтитри та сторінки статистики 1–6 масштабуються разом із відео. Якщо вимкнено, розмір залишається сталим.</string>
 </resources>

@@ -387,7 +387,6 @@
   <string name="pref_audio_drc_title">Dynamic range compression (DRC)</string>
   <string name="pref_audio_drc_summary">Compress audio dynamic range to boost quiet dialogue and tame loud sounds</string>
   <string name="pref_audio_effects">Audio processing</string>
-  <string name="toast_file_not_found">File no longer exists</string>
   <string name="pref_music_tabs_title">Music Library Tabs</string>
   <string name="pref_music_visualizer_title">Music visualizer</string>
   <string name="pref_music_visualizer_summary">Show an audio-reactive visualizer while playing music</string>
@@ -1820,13 +1819,6 @@
   <string name="ui_enable_ass_override">Enable ASS Override</string>
   <string name="ui_filter_presets">Filter Presets</string>
   <string name="ui_yt_dlp_manager">yt-dlp Manager</string>
-  <string name="ui_quick_quality_selection">Quick Quality Selection</string>
-  <string name="ui_codec_preset">Codec Preset</string>
-  <string name="ui_quick_subtitle_config">Quick Subtitle Config</string>
-  <string name="ui_download_subtitles">Download Subtitles</string>
-  <string name="ui_fetch_subs_from_stream_sources">Fetch subs from stream sources</string>
-  <string name="ui_auto_generated_captions">Auto-Generated Captions</string>
-  <string name="ui_include_auto_captions_transcripts">Include auto-captions/transcripts</string>
   <string name="ui_install_core">Install Core</string>
   <string name="ui_update_core">Update Core</string>
   <string name="ui_aspect_ratio">Aspect Ratio</string>
@@ -1938,7 +1930,6 @@
   <string name="ui_drag_disabled">Drag disabled</string>
   <string name="ui_buttons_exported_successfully">Buttons exported successfully</string>
   <string name="ui_anime4k_shaders_options">Anime4K Shaders Options</string>
-  <string name="ui_base_storage_folder">Base Storage Folder</string>
   <string name="ui_script_name">Script name</string>
   <string name="ui_please_enter_a_file_name">Please enter a file name</string>
   <string name="ui_failed_to_open_output_stream">Failed to open output stream</string>
@@ -1982,7 +1973,6 @@
   <string name="ui_switch_to_nightly">Switch to Nightly</string>
   <string name="ui_playback_defaults">Playback Defaults</string>
   <string name="ui_maximum_quality">Maximum Quality</string>
-  <string name="ui_automatic">Automatic</string>
   <string name="ui_checking_yt_dlp">Checking yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp Not Installed</string>
   <string name="ui_yt_dlp_stable_release">Stable Release</string>
@@ -2056,7 +2046,6 @@
   <string name="oss_fsaf_description">Storage Access Framework helpers for file and tree operations.</string>
   <string name="oss_truetype_parser_description">Reads font metadata for subtitle font handling.</string>
   <string name="oss_compose_preference_description">Preference UI components used across settings screens.</string>
-  <string name="oss_lazycolumnscrollbar_description">Scrollbar component for long Compose lists.</string>
   <string name="oss_reorderable_description">Drag-and-drop list reordering for Compose surfaces.</string>
   <string name="oss_seeker_description">A customizable seekbar component for Jetpack Compose.</string>
   <string name="oss_sora_editor_description">A powerful, efficient code editor for Android with TextMate highlighting.</string>
@@ -2068,7 +2057,6 @@
   <string name="oss_androidx_documentfile_description">Abstraction layer for document storage access.</string>
   <string name="oss_androidx_media_description">Android media session and playback APIs.</string>
   <string name="oss_androidx_palette_description">Extracts dominant and vibrant color palettes from images.</string>
-  <string name="oss_androidx_preference_description">UI and storage for app preference screens.</string>
   <string name="oss_androidx_profile_installer_description">Prefetches classes and methods for faster app startup.</string>
   <string name="oss_google_material_description">Material Design components and theming library.</string>
   <string name="oss_google_cast_description">Chromecast framework for media casting.</string>
@@ -2854,8 +2842,6 @@
   <string name="network_smb_share_folder">Share / folder</string>
   <string name="network_smb_share_hint">An SMB share is required, for example /Media or /Media/Movies.</string>
   <string name="network_smb_username_hint">Use your username or DOMAIN\\username for a domain account.</string>
-  <string name="player_zoom_subtitles_follow">Zoom subtitles with video</string>
-  <string name="player_zoom_subtitles_follow_summary">Off keeps subtitle size independent of video zoom.</string>
-  <string name="player_zoom_stats_follow">Zoom statistics with video</string>
-  <string name="player_zoom_stats_follow_summary">Applies to stats pages 1–6. Off keeps statistics at a fixed size.</string>
+  <string name="player_zoom_overlays_follow">Zoom player OSD &amp; subtitles with video</string>
+  <string name="player_zoom_overlays_follow_summary">Subtitles and statistics pages 1–6 scale with video zoom. Off keeps them at a fixed size.</string>
 </resources>

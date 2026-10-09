@@ -1523,13 +1523,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="ui_enable_ass_override">Ativar substituição de ASS</string>
   <string name="ui_filter_presets">Predefinições de filtros</string>
   <string name="ui_yt_dlp_manager">Gerenciador do yt-dlp</string>
-  <string name="ui_quick_quality_selection">Seleção rápida de qualidade</string>
-  <string name="ui_codec_preset">Predefinição de codec</string>
-  <string name="ui_quick_subtitle_config">Configuração rápida de legendas</string>
-  <string name="ui_download_subtitles">Baixar legendas</string>
-  <string name="ui_fetch_subs_from_stream_sources">Buscar legendas em fontes de transmissão</string>
-  <string name="ui_auto_generated_captions">Legendas geradas automaticamente</string>
-  <string name="ui_include_auto_captions_transcripts">Incluir legendas automáticas/transcrições</string>
   <string name="ui_install_core">Instalar núcleo</string>
   <string name="ui_update_core">Atualizar núcleo</string>
   <string name="ui_aspect_ratio">Proporção da tela</string>
@@ -1627,7 +1620,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="ui_drag_disabled">Arrastar desativado</string>
   <string name="ui_buttons_exported_successfully">Botões exportados com sucesso</string>
   <string name="ui_anime4k_shaders_options">Opções de shaders Anime4K</string>
-  <string name="ui_base_storage_folder">Pasta de armazenamento base</string>
   <string name="ui_script_name">Nome do script</string>
   <string name="ui_please_enter_a_file_name">Insira um nome de arquivo</string>
   <string name="ui_failed_to_open_output_stream">Falha ao abrir o fluxo de saída</string>
@@ -1711,7 +1703,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="oss_fsaf_description">Auxiliares do Storage Access Framework para operações com arquivos e árvores.</string>
   <string name="oss_truetype_parser_description">Lê metadados de fontes para gerenciar fontes de legenda.</string>
   <string name="oss_compose_preference_description">Componentes de UI de preferências usados nas telas de configurações.</string>
-  <string name="oss_lazycolumnscrollbar_description">Componente de barra de rolagem para listas longas do Compose.</string>
   <string name="oss_reorderable_description">Reordenação de listas por arrastar e soltar para superfícies Compose.</string>
   <string name="oss_seeker_description">Componente de barra de busca personalizável para Jetpack Compose.</string>
   <string name="oss_sora_editor_description">Editor de código poderoso e eficiente para Android com realce TextMate.</string>
@@ -1723,7 +1714,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="oss_androidx_documentfile_description">Camada de abstração para acesso ao armazenamento de documentos.</string>
   <string name="oss_androidx_media_description">APIs do Android para sessão de mídia e reprodução.</string>
   <string name="oss_androidx_palette_description">Extrai paletas de cores dominantes e vibrantes das imagens.</string>
-  <string name="oss_androidx_preference_description">UI e armazenamento para telas de preferências do app.</string>
   <string name="oss_androidx_profile_installer_description">Pré-carrega classes e métodos para iniciar o app mais rapidamente.</string>
   <string name="oss_google_material_description">Componentes do Material Design e biblioteca de temas.</string>
   <string name="oss_google_cast_description">Framework Chromecast para transmissão de mídia.</string>
@@ -1963,7 +1953,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="pref_audio_drc_title">Compressão de faixa dinâmica (DRC)</string>
   <string name="pref_audio_drc_summary">Comprimir a faixa dinâmica do áudio para realçar diálogos baixos e suavizar sons altos</string>
   <string name="pref_audio_effects">Processamento de áudio</string>
-  <string name="toast_file_not_found">O arquivo não existe mais</string>
   <string name="pref_audio_visualizer_style_particle">Partículas</string>
   <string name="pref_section_p2p_streaming">Streaming P2P</string>
   <string name="pref_network_summary">Streaming P2P e gerenciador do yt-dlp</string>
@@ -2157,7 +2146,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="ui_switch_to_nightly">Mudar para Nightly</string>
   <string name="ui_playback_defaults">Padrões de reprodução</string>
   <string name="ui_maximum_quality">Qualidade máxima</string>
-  <string name="ui_automatic">Automático</string>
   <string name="ui_checking_yt_dlp">Verificando o yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp não está instalado</string>
   <string name="ui_yt_dlp_stable_release">Versão estável</string>
@@ -2717,8 +2705,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="debug_logs_config_save_failed">Não foi possível salvar os registros. Verifique o acesso à pasta de configuração ou selecione-a novamente.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Mostrar barra de busca com controles ocultos</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Ao deslizar horizontalmente para avançar ou retroceder, mostra a barra de busca mesmo com os controles do player ocultos. O indicador de tempo não muda.</string>
-  <string name="player_zoom_subtitles_follow">Ampliar legendas com o vídeo</string>
-  <string name="player_zoom_subtitles_follow_summary">Desativado, o tamanho das legendas fica independente do zoom do vídeo.</string>
-  <string name="player_zoom_stats_follow">Ampliar estatísticas com o vídeo</string>
-  <string name="player_zoom_stats_follow_summary">Aplica-se às páginas 1–6. Desativado, as estatísticas mantêm um tamanho fixo.</string>
+  <string name="player_zoom_overlays_follow">Ampliar OSD e legendas com o vídeo</string>
+  <string name="player_zoom_overlays_follow_summary">As legendas e as páginas de estatísticas 1–6 acompanham o zoom do vídeo. Desativado, mantêm um tamanho fixo.</string>
 </resources>

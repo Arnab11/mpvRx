@@ -51,7 +51,6 @@ object MpvDocumentationRepository {
   private const val REFRESH_AFTER_MS = 10L * 24 * 60 * 60 * 1000
   private const val RETRY_AFTER_FAILURE_MS = 6L * 60 * 60 * 1000
   private const val CACHE_FILE = "mpv-manual-v1.json"
-  const val UPSTREAM_URL = "https://mpv.io/manual/master/"
 
   private val sourceFiles = listOf("options", "input", "javascript", "lua")
   private val json = Json { ignoreUnknownKeys = true }

@@ -162,8 +162,6 @@ import app.gyrolet.mpvrx.ui.player.controls.components.SeekPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.SeekbarWithTimers
 import app.gyrolet.mpvrx.ui.player.controls.components.TextPlayerUpdate
 import app.gyrolet.mpvrx.ui.player.controls.components.VolumeSlider
-import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonBorderColor
-import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContainerColor
 import app.gyrolet.mpvrx.ui.player.controls.components.playerButtonContentColor
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberBufferingState
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
@@ -182,11 +180,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.withContext
 import org.koin.compose.koinInject
-import app.gyrolet.mpvrx.ui.liquidglass.AdaptiveControlsButton
 import app.gyrolet.mpvrx.ui.liquidglass.AdaptiveControlsContainer
 import app.gyrolet.mpvrx.ui.liquidglass.LiquidPillButton
 import app.gyrolet.mpvrx.ui.liquidglass.LocalKyantPlayerBackdrop
-import app.gyrolet.mpvrx.ui.liquidglass.PlayerLiquidTokens
 import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlin.math.abs
@@ -237,7 +233,7 @@ fun PlayerControls(
   val controlsShown by viewModel.controlsShown.collectAsState()
   val controlsInteractionEpoch by viewModel.controlsInteractionEpoch.collectAsState()
   val tvPlayFocusRequester = rememberTvInitialFocusRequester(enabled = controlsShown)
-  val statsFollowVideoZoom by playerPreferences.statsFollowVideoZoom.collectAsState()
+  val overlaysFollowVideoZoom by playerPreferences.overlaysFollowVideoZoom.collectAsState()
   val statisticsPage by advancedPreferences.enabledStatisticsPage.collectAsState()
   val areControlsLocked by viewModel.areControlsLocked.collectAsState()
   val seekBarShown by viewModel.seekBarShown.collectAsState()
@@ -741,7 +737,7 @@ fun PlayerControls(
           Modifier
             .align(Alignment.TopStart)
             .graphicsLayer {
-              val zoomScale = if (statsFollowVideoZoom) app.gyrolet.mpvrx.ui.player.videoZoomMultiplier(currentZoom) else 1f
+              val zoomScale = if (overlaysFollowVideoZoom) app.gyrolet.mpvrx.ui.player.videoZoomMultiplier(currentZoom) else 1f
               scaleX = zoomScale
               scaleY = zoomScale
               transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
@@ -1262,62 +1258,18 @@ is PlayerUpdates.FrameInfo -> {
             ) {
               leftCustomButtons.forEach { button ->
                 key(button.id) {
-                  if (enableLiquidGlass) {
-                    LiquidPillButton(
-                      onClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButton(button.id)
-                      },
-                      onLongClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButtonLongPress(button.id)
-                      },
-                      height = 36.dp,
-                      horizontalPadding = 12.dp,
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier = Modifier.basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  } else {
-                    val buttonInteractionSource = remember { MutableInteractionSource() }
-                    Surface(
-                      shape = CircleShape,
-                      color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
-                      contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-                      modifier =
-                        Modifier
-                          .clip(CircleShape)
-                          .combinedClickable(
-                            interactionSource = buttonInteractionSource,
-                            indication = ripple(),
-                            onClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButton(button.id)
-                            },
-                            onLongClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButtonLongPress(button.id)
-                            },
-                          ),
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier =
-                          Modifier
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  }
+                  CustomControlButton(
+                    label = button.label,
+                    liquidGlass = enableLiquidGlass,
+                    onClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButton(button.id)
+                    },
+                    onLongClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButtonLongPress(button.id)
+                    },
+                  )
                 }
               }
             }
@@ -1349,62 +1301,18 @@ is PlayerUpdates.FrameInfo -> {
             ) {
               rightCustomButtons.forEach { button ->
                 key(button.id) {
-                  if (enableLiquidGlass) {
-                    LiquidPillButton(
-                      onClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButton(button.id)
-                      },
-                      onLongClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButtonLongPress(button.id)
-                      },
-                      height = 36.dp,
-                      horizontalPadding = 12.dp,
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier = Modifier.basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  } else {
-                    val buttonInteractionSource = remember { MutableInteractionSource() }
-                    Surface(
-                      shape = CircleShape,
-                      color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
-                      contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-                      modifier =
-                        Modifier
-                          .clip(CircleShape)
-                          .combinedClickable(
-                            interactionSource = buttonInteractionSource,
-                            indication = ripple(),
-                            onClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButton(button.id)
-                            },
-                            onLongClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButtonLongPress(button.id)
-                            },
-                          ),
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier =
-                          Modifier
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  }
+                  CustomControlButton(
+                    label = button.label,
+                    liquidGlass = enableLiquidGlass,
+                    onClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButton(button.id)
+                    },
+                    onLongClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButtonLongPress(button.id)
+                    },
+                  )
                 }
               }
             }
@@ -1437,62 +1345,18 @@ is PlayerUpdates.FrameInfo -> {
             ) {
               customButtons.forEach { button ->
                 key(button.id) {
-                  if (enableLiquidGlass) {
-                    LiquidPillButton(
-                      onClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButton(button.id)
-                      },
-                      onLongClick = {
-                        resetControlsTimestamp = System.currentTimeMillis()
-                        viewModel.callCustomButtonLongPress(button.id)
-                      },
-                      height = 36.dp,
-                      horizontalPadding = 12.dp,
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier = Modifier.basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  } else {
-                    val buttonInteractionSource = remember { MutableInteractionSource() }
-                    Surface(
-                      shape = CircleShape,
-                      color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
-                      contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
-                      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
-                      modifier =
-                        Modifier
-                          .clip(CircleShape)
-                          .combinedClickable(
-                            interactionSource = buttonInteractionSource,
-                            indication = ripple(),
-                            onClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButton(button.id)
-                            },
-                            onLongClick = {
-                              resetControlsTimestamp = System.currentTimeMillis()
-                              viewModel.callCustomButtonLongPress(button.id)
-                            },
-                          ),
-                    ) {
-                      Text(
-                        text = button.label,
-                        modifier =
-                          Modifier
-                            .padding(horizontal = 12.dp, vertical = 6.dp)
-                            .basicMarquee(),
-                        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
-                        maxLines = 1,
-                        softWrap = false,
-                      )
-                    }
-                  }
+                  CustomControlButton(
+                    label = button.label,
+                    liquidGlass = enableLiquidGlass,
+                    onClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButton(button.id)
+                    },
+                    onLongClick = {
+                      resetControlsTimestamp = System.currentTimeMillis()
+                      viewModel.callCustomButtonLongPress(button.id)
+                    },
+                  )
                 }
               }
             }
@@ -2894,5 +2758,59 @@ private fun OutlinedLabeled(
       text = annotated,
       style = labelStyle,
     )
+  }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
+private fun CustomControlButton(
+  label: String,
+  liquidGlass: Boolean,
+  onClick: () -> Unit,
+  onLongClick: () -> Unit,
+) {
+  if (liquidGlass) {
+    LiquidPillButton(
+      onClick = onClick,
+      onLongClick = onLongClick,
+      height = 36.dp,
+      horizontalPadding = 12.dp,
+    ) {
+      Text(
+        text = label,
+        modifier = Modifier.basicMarquee(),
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+        maxLines = 1,
+        softWrap = false,
+      )
+    }
+  } else {
+    val buttonInteractionSource = remember { MutableInteractionSource() }
+    Surface(
+      shape = CircleShape,
+      color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.85f),
+      contentColor = MaterialTheme.colorScheme.onSecondaryContainer,
+      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.1f)),
+      modifier =
+        Modifier
+          .clip(CircleShape)
+          .combinedClickable(
+            interactionSource = buttonInteractionSource,
+            indication = ripple(),
+            onClick = onClick,
+            onLongClick = onLongClick,
+          ),
+    ) {
+      Text(
+        text = label,
+        modifier =
+          Modifier
+            .padding(horizontal = 12.dp, vertical = 6.dp)
+            .basicMarquee(),
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+        maxLines = 1,
+        softWrap = false,
+      )
+    }
   }
 }

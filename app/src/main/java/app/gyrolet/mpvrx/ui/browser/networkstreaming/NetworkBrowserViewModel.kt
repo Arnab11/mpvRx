@@ -150,25 +150,6 @@ class NetworkBrowserViewModel(
     }
   }
 
-  /**
-   * Play a video file
-   */
-  fun playVideo(file: NetworkFile) {
-    viewModelScope.launch {
-      try {
-        val connection =
-          repository.getConnectionById(connectionId)
-            ?: throw Exception("Connection not found")
-        playVideoInternal(connection, file)
-      } catch (cancellation: CancellationException) {
-        throw cancellation
-      } catch (e: Exception) {
-        Log.e(TAG, "Error playing video", e)
-        _error.value = e.message ?: "Unknown error"
-      }
-    }
-  }
-
   private suspend fun openM3uFile(
     connection: NetworkConnection,
     file: NetworkFile,

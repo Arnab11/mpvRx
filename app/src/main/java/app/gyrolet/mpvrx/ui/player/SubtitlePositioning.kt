@@ -93,7 +93,7 @@ fun applySubtitleLayout(
 }
 
 fun subtitleVideoZoomFactor(): Float =
-  if (GlobalContext.get().get<PlayerPreferences>().subtitlesFollowVideoZoom.get()) {
+  if (GlobalContext.get().get<PlayerPreferences>().overlaysFollowVideoZoom.get()) {
     videoZoomMultiplier(PlaybackSession.videoZoom.value)
   } else 1f
 

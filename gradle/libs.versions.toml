@@ -8,7 +8,6 @@ ksp = "2.3.12"
 composeBom = "2026.09.00"
 activityCompose = "1.13.0"
 koin = "4.2.2"
-lazycolumnscrollbar = "2.2.0"
 nanohttpd = "2.3.1"
 room = "2.8.5"
 navigation3 = "1.1.7"
@@ -26,7 +25,6 @@ reorderable = "3.1.0"
 googleMaterial = "1.14.0"
 androidxCore = "1.19.0"
 androidxCoreSplashScreen = "1.2.0"
-androidxPreference = "1.2.1"
 androidxConstraintLayout = "2.2.2"
 media3 = "1.11.1"
 soraEditor = "0.24.6"
@@ -64,7 +62,6 @@ androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", versi
 commons-net = { module = "commons-net:commons-net", version.ref = "commonsNet" }
 smbj = { module = "com.hierynomus:smbj", version.ref = "smbj" }
 jsch = { module = "com.github.mwiede:jsch", version.ref = "jsch" }
-lazycolumnscrollbar = { module = "com.github.nanihadesuka:LazyColumnScrollbar", version.ref = "lazycolumnscrollbar" }
 nanohttpd = { module = "org.nanohttpd:nanohttpd", version.ref = "nanohttpd" }
 sardine-android = { module = "com.github.thegrizzlylabs:sardine-android", version.ref = "sardineAndroid" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
@@ -72,12 +69,10 @@ androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-material3-android = { group = "androidx.compose.material3", name = "material3", version.ref = "androidxMaterial3" }
-androidx-compose-material = { group = "androidx.compose.material", name = "material" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "androidxAppcompat" }
 composables-material-symbols-rounded-filled-android = { module = "com.composables:icons-material-symbols-rounded-filled-android", version.ref = "materialSymbols" }
 composables-material-symbols-rounded-filled-cmp = { module = "com.composables:icons-material-symbols-rounded-filled-cmp-jvm", version.ref = "materialSymbols" }
 androidx-compose-constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout-compose", version.ref = "composeConstraintLayout" }
-androidx-compose-animation-graphics = { group = "androidx.compose.animation", name = "animation-graphics-android" }
 mediasession = { group = "androidx.media", name = "media", version.ref = "androidxMedia" }
 androidx-navigation3-runtime = { module = "androidx.navigation3:navigation3-runtime", version.ref = "navigation3" }
 androidx-navigation3-ui = { module = "androidx.navigation3:navigation3-ui", version.ref = "navigation3" }
@@ -95,7 +90,6 @@ mpvlib-fongmi = { module = "app.gyrolet.mpvlib:mpvlib-fongmi", version.ref = "mp
 google-material = { module = "com.google.android.material:material", version.ref = "googleMaterial" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidxCore" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "androidxCoreSplashScreen" }
-androidx-preference-ktx = { module = "androidx.preference:preference-ktx", version.ref = "androidxPreference" }
 androidx-constraintlayout = { module = "androidx.constraintlayout:constraintlayout", version.ref = "androidxConstraintLayout" }
 androidx-media3-common = { module = "androidx.media3:media3-common", version.ref = "media3" }
 androidx-media3-effect = { module = "androidx.media3:media3-effect", version.ref = "media3" }

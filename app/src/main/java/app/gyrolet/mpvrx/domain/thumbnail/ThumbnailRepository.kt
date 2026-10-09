@@ -445,18 +445,6 @@ class ThumbnailRepository(
     "${video.path}|${video.uri}|${video.size}|${video.dateModified}|${video.duration}" +
       "|$widthPx|$heightPx|${thumbnailModeKey()}|${thumbnailQualityKey()}"
 
-  /**
-   * Folder prefetch and a visible card may request different sizes for the same source.
-   * The disk entry is size-independent, so either completion can wake the card and let it
-   * decode the cached bitmap at its own target dimensions.
-   */
-  fun isThumbnailKeyForVideo(
-    key: String,
-    video: Video,
-  ): Boolean =
-    key.startsWith("${videoBaseKey(video)}|") &&
-      key.endsWith("|${thumbnailModeKey()}|${thumbnailQualityKey()}")
-
   // Keep extraction-quality changes from reusing smaller legacy images that were
   // cached without their requested dimensions in the key.
   fun diskCacheKey(video: Video): String =

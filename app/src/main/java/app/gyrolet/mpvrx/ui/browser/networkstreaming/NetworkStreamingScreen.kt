@@ -10,16 +10,8 @@
 package app.gyrolet.mpvrx.ui.browser.networkstreaming
 
 import android.content.Context
-import android.content.SharedPreferences
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.expandVertically
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,13 +19,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import app.gyrolet.mpvrx.ui.utils.NavigationPager
@@ -74,10 +64,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -93,14 +81,12 @@ import app.gyrolet.mpvrx.database.repository.NetworkStreamEntryRepository
 import app.gyrolet.mpvrx.domain.network.ConnectionStatus
 import app.gyrolet.mpvrx.domain.network.NetworkConnection
 import app.gyrolet.mpvrx.domain.torrent.TorrentStreamingEngine
-import app.gyrolet.mpvrx.domain.torrent.formatTorrentBytes
 import app.gyrolet.mpvrx.domain.torrent.isTorrentSource
 import app.gyrolet.mpvrx.domain.torrent.normalizeTorrentSource
 import app.gyrolet.mpvrx.preferences.YtdlPreferences
 import app.gyrolet.mpvrx.preferences.NetworkBookmarkPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.Screen
-import app.gyrolet.mpvrx.presentation.components.RemoteImage
 import app.gyrolet.mpvrx.repository.wyzie.WyzieSearchRepository
 import app.gyrolet.mpvrx.utils.media.MediaInfoParser
 import app.gyrolet.mpvrx.ui.browser.cards.NetworkConnectionCard
@@ -118,6 +104,8 @@ import app.gyrolet.mpvrx.ui.preferences.YtdlpSettingsScreen
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionInput
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionScreen
 import app.gyrolet.mpvrx.ui.torrent.TorrentSelectionViewModel
+import app.gyrolet.mpvrx.ui.torrent.loadViewedFileIndices
+import app.gyrolet.mpvrx.ui.torrent.saveViewedFileIndices
 import app.gyrolet.mpvrx.ui.utils.LocalBackStack
 import app.gyrolet.mpvrx.ui.utils.navigateTo
 import app.gyrolet.mpvrx.ui.utils.popSafely
@@ -1319,25 +1307,4 @@ private fun StreamLinkSection(
       }
     }
   }
-}
-
-private fun loadViewedFileIndices(
-  preferences: SharedPreferences,
-  infoHash: String,
-): Set<Int> =
-  preferences
-    .getStringSet(infoHash, emptySet())
-    .orEmpty()
-    .mapNotNull(String::toIntOrNull)
-    .toSet()
-
-private fun saveViewedFileIndices(
-  preferences: SharedPreferences,
-  infoHash: String,
-  indices: Set<Int>,
-) {
-  preferences
-    .edit()
-    .putStringSet(infoHash, indices.map(Int::toString).toSet())
-    .apply()
 }

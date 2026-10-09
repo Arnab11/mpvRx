@@ -315,7 +315,6 @@
   <string name="pref_audio_drc_title">डायनामिक रेंज कम्प्रेशन (DRC)</string>
   <string name="pref_audio_drc_summary">धीमी बोलचाल को बढ़ाने और तेज आवाज़ों को कम करने के लिए ऑडियो डायनामिक रेंज कंप्रेस करें</string>
   <string name="pref_audio_effects">ऑडियो प्रोसेसिंग</string>
-  <string name="toast_file_not_found">फाइल अब मौजूद नहीं है</string>
   <string name="pref_music_tabs_title">संगीत लाइब्रेरी टैब</string>
   <string name="pref_music_visualizer_title">म्यूज़िक विज़ुअलाइज़र</string>
   <string name="pref_music_visualizer_summary">म्यूज़िक चलाते समय ऑडियो-रिएक्टिव विज़ुअलाइज़र दिखाएं</string>
@@ -1459,13 +1458,6 @@
   <string name="ui_enable_ass_override">ASS ओवरराइड सक्षम करें</string>
   <string name="ui_filter_presets">फिल्टर प्रीसेट</string>
   <string name="ui_yt_dlp_manager">yt-dlp मैनेजर</string>
-  <string name="ui_quick_quality_selection">क्विक क्वालिटी चयन</string>
-  <string name="ui_codec_preset">कोडेक प्रीसेट</string>
-  <string name="ui_quick_subtitle_config">क्विक सबटाइटल कॉन्फ़िगरेशन</string>
-  <string name="ui_download_subtitles">सबटाइटल डाउनलोड करें</string>
-  <string name="ui_fetch_subs_from_stream_sources">स्ट्रीम स्रोतों से सबटाइटल लाएं</string>
-  <string name="ui_auto_generated_captions">ऑटो-जनरेटेड कैप्शन</string>
-  <string name="ui_include_auto_captions_transcripts">ऑटो-कैप्शन/ट्रांसक्रिप्ट शामिल करें</string>
   <string name="ui_install_core">कोर इंस्टॉल करें</string>
   <string name="ui_update_core">कोर अपडेट करें</string>
   <string name="ui_aspect_ratio">आस्पेक्ट रेशियो</string>
@@ -1563,7 +1555,6 @@
   <string name="ui_drag_disabled">ड्रैग अक्षम</string>
   <string name="ui_buttons_exported_successfully">बटन सफलतापूर्वक एक्सपोर्ट हुए</string>
   <string name="ui_anime4k_shaders_options">Anime4K शेडर विकल्प</string>
-  <string name="ui_base_storage_folder">बेस स्टोरेज फोल्डर</string>
   <string name="ui_script_name">स्क्रिप्ट नाम</string>
   <string name="ui_please_enter_a_file_name">कृपया एक फाइल नाम डालें</string>
   <string name="ui_failed_to_open_output_stream">आउटपुट स्ट्रीम खोलना नाकाम</string>
@@ -1656,7 +1647,6 @@
   <string name="oss_fsaf_description">फाइल और ट्री ऑपरेशन के लिए स्टोरेज एक्सेस फ्रेमवर्क हेल्पर।</string>
   <string name="oss_truetype_parser_description">सबटाइटल फॉन्ट हैंडलिंग के लिए फॉन्ट मेटाडेटा पढ़ता है।</string>
   <string name="oss_compose_preference_description">पूरी सेटिंग्स स्क्रीन में इस्तेमाल होने वाले प्रेफरेंस UI कंपोनेंट।</string>
-  <string name="oss_lazycolumnscrollbar_description">लंबी Compose लिस्ट के लिए स्क्रॉलबार कंपोनेंट।</string>
   <string name="oss_reorderable_description">Compose सतहों के लिए ड्रैग-एंड-ड्रॉप लिस्ट री-ऑर्डरिंग।</string>
   <string name="oss_seeker_description">Jetpack Compose के लिए एक कस्टमाइज़ेबल सीकबार कंपोनेंट।</string>
   <string name="oss_sora_editor_description">TextMate हाइलाइटिंग के साथ Android के लिए एक शक्तिशाली, कुशल कोड एडिटर।</string>
@@ -1668,7 +1658,6 @@
   <string name="oss_androidx_documentfile_description">डॉक्यूमेंट स्टोरेज एक्सेस के लिए एब्स्ट्रैक्शन लेयर।</string>
   <string name="oss_androidx_media_description">Android मीडिया सेशन और प्लेबैक API।</string>
   <string name="oss_androidx_palette_description">तस्वीरों से प्रमुख और जीवंत रंग पैलेट निकालता है।</string>
-  <string name="oss_androidx_preference_description">ऐप प्रेफरेंस स्क्रीन के लिए UI और स्टोरेज।</string>
   <string name="oss_androidx_profile_installer_description">तेज़ ऐप स्टार्टअप के लिए क्लास और मेथड पहले से लोड करता है।</string>
   <string name="oss_google_material_description">Material Design कंपोनेंट और थीमिंग लाइब्रेरी।</string>
   <string name="oss_google_cast_description">मीडिया कास्टिंग के लिए Chromecast फ्रेमवर्क।</string>
@@ -2061,7 +2050,6 @@
   <string name="ui_switch_to_nightly">Nightly पर जाएँ</string>
   <string name="ui_playback_defaults">डिफ़ॉल्ट प्लेबैक</string>
   <string name="ui_maximum_quality">अधिकतम गुणवत्ता</string>
-  <string name="ui_automatic">स्वचालित</string>
   <string name="ui_checking_yt_dlp">yt-dlp की जाँच हो रही है</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp इंस्टॉल नहीं है</string>
   <string name="ui_yt_dlp_stable_release">स्थिर रिलीज़</string>
@@ -2621,8 +2609,6 @@
   <string name="debug_logs_config_save_failed">लॉग सहेजे नहीं जा सके। कॉन्फ़िगरेशन फ़ोल्डर की अनुमति जाँचें या उसे फिर चुनें।</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">कंट्रोल छिपे होने पर सीक बार दिखाएँ</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">हॉरिज़ॉन्टल स्वाइप से सीक करते समय, प्लेयर कंट्रोल छिपे होने पर भी सीक बार दिखाएँ। समय दिखाने वाला संकेत पहले जैसा ही रहेगा।</string>
-  <string name="player_zoom_subtitles_follow">वीडियो के साथ उपशीर्षक ज़ूम करें</string>
-  <string name="player_zoom_subtitles_follow_summary">बंद होने पर उपशीर्षक का आकार वीडियो ज़ूम से स्वतंत्र रहेगा।</string>
-  <string name="player_zoom_stats_follow">वीडियो के साथ आँकड़े ज़ूम करें</string>
-  <string name="player_zoom_stats_follow_summary">आँकड़ों के पृष्ठ 1–6 पर लागू। बंद होने पर आँकड़ों का आकार स्थिर रहेगा।</string>
+  <string name="player_zoom_overlays_follow">वीडियो के साथ प्लेयर OSD और उपशीर्षक ज़ूम करें</string>
+  <string name="player_zoom_overlays_follow_summary">उपशीर्षक और आँकड़ों के पृष्ठ 1–6 वीडियो ज़ूम के साथ बदलते हैं। बंद होने पर आकार स्थिर रहेगा।</string>
 </resources>

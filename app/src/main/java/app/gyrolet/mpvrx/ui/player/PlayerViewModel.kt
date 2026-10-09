@@ -9,7 +9,6 @@
 
 package app.gyrolet.mpvrx.ui.player
 
-import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -47,7 +46,6 @@ import app.gyrolet.mpvrx.domain.hdr.HdrToysManager
 import app.gyrolet.mpvrx.domain.network.NetworkPlaybackUri
 import app.gyrolet.mpvrx.domain.network.XtreamPlaybackUri
 import app.gyrolet.mpvrx.domain.torrent.TorrentStreamingState
-import app.gyrolet.mpvrx.domain.torrent.formatTorrentSpeed
 import app.gyrolet.mpvrx.domain.syncplay.SyncplayFile
 import app.gyrolet.mpvrx.domain.syncplay.SyncplayPlaybackState
 import app.gyrolet.mpvrx.preferences.AdvancedPreferences
@@ -55,7 +53,6 @@ import app.gyrolet.mpvrx.preferences.AudioChannels
 import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.GesturePreferences
-import app.gyrolet.mpvrx.preferences.MpvConfigOverride
 import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
 import app.gyrolet.mpvrx.preferences.IntroSegmentProvider
@@ -100,7 +97,6 @@ import app.gyrolet.mpvrx.utils.media.SubtitleHashUtils
 import app.gyrolet.mpvrx.utils.media.fileExtension
 import app.gyrolet.mpvrx.utils.media.resolveSubtitleLookupDirectories
 import app.gyrolet.mpvrx.utils.storage.FileTypeUtils
-import `is`.xyz.mpv.FastThumbnails
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toImmutableList
 import kotlinx.coroutines.CoroutineScope
@@ -1638,15 +1634,6 @@ class PlayerViewModel : ViewModel(),
     }
   }
 
-  fun toggleLyricsTranslation() {
-    val current = lyricsUiState.value
-    if (current.isTranslationActive || current.isTranslating) {
-      showOriginalLyrics()
-    } else {
-      translateLyrics()
-    }
-  }
-
   fun showOriginalLyrics() {
     audioPreferences.lyricsAutoTranslate.set(false)
     lyricsTranslateJob?.cancel()
@@ -1760,10 +1747,6 @@ class PlayerViewModel : ViewModel(),
 
   private fun formatEqualizerNumber(value: Float): String =
     String.format(java.util.Locale.US, "%.2f", value).trimEnd('0').trimEnd('.')
-
-  fun updateAlbumArtBounds(rect: android.graphics.Rect?) {
-    albumArtBounds.value = rect
-  }
 
   private val audioVisualizerToggleDebouncer =
     app.gyrolet.mpvrx.ui.player
@@ -2214,7 +2197,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private var ambientPreBatterySaverWarmth: Float = 0.0f
   private var ambientPreBatterySaverFadeCurve: Float = 1.5f
   private var ambientPreBatterySaverOpacity: Float = 1.0f
-  private var batteryReceiver: BroadcastReceiver? = null
   private var androidSystemInfoBridgeJob: Job? = null
 
   // ==================== Post-Processing ===================================
@@ -2806,19 +2788,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     _torrentState.value = state
   }
 
-  fun torrentBufferingText(state: TorrentStreamingState): String =
-    when (state) {
-      is TorrentStreamingState.Idle -> ""
-      is TorrentStreamingState.Connecting -> state.phase
-      is TorrentStreamingState.Streaming -> {
-        val speed = formatTorrentSpeed(state.downloadSpeed)
-        val peers = "${state.peers} peers"
-        val progress = "${(state.bufferProgress * 100).toInt()}%"
-        "$speed | $peers | $progress"
-      }
-      is TorrentStreamingState.Error -> state.message.ifBlank { "Torrent error" }
-    }
-
   private fun currentSyncplayPlaybackState(): SyncplayPlaybackState =
     SyncplayPlaybackState(
       position =
@@ -3290,8 +3259,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     // Upper bound on how long the optimistic thumb may outrun the player.
     const val RELATIVE_SEEK_FEEDBACK_HOLD_MS = 1500L
     const val ABSOLUTE_SEEK_FEEDBACK_HOLD_MS = 3000L
-    const val RELATIVE_SEEK_EOF_GUARD_SECONDS = 0.25
-    const val SEEK_TARGET_TOLERANCE_SECONDS = 0.05
     // The thumb updates immediately; decoder previews only need a modest cadence.
     const val PREVIEW_SEEK_INTERVAL_MS = 200L
     const val FRAME_SEEK_POLL_INTERVAL_MS = 10L
@@ -3306,7 +3273,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       "http", "https", "ftp", "ftps", "rtmp", "rtmps", "rtsp", "rtsps", "mms", "mmsh",
       "srt", "rist", "udp", "tcp", NetworkPlaybackUri.SCHEME, XtreamPlaybackUri.SCHEME,
     )
-    const val NATIVE_LINEAR_HDR_YOUTUBE_BLUR_RADIUS = 100.0
     val MPV_ONLY_PSEUDO_PROTOCOLS =
       setOf("fd", "fdclose", "edl", "memory", "null", "av", "lavf", "archive", "slice", "mf", "hex", "bd", "dvd", "dvb")
     const val PLAYLIST_METADATA_PREFETCH_RADIUS = 8
@@ -5213,10 +5179,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     _seekState.update { it.copy(text = text) }
   }
 
-  fun updateIsSeekingForwards(isForwards: Boolean) {
-    _seekState.update { it.copy(isForwards = isForwards) }
-  }
-
   private fun seekToWithText(
     seekValue: Int,
     text: String?,
@@ -5360,11 +5322,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun displayVolumeSlider() {
     isVolumeSliderShown.value = true
     volumeSliderTimestamp.value = System.currentTimeMillis()
-  }
-
-  fun changeSubtitlePositionTo(position: Int) {
-    previewSubtitlePosition(position.toFloat(), SubtitleGestureTarget.Primary)
-    persistSubtitleGesturePosition(SubtitleGestureTarget.Primary)
   }
 
   /** Keep per-frame movement fractional and defer preference writes until release. */
@@ -6912,13 +6869,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     playerUpdate.value = PlayerUpdates.Shuffle(_shuffleEnabled.value)
   }
 
-  fun shouldRepeatCurrentFile(): Boolean =
-    _repeatMode.value == RepeatMode.ONE ||
-      (_repeatMode.value == RepeatMode.ALL && !PlaybackSession.queue.value.isExplicitQueue)
-
-  fun shouldRepeatPlaylist(): Boolean =
-    _repeatMode.value == RepeatMode.ALL && PlaybackSession.queue.value.isExplicitQueue
-
   // ==================== A-B Loop ====================
 
   fun toggleABLoopExpanded() {
@@ -7421,16 +7371,6 @@ val isBrightnessSliderShown = MutableStateFlow(false)
       fadeCurve = preset.fadeCurve,
       opacity = preset.opacity,
     )
-  }
-
-  fun updateAmbientBatterySaver(enabled: Boolean) {
-    _isAmbientBatterySaver.value = enabled
-    playerPreferences.ambientBatterySaver.set(enabled)
-    if (enabled && _isAmbientEnabled.value) {
-      applyBatterySaverPolicy()
-    } else if (!enabled && ambientWasOnBattery && _isAmbientEnabled.value) {
-      restoreFromBatterySaver()
-    }
   }
 
   private fun applyBatterySaverPolicy() {

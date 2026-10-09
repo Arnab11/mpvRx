@@ -1541,13 +1541,6 @@
   <string name="ui_enable_ass_override">启用 ASS 覆盖</string>
   <string name="ui_filter_presets">滤镜预设</string>
   <string name="ui_yt_dlp_manager">yt-dlp 管理器</string>
-  <string name="ui_quick_quality_selection">快速选择质量</string>
-  <string name="ui_codec_preset">编解码器预设</string>
-  <string name="ui_quick_subtitle_config">快速字幕配置</string>
-  <string name="ui_download_subtitles">下载字幕</string>
-  <string name="ui_fetch_subs_from_stream_sources">从流媒体源获取字幕</string>
-  <string name="ui_auto_generated_captions">自动生成字幕</string>
-  <string name="ui_include_auto_captions_transcripts">包含自动字幕/转录文本</string>
   <string name="ui_install_core">安装核心</string>
   <string name="ui_update_core">更新核心</string>
   <string name="ui_aspect_ratio">宽高比</string>
@@ -1645,7 +1638,6 @@
   <string name="ui_drag_disabled">拖动已禁用</string>
   <string name="ui_buttons_exported_successfully">按钮导出成功</string>
   <string name="ui_anime4k_shaders_options">Anime4K 着色器选项</string>
-  <string name="ui_base_storage_folder">基础存储文件夹</string>
   <string name="ui_script_name">脚本名称</string>
   <string name="ui_please_enter_a_file_name">请输入文件名</string>
   <string name="ui_failed_to_open_output_stream">打开输出流失败</string>
@@ -1729,7 +1721,6 @@
   <string name="oss_fsaf_description">用于文件和目录树操作的存储访问框架辅助工具。</string>
   <string name="oss_truetype_parser_description">读取字体元数据以处理字幕字体。</string>
   <string name="oss_compose_preference_description">设置页面中使用的偏好设置 UI 组件。</string>
-  <string name="oss_lazycolumnscrollbar_description">用于长 Compose 列表的滚动条组件。</string>
   <string name="oss_reorderable_description">用于 Compose 界面的拖放列表排序。</string>
   <string name="oss_seeker_description">用于 Jetpack Compose 的可自定义进度条组件。</string>
   <string name="oss_sora_editor_description">适用于 Android 的强大高效代码编辑器，支持 TextMate 高亮。</string>
@@ -1741,7 +1732,6 @@
   <string name="oss_androidx_documentfile_description">用于文档存储访问的抽象层。</string>
   <string name="oss_androidx_media_description">Android 媒体会话和播放 API。</string>
   <string name="oss_androidx_palette_description">从图像中提取主要和鲜明的调色板。</string>
-  <string name="oss_androidx_preference_description">用于应用偏好设置页面的 UI 和存储。</string>
   <string name="oss_androidx_profile_installer_description">预取类和方法以加快应用启动速度。</string>
   <string name="oss_google_material_description">Material Design 组件和主题库。</string>
   <string name="oss_google_cast_description">用于媒体投屏的 Chromecast 框架。</string>
@@ -1981,7 +1971,6 @@
   <string name="pref_audio_drc_title">动态范围压缩 (DRC)</string>
   <string name="pref_audio_drc_summary">压缩音频动态范围，以增强安静的对白并减弱响亮的声音</string>
   <string name="pref_audio_effects">音频处理</string>
-  <string name="toast_file_not_found">文件已不存在</string>
   <string name="pref_audio_visualizer_style_particle">粒子</string>
   <string name="pref_section_p2p_streaming">P2P 流媒体播放</string>
   <string name="pref_network_summary">P2P 流媒体播放、yt-dlp 管理器</string>
@@ -2175,7 +2164,6 @@
   <string name="ui_switch_to_nightly">切换到 Nightly</string>
   <string name="ui_playback_defaults">播放默认设置</string>
   <string name="ui_maximum_quality">最高画质</string>
-  <string name="ui_automatic">自动</string>
   <string name="ui_checking_yt_dlp">正在检查 yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">未安装 yt-dlp</string>
   <string name="ui_yt_dlp_stable_release">稳定版</string>
@@ -2716,8 +2704,6 @@
   <string name="debug_logs_config_save_failed">无法保存日志。请检查配置文件夹的访问权限或重新选择该文件夹。</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">控制栏隐藏时显示进度条</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">水平滑动快进或快退时，即使播放器控制栏已隐藏也显示进度条。时间提示不受影响.</string>
-  <string name="player_zoom_subtitles_follow">字幕随视频缩放</string>
-  <string name="player_zoom_subtitles_follow_summary">关闭后，字幕大小不受视频缩放影响。</string>
-  <string name="player_zoom_stats_follow">统计信息随视频缩放</string>
-  <string name="player_zoom_stats_follow_summary">适用于统计页面 1–6。关闭后，统计信息保持固定大小。</string>
+  <string name="player_zoom_overlays_follow">播放器 OSD 和字幕随视频缩放</string>
+  <string name="player_zoom_overlays_follow_summary">字幕和统计页面 1–6 随视频缩放。关闭时保持固定大小。</string>
 </resources>

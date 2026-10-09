@@ -423,9 +423,9 @@ object VideoScanUtils : KoinComponent {
     }
   }
 
-  // Formatting utilities
+  // Formatting utilities, shared with MediaFileRepository and MediaLibraryCache
 
-  private fun formatDuration(durationMs: Long): String {
+  internal fun formatDuration(durationMs: Long): String {
     if (durationMs <= 0) return "0s"
 
     val seconds = durationMs / 1000
@@ -440,7 +440,7 @@ object VideoScanUtils : KoinComponent {
     }
   }
 
-  private fun formatFileSize(bytes: Long): String {
+  internal fun formatFileSize(bytes: Long): String {
     if (bytes <= 0) return "0 B"
     val units = arrayOf("B", "KB", "MB", "GB", "TB")
     val digitGroups = (log10(bytes.toDouble()) / log10(1024.0)).toInt()

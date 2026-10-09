@@ -200,44 +200,4 @@ object MusicLibraryScanner {
     }
   }
 
-  suspend fun scanAlbums(context: Context, songs: List<MusicSong>): List<MusicAlbum> = withContext(Dispatchers.IO) {
-    if (songs.isNotEmpty()) {
-      // Group songs by albumId/album title for exact matching
-      songs.filter { it.hasAlbumTag }.groupBy { requireNotNull(it.albumKey) }
-        .map { (albumId, albumSongs) ->
-          val firstSong = albumSongs.first()
-          MusicAlbum(
-            id = albumId,
-            title = firstSong.album,
-            artist = firstSong.artist,
-            songCount = albumSongs.size,
-            year = albumSongs.maxOfOrNull { it.year } ?: 0,
-            albumArtUri = firstSong.albumArtUri,
-            artworkSong = firstSong,
-          )
-        }
-        .sortedBy { it.title.lowercase() }
-    } else {
-      emptyList()
-    }
-  }
-
-  suspend fun scanArtists(context: Context, songs: List<MusicSong>): List<MusicArtist> = withContext(Dispatchers.IO) {
-    if (songs.isNotEmpty()) {
-      songs.groupBy { it.artist.lowercase().trim() }
-        .map { (_, artistSongs) ->
-          val firstSong = artistSongs.first()
-          val albumCount = artistSongs.mapNotNull { it.albumKey }.distinct().size
-          MusicArtist(
-            id = firstSong.artist.hashCode().toLong(),
-            name = firstSong.artist,
-            songCount = artistSongs.size,
-            albumCount = albumCount
-          )
-        }
-        .sortedBy { it.name.lowercase() }
-    } else {
-      emptyList()
-    }
-  }
 }

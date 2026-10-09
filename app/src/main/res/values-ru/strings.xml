@@ -1537,13 +1537,6 @@
   <string name="ui_enable_ass_override">Включить переопределение ASS</string>
   <string name="ui_filter_presets">Предустановки фильтров</string>
   <string name="ui_yt_dlp_manager">Менеджер yt-dlp</string>
-  <string name="ui_quick_quality_selection">Быстрый выбор качества</string>
-  <string name="ui_codec_preset">Предустановка кодека</string>
-  <string name="ui_quick_subtitle_config">Быстрая настройка субтитров</string>
-  <string name="ui_download_subtitles">Скачать субтитры</string>
-  <string name="ui_fetch_subs_from_stream_sources">Получать субтитры из источников потока</string>
-  <string name="ui_auto_generated_captions">Автоматически созданные субтитры</string>
-  <string name="ui_include_auto_captions_transcripts">Включать автосубтитры/расшифровки</string>
   <string name="ui_install_core">Установить ядро</string>
   <string name="ui_update_core">Обновить ядро</string>
   <string name="ui_aspect_ratio">Соотношение сторон</string>
@@ -1641,7 +1634,6 @@
   <string name="ui_drag_disabled">Перетаскивание отключено</string>
   <string name="ui_buttons_exported_successfully">Кнопки успешно экспортированы</string>
   <string name="ui_anime4k_shaders_options">Параметры шейдеров Anime4K</string>
-  <string name="ui_base_storage_folder">Основная папка хранения</string>
   <string name="ui_script_name">Имя скрипта</string>
   <string name="ui_please_enter_a_file_name">Введите имя файла</string>
   <string name="ui_failed_to_open_output_stream">Не удалось открыть выходной поток</string>
@@ -1725,7 +1717,6 @@
   <string name="oss_fsaf_description">Средства Storage Access Framework для операций с файлами и деревьями.</string>
   <string name="oss_truetype_parser_description">Читает метаданные шрифтов для работы со шрифтами субтитров.</string>
   <string name="oss_compose_preference_description">Компоненты интерфейса настроек для экранов параметров.</string>
-  <string name="oss_lazycolumnscrollbar_description">Компонент полосы прокрутки для длинных списков Compose.</string>
   <string name="oss_reorderable_description">Изменение порядка списков перетаскиванием в интерфейсах Compose.</string>
   <string name="oss_seeker_description">Настраиваемый компонент полосы прокрутки для Jetpack Compose.</string>
   <string name="oss_sora_editor_description">Мощный и эффективный редактор кода для Android с подсветкой TextMate.</string>
@@ -1737,7 +1728,6 @@
   <string name="oss_androidx_documentfile_description">Уровень абстракции для доступа к хранилищу документов.</string>
   <string name="oss_androidx_media_description">API Android для медиасеансов и воспроизведения.</string>
   <string name="oss_androidx_palette_description">Извлекает доминирующие и яркие цветовые палитры из изображений.</string>
-  <string name="oss_androidx_preference_description">Интерфейс и хранение данных для экранов настроек приложения.</string>
   <string name="oss_androidx_profile_installer_description">Предварительно загружает классы и методы для ускорения запуска приложения.</string>
   <string name="oss_google_material_description">Компоненты Material Design и библиотека тем.</string>
   <string name="oss_google_cast_description">Фреймворк Chromecast для трансляции медиа.</string>
@@ -1977,7 +1967,6 @@
   <string name="pref_audio_drc_title">Сжатие динамического диапазона (DRC)</string>
   <string name="pref_audio_drc_summary">Сжимать динамический диапазон звука, чтобы усилить тихие диалоги и приглушить громкие звуки</string>
   <string name="pref_audio_effects">Обработка звука</string>
-  <string name="toast_file_not_found">Файл больше не существует</string>
   <string name="pref_audio_visualizer_style_particle">Частицы</string>
   <string name="pref_section_p2p_streaming">P2P-стриминг</string>
   <string name="pref_network_summary">P2P-стриминг и менеджер yt-dlp</string>
@@ -2171,7 +2160,6 @@
   <string name="ui_switch_to_nightly">Перейти на Nightly</string>
   <string name="ui_playback_defaults">Настройки воспроизведения</string>
   <string name="ui_maximum_quality">Максимальное качество</string>
-  <string name="ui_automatic">Автоматически</string>
   <string name="ui_checking_yt_dlp">Проверка yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp не установлен</string>
   <string name="ui_yt_dlp_stable_release">Стабильная версия</string>
@@ -2731,8 +2719,6 @@
   <string name="debug_logs_config_save_failed">Не удалось сохранить журналы. Проверьте доступ к папке конфигурации или выберите её снова.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Показывать полосу перемотки при скрытых элементах управления</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">При горизонтальном свайпе показывать полосу перемотки, даже если элементы управления плеером скрыты. Индикатор времени не изменяется.</string>
-  <string name="player_zoom_subtitles_follow">Масштабировать субтитры с видео</string>
-  <string name="player_zoom_subtitles_follow_summary">Если выключено, размер субтитров не зависит от масштаба видео.</string>
-  <string name="player_zoom_stats_follow">Масштабировать статистику с видео</string>
-  <string name="player_zoom_stats_follow_summary">Для страниц статистики 1–6. Если выключено, размер статистики остаётся постоянным.</string>
+  <string name="player_zoom_overlays_follow">Масштабировать OSD и субтитры с видео</string>
+  <string name="player_zoom_overlays_follow_summary">Субтитры и страницы статистики 1–6 масштабируются вместе с видео. Если выключено, размер остаётся постоянным.</string>
 </resources>

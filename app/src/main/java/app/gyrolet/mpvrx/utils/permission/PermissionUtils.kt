@@ -48,7 +48,6 @@ import java.io.File
  * Simplified storage permission utilities with MANAGE_EXTERNAL_STORAGE support.
  */
 object PermissionUtils {
-  private const val FILE_ACCESS_TAG = "FileAccessRequest"
 
   private var mediaRequestLauncher: ActivityResultLauncher<IntentSenderRequest>? = null
   private var resultOkCallback: () -> Unit = {}
@@ -71,11 +70,6 @@ object PermissionUtils {
       resultCancelledCallback()
     }
   }
-
-  suspend fun requestScopedWriteAccess(
-    context: Context,
-    uris: List<Uri>,
-  ): Boolean = requestWriteAccess(context, uris)
 
   suspend fun requestScopedDeleteAccess(
     context: Context,

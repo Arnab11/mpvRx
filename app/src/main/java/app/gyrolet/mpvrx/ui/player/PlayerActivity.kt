@@ -100,7 +100,6 @@ import app.gyrolet.mpvrx.preferences.AudioPreferences
 import app.gyrolet.mpvrx.preferences.BrowserPreferences
 import app.gyrolet.mpvrx.preferences.DecoderPreferences
 import app.gyrolet.mpvrx.preferences.MpvConfigOverridePolicy
-import app.gyrolet.mpvrx.preferences.MpvConfigControlledFeatures
 import app.gyrolet.mpvrx.preferences.PlayerPreferences
 import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.preferences.VideoSortType
@@ -110,6 +109,7 @@ import app.gyrolet.mpvrx.ui.browser.playlist.isAllVideosPlaylist
 import app.gyrolet.mpvrx.ui.cast.CastMediaSnapshot
 import app.gyrolet.mpvrx.ui.cast.CastPlaybackController
 import app.gyrolet.mpvrx.ui.player.controls.PlayerControls
+import app.gyrolet.mpvrx.ui.player.controls.components.panels.toColorHexString
 import app.gyrolet.mpvrx.ui.player.components.VideoAmbientBackground
 import app.gyrolet.mpvrx.ui.player.components.rememberVideoAmbientFrame
 import app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager
@@ -123,7 +123,6 @@ import app.gyrolet.mpvrx.utils.media.HttpUtils
 import app.gyrolet.mpvrx.utils.media.JellyfinSessionReporter
 import app.gyrolet.mpvrx.utils.media.MediaUtils
 import app.gyrolet.mpvrx.utils.media.fileExtension
-import app.gyrolet.mpvrx.utils.media.resolveSeekMode
 import app.gyrolet.mpvrx.utils.media.M3UParseResult
 import app.gyrolet.mpvrx.utils.media.M3UParser
 import app.gyrolet.mpvrx.utils.media.PlaybackStateEvents
@@ -161,8 +160,6 @@ import org.koin.android.ext.android.inject
 import okhttp3.OkHttpClient
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
-import kotlin.math.abs
-import kotlin.math.pow
 import kotlin.math.roundToInt
 
 private enum class BackgroundPlaybackStartResult {
@@ -1365,9 +1362,8 @@ class PlayerActivity :
           viewModel.videoZoom,
           viewModel.videoPanX,
           viewModel.videoPanY,
-          playerPreferences.subtitlesFollowVideoZoom.changes(),
-          playerPreferences.statsFollowVideoZoom.changes(),
-        ) { _, _, _, _, _ -> Unit }.collect { applyVideoTransform() }
+          playerPreferences.overlaysFollowVideoZoom.changes(),
+        ) { _, _, _, _ -> Unit }.collect { applyVideoTransform() }
       }
     }
   }
@@ -1391,7 +1387,7 @@ class PlayerActivity :
     PlaybackSession.setPropertyFloat("video-pan-x", panX)
     PlaybackSession.setPropertyFloat("video-pan-y", panY)
     applySubtitleZoom()
-    statsZoomController.update(playerPreferences.statsFollowVideoZoom.get(), zoom)
+    statsZoomController.update(playerPreferences.overlaysFollowVideoZoom.get(), zoom)
   }
 
   private fun setupAudioPlayerViewObserver() {
@@ -2149,8 +2145,6 @@ class PlayerActivity :
     viewModel.restartPostProcessingIfActive()
     viewModel.restartAmbientIfActive()
   }
-
-  fun getCurrentPlayableUriForLookup(): String? = currentPlayableUri ?: intent?.dataString
 
   private fun finishStoppedBackgroundPlaybackIfNeeded(): Boolean {
     if (!mpvInitialized || !ownsPlaybackSession() || !isBackgroundPlaybackSessionActive ||
@@ -3910,30 +3904,6 @@ class PlayerActivity :
     }
   }
 
-  /**
-   * Gets the display title for a playlist item URI.
-   * If Room metadata exists for the current playlist, the stored playlist item title wins.
-   *
-   * @param uri The URI to get the title for
-   * @return The display name/title of the file
-   */
-  internal fun getPlaylistItemTitle(uri: Uri): String {
-    getPlaylistItemByUri(uri)?.fileName?.takeIf { it.isNotBlank() }?.let { return it }
-
-    val idx = playlist.indexOf(uri)
-    if (idx != -1 && idx < networkPlaylistTitles.size) {
-      networkPlaylistTitles[idx].takeIf { it.isNotBlank() }?.let { return it }
-    }
-
-    // Try content resolver first for content:// URIs
-    getDisplayNameFromUri(uri)?.let { return it }
-
-    // Extract filename from URL/URI
-    return extractFileNameFromUri(uri)
-  }
-
-  internal fun getPlaylistItemTvgLogo(index: Int): String? = playlistItems.getOrNull(index)?.tvgLogo
-
   private fun getPlaylistItemByIndex(index: Int): PlaylistItemEntity? = playlistItems.getOrNull(index)
 
   private fun getPlaylistItemByUri(uri: Uri): PlaylistItemEntity? {
@@ -4814,28 +4784,7 @@ class PlayerActivity :
 
           // Update recently played with the parsed video title, duration, and file size
           val filePath =
-            when (uri.scheme) {
-              "file" -> uri.path ?: uri.toString()
-              "content" -> {
-                contentResolver
-                  .query(
-                    uri,
-                    arrayOf(MediaStore.MediaColumns.DATA),
-                    null,
-                    null,
-                    null,
-                  )?.use { cursor ->
-                    if (cursor.moveToFirst()) {
-                      val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
-                      if (columnIndex != -1) cursor.getString(columnIndex) else null
-                    } else {
-                      null
-                    }
-                  } ?: uri.toString()
-              }
-
-              else -> uri.toString()
-            }
+            filePathForUri(uri)
 
           // Get duration and file size from MPV on Main thread
           var updatedDuration = 0L
@@ -4982,10 +4931,6 @@ class PlayerActivity :
     if (recordMpvStylePropertyIfChanged(name, value)) PlaybackSession.setPropertyInt(name, value)
   }
 
-  private fun setMpvStyleFloatIfChanged(name: String, value: Float) {
-    if (recordMpvStylePropertyIfChanged(name, value)) PlaybackSession.setPropertyFloat(name, value)
-  }
-
   private fun setMpvStyleBooleanIfChanged(name: String, value: Boolean) {
     if (recordMpvStylePropertyIfChanged(name, value)) PlaybackSession.setPropertyBoolean(name, value)
   }
@@ -4994,16 +4939,23 @@ class PlayerActivity :
     if (recordMpvStylePropertyIfChanged(name, value)) PlaybackSession.setPropertyString(name, value)
   }
 
-  /**
-   * Helper extension function to convert Int color to hex string for MPV
-   */
-  private fun Int.toColorHexString(): String {
-    val a = (this shr 24 and 0xFF).toString(16).padStart(2, '0')
-    val r = (this shr 16 and 0xFF).toString(16).padStart(2, '0')
-    val g = (this shr 8 and 0xFF).toString(16).padStart(2, '0')
-    val b = (this and 0xFF).toString(16).padStart(2, '0')
-    return "#$a$r$g$b".uppercase()
-  }
+  /** Filesystem path for file:// and MediaStore content:// URIs, otherwise the URI string. */
+  private fun filePathForUri(uri: Uri): String =
+    when (uri.scheme) {
+      "file" -> uri.path ?: uri.toString()
+      "content" ->
+        contentResolver
+          .query(uri, arrayOf(MediaStore.MediaColumns.DATA), null, null, null)
+          ?.use { cursor ->
+            if (cursor.moveToFirst()) {
+              val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
+              if (columnIndex != -1) cursor.getString(columnIndex) else null
+            } else {
+              null
+            }
+          } ?: uri.toString()
+      else -> uri.toString()
+    }
 
   private fun canIssueMpvCommands(): Boolean = mpvInitialized && !player.isExiting && !isDestroyed
 
@@ -5359,33 +5311,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
       }
 
       val filePath =
-        when (uri.scheme) {
-          "file" -> {
-            uri.path ?: uri.toString()
-          }
-
-          "content" -> {
-            contentResolver
-              .query(
-                uri,
-                arrayOf(MediaStore.MediaColumns.DATA),
-                null,
-                null,
-                null,
-              )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                  val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
-                  if (columnIndex != -1) cursor.getString(columnIndex) else null
-                } else {
-                  null
-                }
-              } ?: uri.toString()
-          }
-
-          else -> {
-            uri.toString()
-          }
-        }
+        filePathForUri(uri)
 
       val launchSource =
         when {
@@ -7630,28 +7556,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
       lifecycleScope.launch(Dispatchers.IO) {
         val playlistItem = getPlaylistItemByUri(uri)
         val filePath =
-          playlistItem?.filePath ?: when (uri.scheme) {
-            "file" -> uri.path ?: uri.toString()
-            "content" -> {
-              contentResolver
-                .query(
-                  uri,
-                  arrayOf(MediaStore.MediaColumns.DATA),
-                  null,
-                  null,
-                  null,
-                )?.use { cursor ->
-                  if (cursor.moveToFirst()) {
-                    val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
-                    if (columnIndex != -1) cursor.getString(columnIndex) else null
-                  } else {
-                    null
-                  }
-                } ?: uri.toString()
-            }
-
-            else -> uri.toString()
-          }
+          playlistItem?.filePath ?: filePathForUri(uri)
 
         runCatching {
           playlistRepository.updatePlayHistory(id, filePath)
@@ -7876,33 +7781,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
   ) {
     runCatching {
       val filePath =
-        when (uri.scheme) {
-          "file" -> {
-            uri.path ?: uri.toString()
-          }
-
-          "content" -> {
-            contentResolver
-              .query(
-                uri,
-                arrayOf(MediaStore.MediaColumns.DATA),
-                null,
-                null,
-                null,
-              )?.use { cursor ->
-                if (cursor.moveToFirst()) {
-                  val columnIndex = cursor.getColumnIndex(MediaStore.MediaColumns.DATA)
-                  if (columnIndex != -1) cursor.getString(columnIndex) else null
-                } else {
-                  null
-                }
-              } ?: uri.toString()
-          }
-
-          else -> {
-            uri.toString()
-          }
-        }
+        filePathForUri(uri)
 
       val isGenericStream =
         name.isBlank() ||
@@ -8496,11 +8375,6 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     }.onFailure { error ->
       Log.e(TAG, "Failed to auto-generate playlist", error)
     }.getOrDefault(false)
-
-  /**
-   * Check if the current playlist is an M3U playlist (sourced from database).
-   */
-  fun isCurrentPlaylistM3U(): Boolean = isM3uPlaylist
 
   private suspend fun loadDynamicM3uPlaylist(
     uriString: String,

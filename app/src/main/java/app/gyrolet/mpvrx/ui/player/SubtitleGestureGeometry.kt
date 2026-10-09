@@ -54,6 +54,9 @@ fun findSubtitleGestureTarget(
         .thenBy { abs(y - (it.top + it.bottom) / 2f) },
     )
 
+// Android's ICU regex rejects an unescaped '}', so both braces must be escaped.
+private val SUBTITLE_MARKUP_REGEX = Regex("<[^>]*>|\\{[^}]*\\}")
+
 /** Use the rendered height, not a device-dependent number of pixels per percentage point. */
 fun draggedSubtitlePosition(start: Float, deltaY: Float, positionHeight: Float): Float =
   if (positionHeight > 0f && deltaY.isFinite()) {
@@ -78,7 +81,7 @@ fun estimateSubtitleGestureRegion(
   fontReferenceHeight: Float = screenHeight,
 ): SubtitleGestureRegion? {
   if (trackId <= 0 || text.isBlank() || screenWidth <= 0f || screenHeight <= 0f || renderHeight <= 0f) return null
-  val plainText = text.replace(Regex("<[^>]*>|\\{[^}]*}"), "").replace("\\N", "\n")
+  val plainText = text.replace(SUBTITLE_MARKUP_REGEX, "").replace("\\N", "\n")
   if (plainText.isBlank()) return null
   val pixelScale = fontReferenceHeight / 720f
   val charWidth = (fontSize * scale * pixelScale * 0.55f).coerceAtLeast(1f)

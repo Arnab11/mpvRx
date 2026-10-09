@@ -761,24 +761,6 @@ class MediaPlaybackService :
     PlaybackSession.playPrevious()?.let(::applySessionItem) ?: refreshTransportControls()
   }
 
-  private fun handleMediaPreviousAction() {
-    when (gesturePreferences.mediaPreviousGesture.get()) {
-      SingleActionGesture.Seek -> seekByConfiguredInterval(direction = -1)
-      SingleActionGesture.PlayPause -> togglePlaybackFromNotification()
-      SingleActionGesture.Custom -> PlaybackSession.command("keypress", CustomKeyCodes.MediaPrevious.keyCode)
-      SingleActionGesture.None -> Unit
-    }
-  }
-
-  private fun handleMediaNextAction() {
-    when (gesturePreferences.mediaNextGesture.get()) {
-      SingleActionGesture.Seek -> seekByConfiguredInterval(direction = 1)
-      SingleActionGesture.PlayPause -> togglePlaybackFromNotification()
-      SingleActionGesture.Custom -> PlaybackSession.command("keypress", CustomKeyCodes.MediaNext.keyCode)
-      SingleActionGesture.None -> Unit
-    }
-  }
-
   private fun handleMediaPlayAction(shouldPlay: Boolean) {
     when (gesturePreferences.mediaPlayGesture.get()) {
       SingleActionGesture.PlayPause -> {
@@ -791,15 +773,6 @@ class MediaPlaybackService :
       SingleActionGesture.None,
       -> Unit
     }
-  }
-
-  private fun seekByConfiguredInterval(direction: Int) {
-    val duration = PlaybackSession.getPropertyInt("duration") ?: 0
-    val seconds = gesturePreferences.doubleTapToSeekDuration.get() * direction
-    val shouldUsePreciseSeeking = playerPreferences.usePreciseSeeking.get() || duration < 120
-    val seekMode = if (shouldUsePreciseSeeking) "relative+exact" else "relative+keyframes"
-    PlaybackSession.command("seek", seconds.toString(), seekMode)
-    refreshTransportControls()
   }
 
   private fun applySessionItem(item: PlaybackItem) {

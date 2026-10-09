@@ -299,22 +299,8 @@ class MusicLibraryViewModel : ViewModel(), KoinComponent {
     browserPreferences.musicSortField.set(field)
   }
 
-  fun toggleSortOrder() {
-    val nextOrder = if (sortOrder.value == MusicSortOrder.ASCENDING) {
-      MusicSortOrder.DESCENDING
-    } else {
-      MusicSortOrder.ASCENDING
-    }
-    browserPreferences.musicSortOrder.set(nextOrder)
-  }
-
   fun setSortOrder(order: MusicSortOrder) {
     browserPreferences.musicSortOrder.set(order)
-  }
-
-  fun toggleViewMode() {
-    val nextMode = if (viewMode.value == MusicViewMode.GRID) MusicViewMode.LIST else MusicViewMode.GRID
-    browserPreferences.musicViewMode.set(nextMode)
   }
 
   fun setViewMode(mode: MusicViewMode) {

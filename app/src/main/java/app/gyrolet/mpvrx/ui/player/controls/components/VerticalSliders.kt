@@ -52,11 +52,6 @@ fun percentage(
   range: ClosedFloatingPointRange<Float>,
 ): Float = ((value - range.start) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
 
-fun percentage(
-  value: Int,
-  range: ClosedRange<Int>,
-): Float = ((value - range.start - 0f) / (range.endInclusive - range.start)).coerceIn(0f, 1f)
-
 @Composable
 fun VerticalSlider(
   value: Float,
@@ -116,55 +111,23 @@ fun VerticalSlider(
   colorStart: Color = MaterialTheme.colorScheme.primaryContainer,
   colorEnd: Color = MaterialTheme.colorScheme.primary,
 ) {
-  val coercedValue = value.coerceIn(range)
-  val gradientBrush = remember(colorStart, colorEnd) { Brush.verticalGradient(listOf(colorStart, colorEnd)) }
-  Box(
-    modifier =
-      modifier
-        .height(130.dp)
-        .width(36.dp)
-        .clip(AppShapeScale.largeIncreased)
-        .background(Color.Black.copy(alpha = 0.3f)),
-    contentAlignment = Alignment.BottomCenter,
-  ) {
-    val targetHeight by animateFloatAsState(
-      percentage(coercedValue, range),
-      animationSpec = spring(dampingRatio = 0.75f, stiffness = 300f),
-      label = "vsliderheight",
-    )
-    Box(
-      Modifier
-        .fillMaxWidth()
-        .fillMaxHeight(targetHeight)
-        .clip(AppShapeScale.largeIncreased)
-        .background(gradientBrush),
-    )
-    if (overflowRange != null && overflowValue != null) {
-      val overflowHeight by animateFloatAsState(
-        percentage(overflowValue, overflowRange),
-        label = "vslideroverflowheight",
-      )
-      Box(
-        Modifier
-          .fillMaxWidth()
-          .fillMaxHeight(overflowHeight)
-          .clip(AppShapeScale.largeIncreased)
-          .background(MaterialTheme.colorScheme.errorContainer),
-      )
-    }
-  }
+  VerticalSlider(
+    value = value.toFloat(),
+    range = range.start.toFloat()..range.endInclusive.toFloat(),
+    modifier = modifier,
+    overflowValue = overflowValue?.toFloat(),
+    overflowRange = overflowRange?.let { it.start.toFloat()..it.endInclusive.toFloat() },
+    colorStart = colorStart,
+    colorEnd = colorEnd,
+  )
 }
 
+/** Liquid-glass (or translucent) panel shared by the brightness and volume sliders. */
 @Composable
-fun BrightnessSlider(
-  brightness: Float,
-  positiveRange: ClosedFloatingPointRange<Float>,
-  negativeRange: ClosedFloatingPointRange<Float>,
-  modifier: Modifier = Modifier,
+private fun GlassSliderPanel(
+  modifier: Modifier,
+  content: @Composable ColumnScope.() -> Unit,
 ) {
-  val coercedBrightness = brightness.coerceIn(-negativeRange.endInclusive, positiveRange.endInclusive)
-  val percentInt = (coercedBrightness * 100).toInt()
-  val percentText = remember(percentInt) { "$percentInt%" }
   val appearancePreferences = koinInject<AppearancePreferences>()
   val enableLiquidGlass by appearancePreferences.liquidGlassEnabled.collectAsState()
   val glassSettings = rememberLiquidGlassSettings()
@@ -202,33 +165,47 @@ fun BrightnessSlider(
       modifier = Modifier.padding(horizontal = 14.dp, vertical = 20.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-    ) {
-      Text(
-        text = percentText,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.widthIn(min = 48.dp),
-      )
-      VerticalSlider(
-        coercedBrightness.coerceIn(0f, positiveRange.endInclusive),
-        positiveRange,
-        overflowValue = (-coercedBrightness).coerceIn(0f, negativeRange.endInclusive),
-        overflowRange = negativeRange,
-        colorStart = MaterialTheme.colorScheme.primaryContainer,
-        colorEnd = MaterialTheme.colorScheme.primary,
-      )
-      Icon(
-        when {
-          coercedBrightness < 0 -> Icons.RoundedFilled.Brightness6
-          percentage(coercedBrightness, positiveRange) <= 0.3f -> Icons.RoundedFilled.BrightnessLow
-          percentage(coercedBrightness, positiveRange) <= 0.6f -> Icons.RoundedFilled.BrightnessMedium
-          else -> Icons.RoundedFilled.BrightnessHigh
-        },
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-      )
-    }
+      content = content,
+    )
+  }
+}
+
+@Composable
+fun BrightnessSlider(
+  brightness: Float,
+  positiveRange: ClosedFloatingPointRange<Float>,
+  negativeRange: ClosedFloatingPointRange<Float>,
+  modifier: Modifier = Modifier,
+) {
+  val coercedBrightness = brightness.coerceIn(-negativeRange.endInclusive, positiveRange.endInclusive)
+  val percentInt = (coercedBrightness * 100).toInt()
+  val percentText = remember(percentInt) { "$percentInt%" }
+  GlassSliderPanel(modifier) {
+    Text(
+      text = percentText,
+      style = MaterialTheme.typography.titleSmall,
+      fontWeight = FontWeight.Bold,
+      textAlign = TextAlign.Center,
+      modifier = Modifier.widthIn(min = 48.dp),
+    )
+    VerticalSlider(
+      coercedBrightness.coerceIn(0f, positiveRange.endInclusive),
+      positiveRange,
+      overflowValue = (-coercedBrightness).coerceIn(0f, negativeRange.endInclusive),
+      overflowRange = negativeRange,
+      colorStart = MaterialTheme.colorScheme.primaryContainer,
+      colorEnd = MaterialTheme.colorScheme.primary,
+    )
+    Icon(
+      when {
+        coercedBrightness < 0 -> Icons.RoundedFilled.Brightness6
+        percentage(coercedBrightness, positiveRange) <= 0.3f -> Icons.RoundedFilled.BrightnessLow
+        percentage(coercedBrightness, positiveRange) <= 0.6f -> Icons.RoundedFilled.BrightnessMedium
+        else -> Icons.RoundedFilled.BrightnessHigh
+      },
+      contentDescription = null,
+      tint = MaterialTheme.colorScheme.primary,
+    )
   }
 }
 
@@ -243,76 +220,38 @@ fun VolumeSlider(
   displayAsPercentage: Boolean = false,
 ) {
   val percentage = volumePercentage.coerceIn(0, 100)
-  val appearancePreferences = koinInject<AppearancePreferences>()
-  val enableLiquidGlass by appearancePreferences.liquidGlassEnabled.collectAsState()
-  val glassSettings = rememberLiquidGlassSettings()
-  val playerBackdrop = LocalKyantPlayerBackdrop.current ?: rememberLayerBackdrop()
-  val sliderShape = AppShapeScale.extraLarge
-  val density = LocalDensity.current
-  val glassModifier = if (enableLiquidGlass) {
-    modifier
-      .clip(sliderShape)
-      .drawBackdrop(
-        backdrop = playerBackdrop,
-        shape = { sliderShape },
-        effects = {
-          liquidGlassEffects(
-            glassSettings,
-            with(density) { 16.dp.toPx() },
-            with(density) { 16.dp.toPx() },
-            with(density) { 24.dp.toPx() },
-          )
-        },
-        highlight = { glassSettings.highlight(Highlight.Default) },
-        shadow = { glassSettings.shadow(Shadow(color = Color.Black.copy(alpha = 0.25f), radius = 12.dp)) },
-        innerShadow = { glassSettings.innerShadow(InnerShadow(color = Color.White.copy(alpha = 0.15f), radius = 2.dp)) },
-      )
-  } else {
-    modifier
-  }
-  Surface(
-    modifier = glassModifier,
-    shape = sliderShape,
-    color = if (enableLiquidGlass) Color.Black.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.5f),
-    contentColor = Color.White,
-  ) {
-    Column(
-      modifier = Modifier.padding(horizontal = 14.dp, vertical = 20.dp),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
-    ) {
-      val boostVolume = mpvVolume - 100
-      val textStr = getVolumeSliderText(volume, mpvVolume, boostVolume, percentage, displayAsPercentage)
-      val volumeText = remember(textStr, displayAsPercentage) {
-        textStr + if (displayAsPercentage && !textStr.contains('%')) "%" else ""
-      }
-      Text(
-        text = volumeText,
-        style = MaterialTheme.typography.titleSmall,
-        fontWeight = FontWeight.Bold,
-        textAlign = TextAlign.Center,
-        modifier = Modifier.widthIn(min = 48.dp),
-      )
-      VerticalSlider(
-        if (displayAsPercentage) percentage else volume,
-        if (displayAsPercentage) 0..100 else range,
-        overflowValue = boostVolume,
-        overflowRange = boostRange,
-        colorStart = MaterialTheme.colorScheme.primaryContainer,
-        colorEnd = MaterialTheme.colorScheme.primary,
-      )
-      Icon(
-        when (percentage) {
-          0 -> Icons.RoundedFilled.VolumeOff
-          in 0..30 -> Icons.RoundedFilled.VolumeMute
-          in 30..60 -> Icons.RoundedFilled.VolumeDown
-          in 60..100 -> Icons.RoundedFilled.VolumeUp
-          else -> Icons.RoundedFilled.VolumeOff
-        },
-        contentDescription = null,
-        tint = MaterialTheme.colorScheme.primary,
-      )
+  GlassSliderPanel(modifier) {
+    val boostVolume = mpvVolume - 100
+    val textStr = getVolumeSliderText(volume, mpvVolume, boostVolume, percentage, displayAsPercentage)
+    val volumeText = remember(textStr, displayAsPercentage) {
+      textStr + if (displayAsPercentage && !textStr.contains('%')) "%" else ""
     }
+    Text(
+      text = volumeText,
+      style = MaterialTheme.typography.titleSmall,
+      fontWeight = FontWeight.Bold,
+      textAlign = TextAlign.Center,
+      modifier = Modifier.widthIn(min = 48.dp),
+    )
+    VerticalSlider(
+      if (displayAsPercentage) percentage else volume,
+      if (displayAsPercentage) 0..100 else range,
+      overflowValue = boostVolume,
+      overflowRange = boostRange,
+      colorStart = MaterialTheme.colorScheme.primaryContainer,
+      colorEnd = MaterialTheme.colorScheme.primary,
+    )
+    Icon(
+      when (percentage) {
+        0 -> Icons.RoundedFilled.VolumeOff
+        in 0..30 -> Icons.RoundedFilled.VolumeMute
+        in 30..60 -> Icons.RoundedFilled.VolumeDown
+        in 60..100 -> Icons.RoundedFilled.VolumeUp
+        else -> Icons.RoundedFilled.VolumeOff
+      },
+      contentDescription = null,
+      tint = MaterialTheme.colorScheme.primary,
+    )
   }
 }
 

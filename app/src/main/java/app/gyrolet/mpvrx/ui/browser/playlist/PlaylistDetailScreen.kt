@@ -33,7 +33,6 @@ import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -138,7 +137,7 @@ import sh.calvin.reorderable.rememberReorderableLazyListState
 data class PlaylistDetailScreen(
   val playlistId: Int,
 ) : Screen {
-  @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
+  @OptIn(ExperimentalMaterial3Api::class)
   @Composable
   override fun Content() {
     val context = LocalContext.current

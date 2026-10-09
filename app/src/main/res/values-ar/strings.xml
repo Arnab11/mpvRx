@@ -1547,13 +1547,6 @@
   <string name="ui_enable_ass_override">تفعيل تجاوز ASS</string>
   <string name="ui_filter_presets">إعدادات الفلاتر المسبقة</string>
   <string name="ui_yt_dlp_manager">مدير yt-dlp</string>
-  <string name="ui_quick_quality_selection">اختيار سريع للجودة</string>
-  <string name="ui_codec_preset">إعداد ترميز مسبق</string>
-  <string name="ui_quick_subtitle_config">إعداد سريع للترجمة</string>
-  <string name="ui_download_subtitles">تنزيل الترجمات</string>
-  <string name="ui_fetch_subs_from_stream_sources">جلب الترجمات من مصادر البث</string>
-  <string name="ui_auto_generated_captions">تسميات توضيحية منشأة تلقائيًا</string>
-  <string name="ui_include_auto_captions_transcripts">تضمين التسميات التلقائية/النصوص</string>
   <string name="ui_install_core">تثبيت النواة</string>
   <string name="ui_update_core">تحديث النواة</string>
   <string name="ui_aspect_ratio">نسبة العرض إلى الارتفاع</string>
@@ -1651,7 +1644,6 @@
   <string name="ui_drag_disabled">السحب معطّل</string>
   <string name="ui_buttons_exported_successfully">تم تصدير الأزرار بنجاح</string>
   <string name="ui_anime4k_shaders_options">خيارات تأثيرات Anime4K</string>
-  <string name="ui_base_storage_folder">مجلد التخزين الأساسي</string>
   <string name="ui_script_name">اسم البرنامج النصي</string>
   <string name="ui_please_enter_a_file_name">يُرجى إدخال اسم ملف</string>
   <string name="ui_failed_to_open_output_stream">تعذّر فتح تدفق الإخراج</string>
@@ -1735,7 +1727,6 @@
   <string name="oss_fsaf_description">أدوات مساعدة لإطار الوصول إلى التخزين لعمليات الملفات والأشجار.</string>
   <string name="oss_truetype_parser_description">قراءة بيانات الخطوط الوصفية للتعامل مع خطوط الترجمة.</string>
   <string name="oss_compose_preference_description">مكوّنات واجهة التفضيلات المستخدمة في شاشات الإعدادات.</string>
-  <string name="oss_lazycolumnscrollbar_description">مكوّن شريط تمرير لقوائم Compose الطويلة.</string>
   <string name="oss_reorderable_description">إعادة ترتيب القوائم بالسحب والإفلات لواجهات Compose.</string>
   <string name="oss_seeker_description">مكوّن شريط تقدم قابل للتخصيص لـ Jetpack Compose.</string>
   <string name="oss_sora_editor_description">محرر شفرة قوي وفعّال لـ Android مع تمييز TextMate.</string>
@@ -1747,7 +1738,6 @@
   <string name="oss_androidx_documentfile_description">طبقة تجريد للوصول إلى تخزين المستندات.</string>
   <string name="oss_androidx_media_description">واجهات جلسات الوسائط والتشغيل في Android.</string>
   <string name="oss_androidx_palette_description">يستخرج لوحات ألوان مهيمنة ونابضة بالحياة من الصور.</string>
-  <string name="oss_androidx_preference_description">واجهة وتخزين لشاشات تفضيلات التطبيق.</string>
   <string name="oss_androidx_profile_installer_description">يجلب الفئات والطرائق مسبقًا لتسريع بدء تشغيل التطبيق.</string>
   <string name="oss_google_material_description">مكوّنات Material Design ومكتبة السمات.</string>
   <string name="oss_google_cast_description">إطار Chromecast لبث الوسائط.</string>
@@ -1989,7 +1979,6 @@
   <string name="pref_audio_drc_title">ضغط المدى الديناميكي (DRC)</string>
   <string name="pref_audio_drc_summary">ضغط النطاق الديناميكي للصوت لتعزيز الحوار الهادئ وتخفيف الأصوات العالية</string>
   <string name="pref_audio_effects">معالجة الصوت</string>
-  <string name="toast_file_not_found">الملف لم يعد موجودًا</string>
   <string name="pref_audio_visualizer_style_particle">جسيمات</string>
   <string name="pref_section_p2p_streaming">بث P2P</string>
   <string name="pref_network_summary">بث P2P ومدير yt-dlp</string>
@@ -2183,7 +2172,6 @@
   <string name="ui_switch_to_nightly">التبديل إلى الإصدار الليلي</string>
   <string name="ui_playback_defaults">إعدادات التشغيل الافتراضية</string>
   <string name="ui_maximum_quality">أقصى جودة</string>
-  <string name="ui_automatic">تلقائي</string>
   <string name="ui_checking_yt_dlp">جارٍ التحقق من yt-dlp</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp غير مثبت</string>
   <string name="ui_yt_dlp_stable_release">الإصدار المستقر</string>
@@ -2743,8 +2731,6 @@
   <string name="debug_logs_config_save_failed">تعذر حفظ السجلات. تحقق من الوصول إلى مجلد الإعدادات أو اختره مرة أخرى.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">إظهار شريط التقدم عند إخفاء عناصر التحكم</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">أثناء السحب أفقيًا للتقديم أو الإرجاع، أظهر شريط التقدم حتى عند إخفاء عناصر تحكم المشغّل. لا يتأثر مؤشر الوقت.</string>
-  <string name="player_zoom_subtitles_follow">تكبير الترجمة مع الفيديو</string>
-  <string name="player_zoom_subtitles_follow_summary">عند إيقافه يبقى حجم الترجمة مستقلاً عن تكبير الفيديو.</string>
-  <string name="player_zoom_stats_follow">تكبير الإحصاءات مع الفيديو</string>
-  <string name="player_zoom_stats_follow_summary">ينطبق على صفحات الإحصاءات 1–6. عند إيقافه يبقى حجم الإحصاءات ثابتاً.</string>
+  <string name="player_zoom_overlays_follow">تكبير واجهة المشغل والترجمة مع الفيديو</string>
+  <string name="player_zoom_overlays_follow_summary">تتغير الترجمة وصفحات الإحصاءات 1–6 مع تكبير الفيديو. عند إيقافه يبقى حجمها ثابتاً.</string>
 </resources>

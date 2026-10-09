@@ -1516,13 +1516,6 @@
   <string name="ui_enable_ass_override">ASS上書きを有効化</string>
   <string name="ui_filter_presets">フィルタープリセット</string>
   <string name="ui_yt_dlp_manager">yt-dlpマネージャー</string>
-  <string name="ui_quick_quality_selection">画質をクイック選択</string>
-  <string name="ui_codec_preset">コーデックプリセット</string>
-  <string name="ui_quick_subtitle_config">字幕のクイック設定</string>
-  <string name="ui_download_subtitles">字幕をダウンロード</string>
-  <string name="ui_fetch_subs_from_stream_sources">ストリームソースから字幕を取得</string>
-  <string name="ui_auto_generated_captions">自動生成字幕</string>
-  <string name="ui_include_auto_captions_transcripts">自動字幕／文字起こしを含める</string>
   <string name="ui_install_core">コアをインストール</string>
   <string name="ui_update_core">コアを更新</string>
   <string name="ui_aspect_ratio">アスペクト比</string>
@@ -1620,7 +1613,6 @@
   <string name="ui_drag_disabled">ドラッグ無効</string>
   <string name="ui_buttons_exported_successfully">ボタンをエクスポートしました</string>
   <string name="ui_anime4k_shaders_options">Anime4Kシェーダーのオプション</string>
-  <string name="ui_base_storage_folder">基本ストレージフォルダー</string>
   <string name="ui_script_name">スクリプト名</string>
   <string name="ui_please_enter_a_file_name">ファイル名を入力してください</string>
   <string name="ui_failed_to_open_output_stream">出力ストリームを開けませんでした</string>
@@ -1704,7 +1696,6 @@
   <string name="oss_fsaf_description">ファイルおよびツリー操作向けStorage Access Frameworkヘルパー。</string>
   <string name="oss_truetype_parser_description">字幕フォント処理のためにフォントメタデータを読み取ります。</string>
   <string name="oss_compose_preference_description">設定画面で使用する設定UIコンポーネント。</string>
-  <string name="oss_lazycolumnscrollbar_description">長いComposeリスト向けスクロールバーコンポーネント。</string>
   <string name="oss_reorderable_description">Compose画面向けドラッグ＆ドロップによるリスト並べ替え。</string>
   <string name="oss_seeker_description">Jetpack Compose向けカスタマイズ可能なシークバーコンポーネント。</string>
   <string name="oss_sora_editor_description">TextMateハイライト対応の高機能で効率的なAndroidコードエディター。</string>
@@ -1716,7 +1707,6 @@
   <string name="oss_androidx_documentfile_description">ドキュメントストレージアクセスの抽象化レイヤー。</string>
   <string name="oss_androidx_media_description">Androidのメディアセッションおよび再生API。</string>
   <string name="oss_androidx_palette_description">画像から支配的で鮮やかなカラーパレットを抽出します。</string>
-  <string name="oss_androidx_preference_description">アプリ設定画面向けUIとストレージ。</string>
   <string name="oss_androidx_profile_installer_description">アプリ起動を高速化するためクラスとメソッドを事前取得します。</string>
   <string name="oss_google_material_description">Material Designコンポーネントとテーマライブラリ。</string>
   <string name="oss_google_cast_description">メディアキャスト向けChromecastフレームワーク。</string>
@@ -1956,7 +1946,6 @@
   <string name="pref_audio_drc_title">ダイナミックレンジ压縮 (DRC)</string>
   <string name="pref_audio_drc_summary">オーディオのダイナミックレンジを圧縮し、静かな台詞を強調して大きな音を軽めます</string>
   <string name="pref_audio_effects">音声処理</string>
-  <string name="toast_file_not_found">ファイルはもう存在しません</string>
   <string name="pref_audio_visualizer_style_particle">粒子</string>
   <string name="pref_section_p2p_streaming">P2P ストリーミング</string>
   <string name="pref_network_summary">P2P ストリーミング、yt-dlpマネージャー</string>
@@ -2150,7 +2139,6 @@
   <string name="ui_switch_to_nightly">Nightly に切り替え</string>
   <string name="ui_playback_defaults">再生の既定値</string>
   <string name="ui_maximum_quality">最大画質</string>
-  <string name="ui_automatic">自動</string>
   <string name="ui_checking_yt_dlp">yt-dlp を確認中</string>
   <string name="ui_yt_dlp_not_installed">yt-dlp はインストールされていません</string>
   <string name="ui_yt_dlp_stable_release">安定版</string>
@@ -2710,8 +2698,6 @@
   <string name="debug_logs_config_save_failed">ログを保存できませんでした。設定フォルダへのアクセスを確認するか、再選択してください。</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">操作ボタンが非表示でもシークバーを表示</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">左右にスワイプしてシークするとき、プレーヤーの操作ボタンが非表示でもシークバーを表示します。時間表示には影響しません。</string>
-  <string name="player_zoom_subtitles_follow">動画と一緒に字幕を拡大</string>
-  <string name="player_zoom_subtitles_follow_summary">オフにすると字幕のサイズは動画のズームに影響されません。</string>
-  <string name="player_zoom_stats_follow">動画と一緒に統計を拡大</string>
-  <string name="player_zoom_stats_follow_summary">統計ページ1〜6に適用します。オフにすると統計のサイズは固定されます。</string>
+  <string name="player_zoom_overlays_follow">動画と一緒にプレーヤーOSDと字幕を拡大</string>
+  <string name="player_zoom_overlays_follow_summary">字幕と統計ページ1〜6が動画のズームに合わせて拡大します。オフにするとサイズは固定されます。</string>
 </resources>

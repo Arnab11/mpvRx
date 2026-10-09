@@ -9,8 +9,6 @@
 
 package app.gyrolet.mpvrx.ui.player.controls.components.sheets
 
-import androidx.compose.animation.Crossfade
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
@@ -116,8 +114,7 @@ private fun ZoomVideoSheet(
   modifier: Modifier = Modifier,
 ) {
   val preferences = koinInject<PlayerPreferences>()
-  val subtitlesFollowZoom by preferences.subtitlesFollowVideoZoom.collectAsState()
-  val statsFollowZoom by preferences.statsFollowVideoZoom.collectAsState()
+  val overlaysFollowZoom by preferences.overlaysFollowVideoZoom.collectAsState()
   val isDefault = zoom == defaultZoom
   val isZero = zoom == 0f
 
@@ -224,16 +221,10 @@ private fun ZoomVideoSheet(
       }
 
       ZoomOverlaySwitch(
-        title = stringResource(R.string.player_zoom_subtitles_follow),
-        summary = stringResource(R.string.player_zoom_subtitles_follow_summary),
-        checked = subtitlesFollowZoom,
-        onCheckedChange = { preferences.subtitlesFollowVideoZoom.set(it) },
-      )
-      ZoomOverlaySwitch(
-        title = stringResource(R.string.player_zoom_stats_follow),
-        summary = stringResource(R.string.player_zoom_stats_follow_summary),
-        checked = statsFollowZoom,
-        onCheckedChange = { preferences.statsFollowVideoZoom.set(it) },
+        title = stringResource(R.string.player_zoom_overlays_follow),
+        summary = stringResource(R.string.player_zoom_overlays_follow_summary),
+        checked = overlaysFollowZoom,
+        onCheckedChange = { preferences.overlaysFollowVideoZoom.set(it) },
       )
 
       // Action buttons

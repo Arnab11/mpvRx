@@ -44,8 +44,10 @@ class StatsZoomController(private val filesDir: File) {
       }
       originalOptions = null
     } else {
-      val options = baseMetrics.entries.joinToString(",") { (key, value) -> "stats-$key=${value * scale}" }
-      PlaybackSession.command("change-list", "script-opts", "append", options)
+      // `append` takes exactly one key=value; commas would end up inside the value.
+      baseMetrics.forEach { (key, value) ->
+        PlaybackSession.command("change-list", "script-opts", "append", "stats-$key=${value * scale}")
+      }
     }
     lastScale = scale
   }

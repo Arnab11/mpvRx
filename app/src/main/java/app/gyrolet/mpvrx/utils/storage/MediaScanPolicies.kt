@@ -122,18 +122,6 @@ internal fun leafStorageName(path: String?): String {
     ?: ""
 }
 
-internal fun isStoragePathDescendant(
-  parentPath: String?,
-  candidatePath: String?,
-): Boolean {
-  val normalizedParent = normalizeStoragePath(parentPath) ?: return false
-  val normalizedCandidate = normalizeStoragePath(candidatePath) ?: return false
-  val parentKey = storagePathKey(normalizedParent) ?: return false
-  val candidateKey = storagePathKey(normalizedCandidate) ?: return false
-
-  return candidateKey != parentKey && candidateKey.startsWith("$parentKey/")
-}
-
 internal fun isDirectStorageChild(
   parentPath: String?,
   candidatePath: String?,
