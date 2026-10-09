@@ -3597,7 +3597,7 @@ class PlayerActivity :
    * Processes intent extras to set initial playback position, subtitles, and HTTP headers.
    *
    * This method checks the intent extras for the following keys:
-   * - "position": The initial playback position in seconds.
+   * - "position": The initial playback position in milliseconds.
    * - "subs": A list of subtitle URIs to add.
    * - "subs.enable": A list of subtitle URIs to enable.
    * - "headers": A list of HTTP headers to set for network playback.
@@ -3609,7 +3609,7 @@ class PlayerActivity :
 
     extras.getInt("position", POSITION_NOT_SET).takeIf { it != POSITION_NOT_SET }?.let {
       intent.removeExtra("position")
-      PlaybackSession.setPropertyInt("time-pos", it / MILLISECONDS_TO_SECONDS)
+      PlaybackSession.setPropertyDouble("time-pos", it / MILLISECONDS_TO_SECONDS.toDouble())
     }
 
     addSubtitlesFromExtras(extras)
