@@ -427,6 +427,7 @@ object PlaylistScreen : Screen {
 
     PlaylistActionSheet(
       isOpen = showPlaylistActionSheet,
+      savedXtreamServerUrls = playlistsWithCount.mapNotNull { it.playlist.xtreamServerUrl },
       onDismiss = { showPlaylistActionSheet = false },
       onCreatePlaylist = { name -> viewModel.createPlaylist(name) },
       onCreateM3UPlaylistFromFile = viewModel::createM3UPlaylistFromFile,

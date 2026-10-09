@@ -591,6 +591,7 @@ object NetworkStreamingScreen : Screen {
 
       AddConnectionSheet(
         isOpen = showAddSheet,
+        savedConnections = connections,
         onDismiss = { showAddSheet = false },
         onSave = { connection ->
           viewModel.addConnection(connection)
@@ -665,6 +666,7 @@ object NetworkStreamingScreen : Screen {
       editingConnection?.let { connection ->
         EditConnectionSheet(
           connection = connection,
+          savedConnections = connections,
           isOpen = true,
           onDismiss = { editingConnection = null },
           onSave = { updatedConnection, clearPassword ->

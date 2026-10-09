@@ -22,6 +22,8 @@ import android.os.StrictMode
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import androidx.compose.ui.AndroidComposeUiFlags
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import app.gyrolet.mpvrx.database.repository.VideoMetadataCacheRepository
@@ -109,8 +111,14 @@ class App :
     private val IDLE_BACKGROUND_PHASES = setOf(PlaybackPhase.IDLE, PlaybackPhase.UNINITIALIZED)
   }
 
+  @OptIn(ExperimentalComposeUiApi::class)
   override fun onCreate() {
     super.onCreate()
+
+    // Material3 alpha29 brings Compose UI 1.13.0-alpha01, which re-enables out-of-frame
+    // IME dispatch. Batch StopInput/StartInput on the next frame so focus transfers don't
+    // briefly hide/reopen the keyboard (AndroidX b/530704636). Applies to every form/sheet.
+    AndroidComposeUiFlags.isOutOfFrameSchedulerForTextInputEventsEnabled = false
 
     val processName =
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
