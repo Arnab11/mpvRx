@@ -29,6 +29,7 @@ import `is`.xyz.mpv.MPVLib
 import `is`.xyz.mpv.MPVNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -260,6 +261,9 @@ object PlaybackSession : MPVLib.EventObserver {
   private var attachedSurfaceOwner: Any? = null
   private var attachedSurfaceWidth = 0
   private var attachedSurfaceHeight = 0
+  private var surfaceAttachmentToken = 0L
+  private var rendererOutputReady = false
+  private var lastSurfaceVideoTrack: SuspendedVideoTrack? = null
   private var activeNetworkStream: NetworkStreamRegistration? = null
   private val auxiliaryNetworkStreams = linkedMapOf<String, NetworkStreamRegistration>()
   private var suspendedVideoTrack: SuspendedVideoTrack? = null
@@ -494,9 +498,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       // Surface ownership is a renderer concern only. Full player, mini player, PiP and Activity
       // recreation all hand the same live media session between Android Surfaces. Never change
       // `vid` during that handoff or mpv can discard cached packets and refetch normal HTTP data.
-      if (_state.value.surfaceAttached && attachedSurfaceOwner !== owner) {
-        detachRendererSurfaceLocked()
-      }
+      // Always shut down the previous VO before changing the JNI Surface, including
+      // same-owner Surface recreation. A live GPU backend must never see wid=0.
+      if (_state.value.surfaceAttached) detachRendererSurfaceLocked()
       MPVLib.attachSurface(surface)
       attachedSurfaceWidth = 0
       attachedSurfaceHeight = 0
@@ -507,15 +511,50 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
           attachedSurfaceHeight = resolvedHeight
         }
       }
-      MPVLib.setOptionString("force-window", "yes")
-      MPVLib.setPropertyString("vo", desiredVideoOutput)
       attachedSurfaceOwner = owner
       updateState { it.copy(surfaceAttached = true) }
-      restoreSuspendedVideoTrackLocked()
-      applyDeferredVideoSelectionLocked()
-      Log.d(TAG, "Android Surface bound: generation=${_state.value.generation}, " +
-        "phase=${_state.value.phase}, size=${attachedSurfaceWidth}x$attachedSurfaceHeight, " +
-        "valid=${surface.isValid}, wid=${runCatching { MPVLib.getPropertyString("wid") }.getOrNull() ?: "unavailable"}")
+      rendererOutputReady = false
+      val token = ++surfaceAttachmentToken
+
+      // The JNI attachSurface() queues wid through mpv_set_option. On foreground return
+      // the playback thread can run before mpv has consumed that option, producing
+      // "Missing surface pointer", dropping the video track and a permanent black screen.
+      // Never request gpu-next or select a video decoder until wid is observable.
+      nativeEvents.launch {
+        repeat(60) {
+          delay(16)
+          val finished = nativeLock.withLock {
+            if (token != surfaceAttachmentToken || attachedSurfaceOwner !== owner ||
+              !_state.value.surfaceAttached || !surface.isValid ||
+              !initialized || _state.value.phase == PlaybackPhase.STOPPING
+            ) return@withLock true
+            if ((MPVLib.getPropertyInt("wid") ?: 0) <= 0) return@withLock false
+
+            val activated = runCatching {
+              MPVLib.setOptionString("force-window", "yes")
+              MPVLib.setPropertyString("vo", desiredVideoOutput)
+              rendererOutputReady = true
+              restoreSuspendedVideoTrackLocked()
+              applyDeferredVideoSelectionLocked()
+              // A failed VO can deselect vid while leaving audio alive. Restore only
+              // the track that was actually selected before this Surface was lost.
+              lastSurfaceVideoTrack?.takeIf { it.generation == _state.value.generation }?.let { saved ->
+                if ((MPVLib.getPropertyInt("vid") ?: -1) <= 0) {
+                  MPVLib.setPropertyInt("vid", saved.id)
+                  Log.w(TAG, "Recovered video track ${saved.id} after renderer handoff")
+                }
+              }
+              lastSurfaceVideoTrack = null
+              Log.d(TAG, "Android renderer ready: generation=${_state.value.generation}, wid=${MPVLib.getPropertyInt("wid")}")
+            }.onFailure { Log.e(TAG, "Could not activate video output after Surface attachment", it) }
+            activated.isSuccess
+          }
+          if (finished) return@launch
+        }
+        Log.e(TAG, "Timed out waiting for native Android Surface wid; renderer left disabled")
+      }
+      Log.d(TAG, "Android Surface attached; waiting for native window: generation=${_state.value.generation}, " +
+        "phase=${_state.value.phase}, size=${attachedSurfaceWidth}x$attachedSurfaceHeight")
       true
     }
 
@@ -538,6 +577,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   fun isSurfaceAttachedTo(owner: Any): Boolean =
     nativeLock.withLock { _state.value.surfaceAttached && attachedSurfaceOwner === owner }
 
+  fun isRendererReadyFor(owner: Any): Boolean =
+    nativeLock.withLock { rendererOutputReady && _state.value.surfaceAttached && attachedSurfaceOwner === owner }
+
   fun unbindSurface(owner: Any): Boolean =
     withCore(default = false) {
       if (attachedSurfaceOwner !== owner || !_state.value.surfaceAttached) return@withCore false
@@ -555,6 +597,12 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
    * they must not change video-track selection or disturb the live demuxer/cache.
    */
   private fun detachRendererSurfaceLocked() {
+    ++surfaceAttachmentToken
+    rendererOutputReady = false
+    val trackId = MPVLib.getPropertyInt("vid") ?: -1
+    if (trackId > 0 && _state.value.currentItem?.videoSelection() == PlaybackVideoSelection.IMMEDIATE) {
+      lastSurfaceVideoTrack = SuspendedVideoTrack(trackId, _state.value.generation)
+    }
     runCatching { MPVLib.setPropertyString("vo", "null") }
     runCatching { MPVLib.setOptionString("force-window", "no") }
     runCatching { MPVLib.detachSurface() }

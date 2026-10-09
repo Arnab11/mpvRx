@@ -117,7 +117,9 @@ class MPVView(
    */
   internal fun ensureSurfaceAttached(): Boolean {
     if (isExiting || !surfaceBindingEnabled || !holder.surface.isValid) return false
-    if (isSurfaceReady && PlaybackSession.isSurfaceAttachedTo(this)) return true
+    // A Surface can be JNI-attached while mpv is still processing its nonzero wid.
+    // Do not reattach it during that window: JNI replacement briefly resets wid=0.
+    if (PlaybackSession.isSurfaceAttachedTo(this)) return isSurfaceReady
     surfaceCreated(holder)
     return isSurfaceReady
   }
@@ -199,6 +201,7 @@ class MPVView(
   fun rebindCurrentSurface() {
     if (!surfaceBindingEnabled || !holder.surface.isValid) return
     isSurfaceReady = false
+    PlaybackSession.unbindSurface(this)
     surfaceCreated(holder)
   }
 
@@ -568,24 +571,31 @@ class MPVView(
 
   override fun surfaceCreated(holder: android.view.SurfaceHolder) {
     if (!surfaceBindingEnabled) return
+    if (PlaybackSession.isSurfaceAttachedTo(this)) return
     isSurfaceReady = false
     val bound =
       PlaybackSession.bindSurface(holder.surface, width, height, this, ownerIsActive = { surfaceBindingEnabled })
-    isSurfaceReady = bound
-    if (bound) surfaceAttachmentGeneration++
+    if (!bound) return
+    surfaceAttachmentGeneration++
     val attachedGeneration = surfaceAttachmentGeneration
-    applyFrameRate()
-    if (bound) {
-      post {
-        // Ignore a callback queued for a Surface that has since been destroyed/replaced.
-        if (isSurfaceReady && surfaceBindingEnabled && holder.surface.isValid &&
-          PlaybackSession.state.value.surfaceAttached &&
-          surfaceAttachmentGeneration == attachedGeneration
-        ) {
-          onSurfaceReady?.invoke()
-        }
+
+    fun notifyWhenRendererReady(attempt: Int) {
+      // Ignore checks queued for a Surface that has since been destroyed/replaced.
+      if (isExiting || !surfaceBindingEnabled || !holder.surface.isValid ||
+        surfaceAttachmentGeneration != attachedGeneration || !PlaybackSession.isSurfaceAttachedTo(this)
+      ) return
+      if (PlaybackSession.isRendererReadyFor(this)) {
+        isSurfaceReady = true
+        applyFrameRate()
+        redrawPausedFrame()
+        onSurfaceReady?.invoke()
+      } else if (attempt < 60) {
+        postDelayed({ notifyWhenRendererReady(attempt + 1) }, 16L)
+      } else {
+        android.util.Log.e("MPVView", "Native window never became renderer-ready")
       }
     }
+    post { notifyWhenRendererReady(0) }
   }
 
   override fun surfaceDestroyed(holder: android.view.SurfaceHolder) {
