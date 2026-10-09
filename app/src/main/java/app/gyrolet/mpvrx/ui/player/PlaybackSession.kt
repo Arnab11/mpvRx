@@ -1021,6 +1021,12 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       val selectVideoForNewFile = videoSelection == PlaybackVideoSelection.IMMEDIATE
       val deferVideoSelectionUntilSurface =
         selectVideoForNewFile && !_state.value.surfaceAttached
+      // MPV's ytdl_hook checks options/vid during extraction. Passing vid=no while the
+      // Surface is pending makes yt-dlp request bestaudio only; restoring vid later cannot
+      // recover the video formats that were never extracted. Preserve video selection for
+      // yt-dlp URLs, but keep decoder/surface deferral for ordinary local and direct streams.
+      val ytdlVideoRequiresSelection = selectVideoForNewFile &&
+        app.gyrolet.mpvrx.ui.player.ytdlp.YtdlpManager.requiresYtdlp(playableUri)
 
       // An OUTPUT Ambient shader bakes the previous video's aspect ratio into its GLSL. Because the
       // libmpv core outlives PlayerActivity, a late/cancelled Ambient job can otherwise poison the
@@ -1089,7 +1095,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       val loadOptions =
         buildList {
           add("pause=yes")
-          add(if (selectVideoForNewFile && !deferVideoSelectionUntilSurface) "vid=auto" else "vid=no")
+          add(if (selectVideoForNewFile && (!deferVideoSelectionUntilSurface || ytdlVideoRequiresSelection)) "vid=auto" else "vid=no")
           initialPosition?.let { add("start=$it") }
           if (flattenEditions && !MpvConfigOverridePolicy.isOwnedByMpvConf("flatten-editions")) {
             add("flatten-editions=yes")

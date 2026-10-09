@@ -5981,7 +5981,11 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
               if (requestGeneration != mediaRequestGeneration) {
                 -1L
               } else {
-                if (requiresYtdlp) PlaybackSession.setPropertyString("ytdl-format", ytdlFormat.orEmpty())
+                // A null per-video override means "use the user-selected yt-dlp settings";
+                // don't erase the format already applied by setupYtdlpOptions().
+                if (requiresYtdlp && ytdlFormat != null) {
+                  PlaybackSession.setPropertyString("ytdl-format", ytdlFormat)
+                }
                 nativeLoad()
               }
             }
