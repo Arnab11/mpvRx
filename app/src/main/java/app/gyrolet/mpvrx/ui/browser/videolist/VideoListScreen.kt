@@ -14,7 +14,10 @@ import android.os.Environment
 import android.widget.Toast
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -331,8 +334,15 @@ data class VideoListScreen(
       selectionManager.clear()
     }
 
-    Scaffold(
-      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
+    val bottomBarBackdrop = rememberBrowserBottomBarBackdrop()
+
+    Box(modifier = Modifier.fillMaxSize()) {
+      Scaffold(
+        modifier =
+          Modifier
+            .fillMaxSize()
+            .captureLiquidGlassBackdrop(bottomBarBackdrop),
+        containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
       topBar = {
         if (internalIsSearching) {
           InlineSearchBar(
@@ -481,7 +491,6 @@ data class VideoListScreen(
         }
       },
     ) { padding ->
-      val bottomBarBackdrop = rememberBrowserBottomBarBackdrop()
       val autoScrollToLastPlayed by browserPreferences.autoScrollToLastPlayed.collectAsState()
 
       Box(modifier = Modifier.fillMaxSize()) {
@@ -509,7 +518,7 @@ data class VideoListScreen(
           },
           onVideoLongClick = { video -> if (!archiveFolder) selectionManager.handleLongClick(video) },
           isFabVisible = isFabVisible,
-          modifier = Modifier.padding(padding).captureLiquidGlassBackdrop(bottomBarBackdrop),
+          modifier = Modifier.padding(padding),
           showFloatingBottomBar = showFloatingBottomBar,
           mediaLayoutMode = mediaLayoutMode,
           isAudio = isAudio,
@@ -517,49 +526,68 @@ data class VideoListScreen(
           isDualPane = isDualPane,
           pinnedVideoPaths = if (archiveFolder) emptySet() else pinnedVideoPaths,
         )
-
-        // Floating Material 3 Button Group overlay with animation
-        // Play Store gating is intentionally bypassed here.
-        if (showFloatingBottomBar) {
-          BrowserBottomBar(
-            backdrop = bottomBarBackdrop,
-            isSelectionMode = selectionManager.isInSelectionMode,
-            onCopyClick = {
-              operationType.value = CopyPasteOps.OperationType.Copy
-              if (CopyPasteOps.canUseDirectFileOperations()) {
-                folderPickerOpen.value = true
-              } else {
-                treePickerLauncher.launch(null)
-              }
-            },
-            onMoveClick = {
-              operationType.value = CopyPasteOps.OperationType.Move
-              if (CopyPasteOps.canUseDirectFileOperations()) {
-                folderPickerOpen.value = true
-              } else {
-                treePickerLauncher.launch(null)
-              }
-            },
-            onDownscaleClick = { compressorDialogOpen.value = true },
-            onRenameClick = { renameDialogOpen.value = true },
-            onDeleteClick = { deleteDialogOpen.value = true },
-            onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
-            onPinClick = {
-              foldersPreferences.togglePinnedVideos(selectionManager.getSelectedItems().map { it.path })
-              selectionManager.clear()
-            },
-            unpinSelected = selectedVideos.isNotEmpty() && selectedVideos.all { it.path in pinnedVideoPaths },
-            pinLabelRes = R.string.ui_pin_videos,
-            unpinLabelRes = R.string.ui_unpin_videos,
-            showDownscale = selectionManager.getSelectedItems().let { items -> items.isNotEmpty() && items.none { it.isAudio } },
-            showRename = selectionManager.selectedCount > 0,
-            modifier =
-              Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 0.dp),
-          )
-        }
       }
+    }
+
+    // Independent Floating Bottom Bar - positioned at absolute bottom
+    AnimatedVisibility(
+      visible = showFloatingBottomBar,
+      enter =
+        slideInVertically(
+          animationSpec =
+            spring(
+              dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+              stiffness = AppMotion.Spatial.Expressive.stiffness,
+            ),
+          initialOffsetY = { fullHeight -> fullHeight },
+        ),
+      exit =
+        slideOutVertically(
+          animationSpec =
+            spring(
+              dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
+              stiffness = AppMotion.Spatial.Standard.stiffness,
+            ),
+          targetOffsetY = { fullHeight -> fullHeight },
+        ),
+      modifier = Modifier.align(Alignment.BottomCenter),
+    ) {
+      BrowserBottomBar(
+        backdrop = bottomBarBackdrop,
+        isSelectionMode = selectionManager.isInSelectionMode,
+        onCopyClick = {
+          operationType.value = CopyPasteOps.OperationType.Copy
+          if (CopyPasteOps.canUseDirectFileOperations()) {
+            folderPickerOpen.value = true
+          } else {
+            treePickerLauncher.launch(null)
+          }
+        },
+        onMoveClick = {
+          operationType.value = CopyPasteOps.OperationType.Move
+          if (CopyPasteOps.canUseDirectFileOperations()) {
+            folderPickerOpen.value = true
+          } else {
+            treePickerLauncher.launch(null)
+          }
+        },
+        onDownscaleClick = { compressorDialogOpen.value = true },
+        onRenameClick = { renameDialogOpen.value = true },
+        onDeleteClick = { deleteDialogOpen.value = true },
+        onAddToPlaylistClick = { addToPlaylistDialogOpen.value = true },
+        onPinClick = {
+          foldersPreferences.togglePinnedVideos(selectionManager.getSelectedItems().map { it.path })
+          selectionManager.clear()
+        },
+        unpinSelected = selectedVideos.isNotEmpty() && selectedVideos.all { it.path in pinnedVideoPaths },
+        pinLabelRes = R.string.ui_pin_videos,
+        unpinLabelRes = R.string.ui_unpin_videos,
+        showDownscale = selectionManager.getSelectedItems().let { items -> items.isNotEmpty() && items.none { it.isAudio } },
+        showRename = selectionManager.selectedCount > 0,
+        modifier = Modifier.padding(bottom = 0.dp),
+      )
+    }
+  }
 
       // Sort Dialog
       if (isAudio) {
@@ -801,7 +829,7 @@ data class VideoListScreen(
       )
     }
   }
-}
+
 
 @Composable
 internal fun VideoListContent(

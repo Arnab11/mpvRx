@@ -10,6 +10,11 @@ import android.net.Uri
 import android.text.format.DateUtils
 import app.gyrolet.mpvrx.ui.browser.jellyfin.JellyfinViewModel
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import app.gyrolet.mpvrx.ui.theme.AppMotion
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -426,9 +431,12 @@ fun MusicLibraryContent(
     MusicTab.FOLDERS -> 0
   }
 
-  Scaffold(
-    containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
-    modifier = modifier.fillMaxSize(),
+  val bottomBarBackdrop = rememberBrowserBottomBarBackdrop()
+
+  Box(modifier = modifier.fillMaxSize()) {
+    Scaffold(
+      modifier = Modifier.fillMaxSize().captureLiquidGlassBackdrop(bottomBarBackdrop),
+      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
     topBar = {
       Column(
         modifier = Modifier
@@ -690,7 +698,6 @@ fun MusicLibraryContent(
       }
     },
   ) { innerPadding ->
-    val bottomBarBackdrop = rememberBrowserBottomBarBackdrop()
     Box(
       modifier = Modifier
         .fillMaxSize()
@@ -712,7 +719,7 @@ fun MusicLibraryContent(
           NavigationPager(
             state = pagerState,
             key = { page -> visibleTabs[page].name },
-            modifier = Modifier.fillMaxSize().captureLiquidGlassBackdrop(bottomBarBackdrop),
+            modifier = Modifier.fillMaxSize(),
             beyondViewportPageCount = 1,
             allowNestedSwipes = true,
           ) { page ->
@@ -1198,51 +1205,71 @@ fun MusicLibraryContent(
           )
         }
 
-        BrowserBottomBar(
-          backdrop = bottomBarBackdrop,
-          isSelectionMode = activeSelectionManager.isInSelectionMode,
-          onCopyClick = { },
-          onMoveClick = { },
-          onRenameClick = { },
-          onDeleteClick = { showDeleteSelectedDialog = true },
-          onAddToPlaylistClick = {
-            val videosToAdd = selectedMusicVideos()
-            if (videosToAdd.isNotEmpty()) {
-              selectedVideosForAddToPlaylist = videosToAdd
-            }
-          },
-          onPlayNextClick =
-            if (selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS) {
-              {
-                if (addVideosToPlaybackQueue(context, selectedMusicVideos(), QueueInsertion.PlayNext)) {
-                  activeSelectionManager.clear()
-                }
-              }
-            } else {
-              null
-            },
-          onAddToQueueClick =
-            if (selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS) {
-              {
-                if (addVideosToPlaybackQueue(context, selectedMusicVideos(), QueueInsertion.AddToEnd)) {
-                  activeSelectionManager.clear()
-                }
-              }
-            } else {
-              null
-            },
-          showCopy = false,
-          showMove = false,
-          showRename = false,
-          showDelete = selectedTab == MusicTab.SONGS || selectedTab == MusicTab.PLAYLISTS,
-          showAddToPlaylist = selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS,
-          modifier = Modifier.align(Alignment.BottomCenter)
-        )
-
         FabScrollHelper.FabScrim(
           visible = isFabExpanded.value && !quickPlayFabDirect,
           onDismiss = { isFabExpanded.value = false },
         )
+      }
+    }
+
+    AnimatedVisibility(
+      visible = activeSelectionManager.isInSelectionMode,
+      enter = slideInVertically(
+        animationSpec = spring(
+          dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+          stiffness = AppMotion.Spatial.Expressive.stiffness,
+        ),
+        initialOffsetY = { it },
+      ),
+      exit = slideOutVertically(
+        animationSpec = spring(
+          dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
+          stiffness = AppMotion.Spatial.Standard.stiffness,
+        ),
+        targetOffsetY = { it },
+      ),
+      modifier = Modifier.align(Alignment.BottomCenter),
+    ) {
+      BrowserBottomBar(
+        backdrop = bottomBarBackdrop,
+        isSelectionMode = activeSelectionManager.isInSelectionMode,
+        onCopyClick = { },
+        onMoveClick = { },
+        onRenameClick = { },
+        onDeleteClick = { showDeleteSelectedDialog = true },
+        onAddToPlaylistClick = {
+          val videosToAdd = selectedMusicVideos()
+          if (videosToAdd.isNotEmpty()) {
+            selectedVideosForAddToPlaylist = videosToAdd
+          }
+        },
+        onPlayNextClick =
+          if (selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS) {
+            {
+              if (addVideosToPlaybackQueue(context, selectedMusicVideos(), QueueInsertion.PlayNext)) {
+                activeSelectionManager.clear()
+              }
+            }
+          } else {
+            null
+          },
+        onAddToQueueClick =
+          if (selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS) {
+            {
+              if (addVideosToPlaybackQueue(context, selectedMusicVideos(), QueueInsertion.AddToEnd)) {
+                activeSelectionManager.clear()
+              }
+            }
+          } else {
+            null
+          },
+        showCopy = false,
+        showMove = false,
+        showRename = false,
+        showDelete = selectedTab == MusicTab.SONGS || selectedTab == MusicTab.PLAYLISTS,
+        showAddToPlaylist = selectedTab != MusicTab.PLAYLISTS && selectedTab != MusicTab.FOLDERS,
+        modifier = Modifier.padding(bottom = 0.dp)
+      )
     }
   }
 }
