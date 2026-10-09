@@ -283,6 +283,8 @@ object PlaybackSession : MPVLib.EventObserver {
   private var desiredAmbientScaleY = 1.0
   private var streamingOptionsApplied = false
   private var appliedUserAgent: String? = null
+  private var defaultHttpHeaderFields: String? = null
+  private var appliedHttpHeaderFields: String? = null
 
   val isInitialized: Boolean
     get() = initialized
@@ -357,6 +359,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         loadedGeneration = 0L
         defaultUserAgent = null
         appliedUserAgent = null
+        defaultHttpHeaderFields = null
+        appliedHttpHeaderFields = null
         pendingPositionRestoreGeneration = 0L
         pendingPositionRestoreOverride = null
         initialPositionGeneration = 0L
@@ -381,6 +385,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
           // headers may temporarily override it, but must not leak into the next item.
           defaultUserAgent = MPVLib.getPropertyString("user-agent")
           appliedUserAgent = defaultUserAgent
+          defaultHttpHeaderFields = MPVLib.getPropertyString("http-header-fields").orEmpty()
+          appliedHttpHeaderFields = defaultHttpHeaderFields
           postInitOptions()
           MPVLib.getPropertyString("vo")
             ?.takeIf { it.isNotBlank() && it != "null" }
@@ -1074,11 +1080,18 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         MPVLib.setPropertyString("user-agent", userAgent)
         appliedUserAgent = userAgent
       }
-      if (resolvedItem.headers.isNotEmpty()) {
-        MPVLib.setPropertyString(
-          "http-header-fields",
-          PlaybackHttpHeaders.toMpvHeaderFields(resolvedItem.headers),
-        )
+      // http-header-fields is a core-wide mpv property. Reset it to the mpv.conf default
+      // when the incoming item has no headers; otherwise a previous stream's Referer,
+      // Authorization, or Cookie can leak into an unrelated media request.
+      val nextHttpHeaders =
+        if (resolvedItem.headers.isEmpty()) {
+          defaultHttpHeaderFields.orEmpty()
+        } else {
+          PlaybackHttpHeaders.toMpvHeaderFields(resolvedItem.headers)
+        }
+      if (nextHttpHeaders != appliedHttpHeaderFields) {
+        MPVLib.setPropertyString("http-header-fields", nextHttpHeaders)
+        appliedHttpHeaderFields = nextHttpHeaders
       }
       MPVLib.setPropertyString("force-media-title", "")
       MPVLib.setPropertyString("user-data/mpvrx/original-path", smbPath ?: resolvedItem.originalUri)
