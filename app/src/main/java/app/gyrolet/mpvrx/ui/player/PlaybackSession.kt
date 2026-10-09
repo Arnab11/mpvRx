@@ -488,7 +488,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
               // A failed VO can deselect vid while leaving audio alive. Restore only
               // the track that was actually selected before this Surface was lost.
               lastSurfaceVideoTrack?.takeIf { it.generation == _state.value.generation }?.let { saved ->
-                if ((MPVLib.getPropertyInt("vid") ?: -1) <= 0) {
+                if ((MPVLib.getPropertyString("vid")?.toIntOrNull() ?: -1) <= 0) {
                   MPVLib.setPropertyInt("vid", saved.id)
                   Log.w(TAG, "Recovered video track ${saved.id} after renderer handoff")
                 }
@@ -548,7 +548,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   private fun detachRendererSurfaceLocked() {
     ++surfaceAttachmentToken
     rendererOutputReady = false
-    val trackId = MPVLib.getPropertyInt("vid") ?: -1
+    val trackId = MPVLib.getPropertyString("vid")?.toIntOrNull() ?: -1
     if (trackId > 0 && _state.value.currentItem?.videoSelection() == PlaybackVideoSelection.IMMEDIATE) {
       lastSurfaceVideoTrack = SuspendedVideoTrack(trackId, _state.value.generation)
     }
@@ -1499,7 +1499,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       }
       if (property == "vid") {
         if (value == "no" && _state.value.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND)) {
-          val activeVid = MPVLib.getPropertyInt("vid") ?: -1
+          val activeVid = MPVLib.getPropertyString("vid")?.toIntOrNull() ?: -1
           if (activeVid > 0) {
             suspendedVideoTrack = SuspendedVideoTrack(activeVid, _state.value.generation)
           }
@@ -1686,7 +1686,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
             // started without video. Repair a disabled selection before exposing READY so an
             // attached player cannot remain on a black frame with audio.
             if (current.surfaceAttached && current.currentItem?.isDefinitelyAudioOnly() != true) {
-              val selectedVideoTrack = MPVLib.getPropertyInt("vid")
+              val selectedVideoTrack = MPVLib.getPropertyString("vid")?.toIntOrNull()
               if (selectedVideoTrack == null || selectedVideoTrack <= 0) {
                 MPVLib.setPropertyString("vid", "auto")
               }

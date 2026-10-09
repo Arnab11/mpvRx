@@ -436,6 +436,69 @@ object YtdlpManager {
     }
   }
 
+
+  /**
+   * ytdl_hook reads its executable path when libmpv starts built-in Lua scripts. A core may
+   * already exist for a local file when a web URL arrives, so these app-owned script options
+   * must be written before MPVLib.init(), not after the first failed YouTube load.
+   * Python/yt-dlp installation and network operations remain deferred to web playback.
+   */
+  fun configureMpvHookBeforeInit(context: Context) {
+    val ytdlBinaryPath = getExecutablePath(context)
+    val allFormats = "yes"
+    // Configure the bundled hook before MPVLib.init(), otherwise it caches an empty path.
+    // Keep a generated fallback for ytdl_hook. This file is app-owned compatibility state, not a
+    // user preference: mpv.conf ownership must never delete it or leave a stale bundled path
+    // behind. A genuinely hand-written hook file is preserved and the required bootstrap values
+    // are supplied independently through app-owned script options below.
+    try {
+      val scriptOptsDir = File(context.filesDir, "script-opts")
+      if (!scriptOptsDir.exists()) scriptOptsDir.mkdirs()
+      val ytdlConf = File(scriptOptsDir, "ytdl_hook.conf")
+      val existingContent = ytdlConf.takeIf(File::isFile)?.readText().orEmpty()
+      val generatedConfig =
+        existingContent.startsWith(GENERATED_HOOK_CONFIG_MARKER) ||
+          isLegacyGeneratedHookConfig(existingContent)
+
+      when {
+        existingContent.isNotBlank() && !generatedConfig -> Log.d(TAG, "Preserving user-supplied ytdl_hook.conf")
+        else -> {
+          val confLines =
+            buildList {
+              add(GENERATED_HOOK_CONFIG_MARKER)
+              add("ytdl_path=$ytdlBinaryPath")
+              add("all_formats=$allFormats")
+              add("force_all_formats=yes")
+              add("try_ytdl_first=yes")
+              add("exclude=$DIRECT_MEDIA_EXCLUDE")
+            }
+          val desiredContent = confLines.joinToString("\n", postfix = "\n")
+          if (existingContent != desiredContent) {
+            ytdlConf.writeText(desiredContent)
+            Log.d(TAG, "Updated generated ytdl_hook.conf at ${ytdlConf.absolutePath}")
+          }
+        }
+      }
+    } catch (e: Exception) {
+      Log.e(TAG, "Failed to create ytdl_hook.conf", e)
+    }
+
+    // Apply options to MPV core
+    PlaybackSession.setIntegrationOptionString("ytdl", "yes")
+
+    // These values are part of mpvRx's bundled bridge contract. They intentionally bypass
+    // preference ownership so a broad script-opts override cannot remove half of the integration.
+    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-ytdl_path=$ytdlBinaryPath")
+    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-all_formats=$allFormats")
+    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-force_all_formats=yes")
+    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-try_ytdl_first=yes")
+    // Skip yt-dlp for direct media/manifest URLs (.m3u8/.mpd/.mp4/.ts/...). Without this,
+    // ytdl_hook intercepts every http(s) URL and routes it through yt-dlp's generic
+    // extractor, which chokes on tokenized HLS/CDN links — so mpv never falls back to
+    // ffmpeg's native HLS demuxer and playback fails (while MX Player/VLC play it fine).
+    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-exclude=$DIRECT_MEDIA_EXCLUDE")
+  }
+
   fun setupMpvOptions(
     context: Context,
     ytdlPreferences: YtdlPreferences,
@@ -493,61 +556,6 @@ object YtdlpManager {
       )
     val resolvedOptions = YtdlpOptionsBuilder.build(settings)
     val ua = ytdlPreferences.customUserAgent.get().ifBlank { YtdlpOptionsBuilder.DEFAULT_USER_AGENT }
-    // Keep mpv's delay-loaded all-format path enabled for every audio preference. Disabling it for
-    // the default Auto mode was a post-v1.4.1 regression: split video/audio URLs then depended on a
-    // single eagerly selected result and some supported sites failed before mpv could choose tracks.
-    val allFormats = "yes"
-
-    // Keep a generated fallback for ytdl_hook. This file is app-owned compatibility state, not a
-    // user preference: mpv.conf ownership must never delete it or leave a stale bundled path
-    // behind. A genuinely hand-written hook file is preserved and the required bootstrap values
-    // are supplied independently through app-owned script options below.
-    try {
-      val scriptOptsDir = File(context.filesDir, "script-opts")
-      if (!scriptOptsDir.exists()) scriptOptsDir.mkdirs()
-      val ytdlConf = File(scriptOptsDir, "ytdl_hook.conf")
-      val existingContent = ytdlConf.takeIf(File::isFile)?.readText().orEmpty()
-      val generatedConfig =
-        existingContent.startsWith(GENERATED_HOOK_CONFIG_MARKER) ||
-          isLegacyGeneratedHookConfig(existingContent)
-
-      when {
-        existingContent.isNotBlank() && !generatedConfig -> Log.d(TAG, "Preserving user-supplied ytdl_hook.conf")
-        else -> {
-          val confLines =
-            buildList {
-              add(GENERATED_HOOK_CONFIG_MARKER)
-              add("ytdl_path=$ytdlBinaryPath")
-              add("all_formats=$allFormats")
-              add("force_all_formats=yes")
-              add("try_ytdl_first=yes")
-              add("exclude=$DIRECT_MEDIA_EXCLUDE")
-            }
-          ytdlConf.writeText(confLines.joinToString("\n", postfix = "\n"))
-          Log.d(TAG, "Created generated ytdl_hook.conf at ${ytdlConf.absolutePath}")
-        }
-      }
-    } catch (e: Exception) {
-      Log.e(TAG, "Failed to create ytdl_hook.conf", e)
-    }
-
-    // Apply options to MPV core
-    PlaybackSession.setIntegrationOptionString("ytdl", "yes")
-    PlaybackSession.setIntegrationOptionString("ytdl-path", ytdlBinaryPath)
-
-    // These values are part of mpvRx's bundled bridge contract. They intentionally bypass
-    // preference ownership so a broad script-opts override cannot remove half of the integration.
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-path=$ytdlBinaryPath")
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-ytdl_path=$ytdlBinaryPath")
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-all_formats=$allFormats")
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-force_all_formats=yes")
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-try_ytdl_first=yes")
-    // Skip yt-dlp for direct media/manifest URLs (.m3u8/.mpd/.mp4/.ts/...). Without this,
-    // ytdl_hook intercepts every http(s) URL and routes it through yt-dlp's generic
-    // extractor, which chokes on tokenized HLS/CDN links — so mpv never falls back to
-    // ffmpeg's native HLS demuxer and playback fails (while MX Player/VLC play it fine).
-    PlaybackSession.setIntegrationOptionString("script-opts-append", "ytdl_hook-exclude=$DIRECT_MEDIA_EXCLUDE")
-
     // Always derive this from typed preferences so newly added format controls cannot
     // be shadowed by an older cached generated string.
     val ytdlFormat = resolvedOptions.format

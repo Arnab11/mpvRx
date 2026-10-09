@@ -445,6 +445,8 @@ class MPVView(
 
     setupSubtitlesOptions()
     setupAudioOptions()
+    // The built-in hook reads script-opts when MPVLib.init() creates it.
+    YtdlpManager.configureMpvHookBeforeInit(context)
   }
 
   /**
