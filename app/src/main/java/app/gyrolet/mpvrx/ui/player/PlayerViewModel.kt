@@ -5333,6 +5333,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private val pendingSubtitleProperties = ConcurrentHashMap<String, Float>()
   private val subtitleFlushQueued = AtomicBoolean(false)
   private var savedSubtitleBoxStyle: Pair<String?, String?>? = null
+  private var hiddenSubtitleVisibility: String? = null
   private var lastSubtitleGestureText: String? = null
 
   /** Only the newest value per property reaches mpv, so fast drags never queue up stale frames. */
@@ -5374,8 +5375,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     if (preference.get() != rounded) preference.set(rounded)
   }
 
-  /** mpv's own background box outlines the real rendered glyphs while a subtitle is dragged or pinched. */
-  fun setSubtitleGestureHighlight(active: Boolean) {
+  /**
+   * mpv's own background box outlines the real rendered glyphs while a subtitle is dragged or pinched.
+   * The style is shared by both tracks, so the other track is hidden until release when [target] is set.
+   */
+  fun setSubtitleGestureHighlight(active: Boolean, target: SubtitleGestureTarget? = null) {
     viewModelScope.launch(subtitleGestureDispatcher) {
       if (active) {
         if (savedSubtitleBoxStyle != null) return@launch
@@ -5383,7 +5387,15 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           PlaybackSession.getPropertyString("sub-border-style") to PlaybackSession.getPropertyString("sub-back-color")
         PlaybackSession.setPropertyString("sub-border-style", "background-box")
         PlaybackSession.setPropertyString("sub-back-color", SUBTITLE_GESTURE_HIGHLIGHT_COLOR)
+        val other = SubtitleGestureTarget.entries.firstOrNull { target != null && it != target }
+        val visibility = other?.let { "${it.prefix}-visibility" }
+        if (visibility != null && PlaybackSession.getPropertyBoolean(visibility) == true) {
+          PlaybackSession.setPropertyBoolean(visibility, false)
+          hiddenSubtitleVisibility = visibility
+        }
       } else {
+        hiddenSubtitleVisibility?.let { PlaybackSession.setPropertyBoolean(it, true) }
+        hiddenSubtitleVisibility = null
         val (style, color) = savedSubtitleBoxStyle ?: return@launch
         savedSubtitleBoxStyle = null
         style?.let { PlaybackSession.setPropertyString("sub-border-style", it) }

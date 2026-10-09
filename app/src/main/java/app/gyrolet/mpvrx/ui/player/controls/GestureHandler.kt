@@ -579,7 +579,7 @@ fun GestureHandler(
                     if ((isStartOnSubtitleText || isCenterSubtitleTouch) && claimGesture(GestureOwner.SUBTITLE_VERTICAL)) {
                       longPressTriggered = true
                       isSubtitleHoldActive = true
-                      viewModel.setSubtitleGestureHighlight(true)
+                      viewModel.setSubtitleGestureHighlight(true, touchedSubtitle?.target)
                       subtitleHighlightShown = true
                       longPressTriggeredDuringTouch = true
                       actionHaptics.pickup()
@@ -756,7 +756,7 @@ fun GestureHandler(
                             subtitleDragStartY = currentPosition.y
                             subtitleDragPosition = touchedSubtitle?.position ?: originalSubtitlePosition.toFloat()
                             if (!subtitleHighlightShown) {
-                              viewModel.setSubtitleGestureHighlight(true)
+                              viewModel.setSubtitleGestureHighlight(true, touchedSubtitle?.target)
                               subtitleHighlightShown = true
                             }
                             startingY = 0f
@@ -1187,7 +1187,8 @@ fun GestureHandler(
                       lastPinchSubPos = selected.position
                       linkSecondaryScale = selected.target == SubtitleGestureTarget.Primary && secondarySubPinchZoomEnabled &&
                         isSecondarySubtitleActive() && !MpvConfigOverridePolicy.isOwnedByMpvConf("secondary-sub-scale")
-                      viewModel.setSubtitleGestureHighlight(true)
+                      // A linked pinch resizes both tracks, so keep both visible.
+                      viewModel.setSubtitleGestureHighlight(true, selected.target.takeUnless { linkSecondaryScale })
                       pinchHighlightShown = true
                     } else if (pinchToZoomGesture || panAndZoomEnabled) {
                       isSubZoomMode = false
