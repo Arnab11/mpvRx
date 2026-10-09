@@ -449,8 +449,6 @@ class PlayerActivity :
   private var noisyReceiverRegistered = false
   private var lastVid = -1 // Track video track for background playback optimization
   private var isInBackgroundPlayback = false // Track if we are currently in background playback mode
-  private var videoSurfaceStoppedAtMs = 0L
-  private var videoSurfaceGenerationOnStop = 0L
   private var screenStateReceiverRegistered = false
   private var mpvInitialized = false // Track MPV initialization state
   private var viewModelHostAttached = false
@@ -2030,16 +2028,6 @@ class PlayerActivity :
   }
 
   override fun onStop() {
-    // A long screen-off/background interval can invalidate an OEM GPU context without a
-    // SurfaceHolder callback. Remember the current attachment to detect that case on return.
-    if (mpvInitialized && ownsPlaybackSession() && isReady && !isFinishing &&
-      !isInPictureInPictureMode && !isCurrentPlaybackAudio()
-    ) {
-      videoSurfaceStoppedAtMs = android.os.SystemClock.elapsedRealtime()
-      videoSurfaceGenerationOnStop = player.surfaceAttachmentGeneration
-    } else {
-      videoSurfaceStoppedAtMs = 0L
-    }
     if (scriptRuntimeRestartPending) {
       super.onStop()
       return
@@ -3555,29 +3543,6 @@ class PlayerActivity :
     updateVolume()
     resumePlaybackAfterScreenUnlockIfNeeded()
     if (!screenUnlockPlaybackController.hasPendingResume()) wasPlayingBeforePause = false
-
-    val stoppedAt = videoSurfaceStoppedAtMs
-    videoSurfaceStoppedAtMs = 0L
-    if (stoppedAt > 0L &&
-      (android.os.SystemClock.elapsedRealtime() - stoppedAt >= 30_000L ||
-        !player.isSurfaceReady || !PlaybackSession.state.value.surfaceAttached)
-    ) {
-      val previousGeneration = videoSurfaceGenerationOnStop
-      // Give SurfaceView a chance to dispatch its normal surfaceCreated callback first. If the
-      // same attachment survived a long suspend, explicitly rebuild only the video renderer.
-      player.post {
-        if (mpvInitialized && ownsPlaybackSession() && !isFinishing && !isDestroyed &&
-          lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
-          !isInPictureInPictureMode && !isDeviceScreenOffOrLocked() &&
-          externalDisplayManager?.isActive != true && player.surfaceBindingEnabled &&
-          !isCurrentPlaybackAudio() && player.holder.surface.isValid &&
-          player.surfaceAttachmentGeneration == previousGeneration
-        ) {
-          Log.d(TAG, "Restoring stale video renderer after background/screen-off")
-          player.rebindCurrentSurface()
-        }
-      }
-    }
   }
 
   /**

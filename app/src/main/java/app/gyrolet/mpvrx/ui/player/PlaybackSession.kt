@@ -495,10 +495,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       // Surface ownership is a renderer concern only. Full player, mini player, PiP and Activity
       // recreation all hand the same live media session between Android Surfaces. Never change
       // `vid` during that handoff or mpv can discard cached packets and refetch normal HTTP data.
-      // A SurfaceView may receive a new surface without surfaceDestroyed on some devices after
-      // extended doze. Even if the owner is unchanged, drop the old VO/EGL context before
-      // attaching the replacement so the native renderer cannot stay bound to a stale Surface.
-      if (_state.value.surfaceAttached) {
+      if (_state.value.surfaceAttached && attachedSurfaceOwner !== owner) {
         detachRendererSurfaceLocked()
       }
       MPVLib.attachSurface(surface)
