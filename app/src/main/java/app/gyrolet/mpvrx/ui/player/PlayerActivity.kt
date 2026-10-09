@@ -6201,6 +6201,15 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         // direct-media loads so a prior web item cannot leak an extractor probe into this load.
         PlaybackSession.setIntegrationOptionString("ytdl", "no")
       }
+      // MediaCodec must see the foreground native window before video selection starts.
+      // Audio-only and deliberately detached/background sessions must not wait here.
+      if (item.videoSelection() == PlaybackVideoSelection.IMMEDIATE && player.surfaceBindingEnabled) {
+        if (!player.awaitSurfaceReady()) {
+          ensureCurrentMediaRequest(requestGeneration)
+          throw IllegalStateException("Timed out waiting for the foreground video Surface")
+        }
+        ensureCurrentMediaRequest(requestGeneration)
+      }
       val loadGeneration =
         PlaybackSession.load(
           item = item,

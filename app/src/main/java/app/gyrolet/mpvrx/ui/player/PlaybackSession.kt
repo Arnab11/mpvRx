@@ -487,7 +487,10 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     ownerIsActive: () -> Boolean = { true },
   ): Boolean =
     withCore(default = false) {
-      if (!ownerIsActive() || !surface.isValid) return@withCore false
+      if (!ownerIsActive() || !surface.isValid) {
+        Log.w(TAG, "Skipping stale/invalid Android Surface attachment: valid=${surface.isValid}")
+        return@withCore false
+      }
 
       // Surface ownership is a renderer concern only. Full player, mini player, PiP and Activity
       // recreation all hand the same live media session between Android Surfaces. Never change
@@ -513,10 +516,16 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       attachedSurfaceOwner = owner
       updateState { it.copy(surfaceAttached = true) }
       restoreSuspendedVideoTrackLocked()
-      if (deferredVideoSelectionGeneration == _state.value.generation) {
+      if (deferredVideoSelectionGeneration == _state.value.generation &&
+        _state.value.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND)
+      ) {
+        // FILE_LOADED owns vid recovery while the demuxer is still opening.
         MPVLib.setPropertyString("vid", "auto")
         deferredVideoSelectionGeneration = null
       }
+      Log.d(TAG, "Android Surface bound: generation=${_state.value.generation}, " +
+        "phase=${_state.value.phase}, size=${attachedSurfaceWidth}x$attachedSurfaceHeight, " +
+        "valid=${surface.isValid}, wid=${runCatching { MPVLib.getPropertyString("wid") }.getOrNull() ?: "unavailable"}")
       true
     }
 
