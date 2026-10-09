@@ -516,13 +516,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       attachedSurfaceOwner = owner
       updateState { it.copy(surfaceAttached = true) }
       restoreSuspendedVideoTrackLocked()
-      if (deferredVideoSelectionGeneration == _state.value.generation &&
-        _state.value.phase in setOf(PlaybackPhase.READY, PlaybackPhase.BACKGROUND)
-      ) {
-        // FILE_LOADED owns vid recovery while the demuxer is still opening.
-        MPVLib.setPropertyString("vid", "auto")
-        deferredVideoSelectionGeneration = null
-      }
+      applyDeferredVideoSelectionLocked()
       Log.d(TAG, "Android Surface bound: generation=${_state.value.generation}, " +
         "phase=${_state.value.phase}, size=${attachedSurfaceWidth}x$attachedSurfaceHeight, " +
         "valid=${surface.isValid}, wid=${runCatching { MPVLib.getPropertyString("wid") }.getOrNull() ?: "unavailable"}")
@@ -1160,6 +1154,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
         return@withLock
       }
 
+      applyDeferredVideoSelectionLocked()
       MPVLib.setPropertyBoolean("pause", desiredPaused)
       updateState {
         it.copy(
@@ -2077,6 +2072,19 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     activeAmbientShaderPaths.clear()
     desiredAmbientScaleX = 1.0
     desiredAmbientScaleY = 1.0
+  }
+
+  /**
+   * Selects video for a load that started before its Surface existed, once the file has loaded and
+   * a Surface is attached. These can arrive in either order, including while a saved-position
+   * restore keeps the phase at LOADING; missing one leaves audio playing over a black screen.
+   */
+  private fun applyDeferredVideoSelectionLocked() {
+    val current = _state.value
+    if (deferredVideoSelectionGeneration != current.generation) return
+    if (!current.surfaceAttached || loadedGeneration != current.generation) return
+    MPVLib.setPropertyString("vid", "auto")
+    deferredVideoSelectionGeneration = null
   }
 
   private fun restoreSuspendedVideoTrackLocked() {
