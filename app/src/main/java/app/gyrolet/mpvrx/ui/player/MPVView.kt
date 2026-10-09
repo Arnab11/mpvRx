@@ -205,6 +205,14 @@ class MPVView(
     surfaceCreated(holder)
   }
 
+  private data class StartupShaderSelection(
+    val backend: RenderBackendSelection,
+    val hdrMode: HdrScreenMode,
+    val hdrPipelineReady: Boolean,
+  )
+
+  private var pendingStartupShaders: StartupShaderSelection? = null
+
   private data class RenderBackendSelection(
     val vo: String,
     val gpuApi: String,
@@ -434,14 +442,10 @@ class MPVView(
     // match the video frame rate (e.g., 24fps content on 60Hz display).
     PlaybackSession.setOptionString("video-sync", "audio")
 
-    // Anime4K shader initialization (MUST be in initOptions, not after file load!)
-    if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.ANIME4K)) {
-      applyAnime4KShaders(backend.vo, backend.gpuApi)
-    }
-    // HDR Toys shaders (loaded after Anime4K so they append in the correct order)
-    if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.HDR_OUTPUT)) {
-      applyHdrToysMode(hdrScreenMode, hdrPipelineReady)
-    }
+    // These are native property/command operations (shader list changes), not mpv options.
+    // Running them before MPVLib.init() fails with "mpv_command: core not initialized".
+    // Save the selection and apply it in postInitOptions(), before the first loadfile.
+    pendingStartupShaders = StartupShaderSelection(backend, hdrScreenMode, hdrPipelineReady)
 
     setupSubtitlesOptions()
     setupAudioOptions()
@@ -486,6 +490,19 @@ class MPVView(
     // Activity's WindowInsets listener apply the real cutout margins when the view is attached.
     PlaybackSession.setOptionString("osd-margin-x", DEFAULT_OSD_SAFE_MARGIN.toString())
     PlaybackSession.setOptionString("osd-margin-y", DEFAULT_OSD_SAFE_MARGIN.toString())
+
+    // libmpv is initialized here, but no file has been loaded yet. Unlike initOptions(),
+    // it is safe to run change-list and shader property commands here.
+    pendingStartupShaders?.let { selection ->
+      if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.ANIME4K)) {
+        applyAnime4KShaders(selection.backend.vo, selection.backend.gpuApi)
+      }
+      // HDR Toys must be appended after Anime4K.
+      if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.HDR_OUTPUT)) {
+        applyHdrToysMode(selection.hdrMode, selection.hdrPipelineReady)
+      }
+    }
+    pendingStartupShaders = null
 
     when (decoderPreferences.debanding.get()) {
       Debanding.None -> {}
@@ -799,7 +816,11 @@ class MPVView(
     if (MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.HDR_OUTPUT)) return
     val profile = mode.hdrToysProfile
     if (!pipelineReady || profile == null) {
-      hdrToysManager.clear()
+      // A newly initialized core has no app HDR shaders to remove. Avoid a burst of
+      // redundant change-list commands (and native work) on every normal video open.
+      if (PlaybackSession.getPropertyString("glsl-shaders")?.contains("hdr-toys", ignoreCase = true) == true) {
+        hdrToysManager.clear()
+      }
       return
     }
     if (!hdrToysManager.apply(profile)) {
