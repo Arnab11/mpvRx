@@ -320,7 +320,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     }
 
   val propInt = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_INT64, ::getPropertyInt)
-  val propLong = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_INT64) { property -> getPropertyInt(property)?.toLong() }
+  val propLong = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_INT64, ::getPropertyLong)
   val propBoolean = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_FLAG, ::getPropertyBoolean)
   val propDouble = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_DOUBLE, ::getPropertyDouble)
   val propFloat = PlaybackProperty(MPVLib.MpvFormat.MPV_FORMAT_DOUBLE, ::getPropertyFloat)
@@ -392,8 +392,8 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
             ?.takeIf { it.isNotBlank() && it != "null" }
             ?.let { desiredVideoOutput = it }
           MPVLib.setPropertyString("vo", "null")
-          MPVLib.setOptionString("force-window", "no")
-          MPVLib.setOptionString("idle", "yes")
+          MPVLib.setPropertyString("force-window", "no")
+          MPVLib.setPropertyString("idle", "yes")
           NativeEventObserver().also { observer ->
             nativeObserver = observer
             MPVLib.addObserver(observer)
@@ -483,10 +483,13 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
               !_state.value.surfaceAttached || !surface.isValid ||
               !initialized || _state.value.phase == PlaybackPhase.STOPPING
             ) return@withLock true
-            if ((MPVLib.getPropertyInt("wid") ?: 0) <= 0) return@withLock false
+            // The JNI Int accessor truncates int64 values. wid is a native reference,
+            // so its low 32 bits must never decide whether the Surface is attached.
+            val windowId = MPVLib.getPropertyString("wid")?.toLongOrNull() ?: 0L
+            if (windowId == 0L || windowId == -1L) return@withLock false
 
             val activated = runCatching {
-              MPVLib.setOptionString("force-window", "yes")
+              MPVLib.setPropertyString("force-window", "yes")
               MPVLib.setPropertyString("vo", desiredVideoOutput)
               rendererOutputReady = true
               restoreSuspendedVideoTrackLocked()
@@ -500,7 +503,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
                 }
               }
               lastSurfaceVideoTrack = null
-              Log.d(TAG, "Android renderer ready: generation=${_state.value.generation}, wid=${MPVLib.getPropertyInt("wid")}")
+              Log.d(TAG, "Android renderer ready: generation=${_state.value.generation}, wid=$windowId")
             }.onFailure { Log.e(TAG, "Could not activate video output after Surface attachment", it) }
             activated.isSuccess
           }
@@ -559,7 +562,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       lastSurfaceVideoTrack = SuspendedVideoTrack(trackId, _state.value.generation)
     }
     runCatching { MPVLib.setPropertyString("vo", "null") }
-    runCatching { MPVLib.setOptionString("force-window", "no") }
+    runCatching { MPVLib.setPropertyString("force-window", "no") }
     runCatching { MPVLib.detachSurface() }
     attachedSurfaceOwner = null
     attachedSurfaceWidth = 0
@@ -572,7 +575,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
     withCore(Unit, allowInitializing = true) {
       // Track selection does not require an Android Surface, but a GPU video output does.
       // bindSurface() performs the real null -> configured output transition later.
-      MPVLib.setOptionString("vo", if (_state.value.surfaceAttached) videoOutput else "null")
+      setNativeOptionLocked("vo", if (_state.value.surfaceAttached) videoOutput else "null")
     }
   }
 
@@ -1098,7 +1101,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
 
       if (!_state.value.surfaceAttached) {
         MPVLib.setPropertyString("vo", "null")
-        MPVLib.setOptionString("force-window", "no")
+        MPVLib.setPropertyString("force-window", "no")
       }
 
       // Disable the outgoing track only once this replacement request owns the native lock. Doing
@@ -1240,14 +1243,14 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   ): Int {
     if (MpvConfigOverridePolicy.isOwnedByMpvConf(name)) return 0
     return withCore(-1, allowInitializing = true) {
-      // mpv_set_option_string is a pre-init API and is not reliable for runtime updates.
-      // After MPVLib.init(), write the corresponding runtime property instead.
-      if (nativeCoreReady) {
-        MPVLib.setPropertyString(name, value)
-        0
-      } else {
-        MPVLib.setOptionString(name, value)
+      val result = setNativeOptionLocked(name, value)
+      if (nativeCoreReady && name == "user-agent" && result >= 0) {
+        // A refreshed yt-dlp preference is the new default. Per-item headers in load()
+        // must restore that value, not the preference captured at the first core startup.
+        defaultUserAgent = value
+        appliedUserAgent = value
       }
+      result
     }
   }
 
@@ -1259,9 +1262,25 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   fun setIntegrationOptionString(
     name: String,
     value: String,
-  ): Int = withCore(-1, allowInitializing = true) { MPVLib.setOptionString(name, value) }
+  ): Int = withCore(-1, allowInitializing = true) { setNativeOptionLocked(name, value) }
+
+  private fun setNativeOptionLocked(name: String, value: String): Int {
+    if (!nativeCoreReady) return MPVLib.setOptionString(name, value)
+    // List-operation suffixes are option syntax, not property names. In particular,
+    // ytdl_hook must receive its bundled executable path when refreshing a live core.
+    if (name == "script-opts-append") {
+      MPVLib.command("change-list", "script-opts", "append", value)
+    } else {
+      MPVLib.setPropertyString(name, value)
+    }
+    return 0
+  }
 
   fun getPropertyInt(property: String): Int? = withReadyCore(null) { MPVLib.getPropertyInt(property) }
+
+  // mpvlib's getPropertyLong delegates through Int; string conversion preserves all 64 bits.
+  fun getPropertyLong(property: String): Long? =
+    withReadyCore(null) { MPVLib.getPropertyString(property)?.toLongOrNull() }
 
   fun setPropertyInt(
     property: String,
@@ -2296,11 +2315,11 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
 
   private inline fun <T> withCore(
     default: T,
-    allowInitializing: Boolean = true,
+    allowInitializing: Boolean = false,
     block: () -> T,
   ): T =
     nativeLock.withLock {
-      if (!initialized && !(allowInitializing && _state.value.phase == PlaybackPhase.INITIALIZING)) {
+      if (!nativeCoreReady && !(allowInitializing && _state.value.phase == PlaybackPhase.INITIALIZING)) {
         return@withLock default
       }
       block()

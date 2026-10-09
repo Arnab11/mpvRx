@@ -5014,7 +5014,6 @@ class PlayerActivity :
   ): Int =
     runCatching {
       PlaybackSession.getPropertyDouble(property)?.toInt()
-        ?: PlaybackSession.getPropertyInt(property)
         ?: fallback
     }.getOrDefault(fallback)
 
@@ -5953,11 +5952,9 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     ensureCurrentMediaRequest(requestGeneration)
     if (requiresYtdlp) {
       player.setupYtdlpOptions()
-    } else {
-      // mpv keeps script options on the reused core. Explicitly disable ytdl_hook for local and
-      // direct-media loads so a prior web item cannot leak an extractor probe into this load.
-      PlaybackSession.setIntegrationOptionString("ytdl", "no")
     }
+    // Keep the built-in hook loaded across media changes, as in 2.7.2. It ignores local
+    // files and excluded direct URLs itself; toggling ytdl unloads/reloads the Lua script.
     // Attach the video Surface before loadfile so MediaCodec is created against it. A late
     // Surface (slow first frame, locked screen) must not fail playback: PlaybackSession then
     // defers video selection until bindSurface attaches it.
@@ -5989,11 +5986,11 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
             }
           },
         )
-    player.applyDeferredStartupOptions()
     if (generation < 0L) {
       ensureCurrentMediaRequest(requestGeneration)
       throw IllegalStateException("libmpv core is unavailable")
     }
+    player.applyStartupStatistics()
     if (item.audiobook != null) intent.removeExtra(AudiobookPlayback.EXTRA_POSITION_MS)
     if (scriptRestore != null) {
       intent.removeExtra(EXTRA_SCRIPT_RESTORE_MEDIA_ID)

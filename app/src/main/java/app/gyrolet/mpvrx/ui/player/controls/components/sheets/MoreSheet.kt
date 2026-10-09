@@ -254,7 +254,7 @@ fun MoreSheet(
                   if (statisticsPage in 1..5) PlaybackSession.command("script-binding", "stats/display-stats-toggle")
                   // Enable console only if it is not already open
                   if (!isConsoleOpen) {
-                    PlaybackSession.command("script-message-to", "console", "enable")
+                    PlaybackSession.command("script-binding", "console/enable")
                   }
                 }
                 else -> {

@@ -451,21 +451,23 @@ class MPVView(
     setupAudioOptions()
     // The built-in hook reads script-opts when MPVLib.init() creates it.
     YtdlpManager.configureMpvHookBeforeInit(context)
+    // Restore 2.7.2's bridge environment and extractor options before the first load.
+    // This only configures paths/options; installation is still deferred to web playback.
+    setupYtdlpOptions()
+    applyStartupOptions()
   }
 
   /**
-   * Applies yt-dlp integration only when a web playback request actually needs it.
-   * Local files do not need the hook, generated config, or bridge option writes.
+   * Configures the bundled bridge at core startup and refreshes preferences for web playback.
    */
   fun setupYtdlpOptions() {
     YtdlpManager.setupMpvOptions(context, ytdlPreferences, subtitlesPreferences)
   }
 
   /**
-   * Applies options that do not affect decoder creation after the load command is dispatched.
-   * Keeping them out of initOptions shortens the cold-start critical section.
+   * Apply these before loadfile: keep-open and seek policy also affect the first file.
    */
-  fun applyDeferredStartupOptions() {
+  private fun applyStartupOptions() {
     val inputs = awaitInitInputs()
     PlaybackSession.setOptionString("msg-level", "all=${inputs.logLevel}")
     PlaybackSession.setOptionString("keep-open", "yes")
@@ -473,6 +475,13 @@ class MPVView(
     PlaybackSession.setOptionString("screenshot-directory", inputs.screenshotDirectoryPath)
     PlaybackSession.setOptionString("hr-seek", if (inputs.preciseSeek) "yes" else "no")
     PlaybackSession.setOptionString("hr-seek-framedrop", if (inputs.preciseSeek) "no" else "yes")
+  }
+
+  fun applyStartupStatistics() {
+    // The native core survives Activity recreation and playlist loads. A toggle on every
+    // load would turn an already enabled statistics overlay off on the next file.
+    if (PlaybackSession.getPropertyString("user-data/mpvrx/startup-stats-applied") == "yes") return
+    PlaybackSession.setPropertyString("user-data/mpvrx/startup-stats-applied", "yes")
     advancedPreferences.enabledStatisticsPage.get().let {
       if (it in 1..5) {
         PlaybackSession.command("script-binding", "stats/display-stats-toggle")

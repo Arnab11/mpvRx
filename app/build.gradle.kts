@@ -1,6 +1,30 @@
+import com.android.build.api.instrumentation.AsmClassVisitorFactory
+import com.android.build.api.instrumentation.ClassContext
+import com.android.build.api.instrumentation.ClassData
+import com.android.build.api.instrumentation.InstrumentationParameters
+import com.android.build.api.instrumentation.InstrumentationScope
 import com.android.build.api.variant.FilterConfiguration
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.objectweb.asm.ClassVisitor
+import org.objectweb.asm.commons.ClassRemapper
+import org.objectweb.asm.commons.Remapper
 import java.util.Properties
+
+// SMBJ-RPC uses a desktop-only exception for malformed replies. Remap the dependency's
+// references before D8/R8 so decoding failures stay catchable IOExceptions on Android.
+// This fixes the missing runtime type instead of suppressing R8's missing-class diagnostic.
+abstract class SmbRpcExceptionCompatibility : AsmClassVisitorFactory<InstrumentationParameters.None> {
+  override fun isInstrumentable(classData: ClassData): Boolean =
+    classData.className.startsWith("com.rapid7.client.dcerpc.")
+
+  override fun createClassVisitor(classContext: ClassContext, nextClassVisitor: ClassVisitor): ClassVisitor =
+    ClassRemapper(nextClassVisitor, object : Remapper() {
+      override fun map(internalName: String): String =
+        if (internalName == "java/rmi/UnmarshalException") {
+          "app/gyrolet/mpvrx/data/network/client/SmbRpcDecodeException"
+        } else internalName
+    })
+}
 
 val localProperties =
   Properties().apply {
@@ -34,6 +58,15 @@ plugins {
   alias(libs.plugins.ksp)
   alias(libs.plugins.room)
   alias(libs.plugins.ktlint)
+}
+
+androidComponents {
+  onVariants(selector().all()) { variant ->
+    variant.instrumentation.transformClassesWith(
+      SmbRpcExceptionCompatibility::class.java,
+      InstrumentationScope.ALL,
+    ) {}
+  }
 }
 
 android {
