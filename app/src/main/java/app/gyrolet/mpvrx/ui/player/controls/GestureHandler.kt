@@ -1348,141 +1348,146 @@ fun GestureHandler(
             // Use the sensitivity preference instead of hardcoded value
             val seekSensitivity = horizontalSwipeSensitivity
 
-            do {
-              val event = awaitPointerEvent()
-              val pointerCount = event.changes.count { it.pressed }
+            try {
+              do {
+                val event = awaitPointerEvent()
+                val pointerCount = event.changes.count { it.pressed }
 
-              if (pointerCount == 1) {
-                event.changes.forEach { change ->
-                  if (change.pressed) {
-                    val currentPosition = change.position
-                    val deltaX = currentPosition.x - startPosition.x
-                    val deltaY = currentPosition.y - startPosition.y
-                    val timeSinceStart = System.currentTimeMillis() - startTime
+                if (pointerCount == 1) {
+                  event.changes.forEach { change ->
+                    if (change.pressed) {
+                      val currentPosition = change.position
+                      val deltaX = currentPosition.x - startPosition.x
+                      val deltaY = currentPosition.y - startPosition.y
+                      val timeSinceStart = System.currentTimeMillis() - startTime
 
-                    if (
-                      gestureType == null &&
-                      isSubtitleTouch &&
-                      abs(deltaX) > 40f &&
-                      abs(deltaX) > abs(deltaY) * 2f &&
-                      claimGesture(GestureOwner.SUBTITLE_SEEK)
-                    ) {
-                      gestureType = "subtitle_dialog_seek"
-                      hasStartedSeeking = true
-                      val isForward = if (isSwipeSubtitlesInverted) deltaX < 0 else deltaX > 0
-                      val direction = if (isForward) "1" else "-1"
-                      PlaybackSession.command("sub-seek", direction)
-                      viewModel.playerUpdate.update {
-                        PlayerUpdates.ShowText(
-                          context.getString(
-                            if (isForward) R.string.player_next_dialog else R.string.player_previous_dialog,
-                          ),
-                        )
-                      }
-                      change.consume()
-                    }
-
-                    if (gestureType == "subtitle_dialog_seek") {
-                      change.consume()
-                    }
-
-                    // Only activate if this is clearly a horizontal gesture
-                    // and not conflicting with other gestures
-                    if (gestureType == null &&
-                      gestureOwner == null &&
-                      !speedHoldPending &&
-                      !suppressHorizontalSeekForPointer &&
-                      horizontalSwipeToSeek &&
-                      !isSubtitleTouch &&
-                      abs(deltaX) > 30f &&
-                      abs(deltaX) > abs(deltaY) * 2f &&
-                      // Must be strongly horizontal
-                      timeSinceStart > 100L &&
-                      // Avoid conflicts with double-tap
-                      !isLongPressing &&
-                      // Don't conflict with long press
-                      !isDynamicSpeedControlActive &&
-                      // Don't conflict with speed control
-                      !anyPanelShown
-                    ) { // Only when no panels are shown
-                      if (claimGesture(GestureOwner.HORIZONTAL_SEEK)) {
-                        gestureType = "horizontal_seek"
+                      if (
+                        gestureType == null &&
+                        isSubtitleTouch &&
+                        abs(deltaX) > 40f &&
+                        abs(deltaX) > abs(deltaY) * 2f &&
+                        claimGesture(GestureOwner.SUBTITLE_SEEK)
+                      ) {
+                        gestureType = "subtitle_dialog_seek"
                         hasStartedSeeking = true
-                        // Follow the same high precision clock that drives the seekbar.
-                        initialVideoPosition = viewModel.precisePosition.value
-                          .takeIf { it.isFinite() && it >= 0f }
-                          ?: position?.toFloat()
-                          ?: 0f
-                        pendingSeekPosition = initialVideoPosition
+                        viewModel.setSubtitleGestureHighlight(true, SubtitleGestureTarget.Primary)
+                        val isForward = if (isSwipeSubtitlesInverted) deltaX < 0 else deltaX > 0
+                        val direction = if (isForward) "1" else "-1"
+                        PlaybackSession.command("sub-seek", direction)
+                        viewModel.playerUpdate.update {
+                          PlayerUpdates.ShowText(
+                            context.getString(
+                              if (isForward) R.string.player_next_dialog else R.string.player_previous_dialog,
+                            ),
+                          )
+                        }
+                        change.consume()
+                      }
 
-                        // Pause before seeking to prevent decoder stalls
-                        wasPlayerAlreadyPaused = paused ?: false
-                        if (!wasPlayerAlreadyPaused) {
-                          viewModel.pause()
+                      if (gestureType == "subtitle_dialog_seek") {
+                        change.consume()
+                      }
+
+                      // Only activate if this is clearly a horizontal gesture
+                      // and not conflicting with other gestures
+                      if (gestureType == null &&
+                        gestureOwner == null &&
+                        !speedHoldPending &&
+                        !suppressHorizontalSeekForPointer &&
+                        horizontalSwipeToSeek &&
+                        !isSubtitleTouch &&
+                        abs(deltaX) > 30f &&
+                        abs(deltaX) > abs(deltaY) * 2f &&
+                        // Must be strongly horizontal
+                        timeSinceStart > 100L &&
+                        // Avoid conflicts with double-tap
+                        !isLongPressing &&
+                        // Don't conflict with long press
+                        !isDynamicSpeedControlActive &&
+                        // Don't conflict with speed control
+                        !anyPanelShown
+                      ) { // Only when no panels are shown
+                        if (claimGesture(GestureOwner.HORIZONTAL_SEEK)) {
+                          gestureType = "horizontal_seek"
+                          hasStartedSeeking = true
+                          // Follow the same high precision clock that drives the seekbar.
+                          initialVideoPosition = viewModel.precisePosition.value
+                            .takeIf { it.isFinite() && it >= 0f }
+                            ?: position?.toFloat()
+                            ?: 0f
+                          pendingSeekPosition = initialVideoPosition
+
+                          // Pause before seeking to prevent decoder stalls
+                          wasPlayerAlreadyPaused = paused ?: false
+                          if (!wasPlayerAlreadyPaused) {
+                            viewModel.pause()
+                          }
+
+                          change.consume()
+                        }
+                      }
+
+                      if (gestureType == "horizontal_seek" && hasStartedSeeking) {
+                        // Calculate seek amount based on horizontal movement
+                        val seekAmount = deltaX * seekSensitivity
+                        val targetPosition = (initialVideoPosition + seekAmount).coerceAtLeast(0f)
+                        val maxDuration = duration?.toFloat() ?: 0f
+                        val clampedPosition = targetPosition.coerceAtMost(maxDuration)
+                        pendingSeekPosition = clampedPosition
+
+                        // Keep the live preview bounded and keyframe-only while scrubbing. The final
+                        // exact seek is issued once on gesture release below.
+                        viewModel.seekPreviewTo(clampedPosition)
+
+                        // Format and display time position updates
+                        val currentPos = clampedPosition.toInt()
+                        val seekDelta = (clampedPosition - initialVideoPosition).toInt()
+
+                        val currentTimeStr = formatSeekTime(currentPos)
+
+                        // Format seek delta with +/- prefix
+                        val deltaStr =
+                          if (seekDelta >= 0) {
+                            "+${formatSeekTime(seekDelta)}"
+                          } else {
+                            "-${formatSeekTime(-seekDelta)}"
+                          }
+
+                        // Use PlayerUpdates system like zoom updates
+                        viewModel.playerUpdate.update {
+                          PlayerUpdates.HorizontalSeek(currentTimeStr, deltaStr)
                         }
 
                         change.consume()
                       }
                     }
-
-                    if (gestureType == "horizontal_seek" && hasStartedSeeking) {
-                      // Calculate seek amount based on horizontal movement
-                      val seekAmount = deltaX * seekSensitivity
-                      val targetPosition = (initialVideoPosition + seekAmount).coerceAtLeast(0f)
-                      val maxDuration = duration?.toFloat() ?: 0f
-                      val clampedPosition = targetPosition.coerceAtMost(maxDuration)
-                      pendingSeekPosition = clampedPosition
-
-                      // Keep the live preview bounded and keyframe-only while scrubbing. The final
-                      // exact seek is issued once on gesture release below.
-                      viewModel.seekPreviewTo(clampedPosition)
-
-                      // Format and display time position updates
-                      val currentPos = clampedPosition.toInt()
-                      val seekDelta = (clampedPosition - initialVideoPosition).toInt()
-
-                      val currentTimeStr = formatSeekTime(currentPos)
-
-                      // Format seek delta with +/- prefix
-                      val deltaStr =
-                        if (seekDelta >= 0) {
-                          "+${formatSeekTime(seekDelta)}"
-                        } else {
-                          "-${formatSeekTime(-seekDelta)}"
-                        }
-
-                      // Use PlayerUpdates system like zoom updates
-                      viewModel.playerUpdate.update {
-                        PlayerUpdates.HorizontalSeek(currentTimeStr, deltaStr)
-                      }
-
-                      change.consume()
+                  }
+                } else if (pointerCount > 1) {
+                  // Multi-finger detected, cancel horizontal seek
+                  if (hasStartedSeeking) {
+                    hasStartedSeeking = false
+                    // Clean up seeking state without showing controls
+                    if (gestureType == "horizontal_seek" && !wasPlayerAlreadyPaused) {
+                      viewModel.unpause()
                     }
+                    viewModel.playerUpdate.update { PlayerUpdates.None }
                   }
+                  releaseGesture(GestureOwner.HORIZONTAL_SEEK)
+                  releaseGesture(GestureOwner.SUBTITLE_SEEK)
+                  break
                 }
-              } else if (pointerCount > 1) {
-                // Multi-finger detected, cancel horizontal seek
-                if (hasStartedSeeking) {
-                  hasStartedSeeking = false
-                  // Clean up seeking state without showing controls
-                  if (!wasPlayerAlreadyPaused) {
-                    viewModel.unpause()
-                  }
-                  viewModel.playerUpdate.update { PlayerUpdates.None }
-                }
-                releaseGesture(GestureOwner.HORIZONTAL_SEEK)
-                releaseGesture(GestureOwner.SUBTITLE_SEEK)
-                break
-              }
-            } while (event.changes.any { it.pressed })
+              } while (event.changes.any { it.pressed })
+            } finally {
+              if (gestureType == "subtitle_dialog_seek") viewModel.setSubtitleGestureHighlight(false)
+            }
 
             // Apply the final seek when gesture ends
             if (hasStartedSeeking) {
               // Finalize with the last bounded preview target; seekTo cancels any pending preview.
               pendingSeekPosition?.let { viewModel.seekTo(it.toInt()) }
 
-              // Unpause if it wasn't paused before seeking
-              if (!wasPlayerAlreadyPaused) {
+              // Only the scrub seek paused playback; a subtitle swipe must leave it as it was.
+              if (gestureType == "horizontal_seek" && !wasPlayerAlreadyPaused) {
                 viewModel.unpause()
               }
 

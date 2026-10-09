@@ -75,6 +75,7 @@ import app.gyrolet.mpvrx.ui.player.anime4k.applyAnime4KShaderChain
 import app.gyrolet.mpvrx.ui.player.anime4k.applyAnime4KStabilityOptions
 import app.gyrolet.mpvrx.ui.player.anime4k.clearAnime4KShaders
 import app.gyrolet.mpvrx.ui.player.anime4k.selectRuntimeStableAnime4K
+import app.gyrolet.mpvrx.ui.player.controls.components.panels.toColorHexString
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.EQ_MAX_DB
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.EQ_MIN_DB
 import app.gyrolet.mpvrx.ui.player.controls.components.sheets.EQ_TONE_STEPS
@@ -151,7 +152,8 @@ import kotlin.properties.ReadOnlyProperty
 import kotlin.random.Random
 import kotlin.reflect.KProperty
 
-private const val SUBTITLE_GESTURE_HIGHLIGHT_COLOR = "#B31A73E8"
+// ~45% opaque charcoal (#AARRGGBB): visible on bright scenes without hiding the video like solid black.
+private const val SUBTITLE_GESTURE_HIGHLIGHT_COLOR = "#73202429"
 
 enum class AutoCropState {
   IDLE,
@@ -5332,8 +5334,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   private val subtitleGestureDispatcher = Dispatchers.IO.limitedParallelism(1)
   private val pendingSubtitleProperties = ConcurrentHashMap<String, Float>()
   private val subtitleFlushQueued = AtomicBoolean(false)
-  private var savedSubtitleBoxStyle: Pair<String?, String?>? = null
-  private var hiddenSubtitleVisibility: String? = null
+  @Volatile private var savedSubtitleBoxStyle: Pair<String?, String?>? = null
+  @Volatile private var hiddenSubtitleVisibility: String? = null
   private var lastSubtitleGestureText: String? = null
 
   /** Only the newest value per property reaches mpv, so fast drags never queue up stale frames. */
@@ -5394,14 +5396,22 @@ val isBrightnessSliderShown = MutableStateFlow(false)
           hiddenSubtitleVisibility = visibility
         }
       } else {
-        hiddenSubtitleVisibility?.let { PlaybackSession.setPropertyBoolean(it, true) }
-        hiddenSubtitleVisibility = null
-        val (style, color) = savedSubtitleBoxStyle ?: return@launch
-        savedSubtitleBoxStyle = null
-        style?.let { PlaybackSession.setPropertyString("sub-border-style", it) }
-        color?.let { PlaybackSession.setPropertyString("sub-back-color", it) }
+        restoreSubtitleGestureHighlight()
       }
     }
+  }
+
+  private fun restoreSubtitleGestureHighlight() {
+    hiddenSubtitleVisibility?.let { PlaybackSession.setPropertyBoolean(it, true) }
+    hiddenSubtitleVisibility = null
+    val (style, color) = savedSubtitleBoxStyle ?: return
+    savedSubtitleBoxStyle = null
+    // mpv may not have reported a value at gesture start; fall back to the user's saved choice.
+    PlaybackSession.setPropertyString("sub-border-style", style ?: subtitlesPreferences.borderStyle.get().value)
+    PlaybackSession.setPropertyString(
+      "sub-back-color",
+      color ?: subtitlesPreferences.backgroundColor.get().toColorHexString(),
+    )
   }
 
   private fun syncSubtitleLayout(
@@ -7934,6 +7944,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   override fun onCleared() {
+    // The core can outlive this screen (background playback), so never leave the gesture style behind.
+    restoreSubtitleGestureHighlight()
     // Deterministic cleanup of resources that previously relied on GC.
     // viewModelScope is auto-cancelled by ViewModel, but the following
     // resources are not coroutine-scoped and need explicit release.
