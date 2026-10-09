@@ -121,6 +121,8 @@ import app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog
 import app.gyrolet.mpvrx.ui.browser.dialogs.toPlaylistCandidates
 import app.gyrolet.mpvrx.ui.player.resolveUri
 import app.gyrolet.mpvrx.ui.player.controls.components.MiniAudioVisualizer
+import app.gyrolet.mpvrx.ui.player.controls.components.stableNumericWidth
+import app.gyrolet.mpvrx.ui.player.controls.components.withTabularDigits
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberSmoothedPositionMs
 import app.gyrolet.mpvrx.ui.player.controls.components.AnimatedLyricWord
 import app.gyrolet.mpvrx.ui.player.controls.components.hasRtlDirection
@@ -1685,10 +1687,12 @@ fun AudioPlayerControls(
                   tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (speedConfigOwned) 0.38f else 1f),
                   modifier = Modifier.size(16.dp),
                 )
+                val speedText = String.format("%.2fx", playbackSpeed ?: 1f)
                 Text(
-                  text = String.format("%.2fx", playbackSpeed ?: 1f),
-                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+                  text = speedText,
+                  style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold).withTabularDigits(),
                   color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = if (speedConfigOwned) 0.38f else 1f),
+                  modifier = Modifier.stableNumericWidth(speedText),
                 )
               }
             }

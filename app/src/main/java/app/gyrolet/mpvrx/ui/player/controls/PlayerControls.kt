@@ -1086,23 +1086,14 @@ fun PlayerControls(
                 TextPlayerUpdate(displayText)
               }
               is PlayerUpdates.ShowText ->
-                TextPlayerUpdate(
-                  (currentPlayerUpdate as PlayerUpdates.ShowText).value,
-                  modifier = Modifier.widthIn(min = 120.dp),
-                )
+                TextPlayerUpdate((currentPlayerUpdate as PlayerUpdates.ShowText).value)
 
               is PlayerUpdates.ProviderStatusText ->
-                TextPlayerUpdate(
-                  (currentPlayerUpdate as PlayerUpdates.ProviderStatusText).value,
-                  modifier = Modifier.widthIn(min = 120.dp),
-                )
+                TextPlayerUpdate((currentPlayerUpdate as PlayerUpdates.ProviderStatusText).value)
 
               is PlayerUpdates.VideoZoom -> {
                 val zoomPercentage = (videoZoom * 100).toInt()
-                TextPlayerUpdate(
-                  text = String.format("Zoom:%3d%%", zoomPercentage),
-                  modifier = Modifier.widthIn(min = 112.dp),
-                )
+                TextPlayerUpdate(String.format("Zoom: %d%%", zoomPercentage))
               }
 
               is PlayerUpdates.SubtitleZoom -> {
@@ -1110,10 +1101,7 @@ fun PlayerControls(
                 val label = stringResource(
                   if (zoomUpdate.secondary) R.string.player_sheets_secondary_sub_scale else R.string.player_sheets_sub_primary_scale,
                 )
-                TextPlayerUpdate(
-                  text = String.format("%s: %.2fx", label, zoomUpdate.scale),
-                  modifier = Modifier.widthIn(min = 112.dp),
-                )
+                TextPlayerUpdate(String.format("%s: %.2fx", label, zoomUpdate.scale))
               }
 
               is PlayerUpdates.HorizontalSeek -> {
@@ -1121,7 +1109,6 @@ fun PlayerControls(
                 SeekPlayerUpdate(
                   currentTime = seekUpdate.currentTime,
                   seekDelta = "[${seekUpdate.seekDelta}]",
-                  modifier = Modifier.widthIn(min = 168.dp),
                 )
               }
 

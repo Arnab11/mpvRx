@@ -75,6 +75,7 @@ import app.gyrolet.mpvrx.preferences.SubtitlesPreferences
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.LeftSideOvalShape
 import app.gyrolet.mpvrx.presentation.components.RightSideOvalShape
+import app.gyrolet.mpvrx.ui.player.controls.components.stableNumericWidth
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
 import app.gyrolet.mpvrx.ui.player.Panels
@@ -1578,22 +1579,22 @@ fun DoubleTapToSeekOvals(
               if (amount < 0) {
                 CombiningChevronsAnimation(isRight = false, trigger = amount)
                 Spacer(modifier = Modifier.width(8.dp))
+                val seekText = "- ${abs(amount)}"
                 Text(
-                  text = "- ${abs(amount)}",
-                  fontSize = 22.sp,
-                  fontWeight = FontWeight.Bold,
+                  text = seekText,
+                  style = seekOverlayTextStyle,
                   textAlign = TextAlign.Center,
                   color = Color.White,
-                  modifier = Modifier.scale(scale),
+                  modifier = Modifier.stableNumericWidth(seekText).scale(scale),
                 )
               } else {
+                val seekText = "+ ${abs(amount)}"
                 Text(
-                  text = "+ ${abs(amount)}",
-                  fontSize = 22.sp,
-                  fontWeight = FontWeight.Bold,
+                  text = seekText,
+                  style = seekOverlayTextStyle,
                   textAlign = TextAlign.Center,
                   color = Color.White,
-                  modifier = Modifier.scale(scale),
+                  modifier = Modifier.stableNumericWidth(seekText).scale(scale),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 CombiningChevronsAnimation(isRight = true, trigger = amount)

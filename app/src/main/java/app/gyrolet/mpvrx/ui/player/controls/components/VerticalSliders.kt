@@ -183,10 +183,10 @@ fun BrightnessSlider(
   GlassSliderPanel(modifier) {
     Text(
       text = percentText,
-      style = MaterialTheme.typography.titleSmall,
+      style = MaterialTheme.typography.titleSmall.withTabularDigits(),
       fontWeight = FontWeight.Bold,
       textAlign = TextAlign.Center,
-      modifier = Modifier.widthIn(min = 48.dp),
+      modifier = Modifier.widthIn(min = 48.dp).stableNumericWidth(percentText),
     )
     VerticalSlider(
       coercedBrightness.coerceIn(0f, positiveRange.endInclusive),
@@ -228,10 +228,10 @@ fun VolumeSlider(
     }
     Text(
       text = volumeText,
-      style = MaterialTheme.typography.titleSmall,
+      style = MaterialTheme.typography.titleSmall.withTabularDigits(),
       fontWeight = FontWeight.Bold,
       textAlign = TextAlign.Center,
-      modifier = Modifier.widthIn(min = 48.dp),
+      modifier = Modifier.widthIn(min = 48.dp).stableNumericWidth(volumeText),
     )
     VerticalSlider(
       if (displayAsPercentage) percentage else volume,

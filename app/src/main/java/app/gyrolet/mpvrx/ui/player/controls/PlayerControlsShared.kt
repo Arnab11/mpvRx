@@ -80,6 +80,8 @@ import app.gyrolet.mpvrx.ui.player.clip.ClipOverlayView
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.VideoAspect
 import app.gyrolet.mpvrx.ui.player.controls.components.AbLoopIcon
+import app.gyrolet.mpvrx.ui.player.controls.components.stableNumericWidth
+import app.gyrolet.mpvrx.ui.player.controls.components.withTabularDigits
 import app.gyrolet.mpvrx.ui.player.controls.components.ControlsButton
 import app.gyrolet.mpvrx.ui.player.controls.components.CurrentChapter
 import app.gyrolet.mpvrx.ui.theme.controlColor as defaultControlColor
@@ -320,10 +322,12 @@ fun RenderPlayerButton(
               tint = if (configOwned) disabledColor else MaterialTheme.colorScheme.primary,
               modifier = Modifier.size(20.dp),
             )
+            val speedText = String.format("%.2fx", playbackSpeed)
             Text(
-              text = String.format("%.2fx", playbackSpeed),
+              text = speedText,
               maxLines = 1,
-              style = MaterialTheme.typography.bodyMedium,
+              style = MaterialTheme.typography.bodyMedium.withTabularDigits(),
+              modifier = Modifier.stableNumericWidth(speedText),
             )
           }
         } else {
@@ -381,10 +385,12 @@ fun RenderPlayerButton(
                 tint = if (configOwned) disabledColor else MaterialTheme.colorScheme.primary,
                 modifier = Modifier.size(20.dp),
               )
+              val speedText = String.format("%.2fx", playbackSpeed)
               Text(
-                text = String.format("%.2fx", playbackSpeed),
+                text = speedText,
                 maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.withTabularDigits(),
+                modifier = Modifier.stableNumericWidth(speedText),
               )
             }
           }
@@ -795,10 +801,12 @@ fun RenderPlayerButton(
                 },
               modifier = Modifier.size(20.dp),
             )
+            val zoomText = String.format("%.0f%%", currentZoom * 100)
             Text(
-              text = String.format("%.0f%%", currentZoom * 100),
+              text = zoomText,
               maxLines = 1,
-              style = MaterialTheme.typography.bodyMedium,
+              style = MaterialTheme.typography.bodyMedium.withTabularDigits(),
+              modifier = Modifier.stableNumericWidth(zoomText),
             )
           }
         } else {
@@ -866,10 +874,12 @@ fun RenderPlayerButton(
                   },
                 modifier = Modifier.size(20.dp),
               )
+              val zoomText = String.format("%.0f%%", currentZoom * 100)
               Text(
-                text = String.format("%.0f%%", currentZoom * 100),
+                text = zoomText,
                 maxLines = 1,
-                style = MaterialTheme.typography.bodyMedium,
+                style = MaterialTheme.typography.bodyMedium.withTabularDigits(),
+                modifier = Modifier.stableNumericWidth(zoomText),
               )
             }
           }

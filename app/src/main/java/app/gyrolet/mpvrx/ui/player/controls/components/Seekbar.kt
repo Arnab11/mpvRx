@@ -2239,11 +2239,12 @@ fun VideoTimer(
           onClick = onClick,
         ).focusProperties { canFocus = false }
         .padding(horizontal = 4.dp)
+        .stableNumericWidth(timeText)
         .wrapContentHeight(Alignment.CenterVertically),
     text = timeText,
     color = textColor,
     textAlign = TextAlign.Center,
-    style = MaterialTheme.typography.labelSmall,
+    style = MaterialTheme.typography.labelSmall.withTabularDigits(),
   )
 }
 
