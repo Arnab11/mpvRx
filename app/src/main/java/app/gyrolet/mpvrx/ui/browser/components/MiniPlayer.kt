@@ -326,7 +326,7 @@ private fun MiniPlayerContent(
     shape = miniPlayerShape,
     style = LiquidGlassStyle.MiniPlayer,
     glassColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.30f),
-    fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+    fallbackColor = MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.96f),
   ) {
     val progressColor = MaterialTheme.colorScheme.primary
 
@@ -503,7 +503,7 @@ private fun MiniPlayerContent(
             .size(48.dp)
             .playerArtworkAnchor(PlayerArtworkDestination.MINI, currentItem?.stableId, coverArt, 10.dp)
             .clip(RoundedCornerShape(10.dp))
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest),
+            .background(MaterialTheme.colorScheme.surfaceVariant),
           contentAlignment = Alignment.Center,
         ) {
           val artworkImageBitmap = remember(coverArt) { coverArt?.asImageBitmap() }
