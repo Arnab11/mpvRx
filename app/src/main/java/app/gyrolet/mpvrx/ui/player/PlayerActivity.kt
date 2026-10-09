@@ -6971,7 +6971,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     MediaPlaybackService.createNotificationChannel(this)
 
     // Get media info before starting service
-    val artist = runCatching { PlaybackSession.getPropertyString("metadata/artist") }.getOrNull() ?: ""
+    val artist = runCatching { PlaybackSession.getPropertyString("metadata/by-key/artist") }.getOrNull() ?: ""
 
     // Pass media info via intent extras
     val intent =
@@ -7517,7 +7517,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     val notificationIdentifier = currentNotificationMediaIdentifier()
     val artist =
       currentQueueItem?.artist?.takeIf { it.isNotBlank() }
-        ?: runCatching { PlaybackSession.getPropertyString("metadata/artist") }.getOrNull().orEmpty()
+        ?: runCatching { PlaybackSession.getPropertyString("metadata/by-key/artist") }.getOrNull().orEmpty()
     val thumbnailKey = buildBackgroundThumbnailKey()
     val cachedThumbnail =
       if (thumbnailKey == lastBackgroundThumbnailKey) {

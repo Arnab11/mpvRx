@@ -446,7 +446,7 @@ class MediaPlaybackService :
       PlaybackSession.addObserver(this)
       PlaybackSession.observeProperty("pause", MPVLib.MpvFormat.MPV_FORMAT_FLAG)
       PlaybackSession.observeProperty("media-title", MPVLib.MpvFormat.MPV_FORMAT_STRING)
-      PlaybackSession.observeProperty("metadata/artist", MPVLib.MpvFormat.MPV_FORMAT_STRING)
+      PlaybackSession.observeProperty("metadata/by-key/artist", MPVLib.MpvFormat.MPV_FORMAT_STRING)
       PlaybackSession.observeProperty("time-pos", MPVLib.MpvFormat.MPV_FORMAT_DOUBLE)
       PlaybackSession.observeProperty("duration", MPVLib.MpvFormat.MPV_FORMAT_DOUBLE)
       PlaybackSession.observeProperty("speed", MPVLib.MpvFormat.MPV_FORMAT_DOUBLE)
@@ -558,7 +558,7 @@ class MediaPlaybackService :
     // Fallback: Read current state from MPV if not provided via intent
     if (mediaTitle.isBlank()) {
       mediaTitle = FileTypeUtils.stripExtension(PlaybackSession.getPropertyString("media-title") ?: "")
-      mediaArtist = PlaybackSession.getPropertyString("metadata/artist") ?: ""
+      mediaArtist = PlaybackSession.getPropertyString("metadata/by-key/artist") ?: ""
     }
 
     paused = PlaybackSession.getPropertyBoolean("pause") == true
@@ -1702,7 +1702,7 @@ class MediaPlaybackService :
           }
         }
       }
-      "metadata/artist" -> {
+      "metadata/by-key/artist" -> {
         serviceScope.launch {
           if (mediaArtist == value) return@launch
           mediaArtist = value

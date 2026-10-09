@@ -178,7 +178,7 @@ class MediaPlayerWidget : AppWidgetProvider() {
           ?: it.title?.takeIf(String::isNotBlank)
       }
       val artist = item?.let {
-        PlaybackSession.getPropertyString("metadata/artist")?.takeIf(String::isNotBlank)
+        PlaybackSession.getPropertyString("metadata/by-key/artist")?.takeIf(String::isNotBlank)
           ?: it.artist?.takeIf(String::isNotBlank)
       }
       val playing = item != null && !session.paused
