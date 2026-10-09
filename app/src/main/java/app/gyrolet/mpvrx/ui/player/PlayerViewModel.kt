@@ -1238,7 +1238,7 @@ class PlayerViewModel : ViewModel(),
       ?: PlaybackSession.getPropertyString("metadata/by-key/album_artist")
       ?: ""
 
-    val duration = PlaybackSession.getPropertyInt("duration") ?: 0
+    val duration = PlaybackSession.getPropertyDouble("duration")?.toInt() ?: 0
     val album = PlaybackSession.getPropertyString("metadata/by-key/Album")
       ?: PlaybackSession.getPropertyString("metadata/by-key/album")
     val isrc = PlaybackSession.getPropertyString("metadata/by-key/isrc")
@@ -1367,7 +1367,7 @@ class PlayerViewModel : ViewModel(),
           ?: PlaybackSession.getPropertyString("metadata/by-key/ARTIST")
           ?: PlaybackSession.getPropertyString("metadata/by-key/album_artist")
           ?: ""
-        val duration = PlaybackSession.getPropertyInt("duration") ?: 0
+        val duration = PlaybackSession.getPropertyDouble("duration")?.toInt() ?: 0
         val album = PlaybackSession.getPropertyString("metadata/by-key/Album")
           ?: PlaybackSession.getPropertyString("metadata/by-key/album")
 
@@ -1500,7 +1500,7 @@ class PlayerViewModel : ViewModel(),
         ?: PlaybackSession.getPropertyString("metadata/by-key/ARTIST")
         ?: PlaybackSession.getPropertyString("metadata/by-key/album_artist")
         ?: ""
-      val duration = PlaybackSession.getPropertyInt("duration") ?: 0
+      val duration = PlaybackSession.getPropertyDouble("duration")?.toInt() ?: 0
       val album = PlaybackSession.getPropertyString("metadata/by-key/Album")
         ?: PlaybackSession.getPropertyString("metadata/by-key/album")
 
@@ -5065,7 +5065,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     seekCommitJob = viewModelScope.launch(Dispatchers.IO) {
       if (!PlaybackSession.isCurrentGeneration(generation)) return@launch
       val maxDuration =
-        (PlaybackSession.getPropertyInt("duration") ?: duration ?: _preciseDuration.value.toInt())
+        (PlaybackSession.getPropertyDouble("duration")?.toInt() ?: duration ?: _preciseDuration.value.toInt())
           .coerceAtLeast(0)
       var clampedPosition =
         if (maxDuration > 0) position.coerceIn(0, maxDuration) else position.coerceAtLeast(0)
@@ -5120,11 +5120,11 @@ val isBrightnessSliderShown = MutableStateFlow(false)
             return@launch
           }
           val duration =
-            PlaybackSession.getPropertyInt("duration")
+            PlaybackSession.getPropertyDouble("duration")?.toInt()
               ?: duration
               ?: _preciseDuration.value.toInt()
           val currentPos =
-            PlaybackSession.getPropertyInt("time-pos")
+            PlaybackSession.getPropertyDouble("time-pos")?.toInt()
               ?: (pos ?: 0)
 
           if (duration > 0 && currentPos + toApply >= duration) {

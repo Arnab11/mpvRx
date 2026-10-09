@@ -8354,7 +8354,7 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
     if (!isReady || fileName.isBlank()) return
     if (isMiniPlayerEnabled()) return
 
-    val currentVid = PlaybackSession.getPropertyInt("vid") ?: -1
+    val currentVid = PlaybackSession.getPropertyString("vid")?.toIntOrNull() ?: -1
     if (currentVid > 0) {
       lastVid = currentVid
       PlaybackSession.setPropertyString("vid", "no")

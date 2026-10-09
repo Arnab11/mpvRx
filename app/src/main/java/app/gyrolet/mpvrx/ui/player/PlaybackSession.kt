@@ -1260,7 +1260,7 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
   ) {
     if (MpvConfigOverridePolicy.isOwnedByMpvConf(property)) return
     withCore(Unit) {
-      if (property in AUDIO_SUBTITLE_TRACK_PROPERTIES && MPVLib.getPropertyInt(property) == value) {
+      if (property in AUDIO_SUBTITLE_TRACK_PROPERTIES && MPVLib.getPropertyString(property)?.toIntOrNull() == value) {
         return@withCore
       }
       MPVLib.setPropertyInt(property, value)
