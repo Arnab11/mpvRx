@@ -58,7 +58,13 @@ fun getSubtitleGestureRegion(
     marginX = (PlaybackSession.getPropertyInt("sub-margin-x") ?: 19).toFloat(),
     marginY = (PlaybackSession.getPropertyInt("sub-margin-y") ?: 34).toFloat(),
     fontReferenceHeight = fontReferenceHeight,
-  )
+  )?.let { region ->
+    if (!overlaysFollowVideoZoom()) return@let region
+    region.zoomedAroundCenter(
+      videoZoomMultiplier(PlaybackSession.videoZoom.value),
+      PlaybackSession.videoPanX.value, PlaybackSession.videoPanY.value, screenWidth, screenHeight,
+    )
+  }
 }
 
 fun isSecondarySubtitleActive(): Boolean = getTrackSelectionId("secondary-sid") > 0
@@ -92,25 +98,27 @@ fun applySubtitleLayout(
   applySubtitlePositions(primaryPosition, secondaryPosition)
 }
 
-fun subtitleVideoZoomFactor(): Float =
-  if (GlobalContext.get().get<PlayerPreferences>().overlaysFollowVideoZoom.get()) {
-    videoZoomMultiplier(PlaybackSession.videoZoom.value)
-  } else 1f
+/** True when the SurfaceView itself is zoomed, so subtitles and mpv's OSD move with the video. */
+fun overlaysFollowVideoZoom(): Boolean = GlobalContext.get().get<PlayerPreferences>().overlaysFollowVideoZoom.get()
 
-fun applySubtitleZoom() {
-  val factor = subtitleVideoZoomFactor()
+fun applySubtitleBlendMode() {
   val blendMode = subtitleBlendMode()
   if (PlaybackSession.getPropertyString("blend-subtitles") != blendMode) {
     PlaybackSession.setPropertyString("blend-subtitles", blendMode)
   }
-  PlaybackSession.setPropertyFloat("sub-scale", subtitlesPreferences.subScale.get() * factor)
-  PlaybackSession.setPropertyFloat("secondary-sub-scale", subtitlesPreferences.secondarySubScale.get() * factor)
 }
 
-/** Blending into the video would bake subtitle pixels into its zoom and pan. */
+fun applySubtitleScales() {
+  PlaybackSession.setPropertyFloat("sub-scale", subtitlesPreferences.subScale.get())
+  PlaybackSession.setPropertyFloat("secondary-sub-scale", subtitlesPreferences.secondarySubScale.get())
+}
+
+/** Blending into the video would bake subtitle pixels into mpv's own zoom and pan. */
 fun subtitleBlendMode(): String {
-  val transformed = PlaybackSession.videoZoom.value != 0f ||
-    PlaybackSession.videoPanX.value != 0f || PlaybackSession.videoPanY.value != 0f
+  val transformed = !overlaysFollowVideoZoom() && (
+    PlaybackSession.videoZoom.value != 0f ||
+      PlaybackSession.videoPanX.value != 0f || PlaybackSession.videoPanY.value != 0f
+    )
   return if (!transformed && subtitlesPreferences.blendSubtitlesWithVideo.get() &&
     GlobalContext.get().get<PlayerPreferences>().isAmbientEnabled.get()
   ) "video" else "no"

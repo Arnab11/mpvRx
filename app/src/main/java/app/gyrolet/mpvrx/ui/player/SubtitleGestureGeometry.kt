@@ -21,20 +21,12 @@ data class SubtitleGestureRegion(
   val right: Float,
   val bottom: Float,
   val positionHeight: Float,
-  val renderTop: Float,
 ) {
-  fun transformed(newPosition: Float, newScale: Float, screenWidth: Float, screenHeight: Float): SubtitleGestureRegion {
-    val ratio = newScale / scale.coerceAtLeast(0.001f)
-    val rawWidth = (right - left) * ratio
-    val width = rawWidth.coerceIn(1f, screenWidth)
-    val wraps = ceil(rawWidth / screenWidth).coerceAtLeast(1f)
-    val height = ((bottom - top) * ratio * wraps).coerceIn(1f, screenHeight)
-    val anchor = (renderTop + positionHeight * newPosition / 100f).coerceAtLeast(renderTop + height)
-    return copy(
-      position = newPosition, scale = newScale,
-      left = (screenWidth - width) / 2f, right = (screenWidth + width) / 2f,
-      top = (anchor - height).coerceIn(0f, screenHeight), bottom = anchor.coerceIn(0f, screenHeight),
-    )
+  /** Maps surface coordinates through a centre-pivot SurfaceView zoom and pan into screen coordinates. */
+  fun zoomedAroundCenter(scale: Float, panX: Float, panY: Float, width: Float, height: Float): SubtitleGestureRegion {
+    fun x(v: Float) = width / 2f + (v - width / 2f) * scale + panX
+    fun y(v: Float) = height / 2f + (v - height / 2f) * scale + panY
+    return copy(left = x(left), right = x(right), top = y(top), bottom = y(bottom), positionHeight = positionHeight * scale)
   }
 
   fun contains(x: Float, y: Float, padding: Float = 0f): Boolean =
@@ -98,6 +90,6 @@ fun estimateSubtitleGestureRegion(
   if (top >= screenHeight || bottom <= 0f) return null
   return SubtitleGestureRegion(
     target, trackId, position, scale,
-    (screenWidth - width) / 2f, top, (screenWidth + width) / 2f, bottom.coerceAtMost(screenHeight), positionHeight, renderTop,
+    (screenWidth - width) / 2f, top, (screenWidth + width) / 2f, bottom.coerceAtMost(screenHeight), positionHeight,
   )
 }

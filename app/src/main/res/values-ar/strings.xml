@@ -1048,7 +1048,6 @@
   <string name="compressor_version">الضاغط v%1$s</string>
   <string name="compressor_device">الجهاز: %1$s %2$s</string>
   <string name="compressor_android_version">Android:‏ %1$s</string>
-  <string name="subtitle_position_update">موضع الترجمة: %1$d</string>
   <string name="hdr_screen_output_update">إخراج شاشة HDR:‏ %1$s</string>
   <string name="ambient_style_update">نمط الإضاءة المحيطية: %1$s</string>
   <string name="online_subtitle_episode">الحلقة %1$d</string>

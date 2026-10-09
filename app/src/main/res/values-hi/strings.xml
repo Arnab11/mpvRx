@@ -974,7 +974,6 @@
   <string name="compressor_version">कंप्रेसर v%1$s</string>
   <string name="compressor_device">डिवाइस: %1$s %2$s</string>
   <string name="compressor_android_version">Android: %1$s</string>
-  <string name="subtitle_position_update">सबटाइटल पोजीशन: %1$d</string>
   <string name="hdr_screen_output_update">HDR स्क्रीन आउटपुट: %1$s</string>
   <string name="ambient_style_update">एम्बिएंट स्टाइल: %1$s</string>
   <string name="online_subtitle_episode">एपिसोड %1$d</string>

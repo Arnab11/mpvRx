@@ -142,12 +142,16 @@ import java.io.FileOutputStream
 import java.security.MessageDigest
 import java.lang.ref.WeakReference
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.math.abs
 import kotlin.math.roundToInt
 import kotlin.properties.ReadOnlyProperty
 import kotlin.random.Random
 import kotlin.reflect.KProperty
+
+private const val SUBTITLE_GESTURE_HIGHLIGHT_COLOR = "#B31A73E8"
 
 enum class AutoCropState {
   IDLE,
@@ -5324,39 +5328,68 @@ val isBrightnessSliderShown = MutableStateFlow(false)
     volumeSliderTimestamp.value = System.currentTimeMillis()
   }
 
-  /** Keep per-frame movement fractional and defer preference writes until release. */
-  fun previewSubtitlePosition(position: Float, target: SubtitleGestureTarget) {
-    val property = "${target.prefix}-pos"
+  // mpv property writes block until the core handles them; gestures must never wait on that.
+  private val subtitleGestureDispatcher = Dispatchers.IO.limitedParallelism(1)
+  private val pendingSubtitleProperties = ConcurrentHashMap<String, Float>()
+  private val subtitleFlushQueued = AtomicBoolean(false)
+  private var savedSubtitleBoxStyle: Pair<String?, String?>? = null
+  private var lastSubtitleGestureText: String? = null
+
+  /** Only the newest value per property reaches mpv, so fast drags never queue up stale frames. */
+  private fun queueSubtitleProperty(property: String, value: Float) {
     if (MpvConfigOverridePolicy.isOwnedByMpvConf(property)) return
+    pendingSubtitleProperties[property] = value
+    if (!subtitleFlushQueued.compareAndSet(false, true)) return
+    viewModelScope.launch(subtitleGestureDispatcher) {
+      subtitleFlushQueued.set(false)
+      pendingSubtitleProperties.keys.toList().forEach { key ->
+        pendingSubtitleProperties.remove(key)?.let { PlaybackSession.setPropertyFloat(key, it) }
+      }
+    }
+  }
+
+  fun previewSubtitlePosition(position: Float, target: SubtitleGestureTarget) {
     val newPosition = position.coerceIn(0f, 150f)
-    if (PlaybackSession.getPropertyFloat(property) == newPosition) return
-    PlaybackSession.setPropertyFloat(property, newPosition)
+    queueSubtitleProperty("${target.prefix}-pos", newPosition)
     val label = appContext.getString(
       if (target == SubtitleGestureTarget.Secondary) R.string.player_sheets_secondary_sub_position
       else R.string.player_sheets_sub_primary_position,
     )
-    playerUpdate.value = PlayerUpdates.ShowText("$label: ${newPosition.roundToInt()}%")
+    val text = "$label: ${newPosition.roundToInt()}%"
+    if (text != lastSubtitleGestureText) {
+      lastSubtitleGestureText = text
+      playerUpdate.value = PlayerUpdates.ShowText(text)
+    }
   }
 
-  fun persistSubtitleGesturePosition(target: SubtitleGestureTarget) {
-    val property = "${target.prefix}-pos"
-    if (MpvConfigOverridePolicy.isOwnedByMpvConf(property)) return
-    val position = PlaybackSession.getPropertyFloat(property)?.roundToInt() ?: return
+  fun previewSubtitleScale(scale: Float, target: SubtitleGestureTarget) {
+    queueSubtitleProperty("${target.prefix}-scale", scale)
+  }
+
+  fun persistSubtitleGesturePosition(target: SubtitleGestureTarget, position: Float) {
+    lastSubtitleGestureText = null
+    if (MpvConfigOverridePolicy.isOwnedByMpvConf("${target.prefix}-pos")) return
     val preference = if (target == SubtitleGestureTarget.Secondary) subtitlesPreferences.secondarySubPos else subtitlesPreferences.subPos
-    if (preference.get() != position) preference.set(position)
+    val rounded = clampSubtitlePosition(position.roundToInt())
+    if (preference.get() != rounded) preference.set(rounded)
   }
 
-  /**
-   * Moves primary + secondary subtitles together (secondary keeps its offset from
-   * primary). Both mpv props, prefs, OSD and settings sliders update live.
-   */
-  fun changeSubtitlePositionsTo(primaryPosition: Int, secondaryPosition: Int) {
-    val newPrimary = clampSubtitlePosition(primaryPosition)
-    val newSecondary = clampSubtitlePosition(secondaryPosition)
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("sub-pos")) subtitlesPreferences.subPos.set(newPrimary)
-    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("secondary-sub-pos")) subtitlesPreferences.secondarySubPos.set(newSecondary)
-    syncSubtitleLayout(newPrimary, newSecondary)
-    playerUpdate.value = PlayerUpdates.ShowText(appContext.getString(R.string.subtitle_position_update, newPrimary))
+  /** mpv's own background box outlines the real rendered glyphs while a subtitle is dragged or pinched. */
+  fun setSubtitleGestureHighlight(active: Boolean) {
+    viewModelScope.launch(subtitleGestureDispatcher) {
+      if (active) {
+        if (savedSubtitleBoxStyle != null) return@launch
+        savedSubtitleBoxStyle =
+          PlaybackSession.getPropertyString("sub-border-style") to PlaybackSession.getPropertyString("sub-back-color")
+        PlaybackSession.setPropertyString("sub-border-style", "background-box")
+        PlaybackSession.setPropertyString("sub-back-color", SUBTITLE_GESTURE_HIGHLIGHT_COLOR)
+      } else {
+        val (style, color) = savedSubtitleBoxStyle ?: return@launch
+        savedSubtitleBoxStyle = null
+        style?.let { PlaybackSession.setPropertyString("sub-border-style", it) }
+        color?.let { PlaybackSession.setPropertyString("sub-back-color", it) }
+      }
+    }
   }
 
   private fun syncSubtitleLayout(

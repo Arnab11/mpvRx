@@ -15,7 +15,6 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -58,8 +57,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
@@ -85,8 +82,6 @@ import app.gyrolet.mpvrx.ui.player.PlayerUpdates
 import app.gyrolet.mpvrx.ui.player.PlayerViewModel
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.SingleActionGesture
-import app.gyrolet.mpvrx.ui.player.clampSubtitlePosition
-import app.gyrolet.mpvrx.ui.player.subtitleVideoZoomFactor
 import app.gyrolet.mpvrx.ui.player.getSubtitleGestureRegion
 import app.gyrolet.mpvrx.ui.player.SubtitleGestureTarget
 import app.gyrolet.mpvrx.ui.player.SubtitleGestureRegion
@@ -140,7 +135,6 @@ fun GestureHandler(
   val context = LocalContext.current
   val currentOnLockedTouchSideChanged by rememberUpdatedState(onLockedTouchSideChanged)
   val subtitleTracks by viewModel.subtitleTracks.collectAsState(emptyList())
-  var subtitleHighlight by remember { mutableStateOf<SubtitleGestureRegion?>(null) }
   // Pointer handlers outlive recomposition; always resolve against the current tracks.
   val subtitleRegions by rememberUpdatedState<(Float, Float) -> List<SubtitleGestureRegion>> { width, height ->
     SubtitleGestureTarget.entries.mapNotNull { target ->
@@ -220,7 +214,6 @@ fun GestureHandler(
     gesturePointerId = pointerId
     gestureDownTimeMillis = downTimeMillis
     gestureOwner = null
-    subtitleHighlight = null
     gestureClaimedForPointer = false
     speedHoldPending = false
     suppressHorizontalSeekForPointer = false
@@ -553,16 +546,17 @@ fun GestureHandler(
             var lastMPVVolumeValue = currentMPVVolume ?: 100
             var lastBrightnessValue = currentBrightness
             var originalSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-            var lastSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
             var originalSecondarySubtitlePosition =
               PlaybackSession.getPropertyInt("secondary-sub-pos") ?: subtitlesPreferences.secondarySubPos.get()
-            var lastSecondarySubtitlePosition = originalSecondarySubtitlePosition
             val brightnessGestureSens = 0.001f
             // Match the anime4k gesture feel, but snap to whole-number volume steps.
             val volumeGestureSens = 0.1f
             val mpvVolumeGestureSens = 0.1f
             var subtitleDragStartY = startPosition.y
             var subtitleDragPosition = touchedSubtitle?.position ?: originalSubtitlePosition.toFloat()
+            var lastDraggedPosition: Float? = null
+            var lastDraggedSecondaryPosition: Float? = null
+            var subtitleHighlightShown = false
 
             // Original speed for long press
             var originalSpeed = playbackSpeed ?: 1f
@@ -585,16 +579,13 @@ fun GestureHandler(
                     if ((isStartOnSubtitleText || isCenterSubtitleTouch) && claimGesture(GestureOwner.SUBTITLE_VERTICAL)) {
                       longPressTriggered = true
                       isSubtitleHoldActive = true
-                      touchedSubtitle?.let {
-                        subtitleHighlight = it
-                      }
+                      viewModel.setSubtitleGestureHighlight(true)
+                      subtitleHighlightShown = true
                       longPressTriggeredDuringTouch = true
                       actionHaptics.pickup()
                       originalSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-                      lastSubtitlePosition = originalSubtitlePosition
                       originalSecondarySubtitlePosition =
                         PlaybackSession.getPropertyInt("secondary-sub-pos") ?: subtitlesPreferences.secondarySubPos.get()
-                      lastSecondarySubtitlePosition = originalSecondarySubtitlePosition
                       viewModel.playerUpdate.update {
                         PlayerUpdates.ShowText(
                           context.getString(R.string.player_move_subtitles_hint),
@@ -758,24 +749,22 @@ fun GestureHandler(
                               lastBrightnessValue = currentBrightness
                               originalSubtitlePosition =
                                 PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-                              lastSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
                             }
                           }
                           "subtitle_vertical" -> {
                             isVerticalGestureActive = true
                             subtitleDragStartY = currentPosition.y
                             subtitleDragPosition = touchedSubtitle?.position ?: originalSubtitlePosition.toFloat()
-                            touchedSubtitle?.let {
-                              subtitleHighlight = it
+                            if (!subtitleHighlightShown) {
+                              viewModel.setSubtitleGestureHighlight(true)
+                              subtitleHighlightShown = true
                             }
                             startingY = 0f
                             originalSubtitlePosition =
                               PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-                            lastSubtitlePosition = originalSubtitlePosition
                             originalSecondarySubtitlePosition =
                               PlaybackSession.getPropertyInt("secondary-sub-pos")
                                 ?: subtitlesPreferences.secondarySubPos.get()
-                            lastSecondarySubtitlePosition = originalSecondarySubtitlePosition
                           }
                         }
                       }
@@ -853,29 +842,25 @@ fun GestureHandler(
                         "subtitle_vertical" -> {
                           if (isSubtitleHoldActive || gestureOwner == GestureOwner.SUBTITLE_VERTICAL) {
                             val selected = touchedSubtitle
-                            if (selected != null) {
-                              // Lock the target for this entire touch, even if the tracks cross.
-                              if (PlaybackSession.state.value.generation == subtitleGestureGeneration &&
-                                getTrackSelectionId(selected.target.selectionProperty) == selected.trackId
-                              ) {
+                            if (PlaybackSession.state.value.generation == subtitleGestureGeneration) {
+                              if (selected != null) {
+                                // Lock the target for this entire touch, even if the tracks cross.
                                 val newPosition = draggedSubtitlePosition(
                                   subtitleDragPosition, currentPosition.y - subtitleDragStartY, selected.positionHeight,
                                 )
                                 viewModel.previewSubtitlePosition(newPosition, selected.target)
-                                subtitleHighlight = selected.transformed(newPosition, selected.scale, size.width.toFloat(), size.height.toFloat())
-                              }
-                            } else {
-                              // Keep the existing center hold gesture for moving both tracks.
-                              val newPosition = draggedSubtitlePosition(
-                                originalSubtitlePosition.toFloat(), currentPosition.y - subtitleDragStartY, size.height.toFloat(),
-                              )
-                              val newSecondary = clampSubtitlePosition(
-                                originalSecondarySubtitlePosition + newPosition.roundToInt() - originalSubtitlePosition,
-                              )
-                              if (newPosition.roundToInt() != lastSubtitlePosition || newSecondary != lastSecondarySubtitlePosition) {
-                                viewModel.changeSubtitlePositionsTo(newPosition.roundToInt(), newSecondary)
-                                lastSubtitlePosition = newPosition.roundToInt()
-                                lastSecondarySubtitlePosition = newSecondary
+                                lastDraggedPosition = newPosition
+                              } else {
+                                // Center hold moves both tracks and keeps their spacing.
+                                val newPrimary = draggedSubtitlePosition(
+                                  originalSubtitlePosition.toFloat(), currentPosition.y - subtitleDragStartY, size.height.toFloat(),
+                                )
+                                val newSecondary =
+                                  (originalSecondarySubtitlePosition + newPrimary - originalSubtitlePosition).coerceIn(0f, 150f)
+                                viewModel.previewSubtitlePosition(newSecondary, SubtitleGestureTarget.Secondary)
+                                viewModel.previewSubtitlePosition(newPrimary, SubtitleGestureTarget.Primary)
+                                lastDraggedPosition = newPrimary
+                                lastDraggedSecondaryPosition = newSecondary
                               }
                             }
                             change.consume()
@@ -1078,12 +1063,20 @@ fun GestureHandler(
               }
             } finally {
               longPressJob.cancel()
-              touchedSubtitle?.let {
-                if (PlaybackSession.state.value.generation == subtitleGestureGeneration &&
-                  getTrackSelectionId(it.target.selectionProperty) == it.trackId
-                ) viewModel.persistSubtitleGesturePosition(it.target)
+              if (subtitleHighlightShown) viewModel.setSubtitleGestureHighlight(false)
+              if (PlaybackSession.state.value.generation == subtitleGestureGeneration) {
+                val selected = touchedSubtitle
+                lastDraggedPosition?.let { position ->
+                  if (selected == null) {
+                    viewModel.persistSubtitleGesturePosition(SubtitleGestureTarget.Primary, position)
+                  } else if (getTrackSelectionId(selected.target.selectionProperty) == selected.trackId) {
+                    viewModel.persistSubtitleGesturePosition(selected.target, position)
+                  }
+                }
+                lastDraggedSecondaryPosition?.let {
+                  viewModel.persistSubtitleGesturePosition(SubtitleGestureTarget.Secondary, it)
+                }
               }
-              subtitleHighlight = null
               isVerticalGestureActive = false
               releaseGesture(GestureOwner.SUBTITLE_VERTICAL)
               if (isLongPressing) {
@@ -1129,6 +1122,8 @@ fun GestureHandler(
             var lastPinchSubPos = 100f
             var scaleChanged = false
             var linkedScaleChanged = false
+            var linkSecondaryScale = false
+            var pinchHighlightShown = false
 
             var currentPanX = 0f
             var currentPanY = 0f
@@ -1138,7 +1133,6 @@ fun GestureHandler(
             val down = awaitFirstDown(requireUnconsumed = false)
             beginGesture(down.id.value, down.uptimeMillis)
             val subtitleGestureGeneration = PlaybackSession.state.value.generation
-            val zoomFactor = subtitleVideoZoomFactor()
             val firstTouchedSubtitle = if (pinchToZoomSubtitles) {
               findSubtitleGestureTarget(
                 subtitleRegions(size.width.toFloat(), size.height.toFloat()),
@@ -1191,6 +1185,10 @@ fun GestureHandler(
                       lastCalculatedSecondarySubScale = initialSecondarySubScale
                       initialPinchMidY = midY
                       lastPinchSubPos = selected.position
+                      linkSecondaryScale = selected.target == SubtitleGestureTarget.Primary && secondarySubPinchZoomEnabled &&
+                        isSecondarySubtitleActive() && !MpvConfigOverridePolicy.isOwnedByMpvConf("secondary-sub-scale")
+                      viewModel.setSubtitleGestureHighlight(true)
+                      pinchHighlightShown = true
                     } else if (pinchToZoomGesture || panAndZoomEnabled) {
                       isSubZoomMode = false
                       zoom = viewModel.videoZoom.value
@@ -1206,21 +1204,17 @@ fun GestureHandler(
 
                       val selected = selectedSubtitle
                       if (gestureStarted && selected != null &&
-                        PlaybackSession.state.value.generation == subtitleGestureGeneration &&
-                        getTrackSelectionId(selected.target.selectionProperty) == selected.trackId
+                        PlaybackSession.state.value.generation == subtitleGestureGeneration
                       ) {
                         val scaleProperty = "${selected.target.prefix}-scale"
                         if (!MpvConfigOverridePolicy.isOwnedByMpvConf(scaleProperty)) {
-                          val currentSubScale = (initialSubScale * (dist / initialDist)).coerceIn(0.1f * zoomFactor, 5f * zoomFactor)
+                          val currentSubScale = (initialSubScale * (dist / initialDist)).coerceIn(0.1f, 5f)
                           scaleChanged = scaleChanged || abs(currentSubScale - initialSubScale) > 0.001f
                           lastCalculatedSubScale = currentSubScale
-                          PlaybackSession.setPropertyFloat(scaleProperty, currentSubScale)
-                          // Preserve the existing opt-in linked scaling behavior for a primary pinch.
-                          if (selected.target == SubtitleGestureTarget.Primary && secondarySubPinchZoomEnabled &&
-                            isSecondarySubtitleActive() && !MpvConfigOverridePolicy.isOwnedByMpvConf("secondary-sub-scale")
-                          ) {
-                            lastCalculatedSecondarySubScale = (initialSecondarySubScale * (dist / initialDist)).coerceIn(0.1f * zoomFactor, 5f * zoomFactor)
-                            PlaybackSession.setPropertyFloat("secondary-sub-scale", lastCalculatedSecondarySubScale)
+                          viewModel.previewSubtitleScale(currentSubScale, selected.target)
+                          if (linkSecondaryScale) {
+                            lastCalculatedSecondarySubScale = (initialSecondarySubScale * (dist / initialDist)).coerceIn(0.1f, 5f)
+                            viewModel.previewSubtitleScale(lastCalculatedSecondarySubScale, SubtitleGestureTarget.Secondary)
                             linkedScaleChanged = true
                           }
                           viewModel.playerUpdate.update {
@@ -1236,7 +1230,6 @@ fun GestureHandler(
                             lastPinchSubPos = newPosition
                           }
                         }
-                        subtitleHighlight = selected.transformed(lastPinchSubPos, lastCalculatedSubScale, sw, sh)
                       }
                     } else if (pinchToZoomGesture || panAndZoomEnabled) {
                       // Activate on significant pinch movement OR mid movement (pan)
@@ -1303,16 +1296,18 @@ fun GestureHandler(
               val selected = selectedSubtitle
               val stillSameTrack = selected != null && PlaybackSession.state.value.generation == subtitleGestureGeneration &&
                 getTrackSelectionId(selected.target.selectionProperty) == selected.trackId
-              if (stillSameTrack && selected != null) viewModel.persistSubtitleGesturePosition(selected.target)
+              if (stillSameTrack && selected != null && lastPinchSubPos != selected.position) {
+                viewModel.persistSubtitleGesturePosition(selected.target, lastPinchSubPos)
+              }
               if (scaleChanged && stillSameTrack) {
                 if (selectedSubtitle?.target == SubtitleGestureTarget.Secondary) {
-                  subtitlesPreferences.secondarySubScale.set(lastCalculatedSubScale / zoomFactor)
+                  subtitlesPreferences.secondarySubScale.set(lastCalculatedSubScale)
                 } else {
-                  subtitlesPreferences.subScale.set(lastCalculatedSubScale / zoomFactor)
+                  subtitlesPreferences.subScale.set(lastCalculatedSubScale)
                 }
               }
-              if (linkedScaleChanged && stillSameTrack) subtitlesPreferences.secondarySubScale.set(lastCalculatedSecondarySubScale / zoomFactor)
-              subtitleHighlight = null
+              if (linkedScaleChanged && stillSameTrack) subtitlesPreferences.secondarySubScale.set(lastCalculatedSecondarySubScale)
+              if (pinchHighlightShown) viewModel.setSubtitleGestureHighlight(false)
               releaseGesture(GestureOwner.PINCH)
               viewModel.playerUpdate.update { PlayerUpdates.None }
             }
@@ -1500,23 +1495,7 @@ fun GestureHandler(
             releaseGesture(GestureOwner.SUBTITLE_SEEK)
           }
         },
-  ) {
-    subtitleHighlight?.let { region ->
-      Canvas(Modifier.fillMaxSize()) {
-        val padding = 4.dp.toPx()
-        val left = (region.left - padding).coerceAtLeast(0f)
-        val top = (region.top - padding).coerceAtLeast(0f)
-        val right = (region.right + padding).coerceAtMost(size.width)
-        val bottom = (region.bottom + padding).coerceAtMost(size.height)
-        val bounds = Size((right - left).coerceAtLeast(0f), (bottom - top).coerceAtLeast(0f))
-        drawRoundRect(Color.White.copy(alpha = 0.14f), Offset(left, top), bounds, CornerRadius(10.dp.toPx()))
-        drawRoundRect(
-          Color.White.copy(alpha = 0.65f), Offset(left, top), bounds, CornerRadius(10.dp.toPx()),
-          style = Stroke(1.dp.toPx()),
-        )
-      }
-    }
-  }
+  )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -234,6 +234,8 @@ fun PlayerControls(
   val controlsInteractionEpoch by viewModel.controlsInteractionEpoch.collectAsState()
   val tvPlayFocusRequester = rememberTvInitialFocusRequester(enabled = controlsShown)
   val overlaysFollowVideoZoom by playerPreferences.overlaysFollowVideoZoom.collectAsState()
+  val videoPanX by viewModel.videoPanX.collectAsState()
+  val videoPanY by viewModel.videoPanY.collectAsState()
   val statisticsPage by advancedPreferences.enabledStatisticsPage.collectAsState()
   val areControlsLocked by viewModel.areControlsLocked.collectAsState()
   val seekBarShown by viewModel.seekBarShown.collectAsState()
@@ -731,23 +733,30 @@ fun PlayerControls(
       )
     }
     if (statisticsPage == 6) {
-      CustomStatsPageSixOverlay(
-        viewModel = viewModel,
-        modifier =
-          Modifier
-            .align(Alignment.TopStart)
-            .graphicsLayer {
-              val zoomScale = if (overlaysFollowVideoZoom) app.gyrolet.mpvrx.ui.player.videoZoomMultiplier(currentZoom) else 1f
-              scaleX = zoomScale
-              scaleY = zoomScale
-              transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
-            }
-            .windowInsetsPadding(
-              WindowInsets.safeDrawing.only(
-                WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-              ),
-            ).padding(top = 16.dp, start = 14.dp),
-      )
+      // Mirror the SurfaceView transform so page 6 stays on the video like mpv's own stats pages.
+      Box(
+        Modifier.fillMaxSize().graphicsLayer {
+          if (overlaysFollowVideoZoom) {
+            val zoomScale = app.gyrolet.mpvrx.ui.player.videoZoomMultiplier(currentZoom)
+            scaleX = zoomScale
+            scaleY = zoomScale
+            translationX = videoPanX
+            translationY = videoPanY
+          }
+        },
+      ) {
+        CustomStatsPageSixOverlay(
+          viewModel = viewModel,
+          modifier =
+            Modifier
+              .align(Alignment.TopStart)
+              .windowInsetsPadding(
+                WindowInsets.safeDrawing.only(
+                  WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                ),
+              ).padding(top = 16.dp, start = 14.dp),
+        )
+      }
     }
 
     MediaScopesOverlay(

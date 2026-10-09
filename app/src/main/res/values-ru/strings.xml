@@ -1048,7 +1048,6 @@
   <string name="compressor_version">Компрессор v%1$s</string>
   <string name="compressor_device">Устройство: %1$s %2$s</string>
   <string name="compressor_android_version">Android: %1$s</string>
-  <string name="subtitle_position_update">Положение субтитров: %1$d</string>
   <string name="hdr_screen_output_update">Вывод HDR на экран: %1$s</string>
   <string name="ambient_style_update">Стиль подсветки: %1$s</string>
   <string name="online_subtitle_episode">Серия %1$d</string>

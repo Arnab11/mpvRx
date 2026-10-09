@@ -10,7 +10,7 @@
 package app.gyrolet.mpvrx.ui.player.controls.components.panels
 
 import app.gyrolet.mpvrx.ui.player.PlaybackSession
-import app.gyrolet.mpvrx.ui.player.applySubtitleZoom
+import app.gyrolet.mpvrx.ui.player.applySubtitleScales
 import app.gyrolet.mpvrx.ui.player.subtitleBlendMode
 
 import androidx.compose.foundation.layout.Arrangement
@@ -172,7 +172,7 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
           valueText = subScale.toFixed(2).toString(),
           onChange = {
             preferences.subScale.set(it)
-            applySubtitleZoom()
+            applySubtitleScales()
           },
           max = 5f,
           enabled = scaleOptions.none(configOwnedOptions::contains),
@@ -209,7 +209,7 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
             valueText = secondarySubScale.toFixed(2).toString(),
             onChange = {
               preferences.secondarySubScale.set(it)
-              applySubtitleZoom()
+              applySubtitleScales()
             },
             max = 5f,
             enabled = scaleOptions.none(configOwnedOptions::contains),
@@ -245,7 +245,7 @@ fun SubtitlesMiscellaneousCard(modifier: Modifier = Modifier) {
               val defaultSubPos = preferences.subPos.deleteAndGet()
               preferences.subScale.delete()
               preferences.secondarySubScale.delete()
-              applySubtitleZoom()
+              applySubtitleScales()
               preferences.secondarySubPos.delete()
               val defaultOverride = preferences.overrideAssSubs.deleteAndGet()
               overrideAssSubs = defaultOverride

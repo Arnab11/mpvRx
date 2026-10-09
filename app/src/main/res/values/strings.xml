@@ -1226,7 +1226,6 @@
   <string name="compressor_version">Compressor v%1$s</string>
   <string name="compressor_device">Device: %1$s %2$s</string>
   <string name="compressor_android_version">Android: %1$s</string>
-  <string name="subtitle_position_update">Subtitle Position: %1$d</string>
   <string name="hdr_screen_output_update">HDR Screen Output: %1$s</string>
   <string name="ambient_style_update">Ambient Style: %1$s</string>
   <string name="online_subtitle_episode">Episode %1$d</string>

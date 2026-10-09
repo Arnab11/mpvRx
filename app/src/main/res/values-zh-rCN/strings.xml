@@ -1050,7 +1050,6 @@
   <string name="compressor_version">压缩器 v%1$s</string>
   <string name="compressor_device">设备：%1$s %2$s</string>
   <string name="compressor_android_version">Android：%1$s</string>
-  <string name="subtitle_position_update">字幕位置：%1$d</string>
   <string name="hdr_screen_output_update">HDR 屏幕输出：%1$s</string>
   <string name="ambient_style_update">环境光样式：%1$s</string>
   <string name="online_subtitle_episode">第 %1$d 集</string>

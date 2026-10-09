@@ -1048,7 +1048,6 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="compressor_version">Compressor v%1$s</string>
   <string name="compressor_device">Dispositivo: %1$s %2$s</string>
   <string name="compressor_android_version">Android: %1$s</string>
-  <string name="subtitle_position_update">Posição da legenda: %1$d</string>
   <string name="hdr_screen_output_update">Saída de tela HDR: %1$s</string>
   <string name="ambient_style_update">Estilo ambiente: %1$s</string>
   <string name="online_subtitle_episode">Episódio %1$d</string>

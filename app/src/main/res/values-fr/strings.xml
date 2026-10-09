@@ -1048,7 +1048,6 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="compressor_version">Compresseur v%1$s</string>
   <string name="compressor_device">Appareil : %1$s %2$s</string>
   <string name="compressor_android_version">Android : %1$s</string>
-  <string name="subtitle_position_update">Position des sous-titres : %1$d</string>
   <string name="hdr_screen_output_update">Sortie d’écran HDR : %1$s</string>
   <string name="ambient_style_update">Style ambiant : %1$s</string>
   <string name="online_subtitle_episode">Épisode %1$d</string>
