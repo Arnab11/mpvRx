@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">Double appui (droite)</string>
   <string name="pref_gesture_use_single_tap_for_center_title">Utiliser un appui simple pour le geste central</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">Utiliser un seul appui au centre pour les gestes (comme lecture/pause) au lieu d’un double appui.</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">Maintenir et faire glisser déplace les sous-titres</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">Maintenez au centre, puis faites glisser vers le haut ou le bas pour déplacer les sous-titres</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">Faire glisser pour déplacer les sous-titres</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">Faites glisser un sous-titre vers le haut ou le bas pour le déplacer séparément. Appuyez longuement au centre, puis faites glisser pour déplacer les deux.</string>
   <string name="pref_gesture_view_title">Vue</string>
   <string name="pref_gesture_double_tap_custom_info">Vous pouvez associer des actions personnalisées à ces gestes dans input.conf avec les codes de touche suivants :
 
@@ -2717,4 +2717,8 @@ Veuillez redémarrer l’application pour appliquer toutes les modifications.</s
   <string name="debug_logs_config_save_failed">Impossible d\'enregistrer les journaux. Vérifiez l\'accès au dossier de configuration ou sélectionnez-le à nouveau.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Afficher la barre de lecture quand les commandes sont masquées</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Pendant la recherche par balayage horizontal, afficher la barre de lecture même si les commandes du lecteur sont masquées. La pastille de temps reste inchangée.</string>
+  <string name="player_zoom_subtitles_follow">Zoomer les sous-titres avec la vidéo</string>
+  <string name="player_zoom_subtitles_follow_summary">Désactivé, la taille des sous-titres reste indépendante du zoom vidéo.</string>
+  <string name="player_zoom_stats_follow">Zoomer les statistiques avec la vidéo</string>
+  <string name="player_zoom_stats_follow_summary">Concerne les pages 1 à 6. Désactivé, les statistiques gardent une taille fixe.</string>
 </resources>

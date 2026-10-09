@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">双击（右侧）</string>
   <string name="pref_gesture_use_single_tap_for_center_title">中间手势使用单击</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">中间区域的手势（如播放/暂停）使用单击，而不是双击。</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">长按并拖动可移动字幕</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">长按中间区域，然后向上或向下拖动以移动字幕位置</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">拖动以移动字幕</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">上下拖动任意字幕可单独移动该字幕。长按屏幕中央后拖动可同时移动两组字幕。</string>
   <string name="pref_gesture_view_title">视图</string>
   <string name="pref_gesture_double_tap_custom_info">可在 input.conf 中使用以下按键代码为这些手势绑定自定义操作：
 
@@ -2716,4 +2716,8 @@
   <string name="debug_logs_config_save_failed">无法保存日志。请检查配置文件夹的访问权限或重新选择该文件夹。</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">控制栏隐藏时显示进度条</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">水平滑动快进或快退时，即使播放器控制栏已隐藏也显示进度条。时间提示不受影响.</string>
+  <string name="player_zoom_subtitles_follow">字幕随视频缩放</string>
+  <string name="player_zoom_subtitles_follow_summary">关闭后，字幕大小不受视频缩放影响。</string>
+  <string name="player_zoom_stats_follow">统计信息随视频缩放</string>
+  <string name="player_zoom_stats_follow_summary">适用于统计页面 1–6。关闭后，统计信息保持固定大小。</string>
 </resources>

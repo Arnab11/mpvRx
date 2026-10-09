@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">Doppeltipp (rechts)</string>
   <string name="pref_gesture_use_single_tap_for_center_title">Einfaches Tippen für mittlere Geste verwenden</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">Für Gesten in der Mitte (z. B. Wiedergabe/Pause) einmal statt doppelt tippen.</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">Gedrückt halten und ziehen verschiebt Untertitel</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">In der Mitte gedrückt halten und dann nach oben oder unten ziehen, um die Untertitelposition zu ändern</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">Untertitel durch Ziehen verschieben</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">Ziehe einen Untertitel nach oben oder unten, um ihn einzeln zu verschieben. Halte die Mitte gedrückt und ziehe, um beide zu verschieben.</string>
   <string name="pref_gesture_view_title">Ansicht</string>
   <string name="pref_gesture_double_tap_custom_info">Diesen Gesten können in input.conf mit den folgenden Tastencodes benutzerdefinierte Aktionen zugewiesen werden:
 
@@ -2717,4 +2717,8 @@ Bitte starten Sie die App neu, damit alle Änderungen wirksam werden.</string>
   <string name="debug_logs_config_save_failed">Protokolle konnten nicht gespeichert werden. Prüfe den Zugriff auf den Konfigurationsordner oder wähle ihn erneut.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Suchleiste bei ausgeblendeten Bedienelementen anzeigen</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Beim horizontalen Wischen die Suchleiste auch dann anzeigen, wenn die Player-Bedienelemente ausgeblendet sind. Die Zeitanzeige bleibt unverändert.</string>
+  <string name="player_zoom_subtitles_follow">Untertitel mit Video zoomen</string>
+  <string name="player_zoom_subtitles_follow_summary">Aus: Die Untertitelgröße bleibt vom Videozoom unabhängig.</string>
+  <string name="player_zoom_stats_follow">Statistiken mit Video zoomen</string>
+  <string name="player_zoom_stats_follow_summary">Gilt für die Statistikseiten 1–6. Aus: Die Größe bleibt unverändert.</string>
 </resources>

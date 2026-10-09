@@ -11,6 +11,8 @@ package app.gyrolet.mpvrx.ui.player.controls.components.sheets
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -113,6 +115,9 @@ private fun ZoomVideoSheet(
   panControlEnabled: Boolean,
   modifier: Modifier = Modifier,
 ) {
+  val preferences = koinInject<PlayerPreferences>()
+  val subtitlesFollowZoom by preferences.subtitlesFollowVideoZoom.collectAsState()
+  val statsFollowZoom by preferences.statsFollowVideoZoom.collectAsState()
   val isDefault = zoom == defaultZoom
   val isZero = zoom == 0f
 
@@ -218,6 +223,19 @@ private fun ZoomVideoSheet(
         )
       }
 
+      ZoomOverlaySwitch(
+        title = stringResource(R.string.player_zoom_subtitles_follow),
+        summary = stringResource(R.string.player_zoom_subtitles_follow_summary),
+        checked = subtitlesFollowZoom,
+        onCheckedChange = { preferences.subtitlesFollowVideoZoom.set(it) },
+      )
+      ZoomOverlaySwitch(
+        title = stringResource(R.string.player_zoom_stats_follow),
+        summary = stringResource(R.string.player_zoom_stats_follow_summary),
+        checked = statsFollowZoom,
+        onCheckedChange = { preferences.statsFollowVideoZoom.set(it) },
+      )
+
       // Action buttons
       Row(
         modifier = Modifier.fillMaxWidth(),
@@ -240,5 +258,27 @@ private fun ZoomVideoSheet(
         }
       }
     }
+  }
+}
+
+@Composable
+private fun ZoomOverlaySwitch(
+  title: String,
+  summary: String,
+  checked: Boolean,
+  onCheckedChange: (Boolean) -> Unit,
+) {
+  Row(
+    modifier = Modifier.fillMaxWidth()
+      .toggleable(value = checked, role = Role.Switch, onValueChange = onCheckedChange)
+      .padding(vertical = 8.dp),
+    verticalAlignment = Alignment.CenterVertically,
+    horizontalArrangement = Arrangement.spacedBy(12.dp),
+  ) {
+    Column(Modifier.weight(1f)) {
+      Text(title, style = MaterialTheme.typography.bodyMedium)
+      Text(summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+    IconSwitch(checked = checked, onCheckedChange = null)
   }
 }

@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">Toque duplo (direita)</string>
   <string name="pref_gesture_use_single_tap_for_center_title">Usar toque único para o gesto central</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">Usar um único toque no centro para gestos (como reproduzir/pausar) em vez de um toque duplo.</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">Manter e arrastar move as legendas</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">Mantenha pressionado no centro e arraste para cima ou para baixo para mover a posição das legendas</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">Arrastar para mover legendas</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">Arraste qualquer legenda para cima ou para baixo para movê-la separadamente. Mantenha o centro pressionado e arraste para mover ambas.</string>
   <string name="pref_gesture_view_title">Visualização</string>
   <string name="pref_gesture_double_tap_custom_info">Você pode vincular ações personalizadas a estes gestos no input.conf usando os seguintes códigos de tecla:
 
@@ -2717,4 +2717,8 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="debug_logs_config_save_failed">Não foi possível salvar os registros. Verifique o acesso à pasta de configuração ou selecione-a novamente.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Mostrar barra de busca com controles ocultos</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Ao deslizar horizontalmente para avançar ou retroceder, mostra a barra de busca mesmo com os controles do player ocultos. O indicador de tempo não muda.</string>
+  <string name="player_zoom_subtitles_follow">Ampliar legendas com o vídeo</string>
+  <string name="player_zoom_subtitles_follow_summary">Desativado, o tamanho das legendas fica independente do zoom do vídeo.</string>
+  <string name="player_zoom_stats_follow">Ampliar estatísticas com o vídeo</string>
+  <string name="player_zoom_stats_follow_summary">Aplica-se às páginas 1–6. Desativado, as estatísticas mantêm um tamanho fixo.</string>
 </resources>

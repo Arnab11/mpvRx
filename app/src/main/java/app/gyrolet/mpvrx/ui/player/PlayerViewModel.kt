@@ -5363,7 +5363,30 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   }
 
   fun changeSubtitlePositionTo(position: Int) {
-    changeSubtitlePositionsTo(position, subtitlesPreferences.secondarySubPos.get())
+    previewSubtitlePosition(position.toFloat(), SubtitleGestureTarget.Primary)
+    persistSubtitleGesturePosition(SubtitleGestureTarget.Primary)
+  }
+
+  /** Keep per-frame movement fractional and defer preference writes until release. */
+  fun previewSubtitlePosition(position: Float, target: SubtitleGestureTarget) {
+    val property = "${target.prefix}-pos"
+    if (MpvConfigOverridePolicy.isOwnedByMpvConf(property)) return
+    val newPosition = position.coerceIn(0f, 150f)
+    if (PlaybackSession.getPropertyFloat(property) == newPosition) return
+    PlaybackSession.setPropertyFloat(property, newPosition)
+    val label = appContext.getString(
+      if (target == SubtitleGestureTarget.Secondary) R.string.player_sheets_secondary_sub_position
+      else R.string.player_sheets_sub_primary_position,
+    )
+    playerUpdate.value = PlayerUpdates.ShowText("$label: ${newPosition.roundToInt()}%")
+  }
+
+  fun persistSubtitleGesturePosition(target: SubtitleGestureTarget) {
+    val property = "${target.prefix}-pos"
+    if (MpvConfigOverridePolicy.isOwnedByMpvConf(property)) return
+    val position = PlaybackSession.getPropertyFloat(property)?.roundToInt() ?: return
+    val preference = if (target == SubtitleGestureTarget.Secondary) subtitlesPreferences.secondarySubPos else subtitlesPreferences.subPos
+    if (preference.get() != position) preference.set(position)
   }
 
   /**
@@ -5373,8 +5396,8 @@ val isBrightnessSliderShown = MutableStateFlow(false)
   fun changeSubtitlePositionsTo(primaryPosition: Int, secondaryPosition: Int) {
     val newPrimary = clampSubtitlePosition(primaryPosition)
     val newSecondary = clampSubtitlePosition(secondaryPosition)
-    subtitlesPreferences.subPos.set(newPrimary)
-    subtitlesPreferences.secondarySubPos.set(newSecondary)
+    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("sub-pos")) subtitlesPreferences.subPos.set(newPrimary)
+    if (!MpvConfigOverridePolicy.isOwnedByMpvConf("secondary-sub-pos")) subtitlesPreferences.secondarySubPos.set(newSecondary)
     syncSubtitleLayout(newPrimary, newSecondary)
     playerUpdate.value = PlayerUpdates.ShowText(appContext.getString(R.string.subtitle_position_update, newPrimary))
   }
@@ -7553,7 +7576,7 @@ val isBrightnessSliderShown = MutableStateFlow(false)
         if (kotlin.math.abs(lastAmbientScaleY - scaleY) > 0.000001) {
           PlaybackSession.setPropertyDouble("video-scale-y", scaleY)
         }
-        val blendMode = if (subtitlesPreferences.blendSubtitlesWithVideo.get()) "video" else "no"
+        val blendMode = subtitleBlendMode()
         if (lastAmbientBlendMode != blendMode) {
           PlaybackSession.setPropertyString("blend-subtitles", blendMode)
         }

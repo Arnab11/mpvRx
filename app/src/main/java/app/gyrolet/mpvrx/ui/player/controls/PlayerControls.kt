@@ -237,6 +237,7 @@ fun PlayerControls(
   val controlsShown by viewModel.controlsShown.collectAsState()
   val controlsInteractionEpoch by viewModel.controlsInteractionEpoch.collectAsState()
   val tvPlayFocusRequester = rememberTvInitialFocusRequester(enabled = controlsShown)
+  val statsFollowVideoZoom by playerPreferences.statsFollowVideoZoom.collectAsState()
   val statisticsPage by advancedPreferences.enabledStatisticsPage.collectAsState()
   val areControlsLocked by viewModel.areControlsLocked.collectAsState()
   val seekBarShown by viewModel.seekBarShown.collectAsState()
@@ -739,6 +740,12 @@ fun PlayerControls(
         modifier =
           Modifier
             .align(Alignment.TopStart)
+            .graphicsLayer {
+              val zoomScale = if (statsFollowVideoZoom) app.gyrolet.mpvrx.ui.player.videoZoomMultiplier(currentZoom) else 1f
+              scaleX = zoomScale
+              scaleY = zoomScale
+              transformOrigin = androidx.compose.ui.graphics.TransformOrigin(0f, 0f)
+            }
             .windowInsetsPadding(
               WindowInsets.safeDrawing.only(
                 WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
@@ -1094,9 +1101,12 @@ fun PlayerControls(
               }
 
               is PlayerUpdates.SubtitleZoom -> {
-                val scaleVal = (currentPlayerUpdate as PlayerUpdates.SubtitleZoom).scale
+                val zoomUpdate = currentPlayerUpdate as PlayerUpdates.SubtitleZoom
+                val label = stringResource(
+                  if (zoomUpdate.secondary) R.string.player_sheets_secondary_sub_scale else R.string.player_sheets_sub_primary_scale,
+                )
                 TextPlayerUpdate(
-                  text = String.format("Sub: %.2fx", scaleVal),
+                  text = String.format("%s: %.2fx", label, zoomUpdate.scale),
                   modifier = Modifier.widthIn(min = 112.dp),
                 )
               }

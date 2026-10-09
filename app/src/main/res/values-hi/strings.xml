@@ -248,8 +248,8 @@
   <string name="pref_gesture_double_tap_right_title">डबल टैप (दाएं)</string>
   <string name="pref_gesture_use_single_tap_for_center_title">बीच के जेस्चर के लिए सिंगल टैप इस्तेमाल करें</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">बीच में जेस्चर (जैसे प्ले/पॉज) के लिए डबल टैप की बजाय सिंगल टैप इस्तेमाल करें।</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">होल्ड और ड्रैग से सबटाइटल हिलते हैं</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">बीच में होल्ड करें, फिर सबटाइटल की पोजीशन बदलने के लिए ऊपर या नीचे खींचें</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">खींचकर उपशीर्षक खिसकाएँ</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">किसी भी उपशीर्षक को अलग से खिसकाने के लिए ऊपर या नीचे खींचें। दोनों को खिसकाने के लिए बीच में दबाकर रखें, फिर खींचें।</string>
   <string name="pref_gesture_view_title">व्यू</string>
   <string name="pref_gesture_double_tap_custom_info">आप input.conf में इन की-कोड्स का इस्तेमाल करके इन जेस्चरों पर कस्टम एक्शन बांध सकते हैं:\n\nबाएं: MBTN_LEFT_DBL\nबीच: MBTN_MID_DBL\nदाएं: MBTN_RIGHT_DBL</string>
   <string name="pref_gesture_media_title">मीडिया कंट्रोल्स</string>
@@ -2621,4 +2621,8 @@
   <string name="debug_logs_config_save_failed">लॉग सहेजे नहीं जा सके। कॉन्फ़िगरेशन फ़ोल्डर की अनुमति जाँचें या उसे फिर चुनें।</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">कंट्रोल छिपे होने पर सीक बार दिखाएँ</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">हॉरिज़ॉन्टल स्वाइप से सीक करते समय, प्लेयर कंट्रोल छिपे होने पर भी सीक बार दिखाएँ। समय दिखाने वाला संकेत पहले जैसा ही रहेगा।</string>
+  <string name="player_zoom_subtitles_follow">वीडियो के साथ उपशीर्षक ज़ूम करें</string>
+  <string name="player_zoom_subtitles_follow_summary">बंद होने पर उपशीर्षक का आकार वीडियो ज़ूम से स्वतंत्र रहेगा।</string>
+  <string name="player_zoom_stats_follow">वीडियो के साथ आँकड़े ज़ूम करें</string>
+  <string name="player_zoom_stats_follow_summary">आँकड़ों के पृष्ठ 1–6 पर लागू। बंद होने पर आँकड़ों का आकार स्थिर रहेगा।</string>
 </resources>

@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">Doble toque (derecha)</string>
   <string name="pref_gesture_use_single_tap_for_center_title">Usar un toque para el gesto central</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">Usar un solo toque en el centro para los gestos (como reproducir/pausar) en lugar de un doble toque.</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">Mantener y arrastrar mueve los subtítulos</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">Mantén pulsado en el centro y arrastra hacia arriba o abajo para mover la posición de los subtítulos</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">Arrastrar para mover subtítulos</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">Arrastra cualquiera de los subtítulos hacia arriba o abajo para moverlo por separado. Mantén pulsado el centro y arrastra para mover ambos.</string>
   <string name="pref_gesture_view_title">Vista</string>
   <string name="pref_gesture_double_tap_custom_info">Puedes asignar acciones personalizadas a estos gestos en input.conf mediante los siguientes códigos de tecla:
 
@@ -2717,4 +2717,8 @@ Reinicia la aplicación para que se apliquen todos los cambios.</string>
   <string name="debug_logs_config_save_failed">No se pudieron guardar los registros. Comprueba el acceso a tu carpeta de configuración o selecciónala de nuevo.</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">Mostrar la barra de progreso con los controles ocultos</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">Al deslizar horizontalmente para avanzar o retroceder, muestra la barra de progreso aunque los controles del reproductor estén ocultos. El indicador de tiempo no cambia.</string>
+  <string name="player_zoom_subtitles_follow">Ampliar subtítulos con el vídeo</string>
+  <string name="player_zoom_subtitles_follow_summary">Desactivado, el tamaño de los subtítulos es independiente del zoom del vídeo.</string>
+  <string name="player_zoom_stats_follow">Ampliar estadísticas con el vídeo</string>
+  <string name="player_zoom_stats_follow_summary">Se aplica a las páginas 1–6. Desactivado, las estadísticas mantienen un tamaño fijo.</string>
 </resources>

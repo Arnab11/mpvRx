@@ -687,14 +687,7 @@ class MPVView(
     val subSpeed = subtitlesPreferences.defaultSubSpeed.get().toString()
 
     val scaleByWindow = if (subtitlesPreferences.scaleByWindow.get()) "yes" else "no"
-    val blendMode =
-      if (subtitlesPreferences.blendSubtitlesWithVideo.get() &&
-        playerPreferences.isAmbientEnabled.get()
-      ) {
-        "video"
-      } else {
-        "no"
-      }
+    val blendMode = subtitleBlendMode()
 
     return buildList {
       add("slang" to preferredSubtitleLanguages)

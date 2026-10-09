@@ -94,6 +94,8 @@ class PlayerPreferences(
   val playerTimeToDisappear = preferenceStore.getInt("player_time_to_disappear", 4000)
   val clockFormat = preferenceStore.getEnum("player_clock_format", PlayerClockFormat.SYSTEM)
 
+  val subtitlesFollowVideoZoom = preferenceStore.getBoolean("subtitles_follow_video_zoom", false)
+  val statsFollowVideoZoom = preferenceStore.getBoolean("stats_follow_video_zoom", false)
   val defaultVideoZoom = preferenceStore.getFloat("default_video_zoom", 0f)
   val panAndZoomEnabled = preferenceStore.getBoolean("pan_and_zoom_enabled", false)
 

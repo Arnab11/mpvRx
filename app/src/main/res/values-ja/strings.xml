@@ -253,8 +253,8 @@
   <string name="pref_gesture_double_tap_right_title">ダブルタップ（右）</string>
   <string name="pref_gesture_use_single_tap_for_center_title">中央ジェスチャーにシングルタップを使用</string>
   <string name="pref_gesture_use_single_tap_for_center_summary">中央のジェスチャー（再生/一時停止など）にダブルタップではなくシングルタップを使用します。</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_title">長押ししてドラッグすると字幕を移動</string>
-  <string name="pref_gesture_center_vertical_subtitle_position_summary">中央を長押ししてから上下にドラッグし、字幕位置を移動します</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_title">ドラッグで字幕を移動</string>
+  <string name="pref_gesture_center_vertical_subtitle_position_summary">字幕を上下にドラッグすると個別に移動できます。中央を長押ししてからドラッグすると両方を移動できます。</string>
   <string name="pref_gesture_view_title">表示</string>
   <string name="pref_gesture_double_tap_custom_info">input.confで次のキーコードを使用して、これらのジェスチャーにカスタム操作を割り当てられます：
 
@@ -2710,4 +2710,8 @@
   <string name="debug_logs_config_save_failed">ログを保存できませんでした。設定フォルダへのアクセスを確認するか、再選択してください。</string>
   <string name="pref_gesture_show_seekbar_horizontal_title">操作ボタンが非表示でもシークバーを表示</string>
   <string name="pref_gesture_show_seekbar_horizontal_summary">左右にスワイプしてシークするとき、プレーヤーの操作ボタンが非表示でもシークバーを表示します。時間表示には影響しません。</string>
+  <string name="player_zoom_subtitles_follow">動画と一緒に字幕を拡大</string>
+  <string name="player_zoom_subtitles_follow_summary">オフにすると字幕のサイズは動画のズームに影響されません。</string>
+  <string name="player_zoom_stats_follow">動画と一緒に統計を拡大</string>
+  <string name="player_zoom_stats_follow_summary">統計ページ1〜6に適用します。オフにすると統計のサイズは固定されます。</string>
 </resources>

@@ -1355,68 +1355,43 @@ class PlayerActivity :
     binding.player.layoutParams = params
   }
 
+  private val statsZoomController by lazy { StatsZoomController(filesDir) }
+
   private fun setupVideoTransformObserver() {
+    binding.player.addOnLayoutChangeListener { _, _, _, _, _, _, _, _, _ -> applyVideoTransform() }
     lifecycleScope.launch {
       repeatOnLifecycle(Lifecycle.State.STARTED) {
         combine(
           viewModel.videoZoom,
           viewModel.videoPanX,
           viewModel.videoPanY,
-        ) { zoom, panX, panY ->
-          Triple(zoom, panX, panY)
-        }.collect { (zoom, panX, panY) ->
-          val scale = 2f.pow(zoom)
-          binding.player.scaleX = scale
-          binding.player.scaleY = scale
-          binding.player.translationX = panX
-          binding.player.translationY = panY
-
-          if (canIssueMpvCommands()) {
-            val scaleByWindow = subtitlesPreferences.scaleByWindow.get()
-            val baseSubScale = subtitlesPreferences.subScale.get()
-            val baseSecondarySubScale = subtitlesPreferences.secondarySubScale.get()
-            val baseSubPos = subtitlesPreferences.subPos.get()
-            val baseSecondarySubPos = subtitlesPreferences.secondarySubPos.get()
-            val w = player.width.takeIf { it > 0 }?.toFloat()
-              ?: resources.displayMetrics.widthPixels.toFloat()
-            val h = player.height.takeIf { it > 0 }?.toFloat()
-              ?: resources.displayMetrics.heightPixels.toFloat()
-
-            if (scaleByWindow && (scale != 1f || panX != 0f || panY != 0f)) {
-              val compensatedSubScale = (baseSubScale / scale).coerceIn(0.05f, 10f)
-              val compensatedSecondarySubScale = (baseSecondarySubScale / scale).coerceIn(0.05f, 10f)
-              PlaybackSession.setPropertyFloat("sub-scale", compensatedSubScale)
-              PlaybackSession.setPropertyFloat("secondary-sub-scale", compensatedSecondarySubScale)
-
-              val compensatedSubPos =
-                (50f + ((baseSubPos - 50f) - (panY / h) * 100f) / scale).roundToInt().coerceIn(0, 150)
-              val compensatedSecondarySubPos =
-                (50f + ((baseSecondarySubPos - 50f) - (panY / h) * 100f) / scale)
-                  .roundToInt()
-                  .coerceIn(0, 150)
-
-              val baseMarginX = 25f
-              val extraMarginX = if (scale > 1f) (w * (1f - 1f / scale) / 2f + abs(panX) / scale) else 0f
-              val compensatedMarginX = (baseMarginX + extraMarginX).roundToInt().coerceIn(0, (w / 2f).toInt())
-              PlaybackSession.setPropertyInt("sub-margin-x", compensatedMarginX)
-
-              applySubtitlePositions(
-                compensatedSubPos,
-                secondaryPosition = compensatedSecondarySubPos,
-              )
-            } else {
-              PlaybackSession.setPropertyFloat("sub-scale", baseSubScale)
-              PlaybackSession.setPropertyFloat("secondary-sub-scale", baseSecondarySubScale)
-              PlaybackSession.setPropertyInt("sub-margin-x", 25)
-              applySubtitlePositions(
-                baseSubPos,
-                secondaryPosition = baseSecondarySubPos,
-              )
-            }
-          }
-        }
+          playerPreferences.subtitlesFollowVideoZoom.changes(),
+          playerPreferences.statsFollowVideoZoom.changes(),
+        ) { _, _, _, _, _ -> Unit }.collect { applyVideoTransform() }
       }
     }
+  }
+
+  private fun applyVideoTransform() {
+    // Zoom only mpv's video plane. Scaling the Android SurfaceView also scales/clips
+    // libass and stats pages 1-5, making independent overlay gestures impossible.
+    binding.player.scaleX = 1f
+    binding.player.scaleY = 1f
+    binding.player.translationX = 0f
+    binding.player.translationY = 0f
+    if (!canIssueMpvCommands()) return
+    val zoom = viewModel.videoZoom.value
+    val aspect = (PlaybackSession.getPropertyDouble("video-out-params/aspect")
+      ?: PlaybackSession.getPropertyDouble("video-params/aspect") ?: 0.0).toFloat()
+    val (panX, panY) = videoPanFractions(
+      player.width.toFloat(), player.height.toFloat(), aspect, zoom,
+      viewModel.videoPanX.value, viewModel.videoPanY.value,
+    )
+    PlaybackSession.setPropertyFloat("video-zoom", zoom)
+    PlaybackSession.setPropertyFloat("video-pan-x", panX)
+    PlaybackSession.setPropertyFloat("video-pan-y", panY)
+    applySubtitleZoom()
+    statsZoomController.update(playerPreferences.statsFollowVideoZoom.get(), zoom)
   }
 
   private fun setupAudioPlayerViewObserver() {
@@ -1660,6 +1635,7 @@ class PlayerActivity :
   }
 
   override fun onDestroy() {
+    statsZoomController.update(false, 0f)
     Log.d(TAG, "PlayerActivity onDestroy")
     val ownsPlaybackSession = ownsPlaybackSession()
     val playbackWasInitialized = mpvInitialized
@@ -4629,10 +4605,6 @@ class PlayerActivity :
 
     lifecycleScope.launch(Dispatchers.IO) {
       try {
-        if (!MpvConfigOverridePolicy.ownsAny(MpvConfigControlledFeatures.VIDEO_ZOOM)) {
-          PlaybackSession.setPropertyDouble("video-zoom", 0.0)
-        }
-
         // Load playback state (will skip track restoration if preferred language configured)
         val hasState =
           loadVideoPlaybackState(
@@ -4654,6 +4626,9 @@ class PlayerActivity :
             val zoomPreference = playerPreferences.defaultVideoZoom.get()
             viewModel.setVideoZoom(zoomPreference)
           }
+        }
+        withContext(Dispatchers.Main) {
+          if (PlaybackSession.isCurrentGeneration(loadGeneration)) applyVideoTransform()
         }
       } finally {
         PlaybackSession.completePositionRestore(loadGeneration)
@@ -4949,16 +4924,7 @@ class PlayerActivity :
     // Miscellaneous settings
     val scaleByWindow = subtitlesPreferences.scaleByWindow.get()
     val scaleValue = if (scaleByWindow) "yes" else "no"
-    val subScale = subtitlesPreferences.subScale.get()
-    val secondarySubScale = subtitlesPreferences.secondarySubScale.get()
-    val blendMode =
-      if (subtitlesPreferences.blendSubtitlesWithVideo.get() &&
-        playerPreferences.isAmbientEnabled.get()
-      ) {
-        "video"
-      } else {
-        "no"
-      }
+    val blendMode = subtitleBlendMode()
 
     // Ambient Mode can change this property independently of subtitle preferences. Check the
     // effective mpv value instead of forcing a write on every preference refresh: that keeps the
@@ -4983,8 +4949,7 @@ class PlayerActivity :
     setMpvStyleStringIfChanged("sub-shadow-color", shadowColor)
     setMpvStyleStringIfChanged("sub-scale-by-window", scaleValue)
     setMpvStyleStringIfChanged("sub-use-margins", scaleValue)
-    setMpvStyleFloatIfChanged("sub-scale", subScale)
-    setMpvStyleFloatIfChanged("secondary-sub-scale", secondarySubScale)
+    applySubtitleZoom()
 
     applySubtitleLayout(
       primaryPosition = subtitlesPreferences.subPos.get(),
