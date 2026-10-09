@@ -13,6 +13,11 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import app.gyrolet.mpvrx.ui.utils.NavigationBackHandler as BackHandler
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
+import app.gyrolet.mpvrx.ui.theme.AppMotion
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -413,9 +418,14 @@ data class PlaylistDetailScreen(
       }
     }
 
-    Scaffold(
-      containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
-      topBar = {
+    val bottomBarBackdrop = app.gyrolet.mpvrx.ui.browser.components.rememberBrowserBottomBarBackdrop()
+    val showFloatingBottomBar = selectionManager.isInSelectionMode && !isReorderMode
+
+    Box(modifier = Modifier.fillMaxSize()) {
+      Scaffold(
+        modifier = Modifier.fillMaxSize().captureLiquidGlassBackdrop(bottomBarBackdrop),
+        containerColor = app.gyrolet.mpvrx.ui.theme.wallpaperAwareBackgroundColor(),
+        topBar = {
         if (isSearching) {
           // Search mode - show search bar
           InlineSearchBar(
@@ -618,14 +628,7 @@ data class PlaylistDetailScreen(
         }
       },
     ) { padding ->
-      val bottomBarBackdrop = app.gyrolet.mpvrx.ui.browser.components.rememberBrowserBottomBarBackdrop()
       Box(modifier = Modifier.fillMaxSize()) {
-      Box(
-        modifier =
-          Modifier
-            .fillMaxSize()
-            .captureLiquidGlassBackdrop(bottomBarBackdrop),
-      ) {
       // Show "no results" message when searching with no results
       if (isSearching && filteredVideoItems.isEmpty() && searchQuery.isNotBlank()) {
         Box(
@@ -744,70 +747,6 @@ data class PlaylistDetailScreen(
           }
         }
       }
-      }
-
-      val allSelectedBookmarked = selectedItems.isNotEmpty() && selectedItems.all { it.playlistItem.isFavorite }
-      val bookmarkLabel =
-        stringResource(if (allSelectedBookmarked) R.string.audiobook_delete_bookmark else R.string.audiobook_add_bookmark)
-      app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar(
-        backdrop = bottomBarBackdrop,
-        isSelectionMode = selectionManager.isInSelectionMode && !isReorderMode,
-        onCopyClick = { },
-        onMoveClick = { },
-        onRenameClick = { },
-        onDeleteClick = { deleteDialogOpen.value = true },
-        onAddToPlaylistClick = {
-          videosForAddToPlaylist = selectedItems.map { it.video }
-        },
-        onPlayNextClick = {
-          val queued =
-            app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue(
-              context,
-              selectedItems.filter { it.isAvailable }.map { it.video },
-              app.gyrolet.mpvrx.ui.browser.components.QueueInsertion.PlayNext,
-            )
-          if (queued) selectionManager.clear()
-        },
-        onAddToQueueClick = {
-          val queued =
-            app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue(
-              context,
-              selectedItems.filter { it.isAvailable }.map { it.video },
-              app.gyrolet.mpvrx.ui.browser.components.QueueInsertion.AddToEnd,
-            )
-          if (queued) selectionManager.clear()
-        },
-        showCopy = false,
-        showMove = false,
-        showRename = false,
-        showDelete = false,
-        showAddToPlaylist = playlist?.isZipPlaylist != true,
-        extraActions =
-          buildList {
-            add(
-              app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBarAction(
-                icon = Icons.RoundedFilled.Bookmarks,
-                label = bookmarkLabel,
-                onClick = {
-                  val targetBookmarked = !allSelectedBookmarked
-                  val toToggle = selectedItems.filter { it.playlistItem.isFavorite != targetBookmarked }
-                  coroutineScope.launch {
-                    try {
-                      toToggle.forEach { viewModel.toggleFavorite(it.playlistItem.id) }
-                      selectionManager.clear()
-                    } catch (cancelled: kotlinx.coroutines.CancellationException) {
-                      throw cancelled
-                    } catch (_: Exception) {
-                      showToast(context.getString(R.string.playback_bookmark_update_failed))
-                    }
-                  }
-                },
-              ),
-            )
-          },
-        modifier = Modifier.align(Alignment.BottomCenter),
-      )
-      }
 
       if (videosForAddToPlaylist.isNotEmpty()) {
         app.gyrolet.mpvrx.ui.browser.dialogs.AddToPlaylistDialog(
@@ -845,6 +784,89 @@ data class PlaylistDetailScreen(
           onCopy = {
             SafeClipboard.copyPlainText(context, "Stream URL", urlDialogContent)
           },
+        )
+      }
+    }
+  }
+
+      AnimatedVisibility(
+        visible = showFloatingBottomBar,
+        enter = slideInVertically(
+          animationSpec = spring(
+            dampingRatio = AppMotion.Spatial.Expressive.dampingRatio,
+            stiffness = AppMotion.Spatial.Expressive.stiffness,
+          ),
+          initialOffsetY = { it },
+        ),
+        exit = slideOutVertically(
+          animationSpec = spring(
+            dampingRatio = AppMotion.Spatial.Standard.dampingRatio,
+            stiffness = AppMotion.Spatial.Standard.stiffness,
+          ),
+          targetOffsetY = { it },
+        ),
+        modifier = Modifier.align(Alignment.BottomCenter),
+      ) {
+        val allSelectedBookmarked = selectedItems.isNotEmpty() && selectedItems.all { it.playlistItem.isFavorite }
+        val bookmarkLabel =
+          stringResource(if (allSelectedBookmarked) R.string.audiobook_delete_bookmark else R.string.audiobook_add_bookmark)
+        app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBar(
+          backdrop = bottomBarBackdrop,
+          isSelectionMode = true,
+          onCopyClick = { },
+          onMoveClick = { },
+          onRenameClick = { },
+          onDeleteClick = { deleteDialogOpen.value = true },
+          onAddToPlaylistClick = {
+            videosForAddToPlaylist = selectedItems.map { it.video }
+          },
+          onPlayNextClick = {
+            val queued =
+              app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue(
+                context,
+                selectedItems.filter { it.isAvailable }.map { it.video },
+                app.gyrolet.mpvrx.ui.browser.components.QueueInsertion.PlayNext,
+              )
+            if (queued) selectionManager.clear()
+          },
+          onAddToQueueClick = {
+            val queued =
+              app.gyrolet.mpvrx.ui.browser.components.addVideosToPlaybackQueue(
+                context,
+                selectedItems.filter { it.isAvailable }.map { it.video },
+                app.gyrolet.mpvrx.ui.browser.components.QueueInsertion.AddToEnd,
+              )
+            if (queued) selectionManager.clear()
+          },
+          showCopy = false,
+          showMove = false,
+          showRename = false,
+          showDelete = false,
+          showAddToPlaylist = playlist?.isZipPlaylist != true,
+          extraActions =
+            buildList {
+              add(
+                app.gyrolet.mpvrx.ui.browser.components.BrowserBottomBarAction(
+                  icon = Icons.RoundedFilled.Bookmarks,
+                  label = bookmarkLabel,
+                  onClick = {
+                    val targetBookmarked = !allSelectedBookmarked
+                    val toToggle = selectedItems.filter { it.playlistItem.isFavorite != targetBookmarked }
+                    coroutineScope.launch {
+                      try {
+                        toToggle.forEach { viewModel.toggleFavorite(it.playlistItem.id) }
+                        selectionManager.clear()
+                      } catch (cancelled: kotlinx.coroutines.CancellationException) {
+                        throw cancelled
+                      } catch (_: Exception) {
+                        showToast(context.getString(R.string.playback_bookmark_update_failed))
+                      }
+                    }
+                  },
+                ),
+              )
+            },
+          modifier = Modifier.padding(bottom = 0.dp),
         )
       }
     }
