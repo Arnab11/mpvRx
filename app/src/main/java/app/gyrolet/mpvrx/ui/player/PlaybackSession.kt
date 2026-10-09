@@ -536,6 +536,9 @@ internal fun userScriptsNeedReload(currentKey: String): Boolean {
       true
     }
 
+  fun isSurfaceAttachedTo(owner: Any): Boolean =
+    nativeLock.withLock { _state.value.surfaceAttached && attachedSurfaceOwner === owner }
+
   fun unbindSurface(owner: Any): Boolean =
     withCore(default = false) {
       if (attachedSurfaceOwner !== owner || !_state.value.surfaceAttached) return@withCore false

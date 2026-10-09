@@ -3605,6 +3605,7 @@ class PlayerActivity :
 
   private fun restoreForegroundVideoAndAmbientIfUnlocked(): Boolean {
     if (!mpvInitialized || !ownsPlaybackSession() || isDeviceScreenOffOrLocked()) return false
+    player.ensureSurfaceAttached()
     enableVideoAfterBackground()
     viewModel.setAmbientLifecycleActive(true)
     updateKeepScreenOn()
@@ -6166,12 +6167,12 @@ private suspend fun restorePlaybackPosition(state: PlaybackStateEntity?, loadGen
         // direct-media loads so a prior web item cannot leak an extractor probe into this load.
         PlaybackSession.setIntegrationOptionString("ytdl", "no")
       }
-      // MediaCodec must see the foreground native window before video selection starts.
-      // Audio-only and deliberately detached/background sessions must not wait here.
+      // Attach the video Surface before loadfile so MediaCodec is created against it. A late
+      // Surface (slow first frame, locked screen) must not fail playback: PlaybackSession then
+      // defers video selection until bindSurface attaches it.
       if (item.videoSelection() == PlaybackVideoSelection.IMMEDIATE && player.surfaceBindingEnabled) {
         if (!player.awaitSurfaceReady()) {
-          ensureCurrentMediaRequest(requestGeneration)
-          throw IllegalStateException("Timed out waiting for the foreground video Surface")
+          Log.w(TAG, "Video Surface not attached yet; loading with video selection deferred to attachment")
         }
         ensureCurrentMediaRequest(requestGeneration)
       }
