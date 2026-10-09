@@ -187,6 +187,7 @@ private val settingsSearchListAnchors: Map<Screen, List<SettingsSearchListAnchor
         SettingsSearchListAnchor(titleRes = R.string.pref_autoplay_next_audio_title, itemIndex = 5),
         SettingsSearchListAnchor(titleRes = R.string.pref_audio_channels, itemIndex = 5),
         SettingsSearchListAnchor(titleRes = R.string.pref_audio_volume_boost_cap, itemIndex = 5),
+        SettingsSearchListAnchor(titleRes = R.string.pref_lyrics_auto_fetch_online, itemIndex = 5),
       ),
     SubtitlesPreferencesScreen to
       listOf(

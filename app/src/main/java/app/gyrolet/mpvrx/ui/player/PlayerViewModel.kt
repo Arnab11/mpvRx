@@ -1144,6 +1144,7 @@ class PlayerViewModel : ViewModel(),
     val artist: String,
     val durationSeconds: Int,
     val allowOnline: Boolean,
+    val autoFetchOnline: Boolean,
     val album: String?,
     val isrc: String?,
   )
@@ -1220,6 +1221,7 @@ class PlayerViewModel : ViewModel(),
   fun loadLyricsForCurrentTrack(
     forceRefresh: Boolean = false,
     titleOverride: String? = null,
+    forceOnline: Boolean = false,
   ) {
     val allowOnline = PlaybackSession.state.value.currentItem?.audiobook == null
     val path = currentLyricsPath() ?: return
@@ -1242,11 +1244,10 @@ class PlayerViewModel : ViewModel(),
     val album = PlaybackSession.getPropertyString("metadata/by-key/Album")
       ?: PlaybackSession.getPropertyString("metadata/by-key/album")
     val isrc = PlaybackSession.getPropertyString("metadata/by-key/isrc")
-    val request = LyricsLoadRequest(path, title, artist, duration, allowOnline, album, isrc)
-    if (
-      !forceRefresh && lastLyricsLoadRequest?.path == path && lastLyricsLoadRequest?.allowOnline == allowOnline &&
-      (lyricsLoadJob?.isActive == true || request == lastLyricsLoadRequest)
-    ) return
+    val request = LyricsLoadRequest(
+      path, title, artist, duration, allowOnline, audioPreferences.lyricsAutoFetchOnline.get(), album, isrc,
+    )
+    if (!forceRefresh && !forceOnline && request == lastLyricsLoadRequest) return
     lastLyricsLoadRequest = request
 
     lyricsUiState.value = lyricsUiState.value.copy(
@@ -1270,6 +1271,7 @@ class PlayerViewModel : ViewModel(),
         durationSeconds = duration,
         forceRefresh = forceRefresh,
         allowOnline = allowOnline,
+        forceOnline = forceOnline,
         album = album,
         isrc = isrc,
       )
@@ -1326,7 +1328,7 @@ class PlayerViewModel : ViewModel(),
    */
   fun searchLyricsOnline() {
     val path = currentLyricsPath() ?: return
-    loadLyricsForCurrentTrack(forceRefresh = true, titleOverride = trackSearchTitle(path))
+    loadLyricsForCurrentTrack(forceRefresh = true, titleOverride = trackSearchTitle(path), forceOnline = true)
   }
 
   /** What to search for when mpv has not published a title for [mediaPath] yet. */
@@ -1386,7 +1388,11 @@ class PlayerViewModel : ViewModel(),
 
         val updated = lyricsRepository.mergeOnline(path, fetched, allowOnline)
         val online = updated?.onlineLyrics ?: fetched.lyrics
-        val updatedSources = (current.availableSources + app.gyrolet.mpvrx.domain.lyrics.LyricsSourceType.ONLINE).distinct()
+        val updatedSources = if (online != null) {
+          (current.availableSources + app.gyrolet.mpvrx.domain.lyrics.LyricsSourceType.ONLINE).distinct()
+        } else {
+          current.availableSources
+        }
         val activeLyrics = online ?: current.embeddedLyrics
         val activeIndex = app.gyrolet.mpvrx.utils.media.LyricsUtils.getActiveLineIndex(
           syncedLines = activeLyrics?.synced,

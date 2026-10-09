@@ -2286,6 +2286,9 @@
   <string name="pref_paxsenix_api_key">PaxSenix API key</string>
   <string name="pref_paxsenix_api_key_summary">Unlocks the Spotify and Musixmatch routes</string>
   <string name="pref_paxsenix_api_key_dialog_desc">Paste your PaxSenix API key. Leave it empty to use only the routes that need no key.</string>
+  <string name="pref_lyrics_sources_category">Online Lyrics</string>
+  <string name="pref_lyrics_auto_fetch_online">Automatically fetch online lyrics</string>
+  <string name="pref_lyrics_auto_fetch_online_summary">Search online providers only when no embedded or local lyrics are available. You can still search online manually.</string>
   <string name="pref_lyrics_translation_category">Lyrics Translation &amp; Romanization</string>
   <string name="pref_lyrics_auto_translate">Auto-translate foreign lyrics</string>
   <string name="pref_lyrics_auto_translate_summary">Automatically translate foreign language lyrics</string>

@@ -576,6 +576,29 @@ object AudioPreferencesScreen : Screen {
 
               PreferenceDivider()
               Text(
+                text = stringResource(R.string.pref_lyrics_sources_category),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+              )
+
+              val autoFetchLyricsOnline by preferences.lyricsAutoFetchOnline.collectAsState()
+              SwitchPreference(
+                modifier = Modifier.settingsSearchTarget(R.string.pref_lyrics_auto_fetch_online),
+                value = autoFetchLyricsOnline,
+                onValueChange = preferences.lyricsAutoFetchOnline::set,
+                title = { Text(stringResource(R.string.pref_lyrics_auto_fetch_online)) },
+                summary = {
+                  Text(
+                    stringResource(R.string.pref_lyrics_auto_fetch_online_summary),
+                    color = MaterialTheme.colorScheme.outline,
+                  )
+                },
+              )
+
+              PreferenceDivider()
+              Text(
                 text = stringResource(R.string.pref_lyrics_translation_category),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
