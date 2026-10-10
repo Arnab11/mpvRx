@@ -48,6 +48,7 @@ import androidx.compose.ui.unit.dp
 import app.gyrolet.mpvrx.R
 import app.gyrolet.mpvrx.preferences.AudioChannels
 import app.gyrolet.mpvrx.preferences.AudioPreferences
+import app.gyrolet.mpvrx.ui.liquidglass.LocalKyantPlayerBackdrop
 import app.gyrolet.mpvrx.preferences.preference.collectAsState
 import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetAction
@@ -284,12 +285,13 @@ fun AudioTrackRow(
   val haptics = rememberAppHaptics()
   val reducedMotion = AppMotion.playerReducedMotion()
   val shape = MaterialTheme.shapes.medium
+  val isFrosted = LocalKyantPlayerBackdrop.current != null
   val containerColor by animateColorAsState(
     targetValue =
       if (isSelected) {
-        MaterialTheme.colorScheme.secondaryContainer
+        if (isFrosted) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer
       } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        if (isFrosted) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh
       },
     animationSpec = if (reducedMotion) snap() else AppMotion.Effect.Color,
     label = "genericTrackSelection",

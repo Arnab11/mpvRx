@@ -36,6 +36,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import app.gyrolet.mpvrx.presentation.components.PlayerSheet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -82,29 +83,16 @@ fun LyricsSheet(
     }
   }
 
-  Surface(
-    modifier = modifier.fillMaxWidth(),
-    shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
-    color = MaterialTheme.colorScheme.surfaceContainerHigh,
-    tonalElevation = 6.dp,
+  PlayerSheet(
+    onDismissRequest = onDismiss,
+    modifier = modifier,
   ) {
     Column(
       modifier = Modifier
         .fillMaxWidth()
-        .padding(horizontal = 20.dp, vertical = 16.dp),
+        .padding(horizontal = 20.dp, vertical = 8.dp),
       horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-      // Top drag handle
-      Box(
-        modifier = Modifier
-          .width(36.dp)
-          .height(4.dp)
-          .clip(CircleShape)
-          .background(MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)),
-      )
-
-      Spacer(modifier = Modifier.height(12.dp))
-
       // Header title + Source Switcher
       Row(
         modifier = Modifier.fillMaxWidth(),

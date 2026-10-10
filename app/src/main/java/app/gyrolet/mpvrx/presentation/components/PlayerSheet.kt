@@ -94,6 +94,18 @@ import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusReq
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusGroup
 import app.gyrolet.mpvrx.ui.player.controls.components.tvInitialFocus
 import androidx.compose.ui.focus.focusProperties
+import androidx.compose.foundation.border
+import androidx.compose.ui.graphics.Brush
+import app.gyrolet.mpvrx.preferences.AppearancePreferences
+import app.gyrolet.mpvrx.preferences.preference.collectAsState
+import app.gyrolet.mpvrx.ui.liquidglass.LocalKyantPlayerBackdrop
+import app.gyrolet.mpvrx.ui.liquidglass.liquidGlassEffects
+import app.gyrolet.mpvrx.ui.liquidglass.rememberLiquidGlassSettings
+import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.highlight.Highlight
+import com.kyant.backdrop.shadow.InnerShadow
+import com.kyant.backdrop.shadow.Shadow
+import org.koin.compose.koinInject
 import app.gyrolet.mpvrx.ui.theme.AppMotion
 import app.gyrolet.mpvrx.ui.theme.LocalMotionPolicy
 import app.gyrolet.mpvrx.ui.theme.MotionPolicy
@@ -115,9 +127,15 @@ fun PlayerSheet(
   swipeOffset: Float = 0f,
   title: String? = null,
   actions: @Composable RowScope.() -> Unit = {},
+  useFrostedGlass: Boolean = true,
   content: @Composable () -> Unit,
 ) {
   val scope = rememberCoroutineScope()
+  val preferences = koinInject<AppearancePreferences>()
+  val liquidGlassEnabled by preferences.liquidGlassEnabled.collectAsState()
+  val playerBackdrop = LocalKyantPlayerBackdrop.current
+  val isFrosted = useFrostedGlass && liquidGlassEnabled && playerBackdrop != null
+  val glassSettings = rememberLiquidGlassSettings()
   // TV/remote: request focus INTO the sheet content when it opens, so the D-pad can navigate/select
   // its rows instead of being trapped behind the (hidden) first-layer player controls. Ported from
   // mpvEx-TV; rememberTvInitialFocusRequester retries across the entrance animation and is TV-gated.
@@ -224,6 +242,52 @@ fun PlayerSheet(
         },
     contentAlignment = Alignment.BottomCenter,
   ) {
+    val sheetShape = MaterialTheme.shapes.extraLarge.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize)
+    val baseContainerColor = surfaceColor ?: MaterialTheme.colorScheme.surfaceContainerHigh
+    val frostedSurfaceColor = baseContainerColor.copy(alpha = 0.80f)
+    val rimHighlightBrush =
+      remember {
+        Brush.verticalGradient(
+          0.0f to Color.White.copy(alpha = 0.22f),
+          0.06f to Color.White.copy(alpha = 0.05f),
+          0.15f to Color.Transparent,
+        )
+      }
+
+    val glassModifier =
+      if (isFrosted) {
+        Modifier
+          .drawBackdrop(
+            backdrop = playerBackdrop,
+            shape = { sheetShape },
+            effects = {
+              liquidGlassEffects(
+                glassSettings,
+                blurRadius = 16.dp.toPx(),
+                refractionHeight = 12.dp.toPx(),
+                refractionAmount = 20.dp.toPx(),
+                vibrant = true,
+                refractionEnabled = !reducedMotion,
+              )
+            },
+            highlight = {
+              glassSettings.highlight(Highlight.Ambient.copy(alpha = if (reducedMotion) 0.15f else 0.30f))
+            },
+            shadow = {
+              glassSettings.shadow(Shadow(radius = 16.dp, color = Color.Black.copy(alpha = 0.25f)))
+            },
+            innerShadow = {
+              glassSettings.innerShadow(InnerShadow(radius = 2.dp, color = Color.White.copy(alpha = 0.12f)))
+            },
+            onDrawSurface = {
+              drawRect(glassSettings.surfaceColor(frostedSurfaceColor))
+            },
+          )
+          .border(1.dp, rimHighlightBrush, sheetShape)
+      } else {
+        Modifier
+      }
+
     Surface(
       modifier =
         Modifier
@@ -257,16 +321,20 @@ fun PlayerSheet(
           ).windowInsetsPadding(
             WindowInsets.systemBars
               .only(WindowInsetsSides.Horizontal),
-          ),
-      shape = MaterialTheme.shapes.extraLarge.copy(bottomEnd = ZeroCornerSize, bottomStart = ZeroCornerSize),
-      color = surfaceColor ?: MaterialTheme.colorScheme.surface,
-      tonalElevation = tonalElevation,
+          )
+          .then(glassModifier),
+      shape = sheetShape,
+      color = if (isFrosted) Color.Transparent else (surfaceColor ?: MaterialTheme.colorScheme.surface),
+      tonalElevation = if (isFrosted) 0.dp else tonalElevation,
       content = {
         BackHandler(
           enabled = anchoredDraggableState.targetValue == 0,
           onBack = internalOnDismissRequest,
         )
-        CompositionLocalProvider(LocalMotionPolicy provides MotionPolicy(reduceMotion = reducedMotion)) {
+        CompositionLocalProvider(
+          LocalMotionPolicy provides MotionPolicy(reduceMotion = reducedMotion),
+          androidx.compose.material3.LocalContentColor provides MaterialTheme.colorScheme.onSurface,
+        ) {
           Column(
             // The keyboard already covers the navigation bar; its padding would push content under the IME.
             modifier =

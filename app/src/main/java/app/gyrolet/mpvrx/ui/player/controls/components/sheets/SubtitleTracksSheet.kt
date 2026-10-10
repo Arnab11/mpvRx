@@ -57,6 +57,7 @@ import app.gyrolet.mpvrx.presentation.components.PlayerSheetAction
 import app.gyrolet.mpvrx.presentation.components.PlayerSheetSectionHeader
 import app.gyrolet.mpvrx.ui.icons.Icon
 import app.gyrolet.mpvrx.ui.icons.Icons
+import app.gyrolet.mpvrx.ui.liquidglass.LocalKyantPlayerBackdrop
 import app.gyrolet.mpvrx.ui.player.TrackNode
 import app.gyrolet.mpvrx.ui.player.controls.components.rememberTvInitialFocusRequester
 import app.gyrolet.mpvrx.ui.player.controls.components.tvFocusHighlight
@@ -506,6 +507,7 @@ fun SubtitlesSheet(
             is SubtitleItem.Off -> {
               val haptics = rememberAppHaptics()
               val shape = MaterialTheme.shapes.medium
+              val isFrostedOff = LocalKyantPlayerBackdrop.current != null
               Surface(
                 modifier =
                   Modifier
@@ -521,9 +523,9 @@ fun SubtitlesSheet(
                 shape = shape,
                 color =
                   if (subtitlesOff) {
-                    MaterialTheme.colorScheme.secondaryContainer
+                    if (isFrostedOff) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer
                   } else {
-                    MaterialTheme.colorScheme.surfaceContainerHigh
+                    if (isFrostedOff) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh
                   },
                 border =
                   if (subtitlesOff) {
@@ -589,12 +591,13 @@ fun SubtitleTrackRow(
   val isTelevision = DeviceFormFactor.isTelevision(LocalContext.current)
   val haptics = rememberAppHaptics()
   val shape = MaterialTheme.shapes.medium
+  val isFrosted = LocalKyantPlayerBackdrop.current != null
   val containerColor by animateColorAsState(
     targetValue =
       if (isSelected) {
-        MaterialTheme.colorScheme.secondaryContainer
+        if (isFrosted) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.65f) else MaterialTheme.colorScheme.secondaryContainer
       } else {
-        MaterialTheme.colorScheme.surfaceContainerHigh
+        if (isFrosted) MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.35f) else MaterialTheme.colorScheme.surfaceContainerHigh
       },
     animationSpec = AppMotion.spatial(AppMotion.Effect.Color, snap()),
     label = "subtitleTrackSelection",
