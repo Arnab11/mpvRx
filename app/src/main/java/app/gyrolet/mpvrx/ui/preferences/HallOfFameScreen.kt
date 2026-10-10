@@ -48,9 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -86,8 +84,6 @@ import kotlinx.serialization.Serializable
 import org.koin.compose.koinInject
 import java.text.NumberFormat
 import java.util.Locale
-import kotlin.math.cos
-import kotlin.math.sin
 
 /** Contributor avatars are re-downloaded at most once every 72 hours. */
 private const val AVATAR_CACHE_TTL_MS = 72L * 60L * 60L * 1000L
@@ -504,8 +500,11 @@ private fun HallOfFameHeader(
         )
       },
   ) {
-    TrophyIllustration(
+    Icon(
+      imageVector = Icons.RoundedFilled.Trophy,
+      contentDescription = null,
       modifier = Modifier.align(Alignment.TopEnd).padding(top = 44.dp).size(96.dp),
+      tint = colors.primary,
     )
     Column {
       Row(
@@ -784,7 +783,7 @@ private fun HallOfFameSpotlightCard(
         .background(colors.primaryContainer),
       contentAlignment = Alignment.Center,
     ) {
-      CrownGlyph(colors.primary, Modifier.size(12.dp))
+      Icon(Icons.RoundedFilled.Crown, null, Modifier.size(14.dp), tint = colors.primary)
     }
     Column(
       modifier = Modifier.fillMaxSize().padding(start = 8.dp, end = 8.dp, top = 26.dp, bottom = 12.dp),
@@ -919,32 +918,7 @@ private fun HallOfFameAvatar(avatarUrl: String?, accent: Color, modifier: Modifi
   }
 }
 
-// ── Small drawn glyphs (kept local so the shared icon set stays untouched) ────────────────────
-
-@Composable
-private fun CrownGlyph(tint: Color, modifier: Modifier = Modifier) {
-  Canvas(modifier) {
-    val w = size.width
-    val h = size.height
-    val crown = Path().apply {
-      moveTo(w * 0.08f, h * 0.78f)
-      lineTo(w * 0.02f, h * 0.28f)
-      lineTo(w * 0.30f, h * 0.50f)
-      lineTo(w * 0.50f, h * 0.12f)
-      lineTo(w * 0.70f, h * 0.50f)
-      lineTo(w * 0.98f, h * 0.28f)
-      lineTo(w * 0.92f, h * 0.78f)
-      close()
-    }
-    drawPath(crown, tint)
-    drawRoundRect(
-      color = tint,
-      topLeft = Offset(w * 0.08f, h * 0.84f),
-      size = Size(w * 0.84f, h * 0.14f),
-      cornerRadius = CornerRadius(h * 0.07f),
-    )
-  }
-}
+// ── Small drawn glyphs ───────────────────────────────────────────────────────────────────────
 
 @Composable
 private fun BoltGlyph(tint: Color, modifier: Modifier = Modifier) {
@@ -979,77 +953,5 @@ private fun VerifiedBadge(modifier: Modifier = Modifier) {
       lineTo(w * 0.74f, h * 0.35f)
     }
     drawPath(tick, check, style = Stroke(width = w * 0.11f, cap = StrokeCap.Round))
-  }
-}
-
-@Composable
-private fun TrophyIllustration(modifier: Modifier = Modifier) {
-  val colors = MaterialTheme.colorScheme
-  val primary = colors.primary
-  val tertiary = colors.tertiary
-  val star = colors.onPrimary
-  Canvas(modifier) {
-    val w = size.width
-    val h = size.height
-    val body = Brush.verticalGradient(listOf(primary, tertiary))
-    val handle = Stroke(width = w * 0.07f, cap = StrokeCap.Round)
-
-    drawArc(
-      color = primary.copy(alpha = 0.7f),
-      startAngle = 90f,
-      sweepAngle = 180f,
-      useCenter = false,
-      topLeft = Offset(w * 0.04f, h * 0.12f),
-      size = Size(w * 0.30f, h * 0.30f),
-      style = handle,
-    )
-    drawArc(
-      color = primary.copy(alpha = 0.7f),
-      startAngle = 270f,
-      sweepAngle = 180f,
-      useCenter = false,
-      topLeft = Offset(w * 0.66f, h * 0.12f),
-      size = Size(w * 0.30f, h * 0.30f),
-      style = handle,
-    )
-
-    val cup = Path().apply {
-      moveTo(w * 0.22f, h * 0.08f)
-      lineTo(w * 0.78f, h * 0.08f)
-      lineTo(w * 0.78f, h * 0.30f)
-      cubicTo(w * 0.78f, h * 0.50f, w * 0.64f, h * 0.60f, w * 0.50f, h * 0.60f)
-      cubicTo(w * 0.36f, h * 0.60f, w * 0.22f, h * 0.50f, w * 0.22f, h * 0.30f)
-      close()
-    }
-    drawPath(cup, body)
-
-    drawRoundRect(
-      brush = body,
-      topLeft = Offset(w * 0.44f, h * 0.56f),
-      size = Size(w * 0.12f, h * 0.22f),
-      cornerRadius = CornerRadius(w * 0.02f),
-    )
-    drawRoundRect(
-      brush = body,
-      topLeft = Offset(w * 0.28f, h * 0.76f),
-      size = Size(w * 0.44f, h * 0.12f),
-      cornerRadius = CornerRadius(w * 0.04f),
-    )
-
-    val starPath = Path().apply {
-      val cx = w * 0.5f
-      val cy = h * 0.30f
-      val outer = w * 0.11f
-      val inner = outer * 0.45f
-      for (i in 0 until 10) {
-        val r = if (i % 2 == 0) outer else inner
-        val angle = Math.PI / 5.0 * i - Math.PI / 2.0
-        val x = cx + (r * cos(angle)).toFloat()
-        val y = cy + (r * sin(angle)).toFloat()
-        if (i == 0) moveTo(x, y) else lineTo(x, y)
-      }
-      close()
-    }
-    drawPath(starPath, star.copy(alpha = 0.9f))
   }
 }
