@@ -331,6 +331,7 @@ fun PlaylistSheet(
     customMaxHeight = if (isPortrait) configuration.screenHeightDp.dp * 0.55f else null,
     isSwipeActive = isSwipeActive,
     swipeOffset = swipeOffset,
+    useFrostedGlass = true,
   ) {
     Column(
       modifier =

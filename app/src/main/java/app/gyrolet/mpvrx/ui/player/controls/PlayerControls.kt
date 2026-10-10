@@ -663,6 +663,7 @@ fun PlayerControls(
   val playerKyantBackdrop = rememberLayerBackdrop()
 
   CompositionLocalProvider(
+    LocalKyantPlayerBackdrop provides playerKyantBackdrop,
     LocalForceDarkPlayerButtonsBackground provides forceDarkButtonBackground,
     LocalHidePlayerButtonsBackground provides hideBackground,
   ) {
