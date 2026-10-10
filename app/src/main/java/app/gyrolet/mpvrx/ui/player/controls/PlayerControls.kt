@@ -143,8 +143,8 @@ import app.gyrolet.mpvrx.ui.player.PlayerUpdates
 import app.gyrolet.mpvrx.ui.player.PlayerViewModel
 import app.gyrolet.mpvrx.ui.player.Sheets
 import app.gyrolet.mpvrx.ui.player.VideoOpenAnimationOverlay
-import app.gyrolet.mpvrx.ui.player.components.VideoAmbientFrame
-import app.gyrolet.mpvrx.ui.player.components.rememberVideoAmbientFrame
+import app.gyrolet.mpvrx.ui.player.components.VideoGlassFrame
+import app.gyrolet.mpvrx.ui.player.components.rememberVideoGlassFrame
 import app.gyrolet.mpvrx.ui.player.buildControlsEnterH
 import app.gyrolet.mpvrx.ui.player.buildControlsEnterV
 import app.gyrolet.mpvrx.ui.player.buildControlsExitH
@@ -483,7 +483,7 @@ fun PlayerControls(
         playbackSessionState.phase == PlaybackPhase.BACKGROUND)
   val playerGlassFrame =
     if (videoSurface != null) {
-      rememberVideoAmbientFrame(
+      rememberVideoGlassFrame(
         surfaceView = videoSurface,
         active = canCapturePlayerGlass && controlsShown && !areControlsLocked,
         retainFrameWhenInactive = canCapturePlayerGlass,
@@ -501,7 +501,7 @@ fun PlayerControls(
         },
       )
     } else {
-      VideoAmbientFrame(supported = false)
+      VideoGlassFrame(supported = false)
     }
   var playerBounds by remember { mutableStateOf(IntSize.Zero) }
   val isPortrait =
@@ -713,10 +713,10 @@ fun PlayerControls(
             .background(
               Brush.verticalGradient(
                 listOf(
-                  Color.Black,
+                  Color.Black.copy(alpha = 0.35f),
                   Color.Transparent,
                   Color.Transparent,
-                  Color.Black,
+                  Color.Black.copy(alpha = 0.35f),
                 ),
               ),
               alpha = transparentOverlay,

@@ -82,7 +82,7 @@ fun LiquidButton(
         effects = {
           liquidGlassEffects(
             glassSettings,
-            8.dp.toPx(),
+            3.dp.toPx(),
             14.dp.toPx(),
             24.dp.toPx(),
             vibrant = true,
@@ -91,7 +91,7 @@ fun LiquidButton(
         },
         highlight = { glassSettings.highlight(Highlight.Default) },
         shadow = { glassSettings.shadow(Shadow(radius = 6.dp)) },
-        innerShadow = { glassSettings.innerShadow(InnerShadow(radius = 2.dp, color = Color.White.copy(alpha = 0.18f))) },
+        innerShadow = { glassSettings.innerShadow(InnerShadow(radius = 2.dp, color = Color.White.copy(alpha = 0.22f))) },
         layerBlock =
           if (animatePress) {
             {

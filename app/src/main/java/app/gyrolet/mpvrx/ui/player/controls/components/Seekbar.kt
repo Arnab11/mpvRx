@@ -1803,7 +1803,7 @@ private fun LiquidSeekbar(
             val progress = dampedDragAnimation.pressProgress
             liquidGlassEffects(
               glassSettings,
-              with(density) { 8.dp.toPx() * (1f - progress) },
+              with(density) { 3.dp.toPx() * (1f - progress) },
               with(density) { 10.dp.toPx() * progress },
               with(density) { 14.dp.toPx() * progress },
             )

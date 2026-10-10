@@ -143,14 +143,14 @@ private fun GlassSliderPanel(
         effects = {
           liquidGlassEffects(
             glassSettings,
-            with(density) { 16.dp.toPx() },
+            with(density) { 4.dp.toPx() },
             with(density) { 16.dp.toPx() },
             with(density) { 24.dp.toPx() },
           )
         },
         highlight = { glassSettings.highlight(Highlight.Default) },
         shadow = { glassSettings.shadow(Shadow(color = Color.Black.copy(alpha = 0.25f), radius = 12.dp)) },
-        innerShadow = { glassSettings.innerShadow(InnerShadow(color = Color.White.copy(alpha = 0.15f), radius = 2.dp)) },
+        innerShadow = { glassSettings.innerShadow(InnerShadow(color = Color.White.copy(alpha = 0.18f), radius = 2.dp)) },
       )
   } else {
     modifier
@@ -158,7 +158,7 @@ private fun GlassSliderPanel(
   Surface(
     modifier = glassModifier,
     shape = sliderShape,
-    color = if (enableLiquidGlass) Color.Black.copy(alpha = 0.25f) else Color.Black.copy(alpha = 0.5f),
+    color = if (enableLiquidGlass) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.5f),
     contentColor = Color.White,
   ) {
     Column(
