@@ -1802,8 +1802,8 @@ private fun LiquidSeekbar(
           effects = {
             val progress = dampedDragAnimation.pressProgress
             liquidGlassEffects(
-              glassSettings,
-              with(density) { 3.dp.toPx() * (1f - progress) },
+              glassSettings.copy(blur = 1f),
+              with(density) { 8.dp.toPx() * (1f - progress) },
               with(density) { 10.dp.toPx() * progress },
               with(density) { 14.dp.toPx() * progress },
             )
@@ -1843,7 +1843,7 @@ private fun LiquidSeekbar(
               liquidThumbFilm.copy(alpha = 0.72f - 0.28f * progress),
               progress.coerceIn(0f, 1f),
             )
-            drawRect(glassSettings.surfaceColor(film))
+            drawRect(film)
           },
         )
         .size(thumbWidthDp, 24.dp),

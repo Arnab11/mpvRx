@@ -82,7 +82,7 @@ fun LiquidButton(
         effects = {
           liquidGlassEffects(
             glassSettings,
-            3.dp.toPx(),
+            6.dp.toPx(),
             14.dp.toPx(),
             24.dp.toPx(),
             vibrant = true,

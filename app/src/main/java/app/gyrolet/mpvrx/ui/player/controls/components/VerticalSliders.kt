@@ -143,7 +143,7 @@ private fun GlassSliderPanel(
         effects = {
           liquidGlassEffects(
             glassSettings,
-            with(density) { 4.dp.toPx() },
+            with(density) { 10.dp.toPx() },
             with(density) { 16.dp.toPx() },
             with(density) { 24.dp.toPx() },
           )
@@ -158,7 +158,7 @@ private fun GlassSliderPanel(
   Surface(
     modifier = glassModifier,
     shape = sliderShape,
-    color = if (enableLiquidGlass) Color.White.copy(alpha = 0.08f) else Color.Black.copy(alpha = 0.5f),
+    color = if (enableLiquidGlass) Color.White.copy(alpha = (0.16f * glassSettings.blur).coerceIn(0f, 0.4f)) else Color.Black.copy(alpha = 0.5f),
     contentColor = Color.White,
   ) {
     Column(

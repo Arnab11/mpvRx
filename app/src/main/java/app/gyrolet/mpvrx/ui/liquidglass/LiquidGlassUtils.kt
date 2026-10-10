@@ -88,7 +88,8 @@ data class LiquidGlassSettings(
     val innerShadowStrength: Float,
     val innerShadowRadius: Float,
 ) {
-    fun surfaceColor(base: Color): Color = base
+    fun surfaceColor(base: Color): Color =
+        base.copy(alpha = (base.alpha * blur.coerceIn(0f, 2f)).coerceIn(0f, 1f))
 
     fun highlight(base: Highlight): Highlight = base.copy(
         style = when (highlightStyle) {

@@ -20,7 +20,7 @@ internal object PlayerButtonAlpha {
   const val CONTAINER = 0.55f
   const val BORDER = 0.4f
   const val DISABLED_CONTENT = 0.38f
-  const val GLASS_CONTAINER = 0.08f
+  const val GLASS_CONTAINER = 0.16f
   const val SELECTED_GLASS_CONTAINER = 0.20f
 }
 
