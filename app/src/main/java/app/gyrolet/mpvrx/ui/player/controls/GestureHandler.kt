@@ -515,14 +515,6 @@ fun GestureHandler(
             val isVerticalGestureDeadZone =
               startPosition.y <= topGestureDeadZonePx ||
                 startPosition.y >= size.height - bottomGestureDeadZonePx
-            val hasActiveSubtitle =
-              getTrackSelectionId("sid") > 0 ||
-                getTrackSelectionId("secondary-sid") > 0
-            val isCenterSubtitleTouch =
-              centerVerticalSubtitlePositionGesture &&
-                !isVerticalGestureDeadZone &&
-                hasActiveSubtitle &&
-                startPosition.x in (size.width / 3f)..(size.width * 2f / 3f)
             val touchedSubtitle = if (centerVerticalSubtitlePositionGesture) {
               findSubtitleGestureTarget(
                 subtitleRegions(size.width.toFloat(), size.height.toFloat()),
@@ -531,7 +523,7 @@ fun GestureHandler(
             } else null
             val subtitleGestureGeneration = PlaybackSession.state.value.generation
             val isStartOnSubtitleText = touchedSubtitle != null
-            speedHoldPending = paused == false && multipleSpeedGesture > 0f && !isCenterSubtitleTouch && !isStartOnSubtitleText
+            speedHoldPending = paused == false && multipleSpeedGesture > 0f && !isStartOnSubtitleText
 
             // Reset long press tracking at the start of each gesture
             longPressTriggeredDuringTouch = false
@@ -546,17 +538,15 @@ fun GestureHandler(
             var lastVolumePercentValue = currentVolumePercent
             var lastMPVVolumeValue = currentMPVVolume ?: 100
             var lastBrightnessValue = currentBrightness
-            var originalSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-            var originalSecondarySubtitlePosition =
-              PlaybackSession.getPropertyInt("secondary-sub-pos") ?: subtitlesPreferences.secondarySubPos.get()
             val brightnessGestureSens = 0.001f
             // Match the anime4k gesture feel, but snap to whole-number volume steps.
             val volumeGestureSens = 0.1f
             val mpvVolumeGestureSens = 0.1f
             var subtitleDragStartY = startPosition.y
-            var subtitleDragPosition = touchedSubtitle?.position ?: originalSubtitlePosition.toFloat()
+            var subtitleDragPosition = touchedSubtitle?.position ?: 0f
             var lastDraggedPosition: Float? = null
-            var lastDraggedSecondaryPosition: Float? = null
+            // A moving finger is a swipe, not a pending subtitle long-press.
+            var subtitleHoldEligible = isStartOnSubtitleText
             var subtitleHighlightShown = false
 
             // Original speed for long press
@@ -565,34 +555,27 @@ fun GestureHandler(
             // Track long press separately
             var longPressTriggered = false
             var isSubtitleHoldActive = false
-            val longPressDelay = 500L
+            val longPressDelay = viewConfiguration.longPressTimeoutMillis
             var longPressJob =
               coroutineScope.launch {
                 delay(longPressDelay)
                 if (!longPressTriggered) {
-                  val distance =
-                    sqrt(
-                      (down.position.x - startPosition.x) * (down.position.x - startPosition.x) +
-                        (down.position.y - startPosition.y) * (down.position.y - startPosition.y),
-                    )
-                  // Only trigger if still within tap threshold
-                  if (distance < 10f) {
-                    if ((isStartOnSubtitleText || isCenterSubtitleTouch) && claimGesture(GestureOwner.SUBTITLE_VERTICAL)) {
+                  // Gesture movement cancels the subtitle hold before this callback runs.
+                  if (subtitleHoldEligible || !isStartOnSubtitleText) {
+                    if (subtitleHoldEligible && claimGesture(GestureOwner.SUBTITLE_VERTICAL)) {
                       longPressTriggered = true
                       isSubtitleHoldActive = true
                       viewModel.setSubtitleGestureHighlight(true, touchedSubtitle?.target)
                       subtitleHighlightShown = true
                       longPressTriggeredDuringTouch = true
                       actionHaptics.pickup()
-                      originalSubtitlePosition = PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-                      originalSecondarySubtitlePosition =
-                        PlaybackSession.getPropertyInt("secondary-sub-pos") ?: subtitlesPreferences.secondarySubPos.get()
                       viewModel.playerUpdate.update {
                         PlayerUpdates.ShowText(
                           context.getString(R.string.player_move_subtitles_hint),
                         )
                       }
                     } else if (
+                      !isStartOnSubtitleText &&
                       paused == false &&
                       multipleSpeedGesture > 0f &&
                       claimGesture(GestureOwner.SPEED)
@@ -640,6 +623,10 @@ fun GestureHandler(
                       val currentPosition = change.position
                       val deltaX = currentPosition.x - startPosition.x
                       val deltaY = currentPosition.y - startPosition.y
+                      if (subtitleHoldEligible && sqrt(deltaX * deltaX + deltaY * deltaY) > viewConfiguration.touchSlop) {
+                        subtitleHoldEligible = false
+                        longPressJob.cancel()
+                      }
 
                       // Determine gesture type based on initial drag direction
                       if (gestureType == null && (abs(deltaX) > 20f || abs(deltaY) > 20f)) {
@@ -673,10 +660,6 @@ fun GestureHandler(
                           ) {
                             longPressJob.cancel()
                             gestureType = "speed_control"
-                          } else if (isStartOnSubtitleText && isVerticalDrag && claimGesture(GestureOwner.SUBTITLE_VERTICAL)) {
-                            longPressJob.cancel()
-                            actionHaptics.pickup()
-                            gestureType = "subtitle_vertical"
                           } else if (isMinimizeTouch && isVerticalDrag && deltaY > 20f && claimGesture(GestureOwner.VERTICAL)) {
                             longPressJob.cancel()
                             gestureType = "minimize"
@@ -698,11 +681,6 @@ fun GestureHandler(
                               return@forEach
                             }
                           } else {
-                            if (isCenterSubtitleTouch && isVerticalDrag) {
-                              longPressJob.cancel()
-                              return@forEach
-                            }
-
                             // Cancel long press if drag started
                             longPressJob.cancel()
 
@@ -748,24 +726,17 @@ fun GestureHandler(
                               lastVolumePercentValue = currentVolumePercent
                               lastMPVVolumeValue = currentMPVVolume ?: 100
                               lastBrightnessValue = currentBrightness
-                              originalSubtitlePosition =
-                                PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
                             }
                           }
                           "subtitle_vertical" -> {
                             isVerticalGestureActive = true
                             subtitleDragStartY = currentPosition.y
-                            subtitleDragPosition = touchedSubtitle?.position ?: originalSubtitlePosition.toFloat()
+                            subtitleDragPosition = touchedSubtitle?.position ?: subtitleDragPosition
                             if (!subtitleHighlightShown) {
                               viewModel.setSubtitleGestureHighlight(true, touchedSubtitle?.target)
                               subtitleHighlightShown = true
                             }
                             startingY = 0f
-                            originalSubtitlePosition =
-                              PlaybackSession.getPropertyInt("sub-pos") ?: subtitlesPreferences.subPos.get()
-                            originalSecondarySubtitlePosition =
-                              PlaybackSession.getPropertyInt("secondary-sub-pos")
-                                ?: subtitlesPreferences.secondarySubPos.get()
                           }
                         }
                       }
@@ -841,28 +812,15 @@ fun GestureHandler(
                           }
                         }
                         "subtitle_vertical" -> {
-                          if (isSubtitleHoldActive || gestureOwner == GestureOwner.SUBTITLE_VERTICAL) {
+                          if (isSubtitleHoldActive && gestureOwner == GestureOwner.SUBTITLE_VERTICAL) {
                             val selected = touchedSubtitle
-                            if (PlaybackSession.state.value.generation == subtitleGestureGeneration) {
-                              if (selected != null) {
-                                // Lock the target for this entire touch, even if the tracks cross.
-                                val newPosition = draggedSubtitlePosition(
-                                  subtitleDragPosition, currentPosition.y - subtitleDragStartY, selected.positionHeight,
-                                )
-                                viewModel.previewSubtitlePosition(newPosition, selected.target)
-                                lastDraggedPosition = newPosition
-                              } else {
-                                // Center hold moves both tracks and keeps their spacing.
-                                val newPrimary = draggedSubtitlePosition(
-                                  originalSubtitlePosition.toFloat(), currentPosition.y - subtitleDragStartY, size.height.toFloat(),
-                                )
-                                val newSecondary =
-                                  (originalSecondarySubtitlePosition + newPrimary - originalSubtitlePosition).coerceIn(0f, 150f)
-                                viewModel.previewSubtitlePosition(newSecondary, SubtitleGestureTarget.Secondary)
-                                viewModel.previewSubtitlePosition(newPrimary, SubtitleGestureTarget.Primary)
-                                lastDraggedPosition = newPrimary
-                                lastDraggedSecondaryPosition = newSecondary
-                              }
+                            if (selected != null && PlaybackSession.state.value.generation == subtitleGestureGeneration) {
+                              // Lock the target for this entire touch, even if the tracks cross.
+                              val newPosition = draggedSubtitlePosition(
+                                subtitleDragPosition, currentPosition.y - subtitleDragStartY, selected.positionHeight,
+                              )
+                              viewModel.previewSubtitlePosition(newPosition, selected.target)
+                              lastDraggedPosition = newPosition
                             }
                             change.consume()
                           }
@@ -1068,14 +1026,9 @@ fun GestureHandler(
               if (PlaybackSession.state.value.generation == subtitleGestureGeneration) {
                 val selected = touchedSubtitle
                 lastDraggedPosition?.let { position ->
-                  if (selected == null) {
-                    viewModel.persistSubtitleGesturePosition(SubtitleGestureTarget.Primary, position)
-                  } else if (getTrackSelectionId(selected.target.selectionProperty) == selected.trackId) {
+                  if (selected != null && getTrackSelectionId(selected.target.selectionProperty) == selected.trackId) {
                     viewModel.persistSubtitleGesturePosition(selected.target, position)
                   }
-                }
-                lastDraggedSecondaryPosition?.let {
-                  viewModel.persistSubtitleGesturePosition(SubtitleGestureTarget.Secondary, it)
                 }
               }
               isVerticalGestureActive = false
