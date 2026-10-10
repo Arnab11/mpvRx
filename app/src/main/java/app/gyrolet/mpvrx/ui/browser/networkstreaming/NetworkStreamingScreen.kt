@@ -166,6 +166,7 @@ object NetworkStreamingScreen : Screen {
     // screens (such as Profile -> Network) have no navigation bar, so reserve it here.
     val bottomOverlayClearance = maxOf(navigationBarHeight, app.gyrolet.mpvrx.ui.browser.NavigationBarState.miniPlayerClearance)
     val coroutineScope = rememberCoroutineScope()
+    val navigationHaptics = app.gyrolet.mpvrx.ui.utils.rememberAppHaptics()
 
     // yt-dlp install gate for the "paste link -> Play" flow: instead of silently installing
     // yt-dlp in the background while the player buffers on first use, we ask up front.
@@ -409,8 +410,9 @@ object NetworkStreamingScreen : Screen {
               Tab(
                 selected = pagerState.currentPage == index,
                 onClick = {
-                  navigateTab(index)
-                },
+                   if (pagerState.currentPage != index) navigationHaptics.selection(true)
+                   navigateTab(index)
+                 },
                 text = {
                   Text(
                     text = stringResource(tab.titleResId),

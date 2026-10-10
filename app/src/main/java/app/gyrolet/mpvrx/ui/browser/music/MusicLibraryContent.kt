@@ -203,6 +203,7 @@ fun MusicLibraryContent(
   val context = LocalContext.current
   val backStack = LocalBackStack.current
   val scope = rememberCoroutineScope()
+  val navigationHaptics = app.gyrolet.mpvrx.ui.utils.rememberAppHaptics()
 
   val jfViewModel: JellyfinViewModel =
     jellyfinViewModel
@@ -588,7 +589,10 @@ fun MusicLibraryContent(
           visibleTabs.forEachIndexed { index, tab ->
             Tab(
               selected = pagerState.currentPage == index,
-              onClick = { musicViewModel.setTab(tab) },
+              onClick = {
+                 if (selectedTab != tab) navigationHaptics.selection(true)
+                 musicViewModel.setTab(tab)
+               },
               text = {
                 Text(
                   text = stringResource(tab.titleRes),
@@ -708,7 +712,7 @@ fun MusicLibraryContent(
         onRefresh = { musicViewModel.refreshLibrary(context) },
         modifier = Modifier.fillMaxSize()
       ) {
-        if (isLoading && songs.isEmpty()) {
+        if (isLoading && songs.isEmpty() && albums.isEmpty() && artists.isEmpty() && playlists.isEmpty()) {
           Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
@@ -1288,8 +1292,15 @@ fun LocalAlbumArtImage(
   BoxWithConstraints(modifier = modifier, contentAlignment = Alignment.Center) {
     val widthPx = with(density) { if (maxWidth.value.isFinite()) maxWidth.roundToPx().coerceAtLeast(1) else 256 }
     val heightPx = with(density) { if (maxHeight.value.isFinite()) maxHeight.roundToPx().coerceAtLeast(1) else 256 }
+    // Preserve the previous cover for the same track while higher-resolution art loads.
+    var retainedBitmap by remember(audioSong?.path, uri) {
+      mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null)
+    }
     var bitmap by remember(uri, video, widthPx, heightPx) {
-      mutableStateOf(video?.let { thumbnailRepository.peekThumbnailFromMemory(it, widthPx, heightPx) }?.asImageBitmap())
+      mutableStateOf(
+        video?.let { thumbnailRepository.peekThumbnailFromMemory(it, widthPx, heightPx) }?.asImageBitmap()
+          ?: retainedBitmap,
+      )
     }
 
     LaunchedEffect(uri, video, widthPx, heightPx) {
@@ -1329,7 +1340,10 @@ fun LocalAlbumArtImage(
         }
       }
       // Do not blank an already-rendered cover if a transient rescan/reload fails.
-      if (loadedBitmap != null || bitmap == null) bitmap = loadedBitmap
+      if (loadedBitmap != null) {
+        bitmap = loadedBitmap
+        retainedBitmap = loadedBitmap
+      }
     }
 
     val loaded = bitmap

@@ -40,6 +40,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -772,6 +773,7 @@ internal fun ExpressivePillNavigationBar(
   val currentSelectedTab by rememberUpdatedState(selectedTab)
   val currentOnTabSelected by rememberUpdatedState(onTabSelected)
   val appearancePreferences = koinInject<AppearancePreferences>()
+  val navigationHaptics = app.gyrolet.mpvrx.ui.utils.rememberAppHaptics()
   val glowEnabled by appearancePreferences.navigationBarGlow.collectAsState()
   val glowStrength by animateFloatAsState(
     targetValue = if (glowEnabled) 1f else 0f,
@@ -837,9 +839,17 @@ internal fun ExpressivePillNavigationBar(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
               ) {
-                Box(Modifier.size(iconSize).graphicsLayer { translationY = 2.dp.toPx() * labelFraction }
-                  .then(if (active && tab != MainScreen.MainTab.PROFILE) Modifier.navigationAccentMask(accentBrush) else Modifier)) {
-                  MainTabIcon(tab, if (active && tab != MainScreen.MainTab.PROFILE) Color.White else contentColor, null, iconSize)
+                Box(Modifier.size(iconSize).graphicsLayer { translationY = 2.dp.toPx() * labelFraction }) {
+                  if (active && tab != MainScreen.MainTab.PROFILE) {
+                    SelectedMainTabIcon(
+                      tab = tab,
+                      accentBrush = accentBrush,
+                      outlineTint = MaterialTheme.colorScheme.onSurface,
+                      iconSize = iconSize,
+                    )
+                  } else {
+                    MainTabIcon(tab, contentColor, null, iconSize)
+                  }
                 }
                 Box(Modifier.height(labelHeight * labelFraction).fillMaxWidth().clipToBounds().graphicsLayer { alpha = labelFraction }) {
                 Text(
@@ -873,7 +883,7 @@ internal fun ExpressivePillNavigationBar(
         NavigationBarState.navbarLeftOffset = with(density) { coordinates.positionInRoot().x.toDp() }
       }
       .then(
-        if (reducedMotion) Modifier else Modifier.pointerInput(motion, density, isRtl) {
+        if (reducedMotion) Modifier else Modifier.pointerInput(motion, density, isRtl, navigationHaptics) {
           awaitEachGesture {
             val down = awaitFirstDown(requireUnconsumed = false, pass = PointerEventPass.Initial)
             motion.begin(down.position.x / density.density, down.position.y / density.density)
@@ -895,7 +905,9 @@ internal fun ExpressivePillNavigationBar(
                 if (!change.pressed) {
                   val target = motion.finish()
                   finished = true
-                  currentOnTabSelected(visibleTabs[if (isRtl) visibleTabs.lastIndex - target else target])
+                  val targetTab = visibleTabs[if (isRtl) visibleTabs.lastIndex - target else target]
+                  if (targetTab != currentSelectedTab) navigationHaptics.selection(true)
+                  currentOnTabSelected(targetTab)
                   change.consume()
                   break
                 }
@@ -991,6 +1003,7 @@ internal fun ExpressivePillNavigationBar(
                 interactionSource = remember { MutableInteractionSource() },
                 indication = null,
               ) {
+                if (tab != selectedTab) navigationHaptics.selection(true)
                 if (reducedMotion) motion.snapTo(visualIndex(index)) else motion.select(visualIndex(index))
                 onTabSelected(tab)
               }
@@ -1011,6 +1024,34 @@ private fun mainNavigationLabel(tab: MainScreen.MainTab): String =
     MainScreen.MainTab.JELLYFIN -> R.string.ui_jellyfin
     MainScreen.MainTab.PROFILE -> R.string.ui_profile
   })
+
+/**
+ * Emphasize the selected icon's silhouette without adding an icon badge or background.
+ * Offset copies produce a high-contrast outline for both vector and drawable icons,
+ * while the foreground keeps the existing theme accent gradient.
+ */
+@Composable
+private fun SelectedMainTabIcon(
+  tab: MainScreen.MainTab,
+  accentBrush: Brush,
+  outlineTint: Color,
+  iconSize: androidx.compose.ui.unit.Dp,
+) {
+  val stroke = if (iconSize < 26.dp) 1.dp else 1.35.dp
+  Box(Modifier.size(iconSize)) {
+    for (x in -1..1) {
+      for (y in -1..1) {
+        if (x == 0 && y == 0) continue
+        Box(Modifier.matchParentSize().offset(x = stroke * x, y = stroke * y)) {
+          MainTabIcon(tab, outlineTint, null, iconSize)
+        }
+      }
+    }
+    Box(Modifier.matchParentSize().navigationAccentMask(accentBrush)) {
+      MainTabIcon(tab, Color.White, null, iconSize)
+    }
+  }
+}
 
 @Composable
 private fun MainTabIcon(

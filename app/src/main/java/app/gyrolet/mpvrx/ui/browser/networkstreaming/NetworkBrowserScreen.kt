@@ -163,6 +163,14 @@ data class NetworkBrowserScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
+    // Keep the last successful directory listing in place on transient failures, but
+    // report the failed operation rather than silently swallowing its error.
+    LaunchedEffect(error, files.isNotEmpty()) {
+      if (error != null && files.isNotEmpty()) {
+        Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
+      }
+    }
+
     // UI State
     val isRefreshing = remember { mutableStateOf(false) }
     val sortDialogOpen = rememberSaveable { mutableStateOf(false) }
@@ -588,7 +596,7 @@ private fun NetworkBrowserContent(
       }
     }
 
-    error != null -> {
+    error != null && files.isEmpty() -> {
       Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,

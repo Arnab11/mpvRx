@@ -257,12 +257,19 @@ private fun MiniPlayerContent(
 
   val coroutineScope = rememberCoroutineScope()
   var offsetX by remember { mutableFloatStateOf(0f) }
+  // Keep one artwork handoff per tap burst, without scheduling a recomposition.
+  val lastExpandAtMs = remember { longArrayOf(0L) }
+  LaunchedEffect(currentItem?.stableId) { offsetX = 0f }
+  val actionHaptics = app.gyrolet.mpvrx.ui.utils.rememberAppHaptics()
   val density = LocalDensity.current
   val dismissThresholdPx = with(density) { 100.dp.toPx() }
   val expandThresholdPx = with(density) { 48.dp.toPx() }
 
   val launchPlayer = remember(context, isAudioOnlyItem) {
-    {
+    launch@{
+      val now = android.os.SystemClock.elapsedRealtime()
+      if (now - lastExpandAtMs[0] < 650L) return@launch
+      lastExpandAtMs[0] = now
       val animateArtwork = isAudioOnlyItem && PlayerArtworkTransitions.begin(
         PlayerArtworkDestination.FULL,
         PlaybackSession.state.value.currentItem?.stableId,
@@ -447,7 +454,8 @@ private fun MiniPlayerContent(
         ) {
           IconButton(
             onClick = {
-              context.startService(
+              actionHaptics.selection(true)
+             context.startService(
                 Intent(context, MediaPlaybackService::class.java).setAction(
                   MediaPlaybackService.ACTION_NOTIFICATION_PLAY_PAUSE,
                 ),
@@ -472,7 +480,7 @@ private fun MiniPlayerContent(
           }
 
           IconButton(
-            onClick = { dismissPlayer() },
+            onClick = { actionHaptics.confirm(); dismissPlayer() },
             modifier = Modifier.size(48.dp),
           ) {
             Icon(
@@ -589,7 +597,8 @@ private fun MiniPlayerContent(
         // Play / Pause Action Button
         IconButton(
           onClick = {
-            context.startService(
+            actionHaptics.selection(true)
+             context.startService(
               Intent(context, MediaPlaybackService::class.java).setAction(
                 MediaPlaybackService.ACTION_NOTIFICATION_PLAY_PAUSE,
               ),
@@ -616,7 +625,8 @@ private fun MiniPlayerContent(
         // Next Track Action Button
         IconButton(
           onClick = {
-            context.startService(
+            actionHaptics.tick()
+             context.startService(
               Intent(context, MediaPlaybackService::class.java).setAction(
                 MediaPlaybackService.ACTION_NOTIFICATION_NEXT,
               ),
@@ -634,7 +644,7 @@ private fun MiniPlayerContent(
 
         // Close Action Button
         IconButton(
-          onClick = { dismissPlayer() },
+          onClick = { actionHaptics.confirm(); dismissPlayer() },
           modifier = Modifier.size(48.dp),
         ) {
           Icon(

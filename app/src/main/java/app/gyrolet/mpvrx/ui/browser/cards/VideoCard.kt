@@ -281,6 +281,10 @@ fun VideoCard(
   val selectionContainerColor = animatedSelectionColor(isSelected)
   val showSelectionBadge = isSelected || selectionContainerColor.alpha > 0.001f
 
+  // Hold the last displayed thumbnail for this file across grid/list size changes.
+  // Repository memory remains the source of truth for new requests.
+  var retainedThumbnail by remember(video.path, video.dateModified, video.size) { mutableStateOf<Bitmap?>(null) }
+
   val cardShape = AppShapeScale.large
 
   VideoSwipeSurface(
@@ -354,16 +358,20 @@ fun VideoCard(
 
           // Seeded during composition: reading the cache asynchronously shows the placeholder icon
           // for a frame first, which flickers every visible card when the list recomposes.
+          val exactMemoryThumbnail = remember(thumbnailRequestKey) {
+            thumbnailRepository.peekThumbnailFromMemory(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
+          }
           var thumbnail by remember(thumbnailRequestKey) {
-            mutableStateOf<Bitmap?>(
-              thumbnailRepository.peekThumbnailFromMemory(video, resolvedThumbWidthPx, resolvedThumbHeightPx),
-            )
+            mutableStateOf<Bitmap?>(exactMemoryThumbnail ?: retainedThumbnail)
           }
 
           // Read cached thumbnail immediately from disk if not in memory, or generate if permitted
           LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, allowThumbnailLoading, showThumbnails) {
-            if (thumbnail == null && showThumbnails) {
-              thumbnail =
+            thumbnail?.let { retainedThumbnail = it }
+            // A fallback frame from another size is displayed immediately; fetch the exact size
+            // without clearing it. Memory hits require no disk read or decoding.
+            if (exactMemoryThumbnail == null && showThumbnails) {
+              val loaded =
                 withContext(Dispatchers.IO) {
                   if (allowThumbnailGeneration && allowThumbnailLoading) {
                     thumbnailRepository.getThumbnail(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
@@ -371,6 +379,10 @@ fun VideoCard(
                     thumbnailRepository.getCachedThumbnail(video, resolvedThumbWidthPx, resolvedThumbHeightPx)
                   }
                 }
+              if (loaded != null) {
+                thumbnail = loaded
+                retainedThumbnail = loaded
+              }
             }
           }
 
@@ -689,16 +701,20 @@ fun VideoCard(
 
           // Seeded during composition: reading the cache asynchronously shows the placeholder icon
           // for a frame first, which flickers every visible card when the list recomposes.
+          val exactMemoryThumbnail = remember(thumbnailRequestKey) {
+            thumbnailRepository.peekThumbnailFromMemory(video, thumbWidthPx, thumbHeightPx)
+          }
           var thumbnail by remember(thumbnailRequestKey) {
-            mutableStateOf<Bitmap?>(
-              thumbnailRepository.peekThumbnailFromMemory(video, thumbWidthPx, thumbHeightPx),
-            )
+            mutableStateOf<Bitmap?>(exactMemoryThumbnail ?: retainedThumbnail)
           }
 
           // Read cached thumbnail immediately from disk if not in memory, or generate if permitted
           LaunchedEffect(thumbnailRequestKey, allowThumbnailGeneration, allowThumbnailLoading, showThumbnails) {
-            if (thumbnail == null && showThumbnails) {
-              thumbnail =
+            thumbnail?.let { retainedThumbnail = it }
+            // A fallback frame from another size is displayed immediately; fetch the exact size
+            // without clearing it. Memory hits require no disk read or decoding.
+            if (exactMemoryThumbnail == null && showThumbnails) {
+              val loaded =
                 withContext(Dispatchers.IO) {
                   if (allowThumbnailGeneration && allowThumbnailLoading) {
                     thumbnailRepository.getThumbnail(video, thumbWidthPx, thumbHeightPx)
@@ -706,6 +722,10 @@ fun VideoCard(
                     thumbnailRepository.getCachedThumbnail(video, thumbWidthPx, thumbHeightPx)
                   }
                 }
+              if (loaded != null) {
+                thumbnail = loaded
+                retainedThumbnail = loaded
+              }
             }
           }
 

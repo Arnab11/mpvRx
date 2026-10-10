@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
@@ -32,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -84,12 +86,24 @@ fun AdaptiveControlsButton(
     onLongClickLabel = onLongClickLabel,
   ) {
     if (icon != null) {
-      Icon(
-        imageVector = icon,
-        contentDescription = title ?: text,
-        tint = LocalContentColor.current,
-        modifier = Modifier.size(PlayerLiquidTokens.IconSize),
-      )
+      val iconTint = LocalContentColor.current
+      val outlineTint = if (iconTint.luminance() > 0.5f) Color.Black else Color.White
+      // One offset silhouette keeps the control readable over moving light/dark frames.
+      // Unlike a background badge, this only affects the icon pixels.
+      Box(Modifier.size(PlayerLiquidTokens.IconSize)) {
+        Icon(
+          imageVector = icon,
+          contentDescription = null,
+          tint = outlineTint.copy(alpha = iconTint.alpha * 0.7f),
+          modifier = Modifier.size(PlayerLiquidTokens.IconSize).offset(x = 0.8.dp, y = 0.8.dp),
+        )
+        Icon(
+          imageVector = icon,
+          contentDescription = title ?: text,
+          tint = iconTint,
+          modifier = Modifier.size(PlayerLiquidTokens.IconSize),
+        )
+      }
     }
     if (text != null) {
       Text(
