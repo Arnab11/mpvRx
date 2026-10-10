@@ -31,6 +31,8 @@ import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -1220,6 +1222,7 @@ private fun SheetAction(
   }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun ProfileEditDialog(
   initialName: String,
@@ -1291,12 +1294,15 @@ private fun ProfileEditDialog(
             }
           }
         }
-        Row(
-          horizontalArrangement = Arrangement.spacedBy(8.dp),
-          verticalAlignment = Alignment.CenterVertically,
+        // Three buttons don't fit one row in the dialog width once a photo exists; a plain Row
+        // squeezed the last one into a thin vertical pill. FlowRow wraps it onto its own line.
+        FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.fillMaxWidth(),
         ) {
           OutlinedButton(onClick = { picker.launch("image/*") }) {
-            Text(stringResource(R.string.profile_choose_photo))
+            Text(stringResource(R.string.profile_choose_photo), maxLines = 1)
           }
           if (showsPhoto) {
             OutlinedButton(
@@ -1309,7 +1315,7 @@ private fun ProfileEditDialog(
                 }
               },
             ) {
-              Text(stringResource(R.string.clip_crop))
+              Text(stringResource(R.string.clip_crop), maxLines = 1)
             }
             OutlinedButton(
               onClick = {
@@ -1324,7 +1330,7 @@ private fun ProfileEditDialog(
                 MaterialTheme.colorScheme.error.copy(alpha = 0.5f),
               ),
             ) {
-              Text(stringResource(R.string.profile_remove_photo))
+              Text(stringResource(R.string.profile_remove_photo), maxLines = 1)
             }
           }
         }
