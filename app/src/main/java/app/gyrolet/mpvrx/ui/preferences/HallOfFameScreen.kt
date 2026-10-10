@@ -61,7 +61,6 @@ import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -189,7 +188,6 @@ object HallOfFameScreen : Screen {
             item(key = "creators", span = { GridItemSpan(maxLineSpan) }) {
               Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 HallOfFameLeadCard(
-                  rank = 1,
                   name = "MarlboroAdvance",
                   handle = "marlboro-advance",
                   tag = stringResource(R.string.hall_of_fame_original_developer),
@@ -201,7 +199,6 @@ object HallOfFameScreen : Screen {
                   contentColor = colors.onPrimaryContainer,
                 )
                 HallOfFameLeadCard(
-                  rank = 2,
                   name = "Ritesh Pandit",
                   handle = "Riteshp2001",
                   tag = stringResource(R.string.hall_of_fame_maintainer),
@@ -684,7 +681,6 @@ private fun Modifier.profileClickable(name: String, profileUrl: String?): Modifi
 
 @Composable
 private fun HallOfFameLeadCard(
-  rank: Int,
   name: String,
   handle: String,
   tag: String,
@@ -706,8 +702,7 @@ private fun HallOfFameLeadCard(
     verticalAlignment = Alignment.CenterVertically,
     horizontalArrangement = Arrangement.spacedBy(12.dp),
   ) {
-    RankBadge(rank)
-    AvatarWithRing(avatarUrl, size = 68.dp)
+    AvatarWithRing(avatarUrl, size = 72.dp)
     Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
       TagPill(tag, contentColor)
       Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -736,31 +731,6 @@ private fun HallOfFameLeadCard(
       ) {
         Icon(Icons.RoundedFilled.ChevronRight, null, Modifier.size(20.dp), tint = contentColor)
       }
-    }
-  }
-}
-
-@Composable
-private fun RankBadge(rank: Int) {
-  val gold = rank == 1
-  val medal = if (gold) listOf(Color(0xFFF6D77C), Color(0xFFC79436)) else listOf(Color(0xFFE3E8F3), Color(0xFF93A0BA))
-  val ink = if (gold) Color(0xFF2B2111) else Color(0xFF1F2636)
-  val label = stringResource(R.string.hall_of_fame_rank_label, rank)
-  Box(
-    modifier = Modifier
-      .size(width = 28.dp, height = 56.dp)
-      .clip(RoundedCornerShape(14.dp))
-      .background(Brush.verticalGradient(medal))
-      .semantics { contentDescription = label },
-    contentAlignment = Alignment.Center,
-  ) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp)) {
-      CrownGlyph(ink.copy(alpha = 0.85f), Modifier.size(13.dp))
-      Text(
-        text = rank.toString(),
-        style = MaterialTheme.typography.labelMedium.copy(fontSize = 12.sp, fontWeight = FontWeight.ExtraBold),
-        color = ink.copy(alpha = 0.85f),
-      )
     }
   }
 }
