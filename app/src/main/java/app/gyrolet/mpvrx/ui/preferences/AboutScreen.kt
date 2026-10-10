@@ -207,8 +207,13 @@ object AboutScreen : Screen {
                     modifier = Modifier.matchParentSize(),
                     factory = { ctx ->
                       ImageView(ctx).apply {
-                        setImageResource(R.mipmap.ic_launcher)
+                        scaleType = ImageView.ScaleType.FIT_CENTER
+                        setImageResource(LauncherIconManager.current(ctx).preview)
                       }
+                    },
+                    update = { view ->
+                      val selectedPreview = LauncherIconManager.current(view.context).preview
+                      view.setImageResource(selectedPreview)
                     },
                   )
                 }

@@ -7,7 +7,9 @@ package app.gyrolet.mpvrx.ui.theme
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Image
+import android.widget.ImageView
+import androidx.compose.ui.viewinterop.AndroidView
+import app.gyrolet.mpvrx.ui.preferences.LauncherIconManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -100,13 +101,15 @@ fun SplashContent(
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.spacedBy(SPLASH_LABEL_SPACING),
     ) {
-      Image(
-        painter = painterResource(R.mipmap.ic_launcher_foreground),
-        contentDescription = null,
-        modifier =
-          Modifier
-            .size(SPLASH_ICON_SIZE)
-            .scale(iconScale),
+      AndroidView(
+        modifier = Modifier.size(SPLASH_ICON_SIZE).scale(iconScale),
+        factory = { context ->
+          ImageView(context).apply {
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setImageResource(LauncherIconManager.current(context).preview)
+          }
+        },
+        update = { it.setImageResource(LauncherIconManager.current(it.context).preview) },
       )
       Text(
         text = stringResource(R.string.app_name),

@@ -112,7 +112,7 @@ private const val NON_VULKAN_NOTICE_SHOWN = "non_vulkan_notice_shown"
 /**
  * Main entry point for the application
  */
-class MainActivity : AppCompatActivity() {
+open class MainActivity : AppCompatActivity() {
   private val appearancePreferences by inject<AppearancePreferences>()
   private val playerPreferences by inject<PlayerPreferences>()
   private var appliedEdgeToEdgeDarkMode: Boolean? = null

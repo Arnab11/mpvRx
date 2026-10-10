@@ -1,11 +1,17 @@
 /* SPDX-License-Identifier: AGPL-3.0-or-later */
 package app.gyrolet.mpvrx.ui.preferences
 
+import android.app.Activity
+import android.app.ActivityManager
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
 import android.content.ComponentName
 import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import androidx.annotation.DrawableRes
+import androidx.core.content.ContextCompat
 import androidx.annotation.StringRes
 import app.gyrolet.mpvrx.R
 
@@ -18,9 +24,9 @@ internal enum class LauncherIcon(
   @DrawableRes val preview: Int,
 ) {
   Purple("app.gyrolet.mpvrx.PurpleLauncher", "app.gyrolet.mpvrx.TvPurpleLauncher",
-    R.string.app_icon_purple, R.string.app_icon_purple_description, R.drawable.ic_launcher_purple_foreground),
+    R.string.app_icon_purple, R.string.app_icon_purple_description, R.mipmap.ic_launcher_purple),
   Classic("app.gyrolet.mpvrx.ClassicLauncher", "app.gyrolet.mpvrx.TvClassicLauncher",
-    R.string.app_icon_classic, R.string.app_icon_classic_description, R.drawable.ic_splash_logo),
+    R.string.app_icon_classic, R.string.app_icon_classic_description, R.mipmap.ic_launcher),
 }
 
 internal object LauncherIconManager {
@@ -33,6 +39,24 @@ internal object LauncherIconManager {
     return if (classic == PackageManager.COMPONENT_ENABLED_STATE_ENABLED &&
       purple == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
     ) LauncherIcon.Classic else LauncherIcon.Purple
+  }
+
+
+  /**
+   * Synchronizes Android's Recents task artwork with the currently selected launcher alias.
+   * Kept outside application startup and any video-first-frame critical path.
+   */
+  @Suppress("DEPRECATION")
+  fun refreshTaskIcon(activity: Activity) {
+    val iconRes = current(activity).preview
+    val drawable: Drawable = ContextCompat.getDrawable(activity, iconRes) ?: return
+    val size = 128
+    val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+    drawable.setBounds(0, 0, size, size)
+    drawable.draw(Canvas(bitmap))
+    activity.setTaskDescription(ActivityManager.TaskDescription(
+      activity.getString(R.string.app_name), bitmap,
+    ))
   }
 
   fun select(context: Context, icon: LauncherIcon) {
@@ -55,5 +79,6 @@ internal object LauncherIconManager {
       changes.filter { it.second == PackageManager.COMPONENT_ENABLED_STATE_DISABLED }
         .forEach { (name, state) -> pm.setComponentEnabledSetting(name, state, flags) }
     }
+    (context as? Activity)?.let { refreshTaskIcon(it) }
   }
 }
