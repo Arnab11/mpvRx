@@ -2734,4 +2734,12 @@
   <string name="player_zoom_overlays_follow_summary">تتغير الترجمة وصفحات الإحصاءات 1–6 مع تكبير الفيديو. عند إيقافه يبقى حجمها ثابتاً.</string>
   <string name="network_smb_share_folder">المشاركة / المجلد (اختياري)</string>
   <string name="network_smb_share_hint">اتركه فارغًا أو استخدم / لتصفح جميع المجلدات المشتركة. أدخل /Media أو /Media/Movies لفتح مجلد محدد.</string>
+  <string name="pref_app_icon_title">أيقونة التطبيق</string>
+  <string name="pref_app_icon_summary">اختر الأيقونة التي تظهر في المشغل</string>
+  <string name="pref_app_icon_description">اختر أيقونة التطبيق. يمكن إضافة تصاميم أخرى لاحقًا.</string>
+  <string name="app_icon_purple">الشريط البنفسجي</string>
+  <string name="app_icon_purple_description">شعار mpvRx المتدرج الجديد (الافتراضي)</string>
+  <string name="app_icon_classic">الكلاسيكية</string>
+  <string name="app_icon_classic_description">أيقونة mpvRx الأصلية</string>
+  <string name="app_icon_change_failed">تعذر تغيير أيقونة التطبيق.</string>
 </resources>

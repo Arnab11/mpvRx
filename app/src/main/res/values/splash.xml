@@ -1,16 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!--
-        Launch screen.
-
-        The system splash can only take a static colour from the theme, so this matches the default
-        theme's surfaces and keeps the handoff to the app seamless. A palette the user picks at
-        runtime (custom themes, AMOLED) cannot be expressed here — Android's SplashScreen API has no
-        setter for it — so the Compose splash draws the live colour instead. See SplashContent.
-    -->
+    <!-- Native animated-vector splash; the animation never delays app launch. -->
     <style name="Theme.mpvrx.Splash" parent="Theme.SplashScreen">
-        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_logo</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_purple_animated</item>
+        <item name="windowSplashScreenAnimationDuration">420</item>
         <item name="windowSplashScreenBackground">@color/splash_background</item>
         <item name="postSplashScreenTheme">@style/Theme.mpvrx</item>
         <item name="android:statusBarColor">@android:color/transparent</item>

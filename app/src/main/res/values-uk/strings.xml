@@ -2735,4 +2735,12 @@
   <string name="player_zoom_overlays_follow_summary">Субтитри та сторінки статистики 1–6 масштабуються разом із відео. Якщо вимкнено, розмір залишається сталим.</string>
   <string name="network_smb_share_folder">Спільний ресурс / папка (необов’язково)</string>
   <string name="network_smb_share_hint">Залиште поле порожнім або введіть /, щоб переглянути всі спільні папки. Введіть /Media або /Media/Movies, щоб відкрити певну папку.</string>
+  <string name="pref_app_icon_title">Значок застосунку</string>
+  <string name="pref_app_icon_summary">Виберіть значок для лаунчера</string>
+  <string name="pref_app_icon_description">Виберіть значок. Нові варіанти можна додати пізніше.</string>
+  <string name="app_icon_purple">Фіолетова стрічка</string>
+  <string name="app_icon_purple_description">Новий градієнтний логотип mpvRx (типово)</string>
+  <string name="app_icon_classic">Класичний</string>
+  <string name="app_icon_classic_description">Початковий значок mpvRx</string>
+  <string name="app_icon_change_failed">Не вдалося змінити значок.</string>
 </resources>

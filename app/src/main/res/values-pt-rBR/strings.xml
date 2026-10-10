@@ -2708,4 +2708,12 @@ Reinicie o aplicativo para que todas as alterações entrem em vigor.</string>
   <string name="player_zoom_overlays_follow_summary">As legendas e as páginas de estatísticas 1–6 acompanham o zoom do vídeo. Desativado, mantêm um tamanho fixo.</string>
   <string name="network_smb_share_folder">Compartilhamento / pasta (opcional)</string>
   <string name="network_smb_share_hint">Deixe em branco ou use / para explorar todas as pastas compartilhadas. Digite /Media ou /Media/Movies para abrir uma pasta específica.</string>
+  <string name="pref_app_icon_title">Ícone do aplicativo</string>
+  <string name="pref_app_icon_summary">Escolha o ícone do iniciador</string>
+  <string name="pref_app_icon_description">Escolha um ícone. Mais designs poderão ser adicionados depois.</string>
+  <string name="app_icon_purple">Fita roxa</string>
+  <string name="app_icon_purple_description">Novo logo mpvRx em gradiente (padrão)</string>
+  <string name="app_icon_classic">Clássico</string>
+  <string name="app_icon_classic_description">Ícone original do mpvRx</string>
+  <string name="app_icon_change_failed">Não foi possível alterar o ícone.</string>
 </resources>

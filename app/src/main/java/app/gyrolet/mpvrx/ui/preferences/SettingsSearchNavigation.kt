@@ -59,6 +59,7 @@ private val settingsSearchListAnchors: Map<Screen, List<SettingsSearchListAnchor
       listOf(
         SettingsSearchListAnchor(titleRes = R.string.pref_appearance_title, itemIndex = 0),
         SettingsSearchListAnchor(titleRes = R.string.pref_appearance_amoled_mode_title, itemIndex = 1),
+        SettingsSearchListAnchor(titleRes = R.string.pref_app_icon_title, itemIndex = 1),
         SettingsSearchListAnchor(titleRes = R.string.pref_appearance_system_font_title, itemIndex = 1),
         SettingsSearchListAnchor(titleRes = R.string.navbar_glow_title, itemIndex = 1),
         SettingsSearchListAnchor(titleRes = R.string.pref_appearance_unlimited_name_lines_title, itemIndex = 3),

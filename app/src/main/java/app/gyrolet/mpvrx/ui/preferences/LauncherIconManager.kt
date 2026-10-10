@@ -1,0 +1,59 @@
+/* SPDX-License-Identifier: AGPL-3.0-or-later */
+package app.gyrolet.mpvrx.ui.preferences
+
+import android.content.ComponentName
+import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
+import app.gyrolet.mpvrx.R
+
+/** Add future icon designs to this catalogue and declare corresponding launcher aliases. */
+internal enum class LauncherIcon(
+  val phoneAlias: String,
+  val tvAlias: String,
+  @StringRes val label: Int,
+  @StringRes val description: Int,
+  @DrawableRes val preview: Int,
+) {
+  Purple("app.gyrolet.mpvrx.PurpleLauncher", "app.gyrolet.mpvrx.TvPurpleLauncher",
+    R.string.app_icon_purple, R.string.app_icon_purple_description, R.drawable.ic_launcher_purple_foreground),
+  Classic("app.gyrolet.mpvrx.ClassicLauncher", "app.gyrolet.mpvrx.TvClassicLauncher",
+    R.string.app_icon_classic, R.string.app_icon_classic_description, R.drawable.ic_splash_logo),
+}
+
+internal object LauncherIconManager {
+  private fun component(context: Context, name: String) = ComponentName(context.packageName, name)
+
+  fun current(context: Context): LauncherIcon {
+    val pm = context.packageManager
+    val classic = pm.getComponentEnabledSetting(component(context, LauncherIcon.Classic.phoneAlias))
+    val purple = pm.getComponentEnabledSetting(component(context, LauncherIcon.Purple.phoneAlias))
+    return if (classic == PackageManager.COMPONENT_ENABLED_STATE_ENABLED &&
+      purple == PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+    ) LauncherIcon.Classic else LauncherIcon.Purple
+  }
+
+  fun select(context: Context, icon: LauncherIcon) {
+    val pm = context.packageManager
+    val flags = PackageManager.DONT_KILL_APP
+    val changes = LauncherIcon.entries.flatMap { choice ->
+      val state = if (choice == icon) PackageManager.COMPONENT_ENABLED_STATE_ENABLED
+        else PackageManager.COMPONENT_ENABLED_STATE_DISABLED
+      listOf(component(context, choice.phoneAlias) to state, component(context, choice.tvAlias) to state)
+    }
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      // Apply phone and TV aliases atomically on Android 13+.
+      pm.setComponentEnabledSettings(changes.map { (name, state) ->
+        PackageManager.ComponentEnabledSetting(name, state, flags)
+      })
+    } else {
+      // Ensure a launcher remains enabled throughout a switch on Android 8–12.
+      changes.filter { it.second == PackageManager.COMPONENT_ENABLED_STATE_ENABLED }
+        .forEach { (name, state) -> pm.setComponentEnabledSetting(name, state, flags) }
+      changes.filter { it.second == PackageManager.COMPONENT_ENABLED_STATE_DISABLED }
+        .forEach { (name, state) -> pm.setComponentEnabledSetting(name, state, flags) }
+    }
+  }
+}

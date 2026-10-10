@@ -329,6 +329,18 @@ object AppearancePreferencesScreen : Screen {
                     onClick = { backstack.navigateTo(WallpaperEditorScreen()) },
                   )
 
+                   Preference(
+                     modifier = Modifier.settingsSearchTarget(R.string.pref_app_icon_title),
+                     title = { Text(stringResource(R.string.pref_app_icon_title)) },
+                     summary = {
+                       Text(
+                         stringResource(R.string.pref_app_icon_summary),
+                         color = MaterialTheme.colorScheme.outline,
+                       )
+                     },
+                     onClick = { backstack.navigateTo(AppIconPreferencesScreen) },
+                   )
+
                   PreferenceDivider()
 
                   SwitchPreference(

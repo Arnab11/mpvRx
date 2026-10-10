@@ -2701,4 +2701,12 @@
   <string name="player_zoom_overlays_follow_summary">字幕と統計ページ1〜6が動画のズームに合わせて拡大します。オフにするとサイズは固定されます。</string>
   <string name="network_smb_share_folder">共有 / フォルダー（任意）</string>
   <string name="network_smb_share_hint">空欄にするか / を入力すると、すべての共有フォルダーを表示します。特定のフォルダーを開くには /Media または /Media/Movies を入力します。</string>
+  <string name="pref_app_icon_title">アプリアイコン</string>
+  <string name="pref_app_icon_summary">ランチャーに表示するアイコンを選択</string>
+  <string name="pref_app_icon_description">アプリアイコンを選択します。今後ほかのデザインを追加できます。</string>
+  <string name="app_icon_purple">紫のリボン</string>
+  <string name="app_icon_purple_description">新しいグラデーションのmpvRxロゴ（標準）</string>
+  <string name="app_icon_classic">クラシック</string>
+  <string name="app_icon_classic_description">従来のmpvRxアイコン</string>
+  <string name="app_icon_change_failed">アイコンを変更できませんでした。</string>
 </resources>

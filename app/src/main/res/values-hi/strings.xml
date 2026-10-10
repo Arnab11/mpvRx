@@ -2612,4 +2612,12 @@
   <string name="player_zoom_overlays_follow_summary">उपशीर्षक और आँकड़ों के पृष्ठ 1–6 वीडियो ज़ूम के साथ बदलते हैं। बंद होने पर आकार स्थिर रहेगा।</string>
   <string name="network_smb_share_folder">शेयर / फ़ोल्डर (वैकल्पिक)</string>
   <string name="network_smb_share_hint">सभी साझा फ़ोल्डर देखने के लिए खाली छोड़ें या / डालें। किसी खास फ़ोल्डर को खोलने के लिए /Media या /Media/Movies डालें।</string>
+  <string name="pref_app_icon_title">ऐप आइकन</string>
+  <string name="pref_app_icon_summary">लॉन्चर में दिखने वाला आइकन चुनें</string>
+  <string name="pref_app_icon_description">ऐप आइकन चुनें। भविष्य में और डिज़ाइन जोड़े जा सकते हैं।</string>
+  <string name="app_icon_purple">बैंगनी रिबन</string>
+  <string name="app_icon_purple_description">नया ग्रेडिएंट mpvRx लोगो (डिफ़ॉल्ट)</string>
+  <string name="app_icon_classic">क्लासिक</string>
+  <string name="app_icon_classic_description">पुराना mpvRx ऐप आइकन</string>
+  <string name="app_icon_change_failed">ऐप आइकन बदला नहीं जा सका।</string>
 </resources>
