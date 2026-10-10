@@ -25,6 +25,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
@@ -89,6 +90,13 @@ internal fun ScreenNavDisplay(
   backStack: NavBackStack<Screen>,
   modifier: Modifier = Modifier,
   opaqueBackground: Boolean = false,
+  /**
+   * Entries at or above this screen in the stack draw an opaque surface; entries below it keep the
+   * wallpaper-aware one. Decided once per entry, so pushing/popping the screen never flips the
+   * colour of an entry that is already on screen (which used to hard-cut the wallpaper to a solid
+   * colour for one frame before the slide started).
+   */
+  opaqueFrom: Screen? = null,
   onBack: () -> Unit = { backStack.popSafely() },
   content: @Composable (Screen) -> Unit = { it.Content() },
 ) {
@@ -120,7 +128,14 @@ internal fun ScreenNavDisplay(
     },
     entryProvider = { route ->
       NavEntry(route) {
-        Surface(Modifier.fillMaxSize(), color = backgroundColor) {
+        val entryOpaque =
+          remember(route) {
+            opaqueBackground ||
+              (opaqueFrom != null && backStack.indexOf(opaqueFrom).let { it >= 0 && it <= backStack.indexOf(route) })
+          }
+        val entryColor =
+          if (entryOpaque) MaterialTheme.colorScheme.background else wallpaperAwareBackgroundColor()
+        Surface(Modifier.fillMaxSize(), color = entryColor) {
           content(route)
         }
       }
