@@ -25,6 +25,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.isSpecified
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.Dp
@@ -92,32 +93,30 @@ fun LiquidButton(
         highlight = { glassSettings.highlight(Highlight.Default) },
         shadow = { glassSettings.shadow(Shadow(radius = 6.dp)) },
         innerShadow = { glassSettings.innerShadow(InnerShadow(radius = 2.dp, color = Color.White.copy(alpha = 0.22f))) },
-        layerBlock =
+        layerBlock = {
+          clip = false
           if (animatePress) {
-            {
-              val width = size.width
-              val heightPx = size.height
-              val progress = interactiveHighlight.pressProgress
-              val scale = lerp(1f, 1f + 4.dp.toPx() / heightPx, progress)
-              val maxOffset = size.minDimension
-              val offset = interactiveHighlight.offset
-              translationX = maxOffset * tanh(0.05f * offset.x / maxOffset)
-              translationY = maxOffset * tanh(0.05f * offset.y / maxOffset)
+            val width = size.width
+            val heightPx = size.height
+            val progress = interactiveHighlight.pressProgress
+            val scale = lerp(1f, 1f + 4.dp.toPx() / heightPx, progress)
+            val maxOffset = size.minDimension
+            val offset = interactiveHighlight.offset
+            translationX = maxOffset * tanh(0.05f * offset.x / maxOffset)
+            translationY = maxOffset * tanh(0.05f * offset.y / maxOffset)
 
-              val maxDragScale = 4.dp.toPx() / heightPx
-              val offsetAngle = atan2(offset.y, offset.x)
-              scaleX =
-                scale +
-                  maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
-                  (width / heightPx).fastCoerceAtMost(1f)
-              scaleY =
-                scale +
-                  maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
-                  (heightPx / width).fastCoerceAtMost(1f)
-            }
-          } else {
-            null
-          },
+            val maxDragScale = 4.dp.toPx() / heightPx
+            val offsetAngle = atan2(offset.y, offset.x)
+            scaleX =
+              scale +
+                maxDragScale * abs(cos(offsetAngle) * offset.x / size.maxDimension) *
+                (width / heightPx).fastCoerceAtMost(1f)
+            scaleY =
+              scale +
+                maxDragScale * abs(sin(offsetAngle) * offset.y / size.maxDimension) *
+                (heightPx / width).fastCoerceAtMost(1f)
+          }
+        },
         onDrawSurface = {
           if (tint.isSpecified) {
             drawRect(tint, blendMode = BlendMode.Hue)
@@ -140,6 +139,7 @@ fun LiquidButton(
     modifier =
       modifier
         .then(glassModifier)
+        .graphicsLayer { clip = false }
         .combinedClickable(
           enabled = enabled,
           interactionSource = interactionSource,
