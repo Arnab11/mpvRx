@@ -60,7 +60,7 @@ class SmbClient(
     private val LOGON_FAILURE_CODES = setOf(0xC000006DL, 0xC000006AL, 0xC0000064L, 0xC0000072L, 0xC0000234L)
     private val AUTH_FAILURE_CODES = LOGON_FAILURE_CODES + 0xC0000022L
 
-    private fun newClient(): SMBClient =
+    private fun newClient(directoryLeasingEnabled: Boolean): SMBClient =
       SMBClient(
         SmbConfig
           .builder()
@@ -77,6 +77,11 @@ class SmbClient(
             com.hierynomus.mssmb2.SMB2Dialect.SMB_2_1,
             com.hierynomus.mssmb2.SMB2Dialect.SMB_2_0_2,
           ).withDfsEnabled(false)
+          // SMBJ 0.15.0 keys directory leases by relative path, not by the
+          // share/tree. Separate shares have identical "" roots on one session.
+          // Disable directory leases for multi-share server-root connections;
+          // keep the optimized cache for pinned single-share connections.
+          .withDirectoryLeasingEnabled(directoryLeasingEnabled)
           .withMultiProtocolNegotiate(true)
           .withSigningRequired(false)
           .withEncryptData(false)
@@ -140,6 +145,20 @@ class SmbClient(
     }
   }
 
+  /**
+   * A session may cache several SMB tree connections. Verify the returned
+   * tree really belongs to the requested share: showing another share's
+   * directory listing (or streaming its files) is never an acceptable fallback.
+   */
+  private fun Session.connectDiskShare(shareName: String): DiskShare {
+    val tree = connectShare(shareName) as? DiskShare
+      ?: throw IOException("SMB share is not a disk share: $shareName")
+    if (tree.smbPath.shareName?.equals(shareName, ignoreCase = true) != true) {
+      throw IOException("SMB server returned a different share instead of $shareName")
+    }
+    return tree
+  }
+
   override suspend fun connect(): Result<Unit> =
     withContext(Dispatchers.IO) {
       var candidateClient: SMBClient? = null
@@ -157,7 +176,8 @@ class SmbClient(
           runInterruptible(Dispatchers.IO) {
             for ((index, authContext) in authentication.withIndex()) {
               try {
-                val newClient = newClient().also { candidateClient = it }
+                val newClient = newClient(directoryLeasingEnabled = configuredShare != null)
+                  .also { candidateClient = it }
                 val newConnection = newClient.connect(connection.host, connection.port).also { candidateConnection = it }
                 val newSession = newConnection.authenticate(authContext).also { candidateSession = it }
                 if (configuredShare == null) {
@@ -167,8 +187,7 @@ class SmbClient(
                     throw IOException("SMB server does not support shared-folder browsing")
                   }
                 } else {
-                  val diskShare = newSession.connectShare(configuredShare) as? DiskShare
-                    ?: throw IOException("Configured SMB share is not a disk share")
+                  val diskShare = newSession.connectDiskShare(configuredShare)
                   // Keep the session-cached tree alive after validating the configured directory.
                   diskShare.list(sharePath.directory.relative)
                 }
@@ -234,9 +253,7 @@ class SmbClient(
             }
             val target = sharePath.resolve(directory)
 
-            val diskShare =
-              sess.connectShare(target.shareName) as? DiskShare
-                ?: throw IOException("Configured SMB share is not a disk share")
+            val diskShare = sess.connectDiskShare(target.shareName)
 
             // The DiskShare returned by Session.connectShare() is cached and shared by
             // all requests on this session. Never close it from a per-request operation:
@@ -244,7 +261,12 @@ class SmbClient(
             val rawFiles: List<FileIdBothDirectoryInformation> =
               try {
                 withTimeout(15_000) {
-                  runInterruptible(Dispatchers.IO) { diskShare.list(target.path.relative) }
+                  runInterruptible(Dispatchers.IO) {
+                    // Server-root connections now disable directory leasing entirely,
+                    // including SMBJ's lease manager (not merely its list cache).
+                    // Pinned single-share connections retain directory caching.
+                    diskShare.list(target.path.relative)
+                  }
                 }
               } catch (_: TimeoutCancellationException) {
                 throw IOException("SMB directory listing timed out")
@@ -288,9 +310,7 @@ class SmbClient(
             val sess = session ?: throw java.net.SocketException("Not connected")
             val target = sharePath.resolve(parseNetworkPath(path))
 
-            val diskShare =
-              sess.connectShare(target.shareName) as? DiskShare
-                ?: throw IOException("Configured SMB share is not a disk share")
+            val diskShare = sess.connectDiskShare(target.shareName)
 
             try {
               val file =
@@ -392,9 +412,7 @@ class SmbClient(
           executeWithRetry {
             val sess = session ?: throw java.net.SocketException("Not connected")
             val target = sharePath.resolve(parseNetworkPath(path))
-            val diskShare =
-              sess.connectShare(target.shareName) as? DiskShare
-                ?: throw IOException("Configured SMB share is not a disk share")
+            val diskShare = sess.connectDiskShare(target.shareName)
 
             try {
               val file =

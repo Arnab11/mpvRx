@@ -64,11 +64,40 @@ internal object SmbShareDiscovery {
         throw error
       }
       shares.mapNotNull { share ->
-        // Low bits identify disk shares; skip printers/devices/IPC, retaining disk shares
-        // even when the server marks them special or temporary.
-        if (share.type and 0xFFFF != 0) return@mapNotNull null
+        // SRVSVC includes Windows administrative shares (ADMIN$, C$, D$, ...).
+        // STYPE_SPECIAL is the high bit of SHARE_INFO_1.type; the low bits
+        // distinguish disk shares from IPC, printers and devices. Show only
+        // ordinary disk shares at the server root. Hidden shares are still
+        // accessible when the user explicitly configures /Share$ as a path.
+        if (share.type and 0xFFFF != 0 ||
+          // STYPE_SPECIAL | STYPE_TEMPORARY: exclude system and temporary exports.
+          share.type and 0xC0000000.toInt() != 0
+        ) return@mapNotNull null
         val name = share.netName ?: return@mapNotNull null
+        if (name.endsWith("$")) return@mapNotNull null
         val path = runCatching { NetworkPath.ROOT.child(name) }.getOrNull() ?: return@mapNotNull null
+
+        // Enumeration does not prove the current account can browse a share.
+        // Some servers report administrative volumes as plain names (Admin, C,
+        // E), even though they cannot be opened. Check only list permission,
+        // not the directory contents: legitimately empty shares stay visible.
+        // Leave the session-cached DiskShare alive; close just the probe handle.
+        val browsable = try {
+          val diskShare = session.connectShare(name) as? com.hierynomus.smbj.share.DiskShare
+            ?: return@mapNotNull null
+          diskShare.openDirectory(
+            "",
+            EnumSet.of(AccessMask.FILE_LIST_DIRECTORY, AccessMask.FILE_READ_ATTRIBUTES),
+            null,
+            EnumSet.allOf(SMB2ShareAccess::class.java),
+            SMB2CreateDisposition.FILE_OPEN,
+            null,
+          ).use { }
+          true
+        } catch (_: com.hierynomus.mssmb2.SMBApiException) {
+          false // Invalid share or insufficient browse permissions.
+        }
+        if (!browsable) return@mapNotNull null
         NetworkFile(name = name, path = path.value, size = 0L, isDirectory = true)
       }.distinctBy { it.path.lowercase(java.util.Locale.ROOT) }
     }

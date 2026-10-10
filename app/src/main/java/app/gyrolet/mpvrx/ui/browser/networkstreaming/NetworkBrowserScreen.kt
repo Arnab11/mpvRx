@@ -181,8 +181,9 @@ data class NetworkBrowserScreen(
       if (isSearching) focusRequester.requestFocus()
     }
 
-    // Load files when connectionId or currentPath changes
-    LaunchedEffect(connectionId, currentPath) {
+    // Each resolved path has its own ViewModel. Reload when that particular
+    // owner changes, including when Navigation 3 restores a previous entry.
+    LaunchedEffect(viewModel) {
       viewModel.loadFiles()
     }
 
