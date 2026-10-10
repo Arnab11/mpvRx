@@ -597,7 +597,7 @@ class MainActivity : AppCompatActivity() {
                 .fillMaxSize()
                 .captureLiquidGlassBackdrop(miniPlayerBackdrop, liquidGlassEnabled),
             backStack = typedBackstack,
-            opaqueBackground = typedBackstack.any { it == app.gyrolet.mpvrx.ui.preferences.PreferencesScreen },
+            opaqueFrom = app.gyrolet.mpvrx.ui.preferences.PreferencesScreen,
             onBack = {
               if (typedBackstack.size <= 1 || !typedBackstack.popSafely()) {
                 this@MainActivity.finish()
